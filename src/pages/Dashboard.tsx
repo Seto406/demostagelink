@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2 } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +31,10 @@ interface Show {
   description: string | null;
   date: string | null;
   venue: string | null;
+  city: string | null;
+  niche: "local" | "university" | null;
+  ticket_link: string | null;
+  poster_url: string | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
 }
@@ -42,6 +46,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
+  const [editingShow, setEditingShow] = useState<Show | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
 
@@ -151,6 +156,37 @@ const Dashboard = () => {
     }
   };
 
+  const resetForm = () => {
+    setNewShowTitle("");
+    setNewShowDescription("");
+    setNewShowDate("");
+    setNewShowVenue("");
+    setNewShowCity("");
+    setNewShowNiche("local");
+    setNewShowTicketLink("");
+    clearPoster();
+    setEditingShow(null);
+  };
+
+  const openAddModal = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEditModal = (show: Show) => {
+    setEditingShow(show);
+    setNewShowTitle(show.title);
+    setNewShowDescription(show.description || "");
+    setNewShowDate(show.date || "");
+    setNewShowVenue(show.venue || "");
+    setNewShowCity(show.city || "");
+    setNewShowNiche(show.niche || "local");
+    setNewShowTicketLink(show.ticket_link || "");
+    setPosterPreview(show.poster_url);
+    setPosterFile(null);
+    setShowModal(true);
+  };
+
   const handleAddShow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !user) return;
@@ -198,15 +234,7 @@ const Dashboard = () => {
         throw new Error("Failed to submit show");
       }
 
-      // Reset form
-      setNewShowTitle("");
-      setNewShowDescription("");
-      setNewShowDate("");
-      setNewShowVenue("");
-      setNewShowCity("");
-      setNewShowNiche("local");
-      setNewShowTicketLink("");
-      clearPoster();
+      resetForm();
       setShowModal(false);
       setSuccessModal(true);
       fetchShows();
@@ -214,6 +242,71 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to submit show. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
+
+  const handleUpdateShow = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile || !user || !editingShow) return;
+
+    setUploadingPoster(true);
+    let posterUrl: string | null = editingShow.poster_url;
+
+    try {
+      // Upload new poster if selected
+      if (posterFile) {
+        const fileExt = posterFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("posters")
+          .upload(fileName, posterFile);
+
+        if (uploadError) {
+          throw new Error("Failed to upload poster");
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("posters")
+          .getPublicUrl(fileName);
+        
+        posterUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("shows")
+        .update({
+          title: newShowTitle,
+          description: newShowDescription || null,
+          date: newShowDate || null,
+          venue: newShowVenue || null,
+          city: newShowCity || null,
+          niche: newShowNiche,
+          poster_url: posterUrl,
+          ticket_link: newShowTicketLink || null
+        })
+        .eq("id", editingShow.id);
+
+      if (error) {
+        throw new Error("Failed to update show");
+      }
+
+      toast({
+        title: "Success",
+        description: "Show updated successfully!",
+      });
+
+      resetForm();
+      setShowModal(false);
+      fetchShows();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update show. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -404,7 +497,7 @@ const Dashboard = () => {
 
               <div className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
-                <Button onClick={() => setShowModal(true)} variant="default">
+                <Button onClick={openAddModal} variant="default">
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Show
                 </Button>
@@ -422,7 +515,7 @@ const Dashboard = () => {
             >
               <div className="flex justify-between items-center">
                 <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
-                <Button onClick={() => setShowModal(true)} variant="default">
+                <Button onClick={openAddModal} variant="default">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Show
                 </Button>
@@ -433,7 +526,7 @@ const Dashboard = () => {
               ) : shows.length === 0 ? (
                 <div className="bg-card border border-secondary/20 p-12 text-center">
                   <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
-                  <Button onClick={() => setShowModal(true)} variant="outline">
+                  <Button onClick={openAddModal} variant="outline">
                     Submit Your First Show
                   </Button>
                 </div>
@@ -445,6 +538,7 @@ const Dashboard = () => {
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -458,6 +552,17 @@ const Dashboard = () => {
                             <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
                               {getStatusLabel(show.status)}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditModal(show)}
+                              className="h-8 w-8 p-0"
+                              title="Edit Show"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -548,16 +653,20 @@ const Dashboard = () => {
         </div>
       </main>
 
-      {/* Add Show Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      {/* Add/Edit Show Modal */}
+      <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) resetForm(); }}>
         <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Add New Show</DialogTitle>
+            <DialogTitle className="font-serif text-xl">
+              {editingShow ? "Edit Show" : "Add New Show"}
+            </DialogTitle>
             <DialogDescription>
-              Submit your show for review. It will be visible after admin approval.
+              {editingShow 
+                ? "Update your show details. Changes will be saved immediately."
+                : "Submit your show for review. It will be visible after admin approval."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleAddShow} className="space-y-4 mt-4">
+          <form onSubmit={editingShow ? handleUpdateShow : handleAddShow} className="space-y-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="showTitle">Show Title *</Label>
               <Input
@@ -685,7 +794,7 @@ const Dashboard = () => {
             </div>
 
             <Button type="submit" variant="default" className="w-full" disabled={uploadingPoster}>
-              {uploadingPoster ? "Uploading..." : "Submit Show"}
+              {uploadingPoster ? "Saving..." : (editingShow ? "Save Changes" : "Submit Show")}
             </Button>
           </form>
         </DialogContent>
