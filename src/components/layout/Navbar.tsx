@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { Shield } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo.png";
 
 const Navbar = () => {
   const location = useLocation();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   
   const navLinks = [
     { path: "/", label: "Home" },
@@ -54,6 +55,14 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             {user ? (
               <>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm" className="text-primary">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
                 {profile?.role === "producer" && (
                   <Link to="/dashboard">
                     <Button variant="ghost" size="sm">
