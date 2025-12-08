@@ -55,6 +55,7 @@ const Dashboard = () => {
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
   const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [newShowTicketLink, setNewShowTicketLink] = useState("");
 
   // Profile form states
   const [groupName, setGroupName] = useState("");
@@ -189,7 +190,8 @@ const Dashboard = () => {
           city: newShowCity || null,
           niche: newShowNiche,
           status: "pending",
-          poster_url: posterUrl
+          poster_url: posterUrl,
+          ticket_link: newShowTicketLink || null
         });
 
       if (error) {
@@ -203,6 +205,7 @@ const Dashboard = () => {
       setNewShowVenue("");
       setNewShowCity("");
       setNewShowNiche("local");
+      setNewShowTicketLink("");
       clearPoster();
       setShowModal(false);
       setSuccessModal(true);
@@ -628,6 +631,21 @@ const Dashboard = () => {
                   <SelectItem value="university">University</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showTicketLink">Ticket Link</Label>
+              <Input
+                id="showTicketLink"
+                type="url"
+                value={newShowTicketLink}
+                onChange={(e) => setNewShowTicketLink(e.target.value)}
+                placeholder="https://tickets.example.com/your-show"
+                className="bg-background border-secondary/30"
+              />
+              <p className="text-xs text-muted-foreground">
+                Link to your ticket sales page (optional)
+              </p>
             </div>
 
             <div className="space-y-2">
