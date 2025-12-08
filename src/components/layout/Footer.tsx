@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import stageLinkLogo from "@/assets/stagelink-logo.png";
+import stageLinkLogo from "@/assets/stagelink-logo-new.png";
 
 const Footer = () => {
   return (
