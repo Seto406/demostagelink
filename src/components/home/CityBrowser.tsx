@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const cities = [
   { name: "Mandaluyong", icon: "🏙️" },
@@ -28,7 +28,7 @@ const CityBrowser = () => {
           </p>
         </motion.div>
 
-        <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+        <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory justify-center flex-wrap">
           {cities.map((city, index) => (
             <motion.div
               key={city.name}

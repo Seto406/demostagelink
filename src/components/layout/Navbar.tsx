@@ -1,15 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import stageLinkLogo from "@/assets/stagelink-logo.png";
 
 const Navbar = () => {
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
   
   const navLinks = [
     { path: "/", label: "Home" },
     { path: "/directory", label: "Directory" },
     { path: "/about", label: "About" },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-secondary/10">
@@ -44,12 +50,29 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Login Button */}
-          <Link to="/login">
-            <Button variant="outline" size="sm">
-              Login
-            </Button>
-          </Link>
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                {profile?.role === "producer" && (
+                  <Link to="/dashboard">
+                    <Button variant="ghost" size="sm">
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm">
+                  Login
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>

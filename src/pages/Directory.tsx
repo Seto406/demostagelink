@@ -1,42 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
 
 interface TheaterGroup {
   id: string;
-  name: string;
-  city: string;
-  niche: string;
-  description: string;
+  group_name: string;
+  description: string | null;
+  niche: "local" | "university" | null;
 }
 
-const mockGroups: TheaterGroup[] = [
-  { id: "1", name: "RTU Drama Ensemble", city: "Mandaluyong", niche: "University Theater Group", description: "Rizal Technological University's premier theater group." },
-  { id: "2", name: "Manila Repertory", city: "Manila", niche: "Local/Community-based", description: "Bringing classic Filipino stories to life since 1985." },
-  { id: "3", name: "Makati Arts Guild", city: "Makati", niche: "Local/Community-based", description: "Contemporary theater for the modern audience." },
-  { id: "4", name: "QC Theater Company", city: "Quezon City", niche: "Local/Community-based", description: "Quezon City's community theater initiative." },
-  { id: "5", name: "Taguig Players", city: "Taguig", niche: "Local/Community-based", description: "Young and dynamic theater collective from BGC." },
-  { id: "6", name: "UP Repertory", city: "Quezon City", niche: "University Theater Group", description: "University of the Philippines' flagship theater org." },
-];
-
 const Directory = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All");
-  const [selectedNiche, setSelectedNiche] = useState("All");
+  const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
+  const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
+  const [groups, setGroups] = useState<TheaterGroup[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredGroups = mockGroups.filter((group) => {
-    const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCity = selectedCity === "All" || group.city === selectedCity;
-    const matchesNiche = selectedNiche === "All" || group.niche === selectedNiche;
-    return matchesSearch && matchesCity && matchesNiche;
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedCity !== "All") params.set("city", selectedCity);
+    if (selectedNiche !== "All") params.set("niche", selectedNiche);
+    setSearchParams(params, { replace: true });
+  }, [selectedCity, selectedNiche, setSearchParams]);
+
+  // Fetch producer profiles
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, group_name, description, niche")
+        .eq("role", "producer")
+        .not("group_name", "is", null);
+
+      if (error) {
+        console.error("Error fetching groups:", error);
+      } else {
+        setGroups(data as TheaterGroup[]);
+      }
+      setLoading(false);
+    };
+
+    fetchGroups();
+  }, []);
+
+  const filteredGroups = groups.filter((group) => {
+    const matchesSearch = group.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesNiche = selectedNiche === "All" || 
+      (selectedNiche === "Local/Community-based" && group.niche === "local") ||
+      (selectedNiche === "University Theater Group" && group.niche === "university");
+    return matchesSearch && matchesNiche;
   });
+
+  const getNicheLabel = (niche: string | null) => {
+    switch (niche) {
+      case "local":
+        return "Local/Community";
+      case "university":
+        return "University";
+      default:
+        return "Theater Group";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,6 +90,7 @@ const Directory = () => {
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Explore theater groups across Metro Manila
+              {selectedCity !== "All" && <span className="text-secondary"> in {selectedCity}</span>}
             </p>
           </motion.div>
 
@@ -76,10 +112,10 @@ const Directory = () => {
               />
             </div>
 
-            {/* Filter Buttons */}
+            {/* Filter Buttons - City */}
             <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex flex-wrap gap-2">
-                <span className="text-muted-foreground text-sm mr-2 self-center">City:</span>
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-muted-foreground text-sm mr-2">City:</span>
                 {cities.map((city) => (
                   <button
                     key={city}
@@ -96,6 +132,7 @@ const Directory = () => {
               </div>
             </div>
 
+            {/* Filter Buttons - Niche */}
             <div className="flex flex-wrap justify-center gap-2">
               <span className="text-muted-foreground text-sm mr-2 self-center">Type:</span>
               {niches.map((niche) => (
@@ -115,41 +152,44 @@ const Directory = () => {
           </motion.div>
 
           {/* Groups Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGroups.map((group, index) => (
-              <motion.div
-                key={group.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <Link to={`/group/${group.id}`}>
-                  <div className="bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group">
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading theater groups...</div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredGroups.map((group, index) => (
+                <motion.div
+                  key={group.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <div className="bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group cursor-pointer">
                     <div className="flex items-start justify-between mb-4">
                       <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
                         🎭
                       </div>
                       <span className="text-xs text-secondary uppercase tracking-wider">
-                        {group.niche.split("/")[0]}
+                        {getNicheLabel(group.niche)}
                       </span>
                     </div>
                     <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
-                      {group.name}
+                      {group.group_name}
                     </h3>
-                    <p className="text-muted-foreground text-sm mb-4">{group.description}</p>
-                    <div className="flex items-center gap-2 text-secondary/70 text-sm">
-                      <span>📍</span>
-                      <span>{group.city}</span>
-                    </div>
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {group.description || "A theater group in Metro Manila."}
+                    </p>
                   </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-          {filteredGroups.length === 0 && (
+          {!loading && filteredGroups.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No theater groups found matching your criteria.</p>
+              <p className="text-muted-foreground mb-4">No theater groups found matching your criteria.</p>
+              <p className="text-sm text-muted-foreground">
+                Are you a theater group? <Link to="/login" className="text-secondary hover:underline">Join StageLink</Link> to be listed here.
+              </p>
             </div>
           )}
         </div>

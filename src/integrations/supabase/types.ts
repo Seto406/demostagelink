@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          description: string | null
+          founded_year: number | null
+          group_name: string | null
+          id: string
+          map_screenshot_url: string | null
+          niche: Database["public"]["Enums"]["niche_type"] | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          founded_year?: number | null
+          group_name?: string | null
+          id?: string
+          map_screenshot_url?: string | null
+          niche?: Database["public"]["Enums"]["niche_type"] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          founded_year?: number | null
+          group_name?: string | null
+          id?: string
+          map_screenshot_url?: string | null
+          niche?: Database["public"]["Enums"]["niche_type"] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shows: {
+        Row: {
+          city: string | null
+          created_at: string
+          date: string | null
+          description: string | null
+          id: string
+          niche: Database["public"]["Enums"]["niche_type"] | null
+          poster_url: string | null
+          producer_id: string
+          status: Database["public"]["Enums"]["show_status"]
+          ticket_link: string | null
+          title: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          niche?: Database["public"]["Enums"]["niche_type"] | null
+          poster_url?: string | null
+          producer_id: string
+          status?: Database["public"]["Enums"]["show_status"]
+          ticket_link?: string | null
+          title: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          niche?: Database["public"]["Enums"]["niche_type"] | null
+          poster_url?: string | null
+          producer_id?: string
+          status?: Database["public"]["Enums"]["show_status"]
+          ticket_link?: string | null
+          title?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shows_producer_id_fkey"
+            columns: ["producer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +117,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      niche_type: "local" | "university"
+      show_status: "pending" | "approved" | "rejected"
+      user_role: "audience" | "producer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +246,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      niche_type: ["local", "university"],
+      show_status: ["pending", "approved", "rejected"],
+      user_role: ["audience", "producer"],
+    },
   },
 } as const

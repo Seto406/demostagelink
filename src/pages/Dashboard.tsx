@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,67 +19,194 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo.png";
 
 interface Show {
   id: string;
   title: string;
-  status: "PENDING APPROVAL" | "APPROVED" | "REJECTED";
-  createdAt: string;
+  description: string | null;
+  date: string | null;
+  venue: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
 }
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
-  const [shows, setShows] = useState<Show[]>([
-    { id: "1", title: "Florante at Laura", status: "APPROVED", createdAt: "2024-01-15" },
-    { id: "2", title: "Ibong Adarna", status: "PENDING APPROVAL", createdAt: "2024-01-20" },
-  ]);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [loadingShows, setLoadingShows] = useState(true);
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
+  const [newShowDescription, setNewShowDescription] = useState("");
+  const [newShowDate, setNewShowDate] = useState("");
+  const [newShowVenue, setNewShowVenue] = useState("");
+  const [newShowCity, setNewShowCity] = useState("");
+  const [newShowNiche, setNewShowNiche] = useState<"local" | "university">("local");
 
   // Profile form states
-  const [groupName, setGroupName] = useState("RTU Drama Ensemble");
-  const [description, setDescription] = useState("Rizal Technological University's premier theater group.");
-  const [foundedYear, setFoundedYear] = useState("1975");
-  const [niche, setNiche] = useState("");
+  const [groupName, setGroupName] = useState("");
+  const [description, setDescription] = useState("");
+  const [foundedYear, setFoundedYear] = useState("");
+  const [niche, setNiche] = useState<"local" | "university" | "">("");
 
-  const handleLogout = () => {
-    localStorage.removeItem("userType");
+  // Redirect if not logged in or not a producer
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        navigate("/login");
+      } else if (profile && profile.role !== "producer") {
+        navigate("/");
+      }
+    }
+  }, [user, profile, loading, navigate]);
+
+  // Load profile data
+  useEffect(() => {
+    if (profile) {
+      setGroupName(profile.group_name || "");
+      setDescription(profile.description || "");
+      setFoundedYear(profile.founded_year?.toString() || "");
+      setNiche(profile.niche || "");
+    }
+  }, [profile]);
+
+  // Fetch shows
+  const fetchShows = async () => {
+    if (!profile) return;
+    
+    setLoadingShows(true);
+    const { data, error } = await supabase
+      .from("shows")
+      .select("*")
+      .eq("producer_id", profile.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching shows:", error);
+    } else {
+      setShows(data as Show[]);
+    }
+    setLoadingShows(false);
+  };
+
+  useEffect(() => {
+    if (profile) {
+      fetchShows();
+    }
+  }, [profile]);
+
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 
-  const handleAddShow = (e: React.FormEvent) => {
+  const handleAddShow = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newShow: Show = {
-      id: Date.now().toString(),
-      title: newShowTitle,
-      status: "PENDING APPROVAL",
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    setShows([...shows, newShow]);
-    setNewShowTitle("");
-    setShowModal(false);
-    setSuccessModal(true);
+    if (!profile) return;
+
+    const { error } = await supabase
+      .from("shows")
+      .insert({
+        producer_id: profile.id,
+        title: newShowTitle,
+        description: newShowDescription || null,
+        date: newShowDate || null,
+        venue: newShowVenue || null,
+        city: newShowCity || null,
+        niche: newShowNiche,
+        status: "pending"
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit show. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      setNewShowTitle("");
+      setNewShowDescription("");
+      setNewShowDate("");
+      setNewShowVenue("");
+      setNewShowCity("");
+      setNewShowNiche("local");
+      setShowModal(false);
+      setSuccessModal(true);
+      fetchShows();
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!profile) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        group_name: groupName || null,
+        description: description || null,
+        founded_year: foundedYear ? parseInt(foundedYear) : null,
+        niche: niche || null
+      })
+      .eq("id", profile.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+      refreshProfile();
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "APPROVED":
+      case "approved":
         return "text-green-500 bg-green-500/10 border-green-500/30";
-      case "PENDING APPROVAL":
+      case "pending":
         return "text-yellow-500 bg-yellow-500/10 border-yellow-500/30";
-      case "REJECTED":
+      case "rejected":
         return "text-red-500 bg-red-500/10 border-red-500/30";
       default:
         return "text-muted-foreground";
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "UNDER REVIEW";
+      case "approved":
+        return "APPROVED";
+      case "rejected":
+        return "REJECTED";
+      default:
+        return status.toUpperCase();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -189,13 +316,13 @@ const Dashboard = () => {
                 <div className="bg-card border border-secondary/20 p-6">
                   <p className="text-muted-foreground text-sm mb-2">Approved</p>
                   <p className="text-3xl font-serif text-green-500">
-                    {shows.filter((s) => s.status === "APPROVED").length}
+                    {shows.filter((s) => s.status === "approved").length}
                   </p>
                 </div>
                 <div className="bg-card border border-secondary/20 p-6">
-                  <p className="text-muted-foreground text-sm mb-2">Pending</p>
+                  <p className="text-muted-foreground text-sm mb-2">Under Review</p>
                   <p className="text-3xl font-serif text-yellow-500">
-                    {shows.filter((s) => s.status === "PENDING APPROVAL").length}
+                    {shows.filter((s) => s.status === "pending").length}
                   </p>
                 </div>
               </div>
@@ -226,30 +353,43 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              <div className="bg-card border border-secondary/20 overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date Added</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shows.map((show) => (
-                      <tr key={show.id} className="border-t border-secondary/10">
-                        <td className="p-4 text-foreground">{show.title}</td>
-                        <td className="p-4 text-muted-foreground">{show.createdAt}</td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
-                            {show.status}
-                          </span>
-                        </td>
+              {loadingShows ? (
+                <div className="text-muted-foreground text-center py-8">Loading shows...</div>
+              ) : shows.length === 0 ? (
+                <div className="bg-card border border-secondary/20 p-12 text-center">
+                  <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
+                  <Button onClick={() => setShowModal(true)} variant="outline">
+                    Submit Your First Show
+                  </Button>
+                </div>
+              ) : (
+                <div className="bg-card border border-secondary/20 overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {shows.map((show) => (
+                        <tr key={show.id} className="border-t border-secondary/10">
+                          <td className="p-4 text-foreground">{show.title}</td>
+                          <td className="p-4 text-muted-foreground">
+                            {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
+                              {getStatusLabel(show.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -263,7 +403,7 @@ const Dashboard = () => {
             >
               <div className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-6">Group Information</h2>
-                <form className="space-y-6">
+                <div className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="groupName">Group Name</Label>
                     <Input
@@ -271,6 +411,7 @@ const Dashboard = () => {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       className="bg-background border-secondary/30"
+                      placeholder="Enter your theater group name"
                     />
                   </div>
 
@@ -281,6 +422,7 @@ const Dashboard = () => {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       className="bg-background border-secondary/30 min-h-24"
+                      placeholder="Tell us about your theater group"
                     />
                   </div>
 
@@ -291,12 +433,16 @@ const Dashboard = () => {
                       value={foundedYear}
                       onChange={(e) => setFoundedYear(e.target.value)}
                       className="bg-background border-secondary/30"
+                      placeholder="e.g., 1995"
+                      type="number"
+                      min="1900"
+                      max={new Date().getFullYear()}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="niche">Niche</Label>
-                    <Select value={niche} onValueChange={setNiche}>
+                    <Select value={niche} onValueChange={(val) => setNiche(val as "local" | "university")}>
                       <SelectTrigger className="bg-background border-secondary/30">
                         <SelectValue placeholder="Select your group type" />
                       </SelectTrigger>
@@ -310,16 +456,17 @@ const Dashboard = () => {
                   <div className="space-y-2">
                     <Label>Upload Map Screenshot (Optional)</Label>
                     <div className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors">
+                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-muted-foreground text-sm">
                         Click or drag to upload your venue map
                       </p>
                     </div>
                   </div>
 
-                  <Button type="button" variant="hero">
+                  <Button onClick={handleUpdateProfile} variant="hero">
                     Save Profile
                   </Button>
-                </form>
+                </div>
               </div>
             </motion.div>
           )}
@@ -328,7 +475,7 @@ const Dashboard = () => {
 
       {/* Add Show Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="bg-card border-secondary/30">
+        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Add New Show</DialogTitle>
             <DialogDescription>
@@ -337,7 +484,7 @@ const Dashboard = () => {
           </DialogHeader>
           <form onSubmit={handleAddShow} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="showTitle">Show Title</Label>
+              <Label htmlFor="showTitle">Show Title *</Label>
               <Input
                 id="showTitle"
                 value={newShowTitle}
@@ -347,6 +494,80 @@ const Dashboard = () => {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showDescription">Description</Label>
+              <Textarea
+                id="showDescription"
+                value={newShowDescription}
+                onChange={(e) => setNewShowDescription(e.target.value)}
+                placeholder="Describe your show"
+                className="bg-background border-secondary/30"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="showDate">Show Date</Label>
+                <Input
+                  id="showDate"
+                  type="date"
+                  value={newShowDate}
+                  onChange={(e) => setNewShowDate(e.target.value)}
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="showCity">City</Label>
+                <Select value={newShowCity} onValueChange={setNewShowCity}>
+                  <SelectTrigger className="bg-background border-secondary/30">
+                    <SelectValue placeholder="Select city" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-secondary/30">
+                    <SelectItem value="Mandaluyong">Mandaluyong</SelectItem>
+                    <SelectItem value="Taguig">Taguig</SelectItem>
+                    <SelectItem value="Manila">Manila</SelectItem>
+                    <SelectItem value="Quezon City">Quezon City</SelectItem>
+                    <SelectItem value="Makati">Makati</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showVenue">Venue</Label>
+              <Input
+                id="showVenue"
+                value={newShowVenue}
+                onChange={(e) => setNewShowVenue(e.target.value)}
+                placeholder="Where will the show be held?"
+                className="bg-background border-secondary/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showNiche">Type</Label>
+              <Select value={newShowNiche} onValueChange={(val) => setNewShowNiche(val as "local" | "university")}>
+                <SelectTrigger className="bg-background border-secondary/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-secondary/30">
+                  <SelectItem value="local">Local/Community</SelectItem>
+                  <SelectItem value="university">University</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Upload Map Screenshot (Optional)</Label>
+              <div className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-secondary/50 transition-colors">
+                <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-xs">
+                  Click to upload venue map
+                </p>
+              </div>
+            </div>
+
             <Button type="submit" variant="default" className="w-full">
               Submit Show
             </Button>
