@@ -1,31 +1,95 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo.png";
 
 type UserType = "audience" | "producer" | null;
+type AuthMode = "login" | "signup";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user, profile, signIn, signUp, loading } = useAuth();
   const [userType, setUserType] = useState<UserType>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (userType === "producer") {
-      // Store mock session
-      localStorage.setItem("userType", "producer");
-      navigate("/dashboard");
-    } else {
-      localStorage.setItem("userType", "audience");
-      navigate("/");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile && !loading) {
+      if (profile.role === "producer") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     }
+  }, [user, profile, loading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (authMode === "signup") {
+        if (!userType) {
+          toast({
+            title: "Error",
+            description: "Please select your account type",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        
+        const { error } = await signUp(email, password, userType);
+        if (error) {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Account created!",
+            description: "You are now signed in.",
+          });
+          // Navigation will happen via useEffect when profile loads
+        }
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+    
+    setIsSubmitting(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +102,7 @@ const Login = () => {
             transition={{ duration: 0.6 }}
             className="max-w-md mx-auto"
           >
-            {!userType ? (
+            {!userType && authMode === "signup" ? (
               <div className="text-center">
                 <img 
                   src={stageLinkLogo} 
@@ -46,10 +110,10 @@ const Login = () => {
                   className="h-20 w-auto mx-auto mb-8"
                 />
                 <h1 className="text-3xl font-serif font-bold text-foreground mb-4">
-                  Welcome to StageLink
+                  Join StageLink
                 </h1>
                 <p className="text-muted-foreground mb-8">
-                  Choose how you'd like to continue
+                  Choose how you'd like to join
                 </p>
 
                 <div className="space-y-4">
@@ -87,24 +151,37 @@ const Login = () => {
                     </div>
                   </button>
                 </div>
+
+                <p className="text-center text-muted-foreground text-sm mt-6">
+                  Already have an account?{" "}
+                  <button 
+                    onClick={() => setAuthMode("login")}
+                    className="text-secondary cursor-pointer hover:underline"
+                  >
+                    Log in
+                  </button>
+                </p>
               </div>
             ) : (
               <div className="bg-card border border-secondary/20 p-8">
-                <button
-                  onClick={() => setUserType(null)}
-                  className="text-secondary text-sm mb-6 hover:underline"
-                >
-                  ← Back
-                </button>
+                {authMode === "signup" && userType && (
+                  <button
+                    onClick={() => setUserType(null)}
+                    className="text-secondary text-sm mb-6 hover:underline"
+                  >
+                    ← Back
+                  </button>
+                )}
 
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
-                  {userType === "producer" ? "Theater Group Login" : "Audience Login"}
+                  {authMode === "login" ? "Welcome Back" : 
+                    userType === "producer" ? "Theater Group Sign Up" : "Audience Sign Up"}
                 </h1>
                 <p className="text-muted-foreground text-sm mb-8">
-                  Enter your credentials to continue
+                  {authMode === "login" ? "Enter your credentials to continue" : "Create your account"}
                 </p>
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -128,19 +205,40 @@ const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="bg-background border-secondary/30 focus:border-secondary"
                       required
+                      minLength={6}
                     />
                   </div>
 
-                  <Button type="submit" variant="hero" className="w-full">
-                    {userType === "producer" ? "Access Dashboard" : "Continue"}
+                  <Button type="submit" variant="hero" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
                   </Button>
                 </form>
 
                 <p className="text-center text-muted-foreground text-sm mt-6">
-                  Don't have an account?{" "}
-                  <span className="text-secondary cursor-pointer hover:underline">
-                    Sign up
-                  </span>
+                  {authMode === "login" ? (
+                    <>
+                      Don't have an account?{" "}
+                      <button 
+                        onClick={() => {
+                          setAuthMode("signup");
+                          setUserType(null);
+                        }}
+                        className="text-secondary cursor-pointer hover:underline"
+                      >
+                        Sign up
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{" "}
+                      <button 
+                        onClick={() => setAuthMode("login")}
+                        className="text-secondary cursor-pointer hover:underline"
+                      >
+                        Log in
+                      </button>
+                    </>
+                  )}
                 </p>
               </div>
             )}

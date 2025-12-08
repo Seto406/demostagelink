@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
+// Import posters
+import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
+import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
+import posterRent from "@/assets/posters/rent-manila.jpg";
+import posterHamilton from "@/assets/posters/hamilton.jpg";
+import posterPhantom from "@/assets/posters/the-phantom.jpg";
+import posterDekada from "@/assets/posters/dekada-70.jpg";
+
 interface Show {
   id: string;
   title: string;
@@ -8,42 +16,43 @@ interface Show {
   posterUrl: string;
 }
 
-const mockShows: Show[] = [
+// Featured shows with generated posters (these will be replaced by DB data when shows are approved)
+const featuredShows: Show[] = [
   {
     id: "1",
-    title: "Ang Larawan",
+    title: "Ang Huling El Bimbo",
     groupName: "RTU Drama Ensemble",
-    posterUrl: "",
+    posterUrl: posterElBimbo,
   },
   {
     id: "2",
-    title: "Florante at Laura",
+    title: "Mula sa Buwan",
     groupName: "Manila Repertory",
-    posterUrl: "",
+    posterUrl: posterMulaSaBuwan,
   },
   {
     id: "3",
-    title: "Noli Me Tangere",
+    title: "Rent: Manila",
     groupName: "Makati Arts Guild",
-    posterUrl: "",
+    posterUrl: posterRent,
   },
   {
     id: "4",
-    title: "Dekada '70",
+    title: "Hamilton",
     groupName: "QC Theater Company",
-    posterUrl: "",
+    posterUrl: posterHamilton,
   },
   {
     id: "5",
-    title: "Himala",
+    title: "The Phantom",
     groupName: "Taguig Players",
-    posterUrl: "",
+    posterUrl: posterPhantom,
   },
   {
     id: "6",
-    title: "Sino Ka Ba, Jose Rizal?",
+    title: "Dekada '70",
     groupName: "Mandaluyong Arts",
-    posterUrl: "",
+    posterUrl: posterDekada,
   },
 ];
 
@@ -56,26 +65,28 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className="group cursor-pointer"
     >
-      <div className="relative aspect-[2/3] bg-gradient-to-br from-card to-muted border border-secondary/20 overflow-hidden transition-all duration-500 group-hover:border-primary/50 group-hover:shadow-[0_0_40px_hsl(0_100%_25%/0.3)]">
-        {/* Placeholder for poster */}
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-          <span className="text-6xl opacity-30">🎭</span>
-        </div>
+      <div className="relative aspect-[2/3] border border-secondary/50 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_40px_hsl(0_100%_25%/0.3)] group-hover:scale-105">
+        {/* Poster image */}
+        <img 
+          src={show.posterUrl} 
+          alt={show.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         
         {/* Overlay on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-          <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2">
+          <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 drop-shadow-lg">
             {show.title}
           </h3>
-          <p className="text-sm text-secondary">{show.groupName}</p>
+          <p className="text-sm text-secondary drop-shadow-lg">{show.groupName}</p>
         </div>
 
         {/* Corner accent */}
         <div className="absolute top-0 right-0 w-12 h-12 overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-secondary/20 rotate-45 translate-x-8 -translate-y-8 group-hover:bg-primary/40 transition-colors duration-300" />
+          <div className="absolute top-0 right-0 w-16 h-16 bg-secondary/30 rotate-45 translate-x-8 -translate-y-8 group-hover:bg-primary/50 transition-colors duration-300" />
         </div>
       </div>
     </motion.div>
@@ -110,7 +121,7 @@ const UpcomingShows = () => {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-          {mockShows.map((show, index) => (
+          {featuredShows.map((show, index) => (
             <ShowCard key={show.id} show={show} index={index} />
           ))}
         </div>
