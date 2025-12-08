@@ -119,7 +119,7 @@ export type Database = {
     Enums: {
       niche_type: "local" | "university"
       show_status: "pending" | "approved" | "rejected"
-      user_role: "audience" | "producer"
+      user_role: "audience" | "producer" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -249,7 +249,7 @@ export const Constants = {
     Enums: {
       niche_type: ["local", "university"],
       show_status: ["pending", "approved", "rejected"],
-      user_role: ["audience", "producer"],
+      user_role: ["audience", "producer", "admin"],
     },
   },
 } as const
