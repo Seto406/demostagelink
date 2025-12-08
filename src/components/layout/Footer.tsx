@@ -61,7 +61,7 @@ const Footer = () => {
 
         <div className="border-t border-secondary/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-muted-foreground text-xs">
-            © 2024 StageLink. Supporting Local Theater in Metro Manila.
+            © 2026 StageLink. Supporting Local Theater in Metro Manila.
           </p>
           <div className="flex gap-6">
             <span className="text-muted-foreground text-xs">Made with ❤️ for Filipino Theater</span>
