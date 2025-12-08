@@ -15,7 +15,75 @@ interface TheaterGroup {
   group_name: string;
   description: string | null;
   niche: "local" | "university" | null;
+  city?: string;
 }
+
+// Demo theater groups for display when no real data
+const demoGroups: TheaterGroup[] = [
+  {
+    id: "demo-1",
+    group_name: "Tanghalang Pilipino",
+    description: "The resident theater company of the Cultural Center of the Philippines, dedicated to producing Filipino plays and musicals.",
+    niche: "local",
+    city: "Manila"
+  },
+  {
+    id: "demo-2",
+    group_name: "Manila Repertory",
+    description: "One of the leading theater companies in the Philippines, known for innovative productions of both Filipino and international plays.",
+    niche: "local",
+    city: "Manila"
+  },
+  {
+    id: "demo-3",
+    group_name: "Ateneo Blue Repertory",
+    description: "The premier student theater organization of Ateneo de Manila University, producing quality musicals and plays since 1993.",
+    niche: "university",
+    city: "Quezon City"
+  },
+  {
+    id: "demo-4",
+    group_name: "UP Repertory Company",
+    description: "The official theater group of the University of the Philippines, dedicated to Filipino drama and experimental theater.",
+    niche: "university",
+    city: "Quezon City"
+  },
+  {
+    id: "demo-5",
+    group_name: "PETA",
+    description: "Asia's largest theater company, committed to community-based and educational theater for social change since 1967.",
+    niche: "local",
+    city: "Quezon City"
+  },
+  {
+    id: "demo-6",
+    group_name: "Trumpets Inc.",
+    description: "A Manila-based theater company known for world-class productions and family-friendly musicals.",
+    niche: "local",
+    city: "Makati"
+  },
+  {
+    id: "demo-7",
+    group_name: "RTU Drama Ensemble",
+    description: "The theater arm of Rizal Technological University, nurturing young Filipino theater talents.",
+    niche: "university",
+    city: "Mandaluyong"
+  },
+  {
+    id: "demo-8",
+    group_name: "De La Salle Theater Guild",
+    description: "The official theater organization of De La Salle University Manila, producing original Filipino works.",
+    niche: "university",
+    city: "Manila"
+  },
+  {
+    id: "demo-9",
+    group_name: "Repertory Philippines",
+    description: "One of the longest-running theater companies in Asia, bringing Broadway and West End productions to Manila.",
+    niche: "local",
+    city: "Makati"
+  }
+];
 
 const Directory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +113,7 @@ const Directory = () => {
 
       if (error) {
         console.error("Error fetching groups:", error);
+        setGroups([]);
       } else {
         setGroups(data as TheaterGroup[]);
       }
@@ -54,12 +123,17 @@ const Directory = () => {
     fetchGroups();
   }, []);
 
-  const filteredGroups = groups.filter((group) => {
+  // Use demo groups if no real groups exist
+  const displayGroups = groups.length > 0 ? groups : demoGroups;
+  const isUsingDemo = groups.length === 0 && !loading;
+
+  const filteredGroups = displayGroups.filter((group) => {
     const matchesSearch = group.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCity = selectedCity === "All" || group.city === selectedCity;
     const matchesNiche = selectedNiche === "All" || 
       (selectedNiche === "Local/Community-based" && group.niche === "local") ||
       (selectedNiche === "University Theater Group" && group.niche === "university");
-    return matchesSearch && matchesNiche;
+    return matchesSearch && matchesCity && matchesNiche;
   });
 
   const getNicheLabel = (niche: string | null) => {
@@ -155,36 +229,74 @@ const Directory = () => {
           {loading ? (
             <div className="text-center py-12 text-muted-foreground">Loading theater groups...</div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredGroups.map((group, index) => (
-                <motion.div
-                  key={group.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Link 
-                    to={`/producer/${group.id}`}
-                    className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
+            <>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredGroups.map((group, index) => (
+                  <motion.div
+                    key={group.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.05 }}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
-                        🎭
+                    {isUsingDemo ? (
+                      <div className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group cursor-default">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
+                            🎭
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-xs text-secondary uppercase tracking-wider">
+                              {getNicheLabel(group.niche)}
+                            </span>
+                            {group.city && (
+                              <span className="text-xs text-muted-foreground">
+                                {group.city}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <h3 className="font-serif text-xl text-foreground mb-2">
+                          {group.group_name}
+                        </h3>
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                          {group.description || "A theater group in Metro Manila."}
+                        </p>
                       </div>
-                      <span className="text-xs text-secondary uppercase tracking-wider">
-                        {getNicheLabel(group.niche)}
-                      </span>
-                    </div>
-                    <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
-                      {group.group_name}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                      {group.description || "A theater group in Metro Manila."}
-                    </p>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                    ) : (
+                      <Link 
+                        to={`/producer/${group.id}`}
+                        className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
+                            🎭
+                          </div>
+                          <span className="text-xs text-secondary uppercase tracking-wider">
+                            {getNicheLabel(group.niche)}
+                          </span>
+                        </div>
+                        <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
+                          {group.group_name}
+                        </h3>
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                          {group.description || "A theater group in Metro Manila."}
+                        </p>
+                      </Link>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              
+              {isUsingDemo && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-muted-foreground text-sm mt-8"
+                >
+                  Featured theater groups • Real listings coming soon
+                </motion.p>
+              )}
+            </>
           )}
 
           {!loading && filteredGroups.length === 0 && (

@@ -7,6 +7,32 @@ import { Input } from "@/components/ui/input";
 import { Search, Calendar, MapPin, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Import all posters for local mapping
+import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
+import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
+import posterRent from "@/assets/posters/rent-manila.jpg";
+import posterHamilton from "@/assets/posters/hamilton.jpg";
+import posterPhantom from "@/assets/posters/the-phantom.jpg";
+import posterDekada from "@/assets/posters/dekada-70.jpg";
+import posterRakOfAegis from "@/assets/posters/rak-of-aegis.jpg";
+import posterSpringAwakening from "@/assets/posters/spring-awakening.jpg";
+import posterOrosman from "@/assets/posters/orosman-at-zafira.jpg";
+import posterBatangRizal from "@/assets/posters/batang-rizal.jpg";
+
+// Map titles to local poster images
+const posterMap: Record<string, string> = {
+  "Ang Huling El Bimbo": posterElBimbo,
+  "Mula sa Buwan": posterMulaSaBuwan,
+  "Rent": posterRent,
+  "Hamilton": posterHamilton,
+  "The Phantom of the Opera": posterPhantom,
+  "Dekada '70": posterDekada,
+  "Rak of Aegis": posterRakOfAegis,
+  "Spring Awakening": posterSpringAwakening,
+  "Orosman at Zafira": posterOrosman,
+  "Batang Rizal": posterBatangRizal,
+};
+
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const genres = ["All", "Local/Community", "University"];
 
@@ -100,6 +126,11 @@ const Shows = () => {
   };
 
   const hasActiveFilters = selectedCity !== "All" || selectedGenre !== "All" || dateFilter || searchQuery;
+
+  // Get poster for a show - prefer local mapping, then DB URL
+  const getPosterUrl = (show: Show): string | null => {
+    return posterMap[show.title] || show.poster_url;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -243,9 +274,9 @@ const Shows = () => {
                   >
                     {/* Poster */}
                     <div className="aspect-[2/3] relative overflow-hidden">
-                      {show.poster_url ? (
+                      {getPosterUrl(show) ? (
                         <img 
-                          src={show.poster_url} 
+                          src={getPosterUrl(show)!} 
                           alt={show.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />

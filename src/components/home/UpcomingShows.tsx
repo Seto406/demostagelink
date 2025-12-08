@@ -3,13 +3,17 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Import posters for fallback
+// Import all posters
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
 import posterRent from "@/assets/posters/rent-manila.jpg";
 import posterHamilton from "@/assets/posters/hamilton.jpg";
 import posterPhantom from "@/assets/posters/the-phantom.jpg";
 import posterDekada from "@/assets/posters/dekada-70.jpg";
+import posterRakOfAegis from "@/assets/posters/rak-of-aegis.jpg";
+import posterSpringAwakening from "@/assets/posters/spring-awakening.jpg";
+import posterOrosman from "@/assets/posters/orosman-at-zafira.jpg";
+import posterBatangRizal from "@/assets/posters/batang-rizal.jpg";
 
 interface Show {
   id: string;
@@ -20,13 +24,27 @@ interface Show {
   } | null;
 }
 
+// Map titles to local poster images
+const posterMap: Record<string, string> = {
+  "Ang Huling El Bimbo": posterElBimbo,
+  "Mula sa Buwan": posterMulaSaBuwan,
+  "Rent": posterRent,
+  "Hamilton": posterHamilton,
+  "The Phantom of the Opera": posterPhantom,
+  "Dekada '70": posterDekada,
+  "Rak of Aegis": posterRakOfAegis,
+  "Spring Awakening": posterSpringAwakening,
+  "Orosman at Zafira": posterOrosman,
+  "Batang Rizal": posterBatangRizal,
+};
+
 // Featured shows with generated posters (fallback when no approved shows exist)
 const fallbackShows = [
   { id: "fallback-1", title: "Ang Huling El Bimbo", groupName: "RTU Drama Ensemble", posterUrl: posterElBimbo },
   { id: "fallback-2", title: "Mula sa Buwan", groupName: "Manila Repertory", posterUrl: posterMulaSaBuwan },
-  { id: "fallback-3", title: "Rent: Manila", groupName: "Makati Arts Guild", posterUrl: posterRent },
+  { id: "fallback-3", title: "Rent", groupName: "Makati Arts Guild", posterUrl: posterRent },
   { id: "fallback-4", title: "Hamilton", groupName: "QC Theater Company", posterUrl: posterHamilton },
-  { id: "fallback-5", title: "The Phantom", groupName: "Taguig Players", posterUrl: posterPhantom },
+  { id: "fallback-5", title: "The Phantom of the Opera", groupName: "Taguig Players", posterUrl: posterPhantom },
   { id: "fallback-6", title: "Dekada '70", groupName: "Mandaluyong Arts", posterUrl: posterDekada },
 ];
 
@@ -43,9 +61,16 @@ const ShowCard = ({
   const groupName = isFallback 
     ? (show as typeof fallbackShows[0]).groupName 
     : (show as Show).profiles?.group_name || "Theater Group";
-  const posterUrl = isFallback 
-    ? (show as typeof fallbackShows[0]).posterUrl 
-    : (show as Show).poster_url;
+  
+  // Use local poster if available, fallback to database URL or default
+  let posterUrl: string | null = null;
+  if (isFallback) {
+    posterUrl = (show as typeof fallbackShows[0]).posterUrl;
+  } else {
+    const dbShow = show as Show;
+    posterUrl = posterMap[dbShow.title] || dbShow.poster_url;
+  }
+  
   const showId = show.id;
 
   const CardContent = (
