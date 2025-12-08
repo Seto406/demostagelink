@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -52,6 +52,9 @@ const Dashboard = () => {
   const [newShowVenue, setNewShowVenue] = useState("");
   const [newShowCity, setNewShowCity] = useState("");
   const [newShowNiche, setNewShowNiche] = useState<"local" | "university">("local");
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterPreview, setPosterPreview] = useState<string | null>(null);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
 
   // Profile form states
   const [groupName, setGroupName] = useState("");
@@ -110,39 +113,108 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleAddShow = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile) return;
+  const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const { error } = await supabase
-      .from("shows")
-      .insert({
-        producer_id: profile.id,
-        title: newShowTitle,
-        description: newShowDescription || null,
-        date: newShowDate || null,
-        venue: newShowVenue || null,
-        city: newShowCity || null,
-        niche: newShowNiche,
-        status: "pending"
-      });
-
-    if (error) {
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
       toast({
-        title: "Error",
-        description: "Failed to submit show. Please try again.",
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG, or WebP image.",
         variant: "destructive",
       });
-    } else {
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPosterFile(file);
+    setPosterPreview(URL.createObjectURL(file));
+  };
+
+  const clearPoster = () => {
+    setPosterFile(null);
+    if (posterPreview) {
+      URL.revokeObjectURL(posterPreview);
+      setPosterPreview(null);
+    }
+  };
+
+  const handleAddShow = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile || !user) return;
+
+    setUploadingPoster(true);
+    let posterUrl: string | null = null;
+
+    try {
+      // Upload poster if selected
+      if (posterFile) {
+        const fileExt = posterFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("posters")
+          .upload(fileName, posterFile);
+
+        if (uploadError) {
+          throw new Error("Failed to upload poster");
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("posters")
+          .getPublicUrl(fileName);
+        
+        posterUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("shows")
+        .insert({
+          producer_id: profile.id,
+          title: newShowTitle,
+          description: newShowDescription || null,
+          date: newShowDate || null,
+          venue: newShowVenue || null,
+          city: newShowCity || null,
+          niche: newShowNiche,
+          status: "pending",
+          poster_url: posterUrl
+        });
+
+      if (error) {
+        throw new Error("Failed to submit show");
+      }
+
+      // Reset form
       setNewShowTitle("");
       setNewShowDescription("");
       setNewShowDate("");
       setNewShowVenue("");
       setNewShowCity("");
       setNewShowNiche("local");
+      clearPoster();
       setShowModal(false);
       setSuccessModal(true);
       fetchShows();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to submit show. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPoster(false);
     }
   };
 
@@ -559,17 +631,43 @@ const Dashboard = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Upload Map Screenshot (Optional)</Label>
-              <div className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-secondary/50 transition-colors">
-                <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground text-xs">
-                  Click to upload venue map
-                </p>
-              </div>
+              <Label>Show Poster</Label>
+              {posterPreview ? (
+                <div className="relative">
+                  <img
+                    src={posterPreview}
+                    alt="Poster preview"
+                    className="w-full max-h-64 object-contain border border-secondary/30 bg-background"
+                  />
+                  <button
+                    type="button"
+                    onClick={clearPoster}
+                    className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-primary/50 transition-colors block">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handlePosterSelect}
+                    className="hidden"
+                  />
+                  <Image className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-muted-foreground text-sm">
+                    Click to upload poster
+                  </p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    JPG, PNG or WebP (max 5MB)
+                  </p>
+                </label>
+              )}
             </div>
 
-            <Button type="submit" variant="default" className="w-full">
-              Submit Show
+            <Button type="submit" variant="default" className="w-full" disabled={uploadingPoster}>
+              {uploadingPoster ? "Uploading..." : "Submit Show"}
             </Button>
           </form>
         </DialogContent>
