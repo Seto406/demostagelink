@@ -225,17 +225,22 @@ const ShowDetailsPage = () => {
 
                 {/* Theater Group */}
                 {show.profiles?.group_name && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/20 flex items-center justify-center">
+                  <Link 
+                    to={`/producer/${show.profiles.id}`}
+                    className="flex items-center gap-3 group w-fit"
+                  >
+                    <div className="w-10 h-10 bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
                       <Users className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-foreground font-medium">{show.profiles.group_name}</p>
+                      <p className="text-foreground font-medium group-hover:text-secondary transition-colors">
+                        {show.profiles.group_name}
+                      </p>
                       {show.profiles.founded_year && (
                         <p className="text-muted-foreground text-sm">Est. {show.profiles.founded_year}</p>
                       )}
                     </div>
-                  </div>
+                  </Link>
                 )}
 
                 {/* Quick Info Grid */}
@@ -325,12 +330,15 @@ const ShowDetailsPage = () => {
                   About the Theater Group
                 </h2>
                 <div className="bg-card border border-secondary/20 p-8">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 bg-primary/20 flex items-center justify-center text-3xl">
+                  <Link 
+                    to={`/producer/${show.profiles.id}`}
+                    className="flex items-start gap-4 mb-4 group w-fit"
+                  >
+                    <div className="w-16 h-16 bg-primary/20 flex items-center justify-center text-3xl group-hover:bg-primary/30 transition-colors">
                       🎭
                     </div>
                     <div>
-                      <h3 className="text-xl font-serif text-foreground">
+                      <h3 className="text-xl font-serif text-foreground group-hover:text-secondary transition-colors">
                         {show.profiles.group_name || "Theater Group"}
                       </h3>
                       <p className="text-secondary text-sm">
@@ -338,11 +346,17 @@ const ShowDetailsPage = () => {
                         {show.profiles.founded_year && ` • Est. ${show.profiles.founded_year}`}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   <p className="text-muted-foreground leading-relaxed">
                     {show.profiles.description || 
                       "This theater group is part of Metro Manila's vibrant theatrical community, dedicated to bringing compelling stories to life on stage."}
                   </p>
+                  <Link 
+                    to={`/producer/${show.profiles.id}`}
+                    className="text-secondary hover:underline text-sm mt-4 inline-block"
+                  >
+                    View all shows by this group →
+                  </Link>
                 </div>
               </motion.div>
             </div>

@@ -151,7 +151,7 @@ const UpcomingShows = () => {
             </h2>
           </div>
           <Link 
-            to="/directory" 
+            to="/shows" 
             className="text-secondary hover:text-secondary/80 transition-colors text-sm uppercase tracking-wider"
           >
             View All →

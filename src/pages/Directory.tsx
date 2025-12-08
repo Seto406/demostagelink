@@ -163,7 +163,10 @@ const Directory = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <div className="bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group cursor-pointer">
+                  <Link 
+                    to={`/producer/${group.id}`}
+                    className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
+                  >
                     <div className="flex items-start justify-between mb-4">
                       <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
                         🎭
@@ -178,7 +181,7 @@ const Directory = () => {
                     <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                       {group.description || "A theater group in Metro Manila."}
                     </p>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
