@@ -103,7 +103,22 @@ const AdminPanel = () => {
     navigate("/");
   };
 
-  const handleApprove = async (showId: string) => {
+  const sendNotification = async (showId: string, showTitle: string, status: "approved" | "rejected", producerId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("send-show-notification", {
+        body: { showId, showTitle, status, producerId },
+      });
+      if (error) {
+        console.error("Failed to send notification:", error);
+      } else {
+        console.log("Notification sent successfully");
+      }
+    } catch (err) {
+      console.error("Error sending notification:", err);
+    }
+  };
+
+  const handleApprove = async (showId: string, showTitle: string, producerId: string) => {
     const { error } = await supabase
       .from("shows")
       .update({ status: "approved" })
@@ -120,11 +135,12 @@ const AdminPanel = () => {
         title: "Show Approved",
         description: "The show is now visible on the public feed.",
       });
+      sendNotification(showId, showTitle, "approved", producerId);
       fetchShows();
     }
   };
 
-  const handleReject = async (showId: string) => {
+  const handleReject = async (showId: string, showTitle: string, producerId: string) => {
     const { error } = await supabase
       .from("shows")
       .update({ status: "rejected" })
@@ -141,6 +157,7 @@ const AdminPanel = () => {
         title: "Show Rejected",
         description: "The producer will be notified.",
       });
+      sendNotification(showId, showTitle, "rejected", producerId);
       fetchShows();
     }
   };
@@ -364,7 +381,7 @@ const AdminPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleApprove(show.id)}
+                                  onClick={() => handleApprove(show.id, show.title, show.producer_id)}
                                   className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
                                   title="Approve"
                                 >
@@ -373,7 +390,7 @@ const AdminPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleReject(show.id)}
+                                  onClick={() => handleReject(show.id, show.title, show.producer_id)}
                                   className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                                   title="Reject"
                                 >
@@ -465,7 +482,7 @@ const AdminPanel = () => {
                   <Button
                     variant="default"
                     onClick={() => {
-                      handleApprove(selectedShow.id);
+                      handleApprove(selectedShow.id, selectedShow.title, selectedShow.producer_id);
                       setDetailsModal(false);
                     }}
                     className="flex-1"
@@ -476,7 +493,7 @@ const AdminPanel = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      handleReject(selectedShow.id);
+                      handleReject(selectedShow.id, selectedShow.title, selectedShow.producer_id);
                       setDetailsModal(false);
                     }}
                     className="flex-1 border-red-500/50 text-red-500 hover:bg-red-500/10"
