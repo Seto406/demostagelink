@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Shield } from "lucide-react";
-import stageLinkLogo from "@/assets/stagelink-logo-new.png";
+import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const Navbar = () => {
   const location = useLocation();
