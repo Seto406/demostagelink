@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import stageLinkLogo from "@/assets/stagelink-logo-new.png";
+import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 type UserType = "audience" | "producer" | null;
 type AuthMode = "login" | "signup";
