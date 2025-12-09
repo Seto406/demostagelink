@@ -51,7 +51,8 @@ const ResetPassword = () => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // First, generate the reset link using Supabase
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password?type=recovery`,
       });
 
@@ -62,6 +63,18 @@ const ResetPassword = () => {
           variant: "destructive",
         });
       } else {
+        // Send branded email via our edge function
+        try {
+          await supabase.functions.invoke("send-password-reset", {
+            body: {
+              email,
+              resetLink: `${window.location.origin}/reset-password?type=recovery`,
+            },
+          });
+        } catch (emailErr) {
+          console.error("Failed to send branded email, falling back to default:", emailErr);
+        }
+        
         setEmailSent(true);
         toast({
           title: "Check your email",
