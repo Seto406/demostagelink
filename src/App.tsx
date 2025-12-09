@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useEffect, useState } from "react";
+import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
 import Index from "./pages/Index";
 import Directory from "./pages/Directory";
 import Shows from "./pages/Shows";
@@ -20,6 +22,15 @@ import ProducerProfile from "./pages/ProducerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Component to initialize toast handler
+const ToastHandlerInit = () => {
+  const { addToast } = useEnhancedToast();
+  useEffect(() => {
+    setToastHandler(addToast);
+  }, [addToast]);
+  return null;
+};
 
 // Page transition variants
 const pageVariants: Variants = {
@@ -96,13 +107,17 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AnimatedRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+      <EnhancedToastProvider>
+        <ToastHandlerInit />
+        <ScrollProgress color="gold" height={3} />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AnimatedRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </EnhancedToastProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

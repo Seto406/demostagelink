@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Calendar, MapPin, Filter, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
+import { TiltCard } from "@/components/ui/tilt-card";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -51,7 +52,7 @@ interface Show {
   } | null;
 }
 
-// Enhanced Show Card component
+// Enhanced Show Card component with 3D tilt
 const ShowCard = ({ show, index }: { show: Show; index: number }) => {
   const posterUrl = posterMap[show.title] || show.poster_url;
 
@@ -63,79 +64,84 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
       transition={{ duration: 0.4, delay: index * 0.05 }}
       layout
     >
-      <Link
-        to={`/show/${show.id}`}
-        className="block bg-card border border-secondary/20 overflow-hidden group hover-lift card-glow relative"
-      >
-        {/* Poster */}
-        <div className="aspect-[2/3] relative overflow-hidden">
-          {posterUrl ? (
-            <motion.img
-              src={posterUrl}
-              alt={show.title}
-              className="w-full h-full object-cover"
-              whileHover={{ scale: 1.08 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-              <span className="text-6xl opacity-30">🎭</span>
-            </div>
-          )}
+      <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
+        <Link
+          to={`/show/${show.id}`}
+          className="block bg-card border border-secondary/20 overflow-hidden group relative"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Poster */}
+          <div className="aspect-[2/3] relative overflow-hidden">
+            {posterUrl ? (
+              <motion.img
+                src={posterUrl}
+                alt={show.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <span className="text-6xl opacity-30">🎭</span>
+              </div>
+            )}
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
-          {/* Niche badge */}
-          {show.niche && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="absolute top-3 right-3"
-            >
-              <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
-                {show.niche === "university" ? "University" : "Local"}
-              </span>
-            </motion.div>
-          )}
-
-          {/* Content */}
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
-              {show.title}
-            </h3>
-            <Link
-              to={`/producer/${show.profiles?.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
-            >
-              {show.profiles?.group_name || "Theater Group"}
-            </Link>
-
-            <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
-              {show.date && (
-                <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
-                  <Calendar className="w-3 h-3 text-secondary" />
-                  {new Date(show.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
+            {/* Niche badge */}
+            {show.niche && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="absolute top-3 right-3"
+                style={{ transform: "translateZ(30px)" }}
+              >
+                <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
+                  {show.niche === "university" ? "University" : "Local"}
                 </span>
-              )}
-              {show.city && (
-                <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
-                  <MapPin className="w-3 h-3 text-secondary" />
-                  {show.city}
-                </span>
-              )}
+              </motion.div>
+            )}
+
+            {/* Content */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 p-4"
+              style={{ transform: "translateZ(20px)" }}
+            >
+              <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
+                {show.title}
+              </h3>
+              <Link
+                to={`/producer/${show.profiles?.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
+              >
+                {show.profiles?.group_name || "Theater Group"}
+              </Link>
+
+              <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
+                {show.date && (
+                  <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+                    <Calendar className="w-3 h-3 text-secondary" />
+                    {new Date(show.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                )}
+                {show.city && (
+                  <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+                    <MapPin className="w-3 h-3 text-secondary" />
+                    {show.city}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Hover border effect */}
+            <div className="absolute inset-0 border-2 border-secondary/0 group-hover:border-secondary/50 transition-colors duration-300" />
           </div>
-
-          {/* Hover overlay effect */}
-          <div className="absolute inset-0 border-2 border-secondary/0 group-hover:border-secondary/50 transition-colors duration-300" />
-        </div>
-      </Link>
+        </Link>
+      </TiltCard>
     </motion.div>
   );
 };
