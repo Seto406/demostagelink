@@ -57,10 +57,10 @@ const Login = () => {
           });
         } else {
           toast({
-            title: "Account created!",
-            description: "You are now signed in.",
+            title: "Check your email",
+            description: "We've sent you a verification link to confirm your account.",
           });
-          // Navigation will happen via useEffect when profile loads
+          navigate("/verify-email");
         }
       } else {
         const { error } = await signIn(email, password);
