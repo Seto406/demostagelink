@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
-import { CheckCircle, Loader2, XCircle, Mail } from "lucide-react";
+import { CheckCircle, Loader2, XCircle, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type VerificationStatus = "verifying" | "pending" | "success" | "error";
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
@@ -17,13 +19,29 @@ const VerifyEmail = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [email, setEmail] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // Check and update cooldown timer
+  useEffect(() => {
+    const checkCooldown = () => {
+      const lastSent = localStorage.getItem("lastVerificationEmailSent");
+      if (lastSent) {
+        const elapsed = Math.floor((Date.now() - parseInt(lastSent)) / 1000);
+        const remaining = Math.max(0, RESEND_COOLDOWN_SECONDS - elapsed);
+        setCooldownRemaining(remaining);
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
-      // Get email from session or localStorage
       const { data: { session } } = await supabase.auth.getSession();
       const storedEmail = localStorage.getItem("pendingVerificationEmail");
       setEmail(session?.user?.email || storedEmail);
@@ -47,8 +65,8 @@ const VerifyEmail = () => {
           } else {
             setStatus("success");
             localStorage.removeItem("pendingVerificationEmail");
+            localStorage.removeItem("lastVerificationEmailSent");
             
-            // Send welcome email
             if (data.user?.email) {
               const userRole = localStorage.getItem("pendingUserRole") as "audience" | "producer" || "audience";
               try {
@@ -75,7 +93,6 @@ const VerifyEmail = () => {
           setErrorMessage("An unexpected error occurred");
         }
       } else {
-        // Check if already verified
         if (session?.user?.email_confirmed_at) {
           navigate("/");
         } else {
@@ -92,6 +109,16 @@ const VerifyEmail = () => {
       toast({
         title: "Error",
         description: "No email address found. Please try signing up again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check rate limit
+    if (cooldownRemaining > 0) {
+      toast({
+        title: "Please wait",
+        description: `You can resend in ${cooldownRemaining} seconds.`,
         variant: "destructive",
       });
       return;
@@ -114,6 +141,9 @@ const VerifyEmail = () => {
           variant: "destructive",
         });
       } else {
+        // Set cooldown
+        localStorage.setItem("lastVerificationEmailSent", Date.now().toString());
+        setCooldownRemaining(RESEND_COOLDOWN_SECONDS);
         toast({
           title: "Email sent!",
           description: "Check your inbox for the verification link.",
@@ -174,13 +204,18 @@ const VerifyEmail = () => {
                     <Button 
                       variant="outline" 
                       onClick={handleResendEmail}
-                      disabled={isResending}
+                      disabled={isResending || cooldownRemaining > 0}
                       className="w-full"
                     >
                       {isResending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Sending...
+                        </>
+                      ) : cooldownRemaining > 0 ? (
+                        <>
+                          <Clock className="mr-2 h-4 w-4" />
+                          Resend in {cooldownRemaining}s
                         </>
                       ) : (
                         <>
