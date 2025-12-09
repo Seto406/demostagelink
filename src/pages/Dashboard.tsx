@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FloatingInput, FloatingTextarea } from "@/components/ui/floating-input";
 import {
   Dialog,
   DialogContent,
@@ -498,10 +500,10 @@ const Dashboard = () => {
 
               <div className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
-                <Button onClick={openAddModal} variant="default">
+                <RippleButton onClick={openAddModal} variant="ios" size="lg">
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Show
-                </Button>
+                </RippleButton>
               </div>
             </motion.div>
           )}
@@ -516,20 +518,20 @@ const Dashboard = () => {
             >
               <div className="flex justify-between items-center">
                 <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
-                <Button onClick={openAddModal} variant="default">
+                <RippleButton onClick={openAddModal} variant="ios">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Show
-                </Button>
+                </RippleButton>
               </div>
 
               {loadingShows ? (
                 <div className="text-muted-foreground text-center py-8">Loading shows...</div>
               ) : shows.length === 0 ? (
-                <div className="bg-card border border-secondary/20 p-12 text-center">
+                <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
                   <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
-                  <Button onClick={openAddModal} variant="outline">
+                  <RippleButton onClick={openAddModal} variant="ios-secondary">
                     Submit Your First Show
-                  </Button>
+                  </RippleButton>
                 </div>
               ) : (
                 <div className="bg-card border border-secondary/20 overflow-hidden">
@@ -582,52 +584,37 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="max-w-2xl space-y-6"
             >
-              <div className="bg-card border border-secondary/20 p-6">
-                <h2 className="font-serif text-xl text-foreground mb-6">Group Information</h2>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="groupName">Group Name</Label>
-                    <Input
-                      id="groupName"
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      className="bg-background border-secondary/30"
-                      placeholder="Enter your theater group name"
-                    />
-                  </div>
+              <div className="bg-card border border-secondary/20 p-6 ios-rounded">
+                <h2 className="font-serif text-xl text-foreground mb-8">Group Information</h2>
+                <div className="space-y-8">
+                  <FloatingInput
+                    label="Group Name"
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                  />
+
+                  <FloatingTextarea
+                    label="Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+
+                  <FloatingInput
+                    label="Founded Year"
+                    type="number"
+                    value={foundedYear}
+                    onChange={(e) => setFoundedYear(e.target.value)}
+                    min={1900}
+                    max={new Date().getFullYear()}
+                  />
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="bg-background border-secondary/30 min-h-24"
-                      placeholder="Tell us about your theater group"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="foundedYear">Founded Year</Label>
-                    <Input
-                      id="foundedYear"
-                      value={foundedYear}
-                      onChange={(e) => setFoundedYear(e.target.value)}
-                      className="bg-background border-secondary/30"
-                      placeholder="e.g., 1995"
-                      type="number"
-                      min="1900"
-                      max={new Date().getFullYear()}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="niche">Niche</Label>
+                    <Label htmlFor="niche" className="text-sm font-medium text-muted-foreground">Niche</Label>
                     <Select value={niche} onValueChange={(val) => setNiche(val as "local" | "university")}>
-                      <SelectTrigger className="bg-background border-secondary/30">
+                      <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
                         <SelectValue placeholder="Select your group type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover border-secondary/30">
+                      <SelectContent className="bg-popover border-secondary/30 rounded-xl">
                         <SelectItem value="local">Local/Community-based</SelectItem>
                         <SelectItem value="university">University Theater Group</SelectItem>
                       </SelectContent>
@@ -635,8 +622,8 @@ const Dashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Upload Map Screenshot (Optional)</Label>
-                    <div className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors">
+                    <Label className="text-sm font-medium text-muted-foreground">Upload Map Screenshot (Optional)</Label>
+                    <div className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press">
                       <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                       <p className="text-muted-foreground text-sm">
                         Click or drag to upload your venue map
@@ -644,9 +631,9 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Button onClick={handleUpdateProfile} variant="hero">
+                  <RippleButton onClick={handleUpdateProfile} variant="ios" size="lg" className="w-full">
                     Save Profile
-                  </Button>
+                  </RippleButton>
                 </div>
               </div>
             </motion.div>

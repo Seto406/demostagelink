@@ -4,6 +4,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS-inspired smooth scrolling and touch */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS-style momentum scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area insets for notched devices */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @layer base {
   :root {
     /* StageLink - The State Theatre Aesthetic */
@@ -169,5 +187,42 @@
   /* Touch-friendly tap targets */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* iOS-style haptic-like feedback */
+  .ios-press {
+    @apply active:scale-[0.97] transition-transform duration-100;
+  }
+
+  /* iOS blur effects */
+  .ios-blur {
+    @apply backdrop-blur-xl bg-background/80;
+  }
+
+  .ios-blur-strong {
+    @apply backdrop-blur-2xl bg-background/60;
+  }
+
+  /* iOS rounded corners */
+  .ios-rounded {
+    @apply rounded-2xl;
+  }
+
+  .ios-rounded-lg {
+    @apply rounded-3xl;
+  }
+
+  /* iOS shadow */
+  .ios-shadow {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1), 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .ios-shadow-lg {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 20px 60px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Smooth spring animations */
+  .spring-bounce {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
