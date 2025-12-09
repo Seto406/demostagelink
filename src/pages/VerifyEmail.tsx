@@ -5,25 +5,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle, Loader2, XCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type VerificationStatus = "verifying" | "success" | "error";
+type VerificationStatus = "verifying" | "pending" | "success" | "error";
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState<VerificationStatus>("verifying");
+  const [status, setStatus] = useState<VerificationStatus>("pending");
   const [errorMessage, setErrorMessage] = useState("");
+  const [email, setEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const handleEmailConfirmation = async () => {
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
 
+      // Get email from session or localStorage
+      const { data: { session } } = await supabase.auth.getSession();
+      const storedEmail = localStorage.getItem("pendingVerificationEmail");
+      setEmail(session?.user?.email || storedEmail);
+
       if (tokenHash && type === "email") {
+        setStatus("verifying");
         try {
-          const { error } = await supabase.auth.verifyOtp({
+          const { data, error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: "email",
           });
@@ -38,9 +46,28 @@ const VerifyEmail = () => {
             });
           } else {
             setStatus("success");
+            localStorage.removeItem("pendingVerificationEmail");
+            
+            // Send welcome email
+            if (data.user?.email) {
+              const userRole = localStorage.getItem("pendingUserRole") as "audience" | "producer" || "audience";
+              try {
+                await supabase.functions.invoke("send-welcome-email", {
+                  body: {
+                    email: data.user.email,
+                    name: data.user.user_metadata?.group_name,
+                    role: userRole,
+                  },
+                });
+              } catch (err) {
+                console.error("Failed to send welcome email:", err);
+              }
+              localStorage.removeItem("pendingUserRole");
+            }
+            
             toast({
               title: "Email verified!",
-              description: "Your account is now active.",
+              description: "Your account is now active. Check your inbox for a welcome email!",
             });
           }
         } catch (err) {
@@ -48,20 +75,60 @@ const VerifyEmail = () => {
           setErrorMessage("An unexpected error occurred");
         }
       } else {
-        // No token, check if we're just showing the pending state
-        const { data: { session } } = await supabase.auth.getSession();
+        // Check if already verified
         if (session?.user?.email_confirmed_at) {
-          // Already verified, redirect
           navigate("/");
-        } else if (!tokenHash) {
-          // Show pending verification UI
-          setStatus("verifying");
+        } else {
+          setStatus("pending");
         }
       }
     };
 
     handleEmailConfirmation();
   }, [searchParams, navigate]);
+
+  const handleResendEmail = async () => {
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "No email address found. Please try signing up again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/verify-email`,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Failed to resend",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Email sent!",
+          description: "Check your inbox for the verification link.",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to resend verification email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleContinue = () => {
     navigate("/login");
@@ -85,31 +152,51 @@ const VerifyEmail = () => {
                 className="h-16 w-auto mx-auto mb-6"
               />
 
-              {status === "verifying" && !searchParams.get("token_hash") && (
+              {status === "pending" && (
                 <>
                   <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center mx-auto mb-6">
-                    <Loader2 className="h-8 w-8 text-secondary animate-spin" />
+                    <Mail className="h-8 w-8 text-secondary" />
                   </div>
                   <h1 className="text-2xl font-serif font-bold text-foreground mb-4">
                     Check Your Email
                   </h1>
-                  <p className="text-muted-foreground mb-6">
-                    We've sent a verification link to your email address. 
-                    Please click the link to verify your account.
+                  <p className="text-muted-foreground mb-2">
+                    We've sent a verification link to:
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Didn't receive the email? Check your spam folder or{" "}
-                    <button 
-                      onClick={() => navigate("/login")}
-                      className="text-secondary hover:underline"
+                  {email && (
+                    <p className="text-secondary font-medium mb-6">{email}</p>
+                  )}
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Please click the link in the email to verify your account.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleResendEmail}
+                      disabled={isResending}
+                      className="w-full"
                     >
-                      try signing up again
-                    </button>
-                  </p>
+                      {isResending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Resend Verification Email
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Didn't receive the email? Check your spam folder or click above to resend.
+                    </p>
+                  </div>
                 </>
               )}
 
-              {status === "verifying" && searchParams.get("token_hash") && (
+              {status === "verifying" && (
                 <>
                   <Loader2 className="h-12 w-12 text-secondary animate-spin mx-auto mb-6" />
                   <h1 className="text-2xl font-serif font-bold text-foreground mb-4">
@@ -130,7 +217,7 @@ const VerifyEmail = () => {
                     Email Verified!
                   </h1>
                   <p className="text-muted-foreground mb-6">
-                    Your email has been verified successfully. You can now log in to your account.
+                    Your email has been verified successfully. Check your inbox for a welcome email!
                   </p>
                   <Button variant="hero" onClick={handleContinue} className="w-full">
                     Continue to Login
@@ -149,9 +236,26 @@ const VerifyEmail = () => {
                   <p className="text-muted-foreground mb-6">
                     {errorMessage || "The verification link may have expired or is invalid."}
                   </p>
-                  <Button variant="hero" onClick={() => navigate("/login")} className="w-full">
-                    Back to Login
-                  </Button>
+                  <div className="space-y-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleResendEmail}
+                      disabled={isResending}
+                      className="w-full"
+                    >
+                      {isResending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Resend Verification Email"
+                      )}
+                    </Button>
+                    <Button variant="hero" onClick={() => navigate("/login")} className="w-full">
+                      Back to Login
+                    </Button>
+                  </div>
                 </>
               )}
             </div>
