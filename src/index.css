@@ -102,6 +102,51 @@
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-gold);
   }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+  .hover-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 10px 40px hsl(0 100% 25% / 0.2);
+  }
+
+  /* Card hover glow */
+  .card-glow {
+    @apply transition-all duration-500;
+  }
+  .card-glow:hover {
+    box-shadow: 0 0 60px hsl(0 100% 25% / 0.25), 0 0 20px hsl(43 72% 52% / 0.15);
+  }
+
+  /* Shimmer loading effect */
+  .shimmer-loading {
+    @apply relative overflow-hidden;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.5) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-secondary/10;
+  }
+
+  /* Theater spotlight effect */
+  .spotlight-hover::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none;
+    background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(43 72% 52% / 0.15) 0%, transparent 50%);
+  }
+  .spotlight-hover:hover::before {
+    @apply opacity-100;
+  }
 }
 
 @layer utilities {
@@ -111,5 +156,18 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Stagger animation delays */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  .stagger-6 { animation-delay: 0.6s; }
+
+  /* Touch-friendly tap targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }
