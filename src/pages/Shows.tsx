@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Import all posters for local mapping
@@ -50,6 +50,102 @@ interface Show {
     group_name: string | null;
   } | null;
 }
+
+// Skeleton loader component
+const ShowCardSkeleton = () => (
+  <div className="bg-card border border-secondary/20 overflow-hidden">
+    <div className="aspect-[2/3] shimmer-loading" />
+  </div>
+);
+
+// Enhanced Show Card component
+const ShowCard = ({ show, index }: { show: Show; index: number }) => {
+  const posterUrl = posterMap[show.title] || show.poster_url;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, delay: index * 0.05 }}
+      layout
+    >
+      <Link
+        to={`/show/${show.id}`}
+        className="block bg-card border border-secondary/20 overflow-hidden group hover-lift card-glow relative"
+      >
+        {/* Poster */}
+        <div className="aspect-[2/3] relative overflow-hidden">
+          {posterUrl ? (
+            <motion.img
+              src={posterUrl}
+              alt={show.title}
+              className="w-full h-full object-cover"
+              whileHover={{ scale: 1.08 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <span className="text-6xl opacity-30">🎭</span>
+            </div>
+          )}
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+
+          {/* Niche badge */}
+          {show.niche && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="absolute top-3 right-3"
+            >
+              <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
+                {show.niche === "university" ? "University" : "Local"}
+              </span>
+            </motion.div>
+          )}
+
+          {/* Content */}
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
+              {show.title}
+            </h3>
+            <Link
+              to={`/producer/${show.profiles?.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
+            >
+              {show.profiles?.group_name || "Theater Group"}
+            </Link>
+
+            <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
+              {show.date && (
+                <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+                  <Calendar className="w-3 h-3 text-secondary" />
+                  {new Date(show.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              )}
+              {show.city && (
+                <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+                  <MapPin className="w-3 h-3 text-secondary" />
+                  {show.city}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Hover overlay effect */}
+          <div className="absolute inset-0 border-2 border-secondary/0 group-hover:border-secondary/50 transition-colors duration-300" />
+        </div>
+      </Link>
+    </motion.div>
+  );
+};
 
 const Shows = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -104,17 +200,19 @@ const Shows = () => {
   }, []);
 
   const filteredShows = shows.filter((show) => {
-    const matchesSearch = show.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      show.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       show.profiles?.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesCity = selectedCity === "All" || show.city === selectedCity;
-    
-    const matchesGenre = selectedGenre === "All" || 
+
+    const matchesGenre =
+      selectedGenre === "All" ||
       (selectedGenre === "Local/Community" && show.niche === "local") ||
       (selectedGenre === "University" && show.niche === "university");
-    
+
     const matchesDate = !dateFilter || (show.date && show.date >= dateFilter);
-    
+
     return matchesSearch && matchesCity && matchesGenre && matchesDate;
   });
 
@@ -125,39 +223,54 @@ const Shows = () => {
     setSearchQuery("");
   };
 
-  const hasActiveFilters = selectedCity !== "All" || selectedGenre !== "All" || dateFilter || searchQuery;
+  const hasActiveFilters =
+    selectedCity !== "All" || selectedGenre !== "All" || dateFilter || searchQuery;
 
-  // Get poster for a show - prefer local mapping, then DB URL
-  const getPosterUrl = (show: Show): string | null => {
-    return posterMap[show.title] || show.poster_url;
-  };
+  const activeFilterCount = [
+    selectedCity !== "All",
+    selectedGenre !== "All",
+    !!dateFilter,
+    !!searchQuery,
+  ].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-6">
+      <main className="pt-20 sm:pt-24 pb-16">
+        <div className="container mx-auto px-4 sm:px-6">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center justify-center gap-2 mb-4"
+            >
+              <Sparkles className="w-4 h-4 text-secondary" />
+              <span className="text-secondary uppercase tracking-[0.2em] text-xs sm:text-sm font-medium">
+                Now Showing
+              </span>
+              <Sparkles className="w-4 h-4 text-secondary" />
+            </motion.div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
               All Shows
             </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
               Discover theatrical productions across Metro Manila
             </p>
           </motion.div>
 
-          {/* Filters */}
+          {/* Filters Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-12 space-y-6"
+            className="mb-8 sm:mb-12 space-y-4 sm:space-y-6"
           >
             {/* Search */}
             <div className="relative max-w-md mx-auto">
@@ -166,162 +279,157 @@ const Shows = () => {
                 placeholder="Search shows or theater groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-card border-secondary/30 focus:border-secondary"
+                className="pl-12 bg-card border-secondary/30 focus:border-secondary h-12"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
-            {/* Filter Row */}
-            <div className="flex flex-wrap justify-center gap-6">
+            {/* Filter Pills - Scrollable on mobile */}
+            <div className="space-y-4">
               {/* City Filter */}
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-muted-foreground text-sm flex items-center gap-1">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1 mr-2">
                   <MapPin className="w-3 h-3" /> City:
                 </span>
-                {cities.map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => setSelectedCity(city)}
-                    className={`px-3 py-1.5 text-sm border transition-all duration-300 ${
-                      selectedCity === city
-                        ? "border-secondary bg-secondary/10 text-secondary"
-                        : "border-secondary/30 text-muted-foreground hover:border-secondary/60"
-                    }`}
-                  >
-                    {city}
-                  </button>
-                ))}
+                <div className="flex flex-wrap gap-2">
+                  {cities.map((city) => (
+                    <motion.button
+                      key={city}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedCity(city)}
+                      className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
+                        selectedCity === city
+                          ? "border-secondary bg-secondary/20 text-secondary shadow-[0_0_15px_hsl(43_72%_52%/0.3)]"
+                          : "border-secondary/30 text-muted-foreground hover:border-secondary/60 hover:text-foreground"
+                      }`}
+                    >
+                      {city}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap justify-center gap-6">
               {/* Genre Filter */}
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-muted-foreground text-sm flex items-center gap-1">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1 mr-2">
                   <Filter className="w-3 h-3" /> Type:
                 </span>
-                {genres.map((genre) => (
-                  <button
-                    key={genre}
-                    onClick={() => setSelectedGenre(genre)}
-                    className={`px-3 py-1.5 text-sm border transition-all duration-300 ${
-                      selectedGenre === genre
-                        ? "border-secondary bg-secondary/10 text-secondary"
-                        : "border-secondary/30 text-muted-foreground hover:border-secondary/60"
-                    }`}
-                  >
-                    {genre}
-                  </button>
-                ))}
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((genre) => (
+                    <motion.button
+                      key={genre}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setSelectedGenre(genre)}
+                      className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
+                        selectedGenre === genre
+                          ? "border-secondary bg-secondary/20 text-secondary shadow-[0_0_15px_hsl(43_72%_52%/0.3)]"
+                          : "border-secondary/30 text-muted-foreground hover:border-secondary/60 hover:text-foreground"
+                      }`}
+                    >
+                      {genre}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
 
               {/* Date Filter */}
-              <div className="flex gap-2 items-center">
-                <span className="text-muted-foreground text-sm flex items-center gap-1">
+              <div className="flex justify-center items-center gap-2">
+                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1">
                   <Calendar className="w-3 h-3" /> From:
                 </span>
                 <Input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-40 bg-card border-secondary/30 focus:border-secondary text-sm"
+                  className="w-40 bg-card border-secondary/30 focus:border-secondary text-sm h-10"
                 />
+                {dateFilter && (
+                  <button
+                    onClick={() => setDateFilter("")}
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <div className="text-center">
-                <button
-                  onClick={clearFilters}
-                  className="text-secondary hover:text-secondary/80 text-sm underline"
+            {/* Active Filters & Clear */}
+            <AnimatePresence>
+              {hasActiveFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-center"
                 >
-                  Clear all filters
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 text-sm transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Results Count */}
-          <div className="mb-6 text-center text-sm text-muted-foreground">
-            {loading ? "Loading..." : `${filteredShows.length} ${filteredShows.length === 1 ? "show" : "shows"} found`}
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 text-center text-sm text-muted-foreground"
+          >
+            {loading
+              ? "Loading..."
+              : `${filteredShows.length} ${filteredShows.length === 1 ? "show" : "shows"} found`}
+          </motion.div>
 
           {/* Shows Grid */}
           {loading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading shows...</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {[...Array(8)].map((_, i) => (
+                <ShowCardSkeleton key={i} />
+              ))}
+            </div>
           ) : filteredShows.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No shows found matching your criteria.</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-16"
+            >
+              <div className="text-6xl mb-4 opacity-30">🎭</div>
+              <p className="text-muted-foreground mb-4">
+                No shows found matching your criteria.
+              </p>
               <button
                 onClick={clearFilters}
                 className="text-secondary hover:underline"
               >
                 Clear filters
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredShows.map((show, index) => (
-                <motion.div
-                  key={show.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                >
-                  <Link 
-                    to={`/show/${show.id}`}
-                    className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(0_100%_25%/0.2)] transition-all duration-300"
-                  >
-                    {/* Poster */}
-                    <div className="aspect-[2/3] relative overflow-hidden">
-                      {getPosterUrl(show) ? (
-                        <img 
-                          src={getPosterUrl(show)!} 
-                          alt={show.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                          <span className="text-6xl opacity-30">🎭</span>
-                        </div>
-                      )}
-                      
-                      {/* Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
-                      
-                      {/* Content */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2">
-                          {show.title}
-                        </h3>
-                        <Link 
-                          to={`/producer/${show.profiles?.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-sm text-secondary hover:underline"
-                        >
-                          {show.profiles?.group_name || "Theater Group"}
-                        </Link>
-                        
-                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                          {show.date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(show.date).toLocaleDateString()}
-                            </span>
-                          )}
-                          {show.city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {show.city}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+            <motion.div
+              layout
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredShows.map((show, index) => (
+                  <ShowCard key={show.id} show={show} index={index} />
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       </main>
