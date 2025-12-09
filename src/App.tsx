@@ -9,6 +9,7 @@ import Directory from "./pages/Directory";
 import Shows from "./pages/Shows";
 import About from "./pages/About";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
 import ShowDetailsPage from "./pages/ShowDetailsPage";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/shows" element={<Shows />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/show/:id" element={<ShowDetailsPage />} />
