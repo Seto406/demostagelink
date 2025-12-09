@@ -9,6 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { LayoutDashboard, LogOut, Menu, X, Check, XCircle, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +52,7 @@ const AdminPanel = () => {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject"; show: Show } | null>(null);
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -381,7 +392,7 @@ const AdminPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleApprove(show.id, show.title, show.producer_id)}
+                                  onClick={() => setConfirmAction({ type: "approve", show })}
                                   className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
                                   title="Approve"
                                 >
@@ -390,7 +401,7 @@ const AdminPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleReject(show.id, show.title, show.producer_id)}
+                                  onClick={() => setConfirmAction({ type: "reject", show })}
                                   className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                                   title="Reject"
                                 >
@@ -482,8 +493,8 @@ const AdminPanel = () => {
                   <Button
                     variant="default"
                     onClick={() => {
-                      handleApprove(selectedShow.id, selectedShow.title, selectedShow.producer_id);
                       setDetailsModal(false);
+                      setConfirmAction({ type: "approve", show: selectedShow });
                     }}
                     className="flex-1"
                   >
@@ -493,8 +504,8 @@ const AdminPanel = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      handleReject(selectedShow.id, selectedShow.title, selectedShow.producer_id);
                       setDetailsModal(false);
+                      setConfirmAction({ type: "reject", show: selectedShow });
                     }}
                     className="flex-1 border-red-500/50 text-red-500 hover:bg-red-500/10"
                   >
@@ -507,6 +518,41 @@ const AdminPanel = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent className="bg-card border-secondary/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">
+              {confirmAction?.type === "approve" ? "Approve Show" : "Reject Show"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === "approve" 
+                ? `Are you sure you want to approve "${confirmAction?.show.title}"? It will become visible on the public feed.`
+                : `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAction) {
+                  if (confirmAction.type === "approve") {
+                    handleApprove(confirmAction.show.id, confirmAction.show.title, confirmAction.show.producer_id);
+                  } else {
+                    handleReject(confirmAction.show.id, confirmAction.show.title, confirmAction.show.producer_id);
+                  }
+                  setConfirmAction(null);
+                }
+              }}
+              className={confirmAction?.type === "reject" ? "bg-destructive hover:bg-destructive/90" : ""}
+            >
+              {confirmAction?.type === "approve" ? "Approve" : "Reject"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
