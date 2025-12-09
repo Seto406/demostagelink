@@ -56,6 +56,9 @@ const Login = () => {
             variant: "destructive",
           });
         } else {
+          // Store email and role for resending verification
+          localStorage.setItem("pendingVerificationEmail", email);
+          localStorage.setItem("pendingUserRole", userType);
           toast({
             title: "Check your email",
             description: "We've sent you a verification link to confirm your account.",
