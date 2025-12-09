@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, MapPin, Filter, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
+import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -50,13 +50,6 @@ interface Show {
     group_name: string | null;
   } | null;
 }
-
-// Skeleton loader component
-const ShowCardSkeleton = () => (
-  <div className="bg-card border border-secondary/20 overflow-hidden">
-    <div className="aspect-[2/3] shimmer-loading" />
-  </div>
-);
 
 // Enhanced Show Card component
 const ShowCard = ({ show, index }: { show: Show; index: number }) => {
@@ -399,7 +392,7 @@ const Shows = () => {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {[...Array(8)].map((_, i) => (
-                <ShowCardSkeleton key={i} />
+                <SkeletonCard key={i} />
               ))}
             </div>
           ) : filteredShows.length === 0 ? (

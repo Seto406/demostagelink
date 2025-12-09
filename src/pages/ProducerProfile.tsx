@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Users } from "lucide-react";
+import { BrandedLoader } from "@/components/ui/branded-loader";
 
 interface Producer {
   id: string;
@@ -83,8 +84,8 @@ const ProducerProfile = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="pt-24 pb-16">
-          <div className="container mx-auto px-6 text-center">
-            <div className="text-muted-foreground">Loading producer profile...</div>
+          <div className="container mx-auto px-6 flex items-center justify-center min-h-[50vh]">
+            <BrandedLoader size="lg" text="Loading producer profile..." />
           </div>
         </main>
         <Footer />
