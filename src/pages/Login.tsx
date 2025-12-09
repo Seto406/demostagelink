@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { BrandedLoader } from "@/components/ui/branded-loader";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 type UserType = "audience" | "producer" | null;
@@ -89,7 +90,7 @@ const Login = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+        <BrandedLoader size="lg" text="Loading..." />
       </div>
     );
   }

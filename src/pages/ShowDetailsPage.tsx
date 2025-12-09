@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandedLoader } from "@/components/ui/branded-loader";
 
 interface ShowDetails {
   id: string;
@@ -116,7 +117,7 @@ const ShowDetailsPage = () => {
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-center min-h-[50vh]">
-              <div className="text-muted-foreground">Loading show details...</div>
+              <BrandedLoader size="lg" text="Loading show details..." />
             </div>
           </div>
         </main>

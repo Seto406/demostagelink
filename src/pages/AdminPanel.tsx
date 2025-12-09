@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LayoutDashboard, LogOut, Menu, X, Check, XCircle, Eye } from "lucide-react";
+import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -209,7 +210,7 @@ const AdminPanel = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+        <BrandedLoader size="lg" text="Loading admin panel..." />
       </div>
     );
   }

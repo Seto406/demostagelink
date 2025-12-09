@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
 
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
@@ -227,7 +228,7 @@ const Directory = () => {
 
           {/* Groups Grid */}
           {loading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading theater groups...</div>
+            <ProducerListSkeleton count={6} />
           ) : (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
