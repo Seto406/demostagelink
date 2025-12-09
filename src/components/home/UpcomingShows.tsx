@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, ArrowRight } from "lucide-react";
-
+import { TiltCard } from "@/components/ui/tilt-card";
 // Import all posters
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -81,53 +81,61 @@ const ShowCard = ({
   const showId = show.id;
 
   const CardContent = (
-    <motion.div
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="relative aspect-[2/3] border border-secondary/50 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_50px_hsl(0_100%_25%/0.35)]"
-    >
-      {/* Poster image */}
-      {posterUrl ? (
-        <motion.img
-          src={posterUrl}
-          alt={title}
-          className="absolute inset-0 w-full h-full object-cover"
-          whileHover={{ scale: 1.08 }}
-          transition={{ duration: 0.6 }}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
-          <span className="text-6xl opacity-30">🎭</span>
-        </div>
-      )}
+    <TiltCard tiltAmount={8} glareEnabled={true} scale={1.02}>
+      <div
+        className="relative aspect-[2/3] border border-secondary/50 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_50px_hsl(0_100%_25%/0.35)]"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* Poster image */}
+        {posterUrl ? (
+          <img
+            src={posterUrl}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
+            <span className="text-6xl opacity-30">🎭</span>
+          </div>
+        )}
 
-      {/* Overlay on hover */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
+        {/* Overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300" />
 
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-        <h3 className="font-serif text-sm sm:text-lg text-foreground mb-1 line-clamp-2 drop-shadow-lg group-hover:text-secondary transition-colors duration-300">
-          {title}
-        </h3>
-        <p className="text-xs sm:text-sm text-secondary/80 drop-shadow-lg">{groupName}</p>
-      </div>
-
-      {/* Corner accent */}
-      <div className="absolute top-0 right-0 w-10 h-10 sm:w-12 sm:h-12 overflow-hidden">
-        <div className="absolute top-0 right-0 w-14 h-14 sm:w-16 sm:h-16 bg-secondary/30 rotate-45 translate-x-8 -translate-y-8 group-hover:bg-primary/50 transition-colors duration-300" />
-      </div>
-
-      {/* View indicator on hover */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <motion.div
-          initial={{ scale: 0 }}
-          whileHover={{ scale: 1 }}
-          className="bg-secondary/90 text-secondary-foreground px-4 py-2 text-sm font-medium uppercase tracking-wider"
+        {/* Content */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-300"
+          style={{ transform: "translateZ(15px)" }}
         >
-          View Show
-        </motion.div>
+          <h3 className="font-serif text-sm sm:text-lg text-foreground mb-1 line-clamp-2 drop-shadow-lg group-hover:text-secondary transition-colors duration-300">
+            {title}
+          </h3>
+          <p className="text-xs sm:text-sm text-secondary/80 drop-shadow-lg">{groupName}</p>
+        </div>
+
+        {/* Corner accent */}
+        <div 
+          className="absolute top-0 right-0 w-10 h-10 sm:w-12 sm:h-12 overflow-hidden"
+          style={{ transform: "translateZ(20px)" }}
+        >
+          <div className="absolute top-0 right-0 w-14 h-14 sm:w-16 sm:h-16 bg-secondary/30 rotate-45 translate-x-8 -translate-y-8 group-hover:bg-primary/50 transition-colors duration-300" />
+        </div>
+
+        {/* View indicator on hover */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ transform: "translateZ(25px)" }}
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileHover={{ scale: 1, opacity: 1 }}
+            className="bg-secondary/90 text-secondary-foreground px-4 py-2 text-sm font-medium uppercase tracking-wider"
+          >
+            View Show
+          </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </TiltCard>
   );
 
   return (
