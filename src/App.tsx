@@ -8,6 +8,7 @@ import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useEffect, useState } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
+import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import Index from "./pages/Index";
 import Directory from "./pages/Directory";
 import Shows from "./pages/Shows";
@@ -115,6 +116,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <AnimatedRoutes />
+            <MobileBottomNav />
           </AuthProvider>
         </BrowserRouter>
       </EnhancedToastProvider>
