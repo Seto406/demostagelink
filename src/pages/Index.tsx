@@ -1,42 +1,25 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import HeroSection from "@/components/home/HeroSection";
-import CityBrowser from "@/components/home/CityBrowser";
-import UniversitySpotlight from "@/components/home/UniversitySpotlight";
-import UpcomingShows from "@/components/home/UpcomingShows";
-import { CurtainReveal } from "@/components/ui/curtain-reveal";
-import { EntranceAnimation } from "@/components/ui/entrance-animation";
-import { TheaterMarquee } from "@/components/ui/theater-marquee";
+import LandingNavbar from "@/components/landing/LandingNavbar";
+import LandingHero from "@/components/landing/LandingHero";
+import MissionSection from "@/components/landing/MissionSection";
+import FeaturesSection from "@/components/landing/FeaturesSection";
+import PricingSection from "@/components/landing/PricingSection";
+import ShowcaseSection from "@/components/landing/ShowcaseSection";
+import LandingFooter from "@/components/landing/LandingFooter";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="min-h-screen bg-white">
+      <LandingNavbar />
       
       <main>
-        {/* Spacer for fixed navbar */}
-        <div className="h-14 sm:h-[72px]" />
-        
-        {/* Theater Marquee Announcement Bar */}
-        <TheaterMarquee />
-        <HeroSection />
-        
-        {/* City Browser with curtain reveal */}
-        <CurtainReveal delay={0.1}>
-          <CityBrowser />
-        </CurtainReveal>
-        
-        {/* University Spotlight with entrance animation */}
-        <EntranceAnimation type="spotlight" delay={0.1}>
-          <UniversitySpotlight />
-        </EntranceAnimation>
-        
-        {/* Upcoming Shows with curtain reveal */}
-        <CurtainReveal delay={0.1}>
-          <UpcomingShows />
-        </CurtainReveal>
+        <LandingHero />
+        <MissionSection />
+        <FeaturesSection />
+        <PricingSection />
+        <ShowcaseSection />
       </main>
-      <Footer />
+      
+      <LandingFooter />
     </div>
   );
 };

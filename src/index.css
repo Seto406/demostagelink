@@ -93,6 +93,15 @@ html {
     --sidebar-accent-foreground: 0 0% 0%;
     --sidebar-border: 0 0% 15%;
     --sidebar-ring: 43 72% 52%;
+
+    /* Landing Page - Lively & Vibrant Theme */
+    --landing-primary: 0 75% 45%;
+    --landing-gold: 43 90% 55%;
+    --landing-text: 220 15% 15%;
+    --landing-muted: 220 10% 50%;
+    --landing-surface: 220 20% 97%;
+    --landing-accent: 220 100% 60%;
+    --landing-border: 220 15% 90%;
   }
 }
 
