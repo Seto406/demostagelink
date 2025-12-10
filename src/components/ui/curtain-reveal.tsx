@@ -1,5 +1,5 @@
-import { motion, useInView, Variants } from "framer-motion";
-import { useRef, ReactNode } from "react";
+import { motion, useInView } from "framer-motion";
+import { useRef, ReactNode, useEffect, useState } from "react";
 
 interface CurtainRevealProps {
   children: ReactNode;
@@ -9,15 +9,24 @@ interface CurtainRevealProps {
 
 export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRevealProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    if (isInView && !hasAnimated) {
+      setHasAnimated(true);
+    }
+  }, [isInView, hasAnimated]);
+
+  const shouldAnimate = isInView || hasAnimated;
 
   return (
     <div ref={ref} className={`relative overflow-hidden ${className}`}>
-      {/* Content */}
+      {/* Content - visible immediately after animation */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.5, delay: delay + 0.5 }}
+        animate={{ opacity: shouldAnimate ? 1 : 0 }}
+        transition={{ duration: 0.4, delay: shouldAnimate ? delay + 0.4 : 0 }}
       >
         {children}
       </motion.div>
@@ -26,10 +35,10 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
       <motion.div
         className="absolute top-0 left-0 w-1/2 h-full bg-primary z-10 pointer-events-none"
         initial={{ x: 0 }}
-        animate={isInView ? { x: "-100%" } : { x: 0 }}
+        animate={{ x: shouldAnimate ? "-100%" : 0 }}
         transition={{
-          duration: 0.8,
-          delay,
+          duration: 0.7,
+          delay: shouldAnimate ? delay : 0,
           ease: [0.22, 1, 0.36, 1],
         }}
       >
@@ -54,10 +63,10 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
       <motion.div
         className="absolute top-0 right-0 w-1/2 h-full bg-primary z-10 pointer-events-none"
         initial={{ x: 0 }}
-        animate={isInView ? { x: "100%" } : { x: 0 }}
+        animate={{ x: shouldAnimate ? "100%" : 0 }}
         transition={{
-          duration: 0.8,
-          delay,
+          duration: 0.7,
+          delay: shouldAnimate ? delay : 0,
           ease: [0.22, 1, 0.36, 1],
         }}
       >
@@ -80,17 +89,16 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
 
       {/* Top valance decoration */}
       <motion.div
-        className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-primary to-primary/80 z-20 pointer-events-none"
+        className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-primary to-primary/80 z-20 pointer-events-none origin-top"
         initial={{ scaleY: 1 }}
-        animate={isInView ? { scaleY: 0 } : { scaleY: 1 }}
+        animate={{ scaleY: shouldAnimate ? 0 : 1 }}
         transition={{
-          duration: 0.5,
-          delay: delay + 0.6,
+          duration: 0.4,
+          delay: shouldAnimate ? delay + 0.5 : 0,
           ease: "easeOut",
         }}
-        style={{ transformOrigin: "top" }}
       >
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-secondary/50" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-secondary/50" />
       </motion.div>
     </div>
   );
