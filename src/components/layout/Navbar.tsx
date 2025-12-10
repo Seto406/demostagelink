@@ -3,14 +3,26 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Shield, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const Navbar = () => {
   const location = useLocation();
   const { user, profile, isAdmin, signOut } = useAuth();
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Scroll-based animations
+  const { scrollY } = useScroll();
+  const isScrolled = useTransform(scrollY, [0, 20], [false, true]);
+  
+  // Dynamic values based on scroll
+  const headerHeight = useTransform(scrollY, [0, 100], [72, 56]);
+  const logoScale = useTransform(scrollY, [0, 100], [1, 0.85]);
+  const bgOpacity = useTransform(scrollY, [0, 50], [0.6, 0.98]);
+  const blurAmount = useTransform(scrollY, [0, 50], [8, 20]);
+  const borderOpacity = useTransform(scrollY, [0, 50], [0.1, 0.3]);
+  
+  const [scrolled, setScrolled] = useState(false);
 
   const navLinks = [
     { path: "/", label: "Home" },
@@ -21,7 +33,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -42,27 +54,45 @@ const Navbar = () => {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
+        style={{
+          height: headerHeight,
+        }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-background/95 backdrop-blur-lg border-b border-secondary/20 shadow-lg"
-            : "bg-background/60 backdrop-blur-md border-b border-secondary/10"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
+          scrolled
+            ? "shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
+            : ""
         }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
+        {/* Glassmorphism background */}
+        <motion.div 
+          className="absolute inset-0 bg-background border-b border-secondary"
+          style={{
+            opacity: bgOpacity,
+            backdropFilter: useTransform(blurAmount, (v) => `blur(${v}px)`),
+            WebkitBackdropFilter: useTransform(blurAmount, (v) => `blur(${v}px)`),
+            borderBottomColor: useTransform(borderOpacity, (v) => `hsl(43 72% 52% / ${v})`),
+          }}
+        />
+        
+        <div className="container mx-auto px-4 sm:px-6 h-full relative z-10">
+          <div className="flex items-center justify-between h-full">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
               <motion.img
-                whileHover={{ scale: 1.05, rotate: 5 }}
+                style={{ scale: logoScale }}
+                whileHover={{ rotate: 5 }}
                 transition={{ duration: 0.3 }}
                 src={stageLinkLogo}
                 alt="StageLink Logo"
-                className="h-8 sm:h-10 w-auto"
+                className="h-8 sm:h-10 w-auto origin-left"
               />
-              <span className="text-lg sm:text-xl font-serif font-bold text-foreground tracking-wide">
+              <motion.span 
+                style={{ scale: logoScale }}
+                className="text-lg sm:text-xl font-serif font-bold text-foreground tracking-wide origin-left"
+              >
                 Stage<span className="text-secondary">Link</span>
-              </span>
+              </motion.span>
             </Link>
 
             {/* Desktop Navigation Links */}

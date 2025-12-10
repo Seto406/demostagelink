@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,7 @@ import { Search, Calendar, MapPin, Filter, X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -164,39 +165,45 @@ const Shows = () => {
     setSearchParams(params, { replace: true });
   }, [selectedCity, selectedGenre, dateFilter, setSearchParams]);
 
+  // Fetch function for shows
+  const fetchShows = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("shows")
+      .select(`
+        id,
+        title,
+        description,
+        date,
+        venue,
+        city,
+        niche,
+        poster_url,
+        profiles:producer_id (
+          id,
+          group_name
+        )
+      `)
+      .eq("status", "approved")
+      .order("date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching shows:", error);
+    } else {
+      setShows(data as Show[]);
+    }
+    setLoading(false);
+  }, []);
+
   // Fetch approved shows
   useEffect(() => {
-    const fetchShows = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("shows")
-        .select(`
-          id,
-          title,
-          description,
-          date,
-          venue,
-          city,
-          niche,
-          poster_url,
-          profiles:producer_id (
-            id,
-            group_name
-          )
-        `)
-        .eq("status", "approved")
-        .order("date", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching shows:", error);
-      } else {
-        setShows(data as Show[]);
-      }
-      setLoading(false);
-    };
-
     fetchShows();
-  }, []);
+  }, [fetchShows]);
+
+  // Pull to refresh handler
+  const handleRefresh = async () => {
+    await fetchShows();
+  };
 
   const filteredShows = shows.filter((show) => {
     const matchesSearch =
@@ -235,7 +242,8 @@ const Shows = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-20 sm:pt-24 pb-16">
+      <PullToRefresh onRefresh={handleRefresh}>
+        <main className="pt-20 sm:pt-24 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header */}
           <motion.div
@@ -432,6 +440,7 @@ const Shows = () => {
           )}
         </div>
       </main>
+      </PullToRefresh>
       <Footer />
     </div>
   );

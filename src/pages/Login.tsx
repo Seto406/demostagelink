@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { shakeVariants } from "@/hooks/use-shake";
 
 type UserType = "audience" | "producer" | null;
 type AuthMode = "login" | "signup";
@@ -21,6 +22,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -33,8 +35,14 @@ const Login = () => {
     }
   }, [user, profile, loading, navigate]);
 
+  const triggerShake = () => {
+    setFormError(true);
+    setTimeout(() => setFormError(false), 500);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(false);
     setIsSubmitting(true);
 
     try {
@@ -45,12 +53,14 @@ const Login = () => {
             description: "Please select your account type",
             variant: "destructive",
           });
+          triggerShake();
           setIsSubmitting(false);
           return;
         }
         
         const { error } = await signUp(email, password, userType);
         if (error) {
+          triggerShake();
           toast({
             title: "Sign up failed",
             description: error.message,
@@ -69,6 +79,7 @@ const Login = () => {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
+          triggerShake();
           toast({
             title: "Login failed",
             description: error.message,
@@ -77,6 +88,7 @@ const Login = () => {
         }
       }
     } catch (err) {
+      triggerShake();
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -167,7 +179,11 @@ const Login = () => {
                 </p>
               </div>
             ) : (
-              <div className="bg-card border border-secondary/20 p-8">
+              <motion.div 
+                className="bg-card border border-secondary/20 p-8"
+                variants={shakeVariants}
+                animate={formError ? "shake" : "idle"}
+              >
                 {authMode === "signup" && userType && (
                   <button
                     onClick={() => setUserType(null)}
@@ -255,7 +271,7 @@ const Login = () => {
                     </>
                   )}
                 </p>
-              </div>
+              </motion.div>
             )}
           </motion.div>
         </div>

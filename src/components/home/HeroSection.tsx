@@ -1,11 +1,14 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Sparkles, Users } from "lucide-react";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 
 const HeroSection = () => {
   const containerRef = useRef<HTMLElement>(null);
+  const [typingComplete, setTypingComplete] = useState({ discover: false, local: false });
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
@@ -100,36 +103,44 @@ const HeroSection = () => {
             <Sparkles className="w-4 h-4 text-secondary animate-pulse-glow" />
           </motion.div>
 
-          {/* Main Headline with curtain reveal effect */}
+          {/* Main Headline with typing animation */}
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
             className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-bold text-foreground mb-6 sm:mb-8 leading-tight"
           >
-            <motion.span
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="block"
-            >
-              Discover
-            </motion.span>
-            <motion.span
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="block text-secondary relative"
-            >
-              Local Theater
-              {/* Underline accent */}
-              <motion.span
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 sm:w-48 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent origin-center"
+            <span className="block">
+              <TypingAnimation 
+                text="Discover" 
+                speed={80} 
+                delay={400}
+                cursor={!typingComplete.discover}
+                onComplete={() => setTypingComplete(prev => ({ ...prev, discover: true }))}
               />
-            </motion.span>
+            </span>
+            <span className="block text-secondary relative">
+              {typingComplete.discover && (
+                <>
+                  <TypingAnimation 
+                    text="Local Theater" 
+                    speed={60} 
+                    delay={100}
+                    cursor={!typingComplete.local}
+                    onComplete={() => setTypingComplete(prev => ({ ...prev, local: true }))}
+                  />
+                  {/* Underline accent - appears after typing complete */}
+                  {typingComplete.local && (
+                    <motion.span
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.8 }}
+                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 sm:w-48 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent origin-center"
+                    />
+                  )}
+                </>
+              )}
+            </span>
           </motion.h1>
 
           {/* Subtitle */}
