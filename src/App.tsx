@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
+import { CinematicBackground } from "@/components/ui/cinematic-background";
 import Index from "./pages/Index";
 import Directory from "./pages/Directory";
 import Shows from "./pages/Shows";
@@ -109,16 +110,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <EnhancedToastProvider>
-        <ToastHandlerInit />
-        <ScrollProgress color="gold" height={3} />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AnimatedRoutes />
-            <MobileBottomNav />
-          </AuthProvider>
-        </BrowserRouter>
+        <CinematicBackground>
+          <ToastHandlerInit />
+          <ScrollProgress color="gold" height={3} />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <AnimatedRoutes />
+              <MobileBottomNav />
+            </AuthProvider>
+          </BrowserRouter>
+        </CinematicBackground>
       </EnhancedToastProvider>
     </TooltipProvider>
   </QueryClientProvider>
