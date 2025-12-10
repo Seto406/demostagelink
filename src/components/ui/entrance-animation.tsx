@@ -1,5 +1,5 @@
 import { motion, useInView, Variants } from "framer-motion";
-import { useRef, ReactNode } from "react";
+import { useRef, ReactNode, useState, useEffect } from "react";
 
 type EntranceType = "fadeUp" | "fadeDown" | "slideLeft" | "slideRight" | "scale" | "spotlight" | "curtainUp";
 
@@ -69,6 +69,15 @@ export const EntranceAnimation = ({
 }: EntranceAnimationProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once, margin: "-50px" });
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    if (isInView && !hasAnimated) {
+      setHasAnimated(true);
+    }
+  }, [isInView, hasAnimated]);
+
+  const shouldAnimate = isInView || hasAnimated;
 
   return (
     <motion.div
@@ -76,10 +85,10 @@ export const EntranceAnimation = ({
       className={className}
       variants={entranceVariants[type]}
       initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      animate={shouldAnimate ? "visible" : "hidden"}
       transition={{
         duration,
-        delay,
+        delay: shouldAnimate ? delay : 0,
         ease: [0.25, 0.1, 0.25, 1],
       }}
     >
