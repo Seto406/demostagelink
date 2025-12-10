@@ -64,6 +64,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Landing page colors
+        landing: {
+          primary: "hsl(var(--landing-primary))",
+          gold: "hsl(var(--landing-gold))",
+          text: "hsl(var(--landing-text))",
+          muted: "hsl(var(--landing-muted))",
+          surface: "hsl(var(--landing-surface))",
+          accent: "hsl(var(--landing-accent))",
+          border: "hsl(var(--landing-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -128,6 +138,14 @@ export default {
           "50%": { opacity: "1" },
           "100%": { opacity: "0", transform: "scale(1.2)" },
         },
+        "marquee-right": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "marquee-left": {
+          "0%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -141,6 +159,8 @@ export default {
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "slide-down": "slide-down 0.4s ease-out forwards",
+        "marquee-right": "marquee-right 30s linear infinite",
+        "marquee-left": "marquee-left 30s linear infinite",
         "spin-slow": "spin-slow 20s linear infinite",
         "curtain-reveal": "curtain-reveal 1s ease-out forwards",
         "spotlight": "spotlight 3s ease-in-out infinite",
