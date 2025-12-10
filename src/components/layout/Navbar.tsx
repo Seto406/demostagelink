@@ -185,44 +185,131 @@ const Navbar = () => {
         </div>
       </motion.nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Theater Curtain Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with theater ambiance */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+              transition={{ duration: 0.4 }}
+              className="fixed inset-0 bg-background/90 backdrop-blur-md z-40 md:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
 
-            {/* Mobile Menu Panel */}
+            {/* Left Curtain */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ 
+                duration: 0.5, 
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="fixed top-0 left-0 bottom-0 w-1/2 bg-gradient-to-r from-primary/95 to-primary/80 z-50 md:hidden"
+              style={{
+                boxShadow: "10px 0 30px rgba(0,0,0,0.3)",
+              }}
+            >
+              {/* Curtain texture overlay */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.1) 2px,
+                    rgba(0,0,0,0.1) 4px
+                  )`
+                }} />
+              </div>
+              
+              {/* Gold trim */}
+              <motion.div 
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                exit={{ scaleY: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+                className="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-secondary via-secondary/60 to-secondary origin-top"
+              />
+            </motion.div>
+
+            {/* Right Curtain */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="fixed top-0 right-0 bottom-0 w-72 bg-card border-l border-secondary/20 z-50 md:hidden overflow-y-auto"
+              transition={{ 
+                duration: 0.5, 
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="fixed top-0 right-0 bottom-0 w-1/2 bg-gradient-to-l from-primary/95 to-primary/80 z-50 md:hidden"
+              style={{
+                boxShadow: "-10px 0 30px rgba(0,0,0,0.3)",
+              }}
             >
-              <div className="p-6 pt-20">
+              {/* Curtain texture overlay */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.1) 2px,
+                    rgba(0,0,0,0.1) 4px
+                  )`
+                }} />
+              </div>
+              
+              {/* Gold trim */}
+              <motion.div 
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                exit={{ scaleY: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+                className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-secondary via-secondary/60 to-secondary origin-top"
+              />
+            </motion.div>
+
+            {/* Center Content Panel */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+              className="fixed inset-x-8 top-24 bottom-8 bg-card/95 backdrop-blur-xl border border-secondary/30 z-50 md:hidden overflow-y-auto rounded-lg shadow-2xl"
+            >
+              {/* Theater stage top border */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20" />
+              
+              <div className="p-6 pt-8">
+                {/* Theater mask icon */}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.3 }}
+                  className="text-center mb-6"
+                >
+                  <span className="text-4xl">🎭</span>
+                </motion.div>
+
                 {/* Navigation Links */}
                 <nav className="flex flex-col gap-2 mb-8">
                   {navLinks.map((link, index) => (
                     <motion.div
                       key={link.path}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + index * 0.08 }}
                     >
                       <Link
                         to={link.path}
-                        className={`block py-3 px-4 text-lg font-medium transition-colors duration-300 hover:bg-secondary/10 touch-target ${
+                        className={`block py-4 px-6 text-lg font-serif font-medium text-center transition-all duration-300 touch-target rounded-md ${
                           location.pathname === link.path
-                            ? "text-secondary border-l-2 border-secondary bg-secondary/5"
-                            : "text-foreground"
+                            ? "text-secondary bg-secondary/10 border border-secondary/30"
+                            : "text-foreground hover:bg-secondary/5 hover:text-secondary"
                         }`}
                       >
                         {link.label}
@@ -231,18 +318,25 @@ const Navbar = () => {
                   ))}
                 </nav>
 
+                {/* Decorative divider */}
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.6, duration: 0.4 }}
+                  className="h-px bg-gradient-to-r from-transparent via-secondary/50 to-transparent mb-6"
+                />
+
                 {/* Auth Section */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="pt-6 border-t border-secondary/20"
+                  transition={{ delay: 0.7 }}
                 >
                   {user ? (
                     <div className="flex flex-col gap-3">
                       {isAdmin && (
                         <Link to="/admin" className="w-full">
-                          <Button variant="ghost" className="w-full justify-start text-primary">
+                          <Button variant="ghost" className="w-full justify-center text-primary font-serif">
                             <Shield className="w-4 h-4 mr-2" />
                             Admin Panel
                           </Button>
@@ -250,24 +344,27 @@ const Navbar = () => {
                       )}
                       {profile?.role === "producer" && (
                         <Link to="/dashboard" className="w-full">
-                          <Button variant="ghost" className="w-full justify-start">
+                          <Button variant="ghost" className="w-full justify-center font-serif">
                             Dashboard
                           </Button>
                         </Link>
                       )}
-                      <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                      <Button variant="outline" className="w-full font-serif" onClick={handleSignOut}>
                         Sign Out
                       </Button>
                     </div>
                   ) : (
                     <Link to="/login" className="w-full block">
-                      <Button variant="outline" className="w-full">
-                        Login
+                      <Button variant="hero" className="w-full font-serif">
+                        Enter the Stage
                       </Button>
                     </Link>
                   )}
                 </motion.div>
               </div>
+
+              {/* Theater stage bottom border */}
+              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20" />
             </motion.div>
           </>
         )}

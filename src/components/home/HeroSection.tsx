@@ -14,19 +14,60 @@ const HeroSection = () => {
     offset: ["start start", "end start"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  // Parallax transforms for different layers - each moves at different speeds
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, 300]);
+  const spotlightLeftY = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const spotlightRightY = useTransform(scrollYProgress, [0, 1], [0, 250]);
+  const maskLeftY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const maskRightY = useTransform(scrollYProgress, [0, 1], [0, 180]);
+  const starsY = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 80]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  
+  // Parallax horizontal movement for depth
+  const spotlightLeftX = useTransform(scrollYProgress, [0, 1], [0, -50]);
+  const spotlightRightX = useTransform(scrollYProgress, [0, 1], [0, 50]);
 
   return (
     <section
       ref={containerRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/20" />
+      {/* Deep background layer - moves slowest */}
+      <motion.div 
+        style={{ y: bgY }}
+        className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/20" 
+      />
 
-      {/* Animated spotlight effects */}
+      {/* Parallax star field layer */}
       <motion.div
+        style={{ y: starsY }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-secondary/30 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0.2, 0.8, 0.2],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 2 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </motion.div>
+
+      {/* Animated spotlight effects with parallax */}
+      <motion.div
+        style={{ y: spotlightLeftY, x: spotlightLeftX }}
         animate={{
           scale: [1, 1.2, 1],
           opacity: [0.3, 0.5, 0.3],
@@ -39,6 +80,7 @@ const HeroSection = () => {
         className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
       />
       <motion.div
+        style={{ y: spotlightRightY, x: spotlightRightX }}
         animate={{
           scale: [1.2, 1, 1.2],
           opacity: [0.2, 0.4, 0.2],
@@ -52,8 +94,15 @@ const HeroSection = () => {
         className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl"
       />
 
-      {/* Floating theater masks */}
+      {/* Additional parallax ambient glow */}
       <motion.div
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 120]) }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-primary/5 via-transparent to-transparent rounded-full blur-3xl pointer-events-none"
+      />
+
+      {/* Floating theater masks with parallax */}
+      <motion.div
+        style={{ y: maskLeftY }}
         animate={{ y: [-10, 10, -10] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         className="absolute top-32 left-[10%] text-6xl opacity-10 hidden lg:block"
@@ -61,12 +110,27 @@ const HeroSection = () => {
         🎭
       </motion.div>
       <motion.div
+        style={{ y: maskRightY }}
         animate={{ y: [10, -10, 10] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
         className="absolute bottom-32 right-[10%] text-5xl opacity-10 hidden lg:block"
       >
         🎪
       </motion.div>
+
+      {/* Additional floating elements with different parallax speeds */}
+      <motion.div
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 220]) }}
+        animate={{ rotate: [0, 360] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute top-1/3 right-[15%] w-24 h-24 border border-secondary/10 rounded-full hidden lg:block"
+      />
+      <motion.div
+        style={{ y: useTransform(scrollYProgress, [0, 1], [0, 280]) }}
+        animate={{ rotate: [360, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-1/3 left-[12%] w-32 h-32 border border-primary/10 rounded-full hidden lg:block"
+      />
 
       {/* Gold accent lines with animation */}
       <motion.div
@@ -82,7 +146,7 @@ const HeroSection = () => {
         className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-secondary/40 to-transparent origin-center"
       />
 
-      <motion.div style={{ y, opacity }} className="container mx-auto px-4 sm:px-6 relative z-10 text-center">
+      <motion.div style={{ y: contentY, opacity }} className="container mx-auto px-4 sm:px-6 relative z-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
