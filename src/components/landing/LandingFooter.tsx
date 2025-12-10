@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Twitter, Mail } from "lucide-react";
-import stagelinkLogo from "@/assets/stagelink-logo.png";
+import stagelinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const LandingFooter = () => {
   return (
@@ -11,6 +11,9 @@ const LandingFooter = () => {
           <div className="col-span-1 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img src={stagelinkLogo} alt="StageLink" className="h-8 w-auto" />
+              <span className="text-xl font-serif font-bold text-foreground tracking-wide">
+                Stage<span className="text-secondary">Link</span>
+              </span>
             </div>
             <p className="text-muted-foreground mb-6 leading-relaxed">
               Connecting theater groups with audiences across Metro Manila. Discover the magic of local productions.
