@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import stagelinkLogo from "@/assets/stagelink-logo.png";
+import stagelinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const LandingNavbar = () => {
   return (

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { Heart, Users, Sparkles } from "lucide-react";
+import missionTheater from "@/assets/landing/mission-theater.jpg";
 
 const MissionSection = () => {
   const ref = useRef(null);
@@ -21,13 +22,12 @@ const MissionSection = () => {
             <div className="relative aspect-square max-w-lg mx-auto">
               {/* Main Image Container */}
               <div className="absolute inset-4 bg-muted rounded-3xl overflow-hidden shadow-xl border border-secondary/20">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">🎭</div>
-                    <p className="text-muted-foreground font-medium">Connecting Artists & Audiences</p>
-                  </div>
-                </div>
+                <img 
+                  src={missionTheater} 
+                  alt="Theater group rehearsing on stage" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
               </div>
               
               {/* Decorative Elements */}
