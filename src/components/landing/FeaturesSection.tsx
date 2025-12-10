@@ -14,7 +14,7 @@ const features = [
     icon: Ticket,
     title: "Digital Ticketing",
     description: "Connect your ticket links directly to your show pages. Audiences can find and purchase tickets in one click.",
-    color: "bg-landing-primary"
+    color: "bg-primary"
   },
   {
     icon: Users,
@@ -47,7 +47,7 @@ const FeaturesSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="features" ref={ref} className="py-24 bg-landing-surface">
+    <section id="features" ref={ref} className="py-24 bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
@@ -56,14 +56,14 @@ const FeaturesSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <span className="inline-block text-landing-primary font-semibold text-sm uppercase tracking-wider mb-4">
+          <span className="inline-block text-secondary font-semibold text-sm uppercase tracking-wider mb-4">
             Features
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-landing-text mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6">
             Everything You Need to{" "}
-            <span className="text-landing-primary">Shine</span>
+            <span className="text-secondary">Shine</span>
           </h2>
-          <p className="text-lg text-landing-muted">
+          <p className="text-lg text-muted-foreground">
             Powerful tools designed specifically for theater groups and audiences alike.
           </p>
         </motion.div>
@@ -76,15 +76,15 @@ const FeaturesSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
-              className="bg-white rounded-2xl p-8 shadow-sm border border-landing-border hover:shadow-lg hover:border-landing-primary/20 transition-all duration-300 group"
+              className="bg-card rounded-2xl p-8 border border-secondary/20 hover:border-secondary/40 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10"
             >
               <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 <feature.icon className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-landing-text mb-3">
+              <h3 className="text-xl font-semibold text-foreground mb-3">
                 {feature.title}
               </h3>
-              <p className="text-landing-muted leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>

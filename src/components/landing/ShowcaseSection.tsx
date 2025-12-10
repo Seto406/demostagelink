@@ -32,7 +32,7 @@ const ShowcaseSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="showcase" ref={ref} className="py-24 bg-landing-surface overflow-hidden">
+    <section id="showcase" ref={ref} className="py-24 bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
@@ -41,14 +41,14 @@ const ShowcaseSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <span className="inline-block text-landing-primary font-semibold text-sm uppercase tracking-wider mb-4">
+          <span className="inline-block text-secondary font-semibold text-sm uppercase tracking-wider mb-4">
             Showcase
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-landing-text mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6">
             Recent{" "}
-            <span className="text-landing-primary">Productions</span>
+            <span className="text-secondary">Productions</span>
           </h2>
-          <p className="text-lg text-landing-muted">
+          <p className="text-lg text-muted-foreground">
             A glimpse of the amazing theater productions featured on StageLink.
           </p>
         </motion.div>
@@ -57,8 +57,8 @@ const ShowcaseSection = () => {
       {/* Marquee Container */}
       <div className="relative">
         {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-landing-surface to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-landing-surface to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-muted/30 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-muted/30 to-transparent z-10 pointer-events-none" />
 
         {/* First Row - Moving Right */}
         <div className="flex gap-6 mb-6 animate-marquee-right">
@@ -68,7 +68,7 @@ const ShowcaseSection = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={isInView ? { opacity: 1, scale: 1 } : {}}
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
-              className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group"
+              className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg border border-secondary/20 hover:border-secondary/50 transition-all group"
             >
               <img
                 src={poster}
@@ -87,7 +87,7 @@ const ShowcaseSection = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={isInView ? { opacity: 1, scale: 1 } : {}}
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
-              className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow group"
+              className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg border border-secondary/20 hover:border-secondary/50 transition-all group"
             >
               <img
                 src={poster}
