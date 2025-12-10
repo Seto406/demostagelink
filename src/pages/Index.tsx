@@ -13,10 +13,12 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Theater Marquee Announcement Bar */}
-      <TheaterMarquee />
-      
       <main>
+        {/* Spacer for fixed navbar */}
+        <div className="h-14 sm:h-[72px]" />
+        
+        {/* Theater Marquee Announcement Bar */}
+        <TheaterMarquee />
         <HeroSection />
         
         {/* City Browser with curtain reveal */}
