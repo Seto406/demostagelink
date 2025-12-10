@@ -8,7 +8,7 @@ const MissionSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section ref={ref} className="py-24 bg-white">
+    <section ref={ref} className="py-24 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Image Side */}
@@ -20,19 +20,19 @@ const MissionSection = () => {
           >
             <div className="relative aspect-square max-w-lg mx-auto">
               {/* Main Image Container */}
-              <div className="absolute inset-4 bg-landing-surface rounded-3xl overflow-hidden shadow-xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-landing-primary/5 to-landing-gold/5" />
+              <div className="absolute inset-4 bg-muted rounded-3xl overflow-hidden shadow-xl border border-secondary/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-8xl mb-4">🎭</div>
-                    <p className="text-landing-muted font-medium">Connecting Artists & Audiences</p>
+                    <p className="text-muted-foreground font-medium">Connecting Artists & Audiences</p>
                   </div>
                 </div>
               </div>
               
               {/* Decorative Elements */}
-              <div className="absolute top-0 left-0 w-24 h-24 border-l-4 border-t-4 border-landing-gold rounded-tl-3xl" />
-              <div className="absolute bottom-0 right-0 w-24 h-24 border-r-4 border-b-4 border-landing-primary rounded-br-3xl" />
+              <div className="absolute top-0 left-0 w-24 h-24 border-l-4 border-t-4 border-secondary rounded-tl-3xl" />
+              <div className="absolute bottom-0 right-0 w-24 h-24 border-r-4 border-b-4 border-primary rounded-br-3xl" />
             </div>
           </motion.div>
 
@@ -42,16 +42,16 @@ const MissionSection = () => {
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <span className="inline-block text-landing-primary font-semibold text-sm uppercase tracking-wider mb-4">
+            <span className="inline-block text-secondary font-semibold text-sm uppercase tracking-wider mb-4">
               Why StageLink?
             </span>
             
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-landing-text mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">
               Bridging the Gap Between{" "}
-              <span className="text-landing-primary">Stage & Screen</span>
+              <span className="text-secondary">Stage & Screen</span>
             </h2>
             
-            <p className="text-lg text-landing-muted mb-8 leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               We believe every local theater production deserves to be discovered. 
               StageLink connects passionate theater groups with audiences eager to 
               experience the magic of live performance, creating a thriving 
@@ -83,12 +83,12 @@ const MissionSection = () => {
                   transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
                   className="flex items-start gap-4"
                 >
-                  <div className="flex-shrink-0 w-12 h-12 bg-landing-primary/10 rounded-xl flex items-center justify-center">
-                    <item.icon className="w-6 h-6 text-landing-primary" />
+                  <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center border border-primary/30">
+                    <item.icon className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-landing-text mb-1">{item.title}</h3>
-                    <p className="text-landing-muted">{item.description}</p>
+                    <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
+                    <p className="text-muted-foreground">{item.description}</p>
                   </div>
                 </motion.div>
               ))}

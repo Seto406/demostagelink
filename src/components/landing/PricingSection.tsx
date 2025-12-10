@@ -44,7 +44,7 @@ const PricingSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="pricing" ref={ref} className="py-24 bg-white">
+    <section id="pricing" ref={ref} className="py-24 bg-background">
       <div className="container mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <motion.div
@@ -53,14 +53,14 @@ const PricingSection = () => {
           transition={{ duration: 0.6 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <span className="inline-block text-landing-primary font-semibold text-sm uppercase tracking-wider mb-4">
+          <span className="inline-block text-secondary font-semibold text-sm uppercase tracking-wider mb-4">
             Pricing
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-landing-text mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6">
             Simple, Transparent{" "}
-            <span className="text-landing-primary">Pricing</span>
+            <span className="text-secondary">Pricing</span>
           </h2>
-          <p className="text-lg text-landing-muted">
+          <p className="text-lg text-muted-foreground">
             Choose the plan that works best for your theater group. Start free, upgrade when you're ready.
           </p>
         </motion.div>
@@ -75,14 +75,14 @@ const PricingSection = () => {
               transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
               className={`relative rounded-3xl p-8 ${
                 plan.popular
-                  ? "bg-landing-text text-white border-2 border-landing-gold shadow-2xl"
-                  : "bg-landing-surface border border-landing-border"
+                  ? "bg-gradient-to-b from-primary/20 to-card border-2 border-secondary shadow-2xl shadow-primary/20"
+                  : "bg-card border border-secondary/20"
               }`}
             >
               {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="flex items-center gap-1 bg-landing-gold text-landing-text px-4 py-1 rounded-full text-sm font-semibold">
+                  <div className="flex items-center gap-1 bg-secondary text-secondary-foreground px-4 py-1 rounded-full text-sm font-semibold">
                     <Star className="w-4 h-4" />
                     Recommended
                   </div>
@@ -92,18 +92,18 @@ const PricingSection = () => {
               {/* Plan Header */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-2">
-                  <Zap className={`w-5 h-5 ${plan.popular ? "text-landing-gold" : "text-landing-primary"}`} />
-                  <h3 className="text-xl font-semibold">{plan.name}</h3>
+                  <Zap className={`w-5 h-5 ${plan.popular ? "text-secondary" : "text-primary"}`} />
+                  <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
                 </div>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-serif font-bold">{plan.price}</span>
+                  <span className="text-4xl font-serif font-bold text-foreground">{plan.price}</span>
                   {plan.period && (
-                    <span className={plan.popular ? "text-white/60" : "text-landing-muted"}>
+                    <span className="text-muted-foreground">
                       {plan.period}
                     </span>
                   )}
                 </div>
-                <p className={plan.popular ? "text-white/80" : "text-landing-muted"}>
+                <p className="text-muted-foreground">
                   {plan.description}
                 </p>
               </div>
@@ -113,11 +113,11 @@ const PricingSection = () => {
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
-                      plan.popular ? "bg-landing-gold" : "bg-landing-primary"
+                      plan.popular ? "bg-secondary" : "bg-primary"
                     }`}>
-                      <Check className={`w-3 h-3 ${plan.popular ? "text-landing-text" : "text-white"}`} />
+                      <Check className={`w-3 h-3 ${plan.popular ? "text-secondary-foreground" : "text-primary-foreground"}`} />
                     </div>
-                    <span className={plan.popular ? "text-white/90" : "text-landing-muted"}>
+                    <span className="text-muted-foreground">
                       {feature}
                     </span>
                   </li>
@@ -127,10 +127,10 @@ const PricingSection = () => {
               {/* CTA Button */}
               <Link to="/login">
                 <Button
-                  className={`w-full rounded-full py-6 text-lg ${
+                  className={`w-full py-6 text-lg ${
                     plan.popular
-                      ? "bg-landing-gold text-landing-text hover:bg-landing-gold/90"
-                      : "bg-landing-primary text-white hover:bg-landing-primary/90"
+                      ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
                   }`}
                 >
                   {plan.cta}
@@ -145,7 +145,7 @@ const PricingSection = () => {
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-center text-landing-muted mt-8"
+          className="text-center text-muted-foreground mt-8"
         >
           All plans include our core features. No hidden fees. Cancel anytime.
         </motion.p>
