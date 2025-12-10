@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -22,33 +22,47 @@ export const TypingAnimation = ({
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  
+  // Use ref for callback to avoid effect re-runs
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  
+  // Track if animation has run
+  const hasRunRef = useRef(false);
 
   useEffect(() => {
+    // Prevent re-running
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
+    
     if (prefersReducedMotion) {
       setDisplayedText(text);
       setIsComplete(true);
-      onComplete?.();
+      onCompleteRef.current?.();
       return;
     }
 
     let currentIndex = 0;
+    let intervalId: NodeJS.Timeout;
+    
     const timeoutId = setTimeout(() => {
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         if (currentIndex < text.length) {
           setDisplayedText(text.slice(0, currentIndex + 1));
           currentIndex++;
         } else {
           clearInterval(intervalId);
           setIsComplete(true);
-          onComplete?.();
+          onCompleteRef.current?.();
         }
       }, speed);
-
-      return () => clearInterval(intervalId);
     }, delay);
 
-    return () => clearTimeout(timeoutId);
-  }, [text, speed, delay, prefersReducedMotion, onComplete]);
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [text, speed, delay, prefersReducedMotion]);
 
   return (
     <span className={cn("inline", className)}>
