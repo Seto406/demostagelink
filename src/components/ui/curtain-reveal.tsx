@@ -26,7 +26,7 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: shouldAnimate ? 1 : 0 }}
-        transition={{ duration: 0.4, delay: shouldAnimate ? delay + 0.4 : 0 }}
+        transition={{ duration: 0.5, delay: shouldAnimate ? delay + 0.8 : 0 }}
       >
         {children}
       </motion.div>
@@ -37,7 +37,7 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
         initial={{ x: 0 }}
         animate={{ x: shouldAnimate ? "-100%" : 0 }}
         transition={{
-          duration: 0.7,
+          duration: 1.2,
           delay: shouldAnimate ? delay : 0,
           ease: [0.22, 1, 0.36, 1],
         }}
@@ -65,7 +65,7 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
         initial={{ x: 0 }}
         animate={{ x: shouldAnimate ? "100%" : 0 }}
         transition={{
-          duration: 0.7,
+          duration: 1.2,
           delay: shouldAnimate ? delay : 0,
           ease: [0.22, 1, 0.36, 1],
         }}
@@ -93,8 +93,8 @@ export const CurtainReveal = ({ children, className = "", delay = 0 }: CurtainRe
         initial={{ scaleY: 1 }}
         animate={{ scaleY: shouldAnimate ? 0 : 1 }}
         transition={{
-          duration: 0.4,
-          delay: shouldAnimate ? delay + 0.5 : 0,
+          duration: 0.5,
+          delay: shouldAnimate ? delay + 0.9 : 0,
           ease: "easeOut",
         }}
       >
