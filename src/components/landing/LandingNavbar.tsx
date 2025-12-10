@@ -14,12 +14,15 @@ const LandingNavbar = () => {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3">
             <img 
               src={stagelinkLogo} 
               alt="StageLink" 
               className="h-8 sm:h-10 w-auto"
             />
+            <span className="text-lg sm:text-xl font-serif font-bold text-foreground tracking-wide">
+              Stage<span className="text-secondary">Link</span>
+            </span>
           </Link>
 
           {/* Navigation */}
