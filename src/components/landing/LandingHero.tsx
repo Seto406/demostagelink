@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles, Play } from "lucide-react";
+import heroTheater from "@/assets/landing/hero-theater.jpg";
 
 const LandingHero = () => {
   return (
@@ -115,11 +116,13 @@ const LandingHero = () => {
               </div>
               
               {/* Preview Content */}
-              <div className="aspect-video bg-gradient-to-br from-muted to-background flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="text-6xl mb-4">🎭</div>
-                  <p className="text-muted-foreground text-lg">Discover Amazing Productions</p>
-                </div>
+              <div className="aspect-video relative overflow-hidden">
+                <img 
+                  src={heroTheater} 
+                  alt="Theater stage with audience applauding" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
               </div>
             </div>
 
