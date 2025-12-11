@@ -22,6 +22,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
 import ShowDetailsPage from "./pages/ShowDetailsPage";
 import ProducerProfile from "./pages/ProducerProfile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -100,6 +101,7 @@ const AnimatedRoutes = () => {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />
           <Route path="/producer/:id" element={<ProducerProfile />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
