@@ -27,7 +27,9 @@ import {
   Moon,
   Palette,
   Facebook,
-  Instagram
+  Instagram,
+  MapPin,
+  Image
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -74,6 +76,9 @@ const Settings = () => {
   const [niche, setNiche] = useState<string>("");
   const [facebookUrl, setFacebookUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [address, setAddress] = useState("");
+  const [mapScreenshotUrl, setMapScreenshotUrl] = useState<string | null>(null);
+  const [uploadingMap, setUploadingMap] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Password change state
@@ -118,6 +123,10 @@ const Settings = () => {
       setFacebookUrl(profile.facebook_url || "");
       // @ts-ignore
       setInstagramUrl(profile.instagram_url || "");
+      // @ts-ignore
+      setAddress(profile.address || "");
+      // @ts-ignore
+      setMapScreenshotUrl(profile.map_screenshot_url || null);
     }
   }, [profile]);
 
@@ -154,6 +163,7 @@ const Settings = () => {
         updateData.niche = niche || null;
         updateData.facebook_url = facebookUrl || null;
         updateData.instagram_url = instagramUrl || null;
+        updateData.address = address || null;
       }
 
       const { error } = await supabase
@@ -375,6 +385,105 @@ const Settings = () => {
     setUploadingAvatar(false);
   };
 
+  const handleMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a JPG, PNG, or WebP image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload an image under 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingMap(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/map.${fileExt}`;
+
+      // Delete old map if exists
+      await supabase.storage.from('avatars').remove([`${user.id}/map.jpg`, `${user.id}/map.png`, `${user.id}/map.webp`]);
+
+      // Upload new map
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ map_screenshot_url: urlData.publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setMapScreenshotUrl(urlData.publicUrl);
+      await refreshProfile();
+
+      toast({
+        title: "Map Uploaded",
+        description: "Your map screenshot has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload map. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setUploadingMap(false);
+  };
+
+  const handleRemoveMap = async () => {
+    if (!user) return;
+
+    setUploadingMap(true);
+    try {
+      await supabase.storage.from('avatars').remove([`${user.id}/map.jpg`, `${user.id}/map.png`, `${user.id}/map.webp`]);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ map_screenshot_url: null })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setMapScreenshotUrl(null);
+      await refreshProfile();
+
+      toast({
+        title: "Map Removed",
+        description: "Your map screenshot has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove map.",
+        variant: "destructive",
+      });
+    }
+    setUploadingMap(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -564,6 +673,81 @@ const Settings = () => {
                           placeholder="https://instagram.com/yourhandle"
                           className="mt-1 bg-background border-secondary/30"
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label htmlFor="address" className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4" />
+                      Address
+                    </Label>
+                    <Input
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Enter your theater group's address"
+                      className="mt-1 bg-background border-secondary/30"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Your location helps audiences find nearby productions
+                    </p>
+                  </div>
+
+                  {/* Map Screenshot Upload */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label className="flex items-center gap-2 text-sm mb-3">
+                      <Image className="w-4 h-4" />
+                      Map Screenshot (Optional)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Upload a screenshot of your location from Google Maps to help audiences find you
+                    </p>
+                    <div className="flex items-start gap-4">
+                      <div className="relative">
+                        {mapScreenshotUrl ? (
+                          <img 
+                            src={mapScreenshotUrl} 
+                            alt="Map" 
+                            className="w-32 h-24 rounded-lg object-cover border-2 border-secondary/30"
+                          />
+                        ) : (
+                          <div className="w-32 h-24 rounded-lg bg-secondary/10 border-2 border-secondary/30 flex items-center justify-center">
+                            <MapPin className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        {uploadingMap && (
+                          <div className="absolute inset-0 bg-background/80 rounded-lg flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleMapUpload}
+                            className="hidden"
+                            disabled={uploadingMap}
+                          />
+                          <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/10 hover:bg-secondary/20 text-secondary text-sm font-medium rounded-lg transition-colors">
+                            <Upload className="w-4 h-4" />
+                            Upload Map
+                          </span>
+                        </label>
+                        {mapScreenshotUrl && (
+                          <button
+                            onClick={handleRemoveMap}
+                            disabled={uploadingMap}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-red-500 text-sm hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                            Remove
+                          </button>
+                        )}
+                        <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max 5MB.</p>
                       </div>
                     </div>
                   </div>
