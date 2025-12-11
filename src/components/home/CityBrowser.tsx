@@ -1,16 +1,48 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const cities = [
-  { name: "Mandaluyong", icon: "🏙️", count: 12 },
-  { name: "Taguig", icon: "🌆", count: 8 },
-  { name: "Manila", icon: "🏛️", count: 15 },
-  { name: "Quezon City", icon: "🎭", count: 20 },
-  { name: "Makati", icon: "🌃", count: 10 },
+const defaultCities = [
+  { name: "Mandaluyong", icon: "🏙️" },
+  { name: "Taguig", icon: "🌆" },
+  { name: "Manila", icon: "🏛️" },
+  { name: "Quezon City", icon: "🎭" },
+  { name: "Makati", icon: "🌃" },
 ];
 
 const CityBrowser = () => {
+  const [cityCounts, setCityCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchCityCounts = async () => {
+      // Get counts of approved shows grouped by city
+      const { data, error } = await supabase
+        .from("shows")
+        .select("city")
+        .eq("status", "approved")
+        .is("deleted_at", null);
+
+      if (error) {
+        console.error("Error fetching city counts:", error);
+        return;
+      }
+
+      // Count groups per city
+      const counts: Record<string, number> = {};
+      data?.forEach((show) => {
+        if (show.city) {
+          counts[show.city] = (counts[show.city] || 0) + 1;
+        }
+      });
+
+      setCityCounts(counts);
+    };
+
+    fetchCityCounts();
+  }, []);
+
   return (
     <section className="py-16 sm:py-20 bg-gradient-to-b from-muted/10 to-background relative overflow-hidden">
       {/* Background decoration */}
@@ -42,7 +74,7 @@ const CityBrowser = () => {
         </motion.div>
 
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 sm:gap-6 max-w-3xl mx-auto">
-          {cities.map((city, index) => (
+          {defaultCities.map((city, index) => (
             <motion.div
               key={city.name}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -77,7 +109,7 @@ const CityBrowser = () => {
                     {city.name}
                   </span>
                   <span className="text-[10px] sm:text-xs text-muted-foreground/60 group-hover:text-secondary/60 transition-colors">
-                    {city.count} groups
+                    {cityCounts[city.name] || 0} {cityCounts[city.name] === 1 ? 'show' : 'shows'}
                   </span>
                 </div>
               </Link>

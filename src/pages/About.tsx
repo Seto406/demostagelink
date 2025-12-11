@@ -42,6 +42,13 @@ const About = () => {
               </div>
 
               <div className="border-l-2 border-secondary/50 pl-6">
+                <h2 className="text-2xl font-serif text-foreground mb-4">Our Vision</h2>
+                <p className="leading-relaxed">
+                  To become the leading platform for theater discovery in the Philippines, where every local and university production can reach its intended audience. We envision a thriving theater community where no performance goes unnoticed, and every story finds its stage.
+                </p>
+              </div>
+
+              <div className="border-l-2 border-secondary/50 pl-6">
                 <h2 className="text-2xl font-serif text-foreground mb-4">For Theater Groups</h2>
                 <p className="leading-relaxed">
                   Are you part of a theater group? StageLink offers you a platform to showcase your 
