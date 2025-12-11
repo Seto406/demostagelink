@@ -33,7 +33,7 @@ const ShowcaseSection = () => {
 
   return (
     <section id="showcase" ref={ref} className="py-24 bg-muted/30 overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

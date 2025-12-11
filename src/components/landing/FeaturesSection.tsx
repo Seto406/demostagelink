@@ -48,7 +48,7 @@ const FeaturesSection = () => {
 
   return (
     <section id="features" ref={ref} className="py-24 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -68,15 +68,15 @@ const FeaturesSection = () => {
           </p>
         </motion.div>
 
-        {/* Features Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Features Grid - Centered */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
-              className="bg-card rounded-2xl p-8 border border-secondary/20 hover:border-secondary/40 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10"
+              className="bg-card rounded-2xl p-8 border border-secondary/20 hover:border-secondary/40 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 w-full max-w-sm"
             >
               <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 <feature.icon className="w-7 h-7 text-white" />

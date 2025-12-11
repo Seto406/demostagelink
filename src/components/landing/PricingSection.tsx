@@ -45,7 +45,7 @@ const PricingSection = () => {
 
   return (
     <section id="pricing" ref={ref} className="py-24 bg-background">
-      <div className="container mx-auto px-4 sm:px-6">
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -65,8 +65,8 @@ const PricingSection = () => {
           </p>
         </motion.div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        {/* Pricing Cards - Centered */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto justify-items-center">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
