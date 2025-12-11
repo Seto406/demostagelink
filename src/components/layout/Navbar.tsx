@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Shield, Menu, X } from "lucide-react";
+import { Shield, Menu, X, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
@@ -146,6 +146,11 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
+                  <Link to="/settings">
+                    <Button variant="ghost" size="sm">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </Link>
                   <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
@@ -357,6 +362,12 @@ const Navbar = () => {
                           </Button>
                         </Link>
                       )}
+                      <Link to="/settings" className="w-full">
+                        <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Settings
+                        </Button>
+                      </Link>
                       <Button variant="outline" className="w-full font-sans rounded-xl" onClick={handleSignOut}>
                         Sign Out
                       </Button>
