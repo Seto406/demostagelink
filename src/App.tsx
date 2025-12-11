@@ -11,6 +11,7 @@ import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
 import Index from "./pages/Index";
+import UserFeed from "./pages/UserFeed";
 import Directory from "./pages/Directory";
 import Shows from "./pages/Shows";
 import About from "./pages/About";
@@ -88,6 +89,7 @@ const AnimatedRoutes = () => {
       >
         <Routes location={location}>
           <Route path="/" element={<Index />} />
+          <Route path="/feed" element={<UserFeed />} />
           <Route path="/directory" element={<Directory />} />
           <Route path="/shows" element={<Shows />} />
           <Route path="/about" element={<About />} />

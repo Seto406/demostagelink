@@ -19,6 +19,17 @@ const About = () => {
             </h1>
 
             <div className="space-y-8 text-muted-foreground">
+              {/* Our Story - La Creneurs */}
+              <div className="border-l-2 border-secondary/50 pl-6">
+                <h2 className="text-2xl font-serif text-foreground mb-4">Our Story</h2>
+                <p className="leading-relaxed text-lg">
+                  We are <span className="text-secondary font-semibold">La Creneurs</span>, a startup team driven by a shared passion for theater and innovation. What began as a simple question — "Why was such a great play almost empty?" — became a mission to strengthen the visibility of independent and university theater groups.
+                </p>
+                <p className="leading-relaxed text-lg mt-4">
+                  At La Creneurs, we believe that <span className="text-foreground font-medium">every performance deserves an audience</span>. This inspired us to create StageLink.
+                </p>
+              </div>
+
               <div className="border-l-2 border-secondary/50 pl-6">
                 <h2 className="text-2xl font-serif text-foreground mb-4">Our Mission</h2>
                 <p className="leading-relaxed">
@@ -47,7 +58,7 @@ const About = () => {
                 </p>
               </div>
 
-              <div className="bg-card border border-secondary/20 p-8 text-center">
+              <div className="bg-card border border-secondary/20 p-8 text-center rounded-2xl">
                 <h3 className="text-xl font-serif text-foreground mb-4">
                   "The theater is a spiritual and social X-ray of its time."
                 </h3>

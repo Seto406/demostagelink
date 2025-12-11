@@ -24,12 +24,20 @@ const Navbar = () => {
   
   const [scrolled, setScrolled] = useState(false);
 
-  const navLinks = [
-    { path: "/", label: "Home" },
-    { path: "/shows", label: "Shows" },
-    { path: "/directory", label: "Directory" },
-    { path: "/about", label: "About" },
-  ];
+  // Dynamic nav links based on auth state
+  const navLinks = user
+    ? [
+        { path: "/feed", label: "Home" },
+        { path: "/shows", label: "Shows" },
+        { path: "/directory", label: "Directory" },
+        { path: "/about", label: "About" },
+      ]
+    : [
+        { path: "/", label: "Home" },
+        { path: "/shows", label: "Shows" },
+        { path: "/directory", label: "Directory" },
+        { path: "/about", label: "About" },
+      ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,19 +85,19 @@ const Navbar = () => {
         
         <div className="container mx-auto px-4 sm:px-6 h-full relative z-10">
           <div className="flex items-center justify-between h-full">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
+            {/* Logo - Routes to feed if logged in, landing if not */}
+            <Link to={user ? "/feed" : "/"} className="flex items-center gap-2 sm:gap-3 group">
               <motion.img
                 style={{ scale: logoScale }}
                 whileHover={{ rotate: 5 }}
                 transition={{ duration: 0.3 }}
                 src={stageLinkLogo}
                 alt="StageLink Logo"
-                className="h-8 sm:h-10 w-auto origin-left"
+                className="h-8 sm:h-10 w-auto origin-left rounded-full"
               />
               <motion.span 
                 style={{ scale: logoScale }}
-                className="text-lg sm:text-xl font-serif font-bold text-foreground tracking-wide origin-left"
+                className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight origin-left"
               >
                 Stage<span className="text-secondary">Link</span>
               </motion.span>
@@ -138,13 +146,13 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
                 </>
               ) : (
                 <Link to="/login">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="rounded-xl">
                     Login
                   </Button>
                 </Link>
@@ -279,10 +287,10 @@ const Navbar = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ delay: 0.3, duration: 0.3 }}
-              className="fixed inset-x-8 top-24 bottom-8 bg-card/95 backdrop-blur-xl border border-secondary/30 z-50 md:hidden overflow-y-auto rounded-lg shadow-2xl"
+              className="fixed inset-x-8 top-24 bottom-8 bg-card/95 backdrop-blur-xl border border-secondary/30 z-50 md:hidden overflow-y-auto rounded-2xl shadow-2xl"
             >
               {/* Theater stage top border */}
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20" />
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20 rounded-t-2xl" />
               
               <div className="p-6 pt-8">
                 {/* Theater mask icon */}
@@ -306,7 +314,7 @@ const Navbar = () => {
                     >
                       <Link
                         to={link.path}
-                        className={`block py-4 px-6 text-lg font-serif font-medium text-center transition-all duration-300 touch-target rounded-md ${
+                        className={`block py-4 px-6 text-lg font-sans font-medium text-center transition-all duration-300 touch-target rounded-xl ${
                           location.pathname === link.path
                             ? "text-secondary bg-secondary/10 border border-secondary/30"
                             : "text-foreground hover:bg-secondary/5 hover:text-secondary"
@@ -336,7 +344,7 @@ const Navbar = () => {
                     <div className="flex flex-col gap-3">
                       {isAdmin && (
                         <Link to="/admin" className="w-full">
-                          <Button variant="ghost" className="w-full justify-center text-primary font-serif">
+                          <Button variant="ghost" className="w-full justify-center text-primary font-sans rounded-xl">
                             <Shield className="w-4 h-4 mr-2" />
                             Admin Panel
                           </Button>
@@ -344,18 +352,18 @@ const Navbar = () => {
                       )}
                       {profile?.role === "producer" && (
                         <Link to="/dashboard" className="w-full">
-                          <Button variant="ghost" className="w-full justify-center font-serif">
+                          <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
                             Dashboard
                           </Button>
                         </Link>
                       )}
-                      <Button variant="outline" className="w-full font-serif" onClick={handleSignOut}>
+                      <Button variant="outline" className="w-full font-sans rounded-xl" onClick={handleSignOut}>
                         Sign Out
                       </Button>
                     </div>
                   ) : (
                     <Link to="/login" className="w-full block">
-                      <Button variant="hero" className="w-full font-serif">
+                      <Button variant="hero" className="w-full font-sans rounded-xl">
                         Enter the Stage
                       </Button>
                     </Link>
@@ -364,7 +372,7 @@ const Navbar = () => {
               </div>
 
               {/* Theater stage bottom border */}
-              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20" />
+              <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-secondary/20 via-secondary to-secondary/20 rounded-b-2xl" />
             </motion.div>
           </>
         )}

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/floating-input";
 import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,7 +29,7 @@ const Login = () => {
       if (profile.role === "producer") {
         navigate("/dashboard");
       } else {
-        navigate("/");
+        navigate("/feed");
       }
     }
   }, [user, profile, loading, navigate]);
@@ -125,7 +124,7 @@ const Login = () => {
                   alt="StageLink" 
                   className="h-20 w-auto mx-auto mb-8"
                 />
-                <h1 className="text-3xl font-serif font-bold text-foreground mb-4">
+                <h1 className="text-3xl font-sans font-bold text-foreground mb-4 tracking-tight">
                   Join StageLink
                 </h1>
                 <p className="text-muted-foreground mb-8">
@@ -135,12 +134,12 @@ const Login = () => {
                 <div className="space-y-4">
                   <button
                     onClick={() => setUserType("audience")}
-                    className="w-full p-6 border border-secondary/30 bg-card hover:border-secondary hover:shadow-[0_0_30px_hsl(43_72%_52%/0.2)] transition-all duration-300 text-left group"
+                    className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-secondary hover:shadow-[0_0_30px_hsl(43_72%_52%/0.2)] transition-all duration-300 text-left group"
                   >
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">🎟️</span>
                       <div>
-                        <h3 className="font-serif text-lg text-foreground group-hover:text-secondary transition-colors">
+                        <h3 className="font-sans font-semibold text-lg text-foreground group-hover:text-secondary transition-colors tracking-tight">
                           I'm an Audience Member
                         </h3>
                         <p className="text-sm text-muted-foreground">
@@ -152,12 +151,12 @@ const Login = () => {
 
                   <button
                     onClick={() => setUserType("producer")}
-                    className="w-full p-6 border border-secondary/30 bg-card hover:border-primary hover:shadow-[0_0_30px_hsl(0_100%_25%/0.3)] transition-all duration-300 text-left group"
+                    className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-primary hover:shadow-[0_0_30px_hsl(0_100%_25%/0.3)] transition-all duration-300 text-left group"
                   >
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">🎭</span>
                       <div>
-                        <h3 className="font-serif text-lg text-foreground group-hover:text-primary transition-colors">
+                        <h3 className="font-sans font-semibold text-lg text-foreground group-hover:text-primary transition-colors tracking-tight">
                           I'm a Theater Group
                         </h3>
                         <p className="text-sm text-muted-foreground">
@@ -180,7 +179,7 @@ const Login = () => {
               </div>
             ) : (
               <motion.div 
-                className="bg-card border border-secondary/20 p-8"
+                className="bg-card/50 backdrop-blur-xl border border-secondary/20 p-8 rounded-3xl shadow-2xl"
                 variants={shakeVariants}
                 animate={formError ? "shake" : "idle"}
               >
@@ -193,7 +192,7 @@ const Login = () => {
                   </button>
                 )}
 
-                <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
+                <h1 className="text-2xl font-sans font-bold text-foreground mb-2 tracking-tight">
                   {authMode === "login" ? "Welcome Back" : 
                     userType === "producer" ? "Theater Group Sign Up" : "Audience Sign Up"}
                 </h1>
@@ -202,45 +201,41 @@ const Login = () => {
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-background border-secondary/30 focus:border-secondary"
-                      required
-                    />
-                  </div>
+                  <FloatingInput
+                    id="email"
+                    type="email"
+                    label="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      {authMode === "login" && (
-                        <button 
-                          type="button"
-                          onClick={() => navigate("/reset-password")}
-                          className="text-xs text-secondary hover:underline"
-                        >
-                          Forgot password?
-                        </button>
-                      )}
-                    </div>
-                    <Input
+                  <div>
+                    <FloatingInput
                       id="password"
                       type="password"
-                      placeholder="Enter your password"
+                      label="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="bg-background border-secondary/30 focus:border-secondary"
                       required
                       minLength={6}
                     />
+                    {authMode === "login" && (
+                      <button 
+                        type="button"
+                        onClick={() => navigate("/reset-password")}
+                        className="text-xs text-secondary hover:underline mt-2 block ml-auto"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
                   </div>
 
-                  <Button type="submit" variant="hero" className="w-full" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base transition-all active:scale-[0.98]" 
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
                   </Button>
                 </form>
