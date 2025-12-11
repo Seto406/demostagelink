@@ -18,7 +18,7 @@ const LandingNavbar = () => {
             <img 
               src={stagelinkLogo} 
               alt="StageLink" 
-              className="h-8 sm:h-10 w-auto rounded-full"
+              className="h-8 sm:h-10 w-auto"
             />
             <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
               Stage<span className="text-secondary">Link</span>
