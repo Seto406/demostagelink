@@ -25,11 +25,17 @@ const Login = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user && profile && !loading) {
-      if (profile.role === "producer") {
-        navigate("/dashboard");
+    if (user && !loading) {
+      // If we have profile info, route based on role
+      if (profile) {
+        if (profile.role === "producer" || profile.role === "admin") {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/feed", { replace: true });
+        }
       } else {
-        navigate("/feed");
+        // Default to feed if no profile loaded yet
+        navigate("/feed", { replace: true });
       }
     }
   }, [user, profile, loading, navigate]);
@@ -84,6 +90,13 @@ const Login = () => {
             description: error.message,
             variant: "destructive",
           });
+        } else {
+          // Successful login - navigate immediately
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in.",
+          });
+          navigate("/feed", { replace: true });
         }
       }
     } catch (err) {
@@ -118,11 +131,16 @@ const Login = () => {
             className="max-w-md mx-auto"
           >
             {!userType && authMode === "signup" ? (
-              <div className="text-center">
+              <motion.div 
+                className="text-center"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
                 <img 
                   src={stageLinkLogo} 
                   alt="StageLink" 
-                  className="h-20 w-auto mx-auto mb-8"
+                  className="h-20 w-auto mx-auto mb-8 rounded-full"
                 />
                 <h1 className="text-3xl font-sans font-bold text-foreground mb-4 tracking-tight">
                   Join StageLink
@@ -132,7 +150,10 @@ const Login = () => {
                 </p>
 
                 <div className="space-y-4">
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
                     onClick={() => setUserType("audience")}
                     className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-secondary hover:shadow-[0_0_30px_hsl(43_72%_52%/0.2)] transition-all duration-300 text-left group"
                   >
@@ -147,9 +168,12 @@ const Login = () => {
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
 
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
                     onClick={() => setUserType("producer")}
                     className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-primary hover:shadow-[0_0_30px_hsl(0_100%_25%/0.3)] transition-all duration-300 text-left group"
                   >
@@ -164,10 +188,15 @@ const Login = () => {
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 </div>
 
-                <p className="text-center text-muted-foreground text-sm mt-6">
+                <motion.p 
+                  className="text-center text-muted-foreground text-sm mt-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
                   Already have an account?{" "}
                   <button 
                     onClick={() => setAuthMode("login")}
@@ -175,8 +204,8 @@ const Login = () => {
                   >
                     Log in
                   </button>
-                </p>
-              </div>
+                </motion.p>
+              </motion.div>
             ) : (
               <motion.div 
                 className="bg-card/50 backdrop-blur-xl border border-secondary/20 p-8 rounded-3xl shadow-2xl"

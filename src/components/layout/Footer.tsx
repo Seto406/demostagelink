@@ -12,7 +12,7 @@ const Footer = () => {
               <img 
                 src={stageLinkLogo} 
                 alt="StageLink Logo" 
-                className="h-8 w-auto"
+                className="h-8 w-auto rounded-full"
               />
               <span className="text-xl font-serif font-bold text-foreground">
                 Stage<span className="text-secondary">Link</span>
