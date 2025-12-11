@@ -92,7 +92,7 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-  // Fetch shows
+  // Fetch shows (excluding soft-deleted)
   const fetchShows = async () => {
     if (!profile) return;
     
@@ -101,6 +101,7 @@ const Dashboard = () => {
       .from("shows")
       .select("*")
       .eq("producer_id", profile.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {

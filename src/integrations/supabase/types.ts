@@ -103,6 +103,7 @@ export type Database = {
           city: string | null
           created_at: string
           date: string | null
+          deleted_at: string | null
           description: string | null
           id: string
           niche: Database["public"]["Enums"]["niche_type"] | null
@@ -118,6 +119,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date?: string | null
+          deleted_at?: string | null
           description?: string | null
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
@@ -133,6 +135,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           date?: string | null
+          deleted_at?: string | null
           description?: string | null
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null

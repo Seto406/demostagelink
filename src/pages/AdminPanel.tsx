@@ -33,7 +33,8 @@ import {
   ChevronUp,
   ChevronDown,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  RotateCcw
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,6 +56,7 @@ interface Show {
   created_at: string;
   producer_id: string;
   poster_url: string | null;
+  deleted_at: string | null;
   profiles?: {
     group_name: string | null;
   };
@@ -82,9 +84,10 @@ interface Stats {
   totalShows: number;
   activeProducers: number;
   pendingRequests: number;
+  deletedShows: number;
 }
 
-type FilterStatus = "all" | "pending" | "approved" | "rejected";
+type FilterStatus = "all" | "pending" | "approved" | "rejected" | "deleted";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -101,7 +104,7 @@ const AdminPanel = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0 });
+  const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0, deletedShows: 0 });
   const [activeTab, setActiveTab] = useState("shows");
 
   // Dev tools state
@@ -133,11 +136,12 @@ const AdminPanel = () => {
 
   // Fetch stats
   const fetchStats = async () => {
-    const [usersRes, showsRes, producersRes, requestsRes] = await Promise.all([
+    const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
-      supabase.from("shows").select("id", { count: "exact" }),
+      supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
       supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
       supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
+      supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
     ]);
 
     setStats({
@@ -145,6 +149,7 @@ const AdminPanel = () => {
       totalShows: showsRes.count || 0,
       activeProducers: producersRes.count || 0,
       pendingRequests: requestsRes.count || 0,
+      deletedShows: deletedRes.count || 0,
     });
   };
 
@@ -162,8 +167,14 @@ const AdminPanel = () => {
       `)
       .order("created_at", { ascending: false });
 
-    if (filterStatus !== "all") {
-      query = query.eq("status", filterStatus);
+    // Handle deleted filter differently
+    if (filterStatus === "deleted") {
+      query = query.not("deleted_at", "is", null);
+    } else {
+      query = query.is("deleted_at", null);
+      if (filterStatus !== "all") {
+        query = query.eq("status", filterStatus);
+      }
     }
 
     const { data, error } = await query;
@@ -384,6 +395,52 @@ const AdminPanel = () => {
         description: "The user has been notified.",
       });
       fetchProducerRequests();
+      fetchStats();
+    }
+  };
+
+  // Soft delete show
+  const handleSoftDeleteShow = async (showId: string) => {
+    const { error } = await supabase
+      .from("shows")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", showId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete show.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Show Deleted",
+        description: "Show has been moved to trash. You can restore it later.",
+      });
+      fetchShows();
+      fetchStats();
+    }
+  };
+
+  // Restore soft-deleted show
+  const handleRestoreShow = async (showId: string) => {
+    const { error } = await supabase
+      .from("shows")
+      .update({ deleted_at: null })
+      .eq("id", showId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to restore show.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Show Restored",
+        description: "Show has been restored successfully.",
+      });
+      fetchShows();
       fetchStats();
     }
   };
@@ -728,7 +785,7 @@ const AdminPanel = () => {
               className="space-y-6"
             >
               {/* Show Filter Stats */}
-              <div className="grid md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <button
                   onClick={() => setFilterStatus("all")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
@@ -770,6 +827,15 @@ const AdminPanel = () => {
                   <p className="text-2xl font-serif text-red-500">
                     {filterStatus === "all" ? shows.filter(s => s.status === "rejected").length : (filterStatus === "rejected" ? shows.length : "—")}
                   </p>
+                </button>
+                <button
+                  onClick={() => setFilterStatus("deleted")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "deleted" ? "border-orange-500" : "border-secondary/20 hover:border-orange-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">🗑️ Deleted</p>
+                  <p className="text-2xl font-serif text-orange-500">{stats.deletedShows}</p>
                 </button>
               </div>
 
@@ -838,43 +904,69 @@ const AdminPanel = () => {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              {show.status === "pending" && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setConfirmAction({ type: "approve", show })}
-                                    className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                    title="Approve"
-                                  >
-                                    <Check className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setConfirmAction({ type: "reject", show })}
-                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                                    title="Reject"
-                                  >
-                                    <XCircle className="w-4 h-4" />
-                                  </Button>
-                                </>
-                              )}
-                              {show.status !== "pending" && (
+                              
+                              {/* Restore button for deleted shows */}
+                              {filterStatus === "deleted" ? (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => {
-                                    supabase
-                                      .from("shows")
-                                      .update({ status: "pending" })
-                                      .eq("id", show.id)
-                                      .then(() => fetchShows());
-                                  }}
-                                  className="text-xs text-muted-foreground hover:text-foreground"
+                                  onClick={() => handleRestoreShow(show.id)}
+                                  className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                  title="Restore Show"
                                 >
-                                  Reset
+                                  <RotateCcw className="w-4 h-4" />
                                 </Button>
+                              ) : (
+                                <>
+                                  {show.status === "pending" && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setConfirmAction({ type: "approve", show })}
+                                        className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                        title="Approve"
+                                      >
+                                        <Check className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setConfirmAction({ type: "reject", show })}
+                                        className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                        title="Reject"
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {show.status !== "pending" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        supabase
+                                          .from("shows")
+                                          .update({ status: "pending" })
+                                          .eq("id", show.id)
+                                          .then(() => fetchShows());
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground"
+                                    >
+                                      Reset
+                                    </Button>
+                                  )}
+                                  {/* Soft Delete button */}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleSoftDeleteShow(show.id)}
+                                    className="h-8 w-8 p-0 text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
+                                    title="Delete Show"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </td>
