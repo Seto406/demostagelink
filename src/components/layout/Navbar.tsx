@@ -152,14 +152,14 @@ const Navbar = () => {
                       <Settings className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <ThemeToggle />
+                  <ThemeToggle variant="icon" />
                   <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
                 </>
               ) : (
                 <>
-                  <ThemeToggle />
+                  <ThemeToggle variant="icon" />
                   <Link to="/login">
                     <Button variant="outline" size="sm" className="rounded-xl">
                       Login
@@ -374,7 +374,7 @@ const Navbar = () => {
                         </Button>
                       </Link>
                       <div className="flex justify-center py-2">
-                        <ThemeToggle />
+                        <ThemeToggle variant="icon" />
                       </div>
                       <Button variant="outline" className="w-full font-sans rounded-xl" onClick={handleSignOut}>
                         Sign Out
