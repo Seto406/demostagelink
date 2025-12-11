@@ -161,9 +161,14 @@ const UserFeed = () => {
 
             {/* Producer Request Button for Audience */}
             {profile?.role === "audience" && (
-              <div className="mt-6">
+              <motion.div 
+                className="mt-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
                 {existingRequest ? (
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ${
+                  <div className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium ${
                     existingRequest.status === "pending" 
                       ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/30"
                       : existingRequest.status === "approved"
@@ -176,14 +181,15 @@ const UserFeed = () => {
                 ) : (
                   <Button
                     variant="outline"
+                    size="lg"
                     onClick={() => setProducerRequestModal(true)}
-                    className="border-secondary/50 hover:border-secondary"
+                    className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground font-semibold px-6 py-3 h-auto rounded-xl shadow-[0_0_20px_hsl(43_72%_52%/0.2)] hover:shadow-[0_0_30px_hsl(43_72%_52%/0.4)] transition-all"
                   >
-                    <Users className="w-4 h-4 mr-2" />
-                    Request to become a Producer
+                    <Users className="w-5 h-5 mr-2" />
+                    🎭 Request to become a Producer
                   </Button>
                 )}
-              </div>
+              </motion.div>
             )}
           </motion.div>
 
