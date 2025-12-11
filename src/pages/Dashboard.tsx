@@ -21,12 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { GroupMembers } from "@/components/dashboard/GroupMembers";
 
 interface Show {
   id: string;
@@ -51,7 +52,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [editingShow, setEditingShow] = useState<Show | null>(null);
@@ -468,6 +469,18 @@ const Dashboard = () => {
               <User className="w-5 h-5" />
               {sidebarOpen && <span>Profile</span>}
             </button>
+
+            <button
+              onClick={() => setActiveTab("members")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "members"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              {sidebarOpen && <span>Members</span>}
+            </button>
           </nav>
 
           {/* Logout */}
@@ -497,6 +510,7 @@ const Dashboard = () => {
             {activeTab === "dashboard" && "Dashboard"}
             {activeTab === "shows" && "My Productions"}
             {activeTab === "profile" && "Group Profile"}
+            {activeTab === "members" && "Group Members"}
           </h1>
           <div className="w-10" />
         </header>
@@ -667,6 +681,18 @@ const Dashboard = () => {
                   </RippleButton>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* Members Tab */}
+          {activeTab === "members" && profile && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-4xl"
+            >
+              <GroupMembers profileId={profile.id} />
             </motion.div>
           )}
         </div>
