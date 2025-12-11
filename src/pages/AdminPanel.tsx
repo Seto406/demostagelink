@@ -19,12 +19,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LayoutDashboard, LogOut, Menu, X, Check, XCircle, Eye } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  Menu, 
+  X, 
+  Check, 
+  XCircle, 
+  Eye, 
+  Users, 
+  Theater, 
+  UserCheck,
+  ChevronUp,
+  ChevronDown,
+  Image as ImageIcon
+} from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Show {
   id: string;
@@ -37,9 +52,34 @@ interface Show {
   status: "pending" | "approved" | "rejected";
   created_at: string;
   producer_id: string;
+  poster_url: string | null;
   profiles?: {
     group_name: string | null;
   };
+}
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  role: "audience" | "producer" | "admin";
+  group_name: string | null;
+  created_at: string;
+}
+
+interface ProducerRequest {
+  id: string;
+  user_id: string;
+  group_name: string;
+  portfolio_link: string;
+  status: string;
+  created_at: string;
+}
+
+interface Stats {
+  totalUsers: number;
+  totalShows: number;
+  activeProducers: number;
+  pendingRequests: number;
 }
 
 type FilterStatus = "all" | "pending" | "approved" | "rejected";
@@ -54,6 +94,13 @@ const AdminPanel = () => {
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject"; show: Show } | null>(null);
+  
+  // User management state
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
+  const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0 });
+  const [activeTab, setActiveTab] = useState("shows");
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -70,6 +117,23 @@ const AdminPanel = () => {
       }
     }
   }, [user, profile, isAdmin, loading, navigate]);
+
+  // Fetch stats
+  const fetchStats = async () => {
+    const [usersRes, showsRes, producersRes, requestsRes] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact" }),
+      supabase.from("shows").select("id", { count: "exact" }),
+      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
+      supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
+    ]);
+
+    setStats({
+      totalUsers: usersRes.count || 0,
+      totalShows: showsRes.count || 0,
+      activeProducers: producersRes.count || 0,
+      pendingRequests: requestsRes.count || 0,
+    });
+  };
 
   // Fetch all shows for admin
   const fetchShows = async () => {
@@ -104,9 +168,43 @@ const AdminPanel = () => {
     setLoadingShows(false);
   };
 
+  // Fetch all users
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching users:", error);
+    } else {
+      setUsers(data as UserProfile[]);
+    }
+    setLoadingUsers(false);
+  };
+
+  // Fetch producer requests
+  const fetchProducerRequests = async () => {
+    const { data, error } = await supabase
+      .from("producer_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching producer requests:", error);
+    } else {
+      setProducerRequests(data as ProducerRequest[]);
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchShows();
+      fetchUsers();
+      fetchProducerRequests();
+      fetchStats();
     }
   }, [isAdmin, filterStatus]);
 
@@ -149,6 +247,7 @@ const AdminPanel = () => {
       });
       sendNotification(showId, showTitle, "approved", producerId);
       fetchShows();
+      fetchStats();
     }
   };
 
@@ -171,6 +270,108 @@ const AdminPanel = () => {
       });
       sendNotification(showId, showTitle, "rejected", producerId);
       fetchShows();
+      fetchStats();
+    }
+  };
+
+  const handlePromoteUser = async (userId: string, groupName: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role: "producer", group_name: groupName })
+      .eq("user_id", userId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to promote user.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "User Promoted",
+        description: "User is now a Producer.",
+      });
+      fetchUsers();
+      fetchStats();
+    }
+  };
+
+  const handleDemoteUser = async (userId: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role: "audience", group_name: null })
+      .eq("user_id", userId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to demote user.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "User Demoted",
+        description: "User is now an Audience member.",
+      });
+      fetchUsers();
+      fetchStats();
+    }
+  };
+
+  const handleApproveRequest = async (request: ProducerRequest) => {
+    // Update user role to producer
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ role: "producer", group_name: request.group_name })
+      .eq("user_id", request.user_id);
+
+    if (profileError) {
+      toast({
+        title: "Error",
+        description: "Failed to approve request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update request status
+    const { error: requestError } = await supabase
+      .from("producer_requests")
+      .update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq("id", request.id);
+
+    if (requestError) {
+      console.error("Error updating request:", requestError);
+    }
+
+    toast({
+      title: "Request Approved",
+      description: `${request.group_name} is now a Producer.`,
+    });
+    fetchProducerRequests();
+    fetchUsers();
+    fetchStats();
+  };
+
+  const handleRejectRequest = async (request: ProducerRequest) => {
+    const { error } = await supabase
+      .from("producer_requests")
+      .update({ status: "rejected", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq("id", request.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject request.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Request Rejected",
+        description: "The user has been notified.",
+      });
+      fetchProducerRequests();
+      fetchStats();
     }
   };
 
@@ -207,6 +408,17 @@ const AdminPanel = () => {
     }
   };
 
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "text-purple-500 bg-purple-500/10 border-purple-500/30";
+      case "producer":
+        return "text-blue-500 bg-blue-500/10 border-blue-500/30";
+      default:
+        return "text-gray-500 bg-gray-500/10 border-gray-500/30";
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -233,7 +445,7 @@ const AdminPanel = () => {
             <Link to="/" className="flex items-center gap-3">
               <img src={stageLinkLogo} alt="StageLink" className="h-10 w-auto" />
               {sidebarOpen && (
-                <span className="text-lg font-serif font-bold text-sidebar-foreground">
+                <span className="text-lg font-sans font-bold tracking-tight text-sidebar-foreground">
                   Stage<span className="text-sidebar-accent">Link</span>
                 </span>
               )}
@@ -242,16 +454,34 @@ const AdminPanel = () => {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
-            <div className="w-full flex items-center gap-3 px-4 py-3 bg-sidebar-accent text-sidebar-accent-foreground">
+            <button
+              onClick={() => setActiveTab("shows")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "shows" 
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
               <LayoutDashboard className="w-5 h-5" />
-              {sidebarOpen && <span>Admin Panel</span>}
-            </div>
+              {sidebarOpen && <span>Show Approvals</span>}
+            </button>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "users" 
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              {sidebarOpen && <span>User Management</span>}
+            </button>
           </nav>
 
           {/* Admin badge */}
           {sidebarOpen && (
             <div className="px-4 py-2">
-              <div className="bg-primary/20 border border-primary/30 px-3 py-2 text-center">
+              <div className="bg-primary/20 border border-primary/30 px-3 py-2 text-center rounded-lg">
                 <span className="text-xs text-primary uppercase tracking-wider">Admin Access</span>
               </div>
             </div>
@@ -261,7 +491,7 @@ const AdminPanel = () => {
           <div className="p-4 border-t border-sidebar-border">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors rounded-lg"
             >
               <LogOut className="w-5 h-5" />
               {sidebarOpen && <span>Logout</span>}
@@ -276,171 +506,364 @@ const AdminPanel = () => {
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-muted transition-colors"
+            className="p-2 hover:bg-muted transition-colors rounded-lg"
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <h1 className="font-serif text-xl text-foreground">Show Approvals</h1>
+          <h1 className="font-serif text-xl text-foreground">
+            {activeTab === "shows" ? "Show Approvals" : "User Management"}
+          </h1>
           <div className="w-10" />
         </header>
 
         <div className="p-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            {/* Stats */}
-            <div className="grid md:grid-cols-4 gap-4">
-              <button
-                onClick={() => setFilterStatus("all")}
-                className={`bg-card border p-4 text-left transition-all ${
-                  filterStatus === "all" ? "border-secondary" : "border-secondary/20 hover:border-secondary/50"
-                }`}
-              >
-                <p className="text-muted-foreground text-sm mb-1">All Shows</p>
-                <p className="text-2xl font-serif text-foreground">{shows.length}</p>
-              </button>
-              <button
-                onClick={() => setFilterStatus("pending")}
-                className={`bg-card border p-4 text-left transition-all ${
-                  filterStatus === "pending" ? "border-yellow-500" : "border-secondary/20 hover:border-yellow-500/50"
-                }`}
-              >
-                <p className="text-muted-foreground text-sm mb-1">Pending</p>
-                <p className="text-2xl font-serif text-yellow-500">
-                  {filterStatus === "all" ? shows.filter(s => s.status === "pending").length : (filterStatus === "pending" ? shows.length : "—")}
-                </p>
-              </button>
-              <button
-                onClick={() => setFilterStatus("approved")}
-                className={`bg-card border p-4 text-left transition-all ${
-                  filterStatus === "approved" ? "border-green-500" : "border-secondary/20 hover:border-green-500/50"
-                }`}
-              >
-                <p className="text-muted-foreground text-sm mb-1">Approved</p>
-                <p className="text-2xl font-serif text-green-500">
-                  {filterStatus === "all" ? shows.filter(s => s.status === "approved").length : (filterStatus === "approved" ? shows.length : "—")}
-                </p>
-              </button>
-              <button
-                onClick={() => setFilterStatus("rejected")}
-                className={`bg-card border p-4 text-left transition-all ${
-                  filterStatus === "rejected" ? "border-red-500" : "border-secondary/20 hover:border-red-500/50"
-                }`}
-              >
-                <p className="text-muted-foreground text-sm mb-1">Rejected</p>
-                <p className="text-2xl font-serif text-red-500">
-                  {filterStatus === "all" ? shows.filter(s => s.status === "rejected").length : (filterStatus === "rejected" ? shows.length : "—")}
-                </p>
-              </button>
-            </div>
-
-            {/* Shows Table */}
-            {loadingShows ? (
-              <div className="text-muted-foreground text-center py-8">Loading shows...</div>
-            ) : shows.length === 0 ? (
-              <div className="bg-card border border-secondary/20 p-12 text-center">
-                <p className="text-muted-foreground">
-                  {filterStatus === "pending" 
-                    ? "No pending shows to review." 
-                    : `No ${filterStatus === "all" ? "" : filterStatus} shows found.`}
-                </p>
+          {/* Stats Widget */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Total Users</p>
+                  <p className="text-xl font-semibold text-foreground">{stats.totalUsers}</p>
+                </div>
               </div>
-            ) : (
-              <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto">
-                <table className="w-full min-w-[800px]">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Theater Group</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Type</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
-                      <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shows.map((show) => (
-                      <tr key={show.id} className="border-t border-secondary/10">
-                        <td className="p-4 text-foreground font-medium">{show.title}</td>
-                        <td className="p-4 text-muted-foreground">
-                          {show.profiles?.group_name || "Unknown Group"}
-                        </td>
-                        <td className="p-4 text-muted-foreground">{getNicheLabel(show.niche)}</td>
-                        <td className="p-4 text-muted-foreground">
-                          {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
-                            {getStatusLabel(show.status)}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openDetails(show)}
-                              className="h-8 w-8 p-0"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            {show.status === "pending" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setConfirmAction({ type: "approve", show })}
-                                  className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                  title="Approve"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setConfirmAction({ type: "reject", show })}
-                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                                  title="Reject"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                              </>
+            </div>
+            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <Theater className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Total Shows</p>
+                  <p className="text-xl font-semibold text-foreground">{stats.totalShows}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                  <UserCheck className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Active Producers</p>
+                  <p className="text-xl font-semibold text-foreground">{stats.activeProducers}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Pending Requests</p>
+                  <p className="text-xl font-semibold text-foreground">{stats.pendingRequests}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {activeTab === "shows" ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Show Filter Stats */}
+              <div className="grid md:grid-cols-4 gap-4">
+                <button
+                  onClick={() => setFilterStatus("all")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "all" ? "border-secondary" : "border-secondary/20 hover:border-secondary/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">All Shows</p>
+                  <p className="text-2xl font-serif text-foreground">{shows.length}</p>
+                </button>
+                <button
+                  onClick={() => setFilterStatus("pending")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "pending" ? "border-yellow-500" : "border-secondary/20 hover:border-yellow-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">Pending</p>
+                  <p className="text-2xl font-serif text-yellow-500">
+                    {filterStatus === "all" ? shows.filter(s => s.status === "pending").length : (filterStatus === "pending" ? shows.length : "—")}
+                  </p>
+                </button>
+                <button
+                  onClick={() => setFilterStatus("approved")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "approved" ? "border-green-500" : "border-secondary/20 hover:border-green-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">Approved</p>
+                  <p className="text-2xl font-serif text-green-500">
+                    {filterStatus === "all" ? shows.filter(s => s.status === "approved").length : (filterStatus === "approved" ? shows.length : "—")}
+                  </p>
+                </button>
+                <button
+                  onClick={() => setFilterStatus("rejected")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "rejected" ? "border-red-500" : "border-secondary/20 hover:border-red-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">Rejected</p>
+                  <p className="text-2xl font-serif text-red-500">
+                    {filterStatus === "all" ? shows.filter(s => s.status === "rejected").length : (filterStatus === "rejected" ? shows.length : "—")}
+                  </p>
+                </button>
+              </div>
+
+              {/* Shows Table */}
+              {loadingShows ? (
+                <div className="text-muted-foreground text-center py-8">Loading shows...</div>
+              ) : shows.length === 0 ? (
+                <div className="bg-card border border-secondary/20 p-12 text-center rounded-xl">
+                  <p className="text-muted-foreground">
+                    {filterStatus === "pending" 
+                      ? "No pending shows to review." 
+                      : `No ${filterStatus === "all" ? "" : filterStatus} shows found.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
+                  <table className="w-full min-w-[800px]">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Poster</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Theater Group</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Type</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shows.map((show) => (
+                        <tr key={show.id} className="border-t border-secondary/10">
+                          <td className="p-4">
+                            {show.poster_url ? (
+                              <img 
+                                src={show.poster_url} 
+                                alt={show.title} 
+                                className="w-12 h-16 object-cover rounded border border-secondary/20"
+                              />
+                            ) : (
+                              <div className="w-12 h-16 bg-muted rounded border border-secondary/20 flex items-center justify-center">
+                                <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                              </div>
                             )}
-                            {show.status !== "pending" && (
+                          </td>
+                          <td className="p-4 text-foreground font-medium">{show.title}</td>
+                          <td className="p-4 text-muted-foreground">
+                            {show.profiles?.group_name || "Unknown Group"}
+                          </td>
+                          <td className="p-4 text-muted-foreground">{getNicheLabel(show.niche)}</td>
+                          <td className="p-4 text-muted-foreground">
+                            {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs border rounded-full ${getStatusColor(show.status)}`}>
+                              {getStatusLabel(show.status)}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  supabase
-                                    .from("shows")
-                                    .update({ status: "pending" })
-                                    .eq("id", show.id)
-                                    .then(() => fetchShows());
-                                }}
-                                className="text-xs text-muted-foreground hover:text-foreground"
+                                onClick={() => openDetails(show)}
+                                className="h-8 w-8 p-0"
+                                title="View Details"
                               >
-                                Reset
+                                <Eye className="w-4 h-4" />
                               </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                              {show.status === "pending" && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setConfirmAction({ type: "approve", show })}
+                                    className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                    title="Approve"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setConfirmAction({ type: "reject", show })}
+                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                    title="Reject"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {show.status !== "pending" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    supabase
+                                      .from("shows")
+                                      .update({ status: "pending" })
+                                      .eq("id", show.id)
+                                      .then(() => fetchShows());
+                                  }}
+                                  className="text-xs text-muted-foreground hover:text-foreground"
+                                >
+                                  Reset
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* Producer Requests */}
+              {producerRequests.length > 0 && (
+                <div className="bg-card border border-yellow-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-yellow-500" />
+                    Pending Producer Requests ({producerRequests.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {producerRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-secondary/20">
+                        <div>
+                          <p className="text-foreground font-medium">{request.group_name}</p>
+                          <a 
+                            href={request.portfolio_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm text-secondary hover:underline"
+                          >
+                            View Portfolio
+                          </a>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Submitted: {new Date(request.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveRequest(request)}
+                            className="bg-green-500 hover:bg-green-600"
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRejectRequest(request)}
+                            className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </motion.div>
+                  </div>
+                </div>
+              )}
+
+              {/* Users Table */}
+              {loadingUsers ? (
+                <div className="text-muted-foreground text-center py-8">Loading users...</div>
+              ) : (
+                <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
+                  <table className="w-full min-w-[600px]">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Group Name</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Role</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Joined</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((userProfile) => (
+                        <tr key={userProfile.id} className="border-t border-secondary/10">
+                          <td className="p-4 text-muted-foreground text-sm font-mono">
+                            {userProfile.user_id.slice(0, 8)}...
+                          </td>
+                          <td className="p-4 text-foreground">
+                            {userProfile.group_name || "—"}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 text-xs border rounded-full capitalize ${getRoleColor(userProfile.role)}`}>
+                              {userProfile.role}
+                            </span>
+                          </td>
+                          <td className="p-4 text-muted-foreground text-sm">
+                            {new Date(userProfile.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-4">
+                            {userProfile.role !== "admin" && (
+                              <div className="flex items-center gap-2">
+                                {userProfile.role === "audience" ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handlePromoteUser(userProfile.user_id, userProfile.group_name || "New Producer")}
+                                    className="text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                    title="Promote to Producer"
+                                  >
+                                    <ChevronUp className="w-4 h-4 mr-1" />
+                                    Promote
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDemoteUser(userProfile.user_id)}
+                                    className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                    title="Demote to Audience"
+                                  >
+                                    <ChevronDown className="w-4 h-4 mr-1" />
+                                    Demote
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                            {userProfile.role === "admin" && (
+                              <span className="text-xs text-muted-foreground">Protected</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          )}
         </div>
       </main>
 
-      {/* Details Modal */}
+      {/* Details Modal with Poster Image */}
       <Dialog open={detailsModal} onOpenChange={setDetailsModal}>
-        <DialogContent className="bg-card border-secondary/30 max-w-lg">
+        <DialogContent className="bg-card border-secondary/30 max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">{selectedShow?.title}</DialogTitle>
             <DialogDescription>
@@ -449,10 +872,28 @@ const AdminPanel = () => {
           </DialogHeader>
           {selectedShow && (
             <div className="space-y-4 mt-4">
+              {/* Poster Image */}
+              {selectedShow.poster_url ? (
+                <div className="relative w-full aspect-[3/4] max-h-64 overflow-hidden rounded-lg border border-secondary/20">
+                  <img 
+                    src={selectedShow.poster_url} 
+                    alt={selectedShow.title} 
+                    className="w-full h-full object-contain bg-muted"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-48 bg-muted rounded-lg border border-secondary/20 flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                    <p className="text-sm">No poster uploaded</p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Status</p>
-                  <span className={`px-2 py-1 text-xs border ${getStatusColor(selectedShow.status)}`}>
+                  <span className={`px-2 py-1 text-xs border rounded-full ${getStatusColor(selectedShow.status)}`}>
                     {getStatusLabel(selectedShow.status)}
                   </span>
                 </div>
