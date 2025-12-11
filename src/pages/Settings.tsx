@@ -18,7 +18,11 @@ import {
   Users,
   Trash2,
   Save,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Camera,
+  Upload,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 
 const Settings = () => {
@@ -79,6 +84,10 @@ const Settings = () => {
   // Delete account state
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  
+  // Avatar state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -94,6 +103,8 @@ const Settings = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
+      // @ts-ignore - avatar_url is newly added
+      setAvatarUrl(profile.avatar_url || null);
     }
   }, [profile]);
 
@@ -245,6 +256,108 @@ const Settings = () => {
       description: "To delete your account, please contact support at connect.stagelink@gmail.com",
     });
     setDeleteModal(false);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a JPG, PNG, or WebP image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload an image under 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Delete old avatar if exists
+      await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`, `${user.id}/avatar.png`, `${user.id}/avatar.webp`]);
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: urlData.publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(urlData.publicUrl);
+      await refreshProfile();
+
+      toast({
+        title: "Avatar Updated",
+        description: "Your profile photo has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setUploadingAvatar(false);
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+
+    setUploadingAvatar(true);
+    try {
+      // Remove from storage
+      await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`, `${user.id}/avatar.png`, `${user.id}/avatar.webp`]);
+
+      // Update profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setAvatarUrl(null);
+      await refreshProfile();
+
+      toast({
+        title: "Avatar Removed",
+        description: "Your profile photo has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove avatar.",
+        variant: "destructive",
+      });
+    }
+    setUploadingAvatar(false);
   };
 
   if (loading) {
@@ -407,10 +520,61 @@ const Settings = () => {
                     </div>
                   </div>
 
+                  {/* Avatar Upload */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label className="text-muted-foreground text-sm mb-3 block">Profile Photo</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        {avatarUrl ? (
+                          <img 
+                            src={avatarUrl} 
+                            alt="Profile" 
+                            className="w-20 h-20 rounded-full object-cover border-2 border-secondary/30"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-secondary/10 border-2 border-secondary/30 flex items-center justify-center">
+                            <Camera className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        {uploadingAvatar && (
+                          <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            disabled={uploadingAvatar}
+                          />
+                          <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/10 hover:bg-secondary/20 text-secondary text-sm font-medium rounded-lg transition-colors">
+                            <Upload className="w-4 h-4" />
+                            Upload Photo
+                          </span>
+                        </label>
+                        {avatarUrl && (
+                          <button
+                            onClick={handleRemoveAvatar}
+                            disabled={uploadingAvatar}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-red-500 text-sm hover:bg-red-500/10 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                            Remove
+                          </button>
+                        )}
+                        <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max 2MB.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <Button
                     onClick={handleSaveProfile}
                     disabled={saving}
-                    className="w-full sm:w-auto mt-2"
+                    className="w-full sm:w-auto mt-4"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     {saving ? "Saving..." : "Save Changes"}
@@ -463,6 +627,62 @@ const Settings = () => {
                 )}
               </motion.section>
             )}
+
+            {/* Notifications */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6 relative overflow-hidden"
+            >
+              {/* Coming Soon Overlay */}
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="text-center">
+                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/20 text-secondary rounded-full text-sm font-medium">
+                    <Bell className="w-4 h-4" />
+                    Coming Soon!
+                  </span>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    Email notifications will be available in Phase 2
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-secondary/10">
+                  <Bell className="w-5 h-5 text-secondary" />
+                </div>
+                <h2 className="text-xl font-serif font-semibold text-foreground">
+                  Notifications
+                </h2>
+              </div>
+
+              <div className="space-y-4 opacity-50">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
+                  <div>
+                    <p className="text-foreground font-medium">Show Approvals</p>
+                    <p className="text-sm text-muted-foreground">Get notified when your shows are approved</p>
+                  </div>
+                  <Switch disabled checked={true} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
+                  <div>
+                    <p className="text-foreground font-medium">New Shows</p>
+                    <p className="text-sm text-muted-foreground">Updates about new theater productions</p>
+                  </div>
+                  <Switch disabled checked={true} />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
+                  <div>
+                    <p className="text-foreground font-medium">Marketing Emails</p>
+                    <p className="text-sm text-muted-foreground">News and promotions from StageLink</p>
+                  </div>
+                  <Switch disabled checked={false} />
+                </div>
+              </div>
+            </motion.section>
 
             {/* Security */}
             <motion.section
