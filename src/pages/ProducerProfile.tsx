@@ -13,6 +13,7 @@ interface Producer {
   description: string | null;
   founded_year: number | null;
   niche: "local" | "university" | null;
+  avatar_url: string | null;
 }
 
 interface Show {
@@ -38,7 +39,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche")
+        .select("id, group_name, description, founded_year, niche, avatar_url")
         .eq("id", id)
         .maybeSingle();
 
@@ -127,11 +128,19 @@ const ProducerProfile = () => {
               ← Back to Directory
             </Link>
             
-            <div className="bg-card border border-secondary/20 p-8 md:p-12">
+            <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Avatar */}
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-primary/20 flex items-center justify-center text-5xl md:text-6xl shrink-0">
-                  🎭
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center text-5xl md:text-6xl shrink-0 border-2 border-secondary/30">
+                  {producer.avatar_url ? (
+                    <img 
+                      src={producer.avatar_url} 
+                      alt={producer.group_name || "Producer"} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>🎭</span>
+                  )}
                 </div>
                 
                 {/* Info */}

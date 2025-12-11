@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "next-themes";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { useEffect, useState } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
@@ -112,22 +113,24 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <EnhancedToastProvider>
-        <CinematicBackground>
-          <ToastHandlerInit />
-          <ScrollProgress color="gold" height={3} />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <AnimatedRoutes />
-              <MobileBottomNav />
-            </AuthProvider>
-          </BrowserRouter>
-        </CinematicBackground>
-      </EnhancedToastProvider>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <TooltipProvider>
+        <EnhancedToastProvider>
+          <CinematicBackground>
+            <ToastHandlerInit />
+            <ScrollProgress color="gold" height={3} />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <AnimatedRoutes />
+                <MobileBottomNav />
+              </AuthProvider>
+            </BrowserRouter>
+          </CinematicBackground>
+        </EnhancedToastProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
