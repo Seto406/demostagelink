@@ -104,10 +104,16 @@ const AdminPanel = () => {
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0 });
   const [activeTab, setActiveTab] = useState("shows");
 
-  // Dev reset state
+  // Dev tools state
   const [devModalOpen, setDevModalOpen] = useState(false);
   const [devPassword, setDevPassword] = useState("");
   const [resetting, setResetting] = useState(false);
+  const [resetType, setResetType] = useState<"shows" | "factory">("shows");
+  
+  // Delete user state
+  const [deleteUserModal, setDeleteUserModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [deleteUserPassword, setDeleteUserPassword] = useState("");
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -439,33 +445,125 @@ const AdminPanel = () => {
 
     setResetting(true);
     try {
-      // Delete all shows from the database
-      const { error } = await supabase
-        .from("shows")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all (this matches everything)
+      if (resetType === "factory") {
+        // Factory reset: Delete all shows, producer requests, and non-admin profiles
+        // First delete shows
+        const { error: showsError } = await supabase
+          .from("shows")
+          .delete()
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+        
+        if (showsError) throw showsError;
 
-      if (error) {
-        throw error;
+        // Delete producer requests
+        const { error: requestsError } = await supabase
+          .from("producer_requests")
+          .delete()
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+        
+        if (requestsError) throw requestsError;
+
+        // Delete non-admin profiles (this cascades from auth.users but we need edge function for that)
+        // For now, just reset roles of non-admin users
+        const { error: profilesError } = await supabase
+          .from("profiles")
+          .update({ role: "audience", group_name: null })
+          .neq("role", "admin");
+        
+        if (profilesError) throw profilesError;
+
+        toast({
+          title: "Factory Reset Complete",
+          description: "All shows, requests cleared. Non-admin users reset to audience.",
+        });
+      } else {
+        // Delete all shows only
+        const { error } = await supabase
+          .from("shows")
+          .delete()
+          .neq("id", "00000000-0000-0000-0000-000000000000");
+
+        if (error) throw error;
+
+        toast({
+          title: "Reset Complete",
+          description: "All shows have been cleared from the database.",
+        });
       }
-
-      toast({
-        title: "Reset Complete",
-        description: "All shows have been cleared from the database.",
-      });
+      
       setDevModalOpen(false);
       setDevPassword("");
       fetchShows();
+      fetchUsers();
+      fetchProducerRequests();
       fetchStats();
     } catch (error) {
-      console.error("Error resetting shows:", error);
+      console.error("Error resetting:", error);
       toast({
         title: "Reset Failed",
-        description: "Failed to reset shows. Check console for details.",
+        description: "Failed to reset. Check console for details.",
         variant: "destructive",
       });
     } finally {
       setResetting(false);
+    }
+  };
+
+  // Force delete user function
+  const handleForceDeleteUser = async () => {
+    if (deleteUserPassword !== "dev123") {
+      toast({
+        title: "Invalid Password",
+        description: "The dev password is incorrect.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!userToDelete) return;
+
+    try {
+      // Delete user's shows first
+      const { error: showsError } = await supabase
+        .from("shows")
+        .delete()
+        .eq("producer_id", userToDelete.id);
+
+      if (showsError) console.error("Error deleting user shows:", showsError);
+
+      // Delete user's producer requests
+      const { error: requestsError } = await supabase
+        .from("producer_requests")
+        .delete()
+        .eq("user_id", userToDelete.user_id);
+
+      if (requestsError) console.error("Error deleting user requests:", requestsError);
+
+      // Delete user profile (note: full auth.users deletion requires admin API)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userToDelete.user_id);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "User Deleted",
+        description: "User profile and associated data have been removed.",
+      });
+      
+      setDeleteUserModal(false);
+      setUserToDelete(null);
+      setDeleteUserPassword("");
+      fetchUsers();
+      fetchStats();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete user. Check console for details.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -901,6 +999,19 @@ const AdminPanel = () => {
                                     Demote
                                   </Button>
                                 )}
+                                {/* Force Delete Button */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setUserToDelete(userProfile);
+                                    setDeleteUserModal(true);
+                                  }}
+                                  className="text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
+                                  title="Force Delete User"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
                             )}
                             {userProfile.role === "admin" && (
@@ -1059,13 +1170,44 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Dev Reset - Clear All Shows
+              ⚠️ Dev Tools - Database Reset
             </DialogTitle>
             <DialogDescription>
-              This will permanently delete ALL shows from the database. This action cannot be undone.
+              Choose reset type and enter the dev password to confirm.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Reset Type Selection */}
+            <div className="space-y-3">
+              <label className="text-sm text-muted-foreground">Reset Type:</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setResetType("shows")}
+                  className={`p-4 rounded-lg border text-left transition-all ${
+                    resetType === "shows"
+                      ? "border-orange-500 bg-orange-500/10"
+                      : "border-secondary/30 hover:border-secondary/50"
+                  }`}
+                >
+                  <p className="font-medium text-foreground">Clear Shows</p>
+                  <p className="text-xs text-muted-foreground mt-1">Delete all shows only</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResetType("factory")}
+                  className={`p-4 rounded-lg border text-left transition-all ${
+                    resetType === "factory"
+                      ? "border-red-500 bg-red-500/10"
+                      : "border-secondary/30 hover:border-secondary/50"
+                  }`}
+                >
+                  <p className="font-medium text-destructive">⚠️ FACTORY RESET</p>
+                  <p className="text-xs text-muted-foreground mt-1">Delete ALL data except admins</p>
+                </button>
+              </div>
+            </div>
+            
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">
                 Enter dev password to confirm:
@@ -1084,6 +1226,7 @@ const AdminPanel = () => {
                 onClick={() => {
                   setDevModalOpen(false);
                   setDevPassword("");
+                  setResetType("shows");
                 }}
               >
                 Cancel
@@ -1093,10 +1236,65 @@ const AdminPanel = () => {
                 onClick={handleDevReset}
                 disabled={resetting || !devPassword}
               >
-                {resetting ? "Resetting..." : "Reset All Shows"}
+                {resetting ? "Resetting..." : resetType === "factory" ? "⚠️ FACTORY RESET" : "Clear Shows"}
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Modal */}
+      <Dialog open={deleteUserModal} onOpenChange={setDeleteUserModal}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-orange-500 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Force Delete User
+            </DialogTitle>
+            <DialogDescription>
+              This will delete the user's profile and all associated data (shows, requests).
+            </DialogDescription>
+          </DialogHeader>
+          {userToDelete && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground">User to delete:</p>
+                <p className="text-foreground font-medium">{userToDelete.group_name || "No group name"}</p>
+                <p className="text-xs text-muted-foreground font-mono">{userToDelete.user_id}</p>
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">
+                  Enter dev password to confirm:
+                </label>
+                <Input
+                  type="password"
+                  placeholder="Enter password..."
+                  value={deleteUserPassword}
+                  onChange={(e) => setDeleteUserPassword(e.target.value)}
+                  className="bg-background border-border"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDeleteUserModal(false);
+                    setUserToDelete(null);
+                    setDeleteUserPassword("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleForceDeleteUser}
+                  disabled={!deleteUserPassword}
+                >
+                  Delete User
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

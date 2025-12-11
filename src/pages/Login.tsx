@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { shakeVariants } from "@/hooks/use-shake";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 
 type UserType = "audience" | "producer" | null;
 type AuthMode = "login" | "signup";
@@ -20,13 +21,19 @@ const Login = () => {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(false);
+
+  // Password match validation
+  const passwordsMatch = password === confirmPassword && password.length > 0;
+  const showMatchIndicator = authMode === "signup" && confirmPassword.length > 0;
 
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      // If we have profile info, route based on role
       if (profile) {
         if (profile.role === "producer" || profile.role === "admin") {
           navigate("/dashboard", { replace: true });
@@ -34,7 +41,6 @@ const Login = () => {
           navigate("/feed", { replace: true });
         }
       } else {
-        // Default to feed if no profile loaded yet
         navigate("/feed", { replace: true });
       }
     }
@@ -62,6 +68,17 @@ const Login = () => {
           setIsSubmitting(false);
           return;
         }
+
+        if (!passwordsMatch) {
+          toast({
+            title: "Error",
+            description: "Passwords do not match",
+            variant: "destructive",
+          });
+          triggerShake();
+          setIsSubmitting(false);
+          return;
+        }
         
         const { error } = await signUp(email, password, userType);
         if (error) {
@@ -72,7 +89,6 @@ const Login = () => {
             variant: "destructive",
           });
         } else {
-          // Store email and role for resending verification
           localStorage.setItem("pendingVerificationEmail", email);
           localStorage.setItem("pendingUserRole", userType);
           toast({
@@ -91,7 +107,6 @@ const Login = () => {
             variant: "destructive",
           });
         } else {
-          // Successful login - navigate immediately
           toast({
             title: "Welcome back!",
             description: "You have successfully logged in.",
@@ -239,16 +254,24 @@ const Login = () => {
                     required
                   />
 
-                  <div>
+                  {/* Password Field with Eye Toggle */}
+                  <div className="relative">
                     <FloatingInput
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       label="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                     {authMode === "login" && (
                       <button 
                         type="button"
@@ -260,10 +283,57 @@ const Login = () => {
                     )}
                   </div>
 
+                  {/* Confirm Password Field (Signup only) */}
+                  {authMode === "signup" && (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <FloatingInput
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          label="Confirm Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      
+                      {/* Password Match Indicator */}
+                      {showMatchIndicator && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`flex items-center gap-2 text-sm ${
+                            passwordsMatch ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {passwordsMatch ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span>Passwords match</span>
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-4 h-4" />
+                              <span>Passwords do not match</span>
+                            </>
+                          )}
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
                   <Button 
                     type="submit" 
                     className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base transition-all active:scale-[0.98]" 
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (authMode === "signup" && !passwordsMatch)}
                   >
                     {isSubmitting ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
                   </Button>
@@ -277,6 +347,7 @@ const Login = () => {
                         onClick={() => {
                           setAuthMode("signup");
                           setUserType(null);
+                          setConfirmPassword("");
                         }}
                         className="text-secondary cursor-pointer hover:underline"
                       >
@@ -287,7 +358,10 @@ const Login = () => {
                     <>
                       Already have an account?{" "}
                       <button 
-                        onClick={() => setAuthMode("login")}
+                        onClick={() => {
+                          setAuthMode("login");
+                          setConfirmPassword("");
+                        }}
                         className="text-secondary cursor-pointer hover:underline"
                       >
                         Log in
