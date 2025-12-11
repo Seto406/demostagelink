@@ -43,6 +43,47 @@ export type Database = {
           },
         ]
       }
+      group_audience_links: {
+        Row: {
+          accepted_at: string | null
+          audience_user_id: string
+          created_at: string
+          group_id: string
+          id: string
+          invited_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          audience_user_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+          invited_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          audience_user_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          invited_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_audience_links_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           avatar_url: string | null

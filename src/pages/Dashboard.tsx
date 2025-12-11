@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { GroupMembers } from "@/components/dashboard/GroupMembers";
+import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
 
 interface Show {
   id: string;
@@ -690,9 +691,10 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="max-w-4xl"
+              className="max-w-4xl space-y-6"
             >
               <GroupMembers profileId={profile.id} />
+              <AudienceLinking />
             </motion.div>
           )}
         </div>
