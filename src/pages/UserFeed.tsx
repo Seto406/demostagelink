@@ -34,6 +34,40 @@ interface Show {
   };
 }
 
+// Dummy placeholder shows for empty state
+const dummyShows: Show[] = [
+  {
+    id: "dummy-1",
+    title: "Hamlet - University Edition",
+    description: "A classic tale of revenge and tragedy, reimagined for the modern stage.",
+    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    venue: "University Theater",
+    city: "Manila",
+    poster_url: null,
+    profiles: { group_name: "Sample Theater Group", id: "dummy", avatar_url: null }
+  },
+  {
+    id: "dummy-2",
+    title: "The Phantom of Manila",
+    description: "A local adaptation of the beloved musical classic.",
+    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    venue: "Cultural Center",
+    city: "Makati",
+    poster_url: null,
+    profiles: { group_name: "Metro Arts Collective", id: "dummy", avatar_url: null }
+  },
+  {
+    id: "dummy-3",
+    title: "Rizal: The Musical",
+    description: "The life and legacy of our national hero brought to life on stage.",
+    date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    venue: "National Theater",
+    city: "Quezon City",
+    poster_url: null,
+    profiles: { group_name: "Heritage Players", id: "dummy", avatar_url: null }
+  }
+];
+
 const UserFeed = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
@@ -93,7 +127,7 @@ const UserFeed = () => {
         .from("producer_requests")
         .select("status")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         setExistingRequest(data);
@@ -142,6 +176,10 @@ const UserFeed = () => {
       </div>
     );
   }
+
+  // Determine which shows to display
+  const displayShows = shows.length === 0 ? dummyShows : shows;
+  const showingDummyData = shows.length === 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -212,75 +250,129 @@ const UserFeed = () => {
               <div className="flex justify-center py-12">
                 <BrandedLoader size="md" text="Loading shows..." />
               </div>
-            ) : shows.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No upcoming shows at the moment. Check back soon!
-              </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {shows.map((show, index) => (
+              <>
+                {/* Empty State Notice */}
+                {showingDummyData && (
                   <motion.div
-                    key={show.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mb-6 p-4 bg-secondary/10 border border-secondary/30 rounded-xl text-center"
                   >
-                    <Link to={`/show/${show.id}`}>
-                      <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-all group">
-                        <div className="aspect-[3/4] relative overflow-hidden">
-                          {show.poster_url ? (
-                            <img
-                              src={show.poster_url}
-                              alt={show.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          ) : (
+                    <p className="text-muted-foreground text-sm">
+                      🎭 No live shows yet! Here are some sample productions to show you what's coming.
+                    </p>
+                  </motion.div>
+                )}
+                
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {displayShows.map((show, index) => (
+                    <motion.div
+                      key={show.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      {showingDummyData ? (
+                        // Dummy cards are not clickable
+                        <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden opacity-60 cursor-not-allowed">
+                          <div className="aspect-[3/4] relative overflow-hidden">
                             <div className="w-full h-full bg-muted flex items-center justify-center">
                               <span className="text-4xl">🎭</span>
                             </div>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
-                            {show.title}
-                          </h3>
-                          <div className="flex items-center gap-2 mb-2">
-                            {show.profiles?.avatar_url ? (
-                              <img 
-                                src={show.profiles.avatar_url} 
-                                alt={show.profiles.group_name || "Producer"} 
-                                className="w-5 h-5 rounded-full object-cover border border-secondary/30"
-                              />
-                            ) : (
+                            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                            <div className="absolute top-2 right-2 bg-secondary/90 text-secondary-foreground text-xs px-2 py-1 rounded-full">
+                              Sample
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
+                              {show.title}
+                            </h3>
+                            <div className="flex items-center gap-2 mb-2">
                               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">
                                 🎭
                               </div>
-                            )}
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {show.profiles?.group_name || "Unknown Group"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            {show.date && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(show.date).toLocaleDateString()}
-                              </span>
-                            )}
-                            {show.city && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {show.city}
-                              </span>
-                            )}
+                              <p className="text-sm text-muted-foreground line-clamp-1">
+                                {show.profiles?.group_name || "Unknown Group"}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              {show.date && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(show.date).toLocaleDateString()}
+                                </span>
+                              )}
+                              {show.city && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {show.city}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
+                      ) : (
+                        // Real show cards are clickable
+                        <Link to={`/show/${show.id}`}>
+                          <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-all group">
+                            <div className="aspect-[3/4] relative overflow-hidden">
+                              {show.poster_url ? (
+                                <img
+                                  src={show.poster_url}
+                                  alt={show.title}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                  <span className="text-4xl">🎭</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                            </div>
+                            <div className="p-4">
+                              <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
+                                {show.title}
+                              </h3>
+                              <div className="flex items-center gap-2 mb-2">
+                                {show.profiles?.avatar_url ? (
+                                  <img 
+                                    src={show.profiles.avatar_url} 
+                                    alt={show.profiles.group_name || "Producer"} 
+                                    className="w-5 h-5 rounded-full object-cover border border-secondary/30"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                                    🎭
+                                  </div>
+                                )}
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {show.profiles?.group_name || "Unknown Group"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                {show.date && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {new Date(show.date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {show.city && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {show.city}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </>
             )}
           </section>
         </div>
