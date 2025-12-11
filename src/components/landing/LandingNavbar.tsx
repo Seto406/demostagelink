@@ -36,6 +36,9 @@ const LandingNavbar = () => {
             <a href="#showcase" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Showcase
             </a>
+            <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              About
+            </Link>
           </nav>
 
           {/* Action Buttons */}
