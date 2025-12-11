@@ -94,7 +94,7 @@ const Navbar = () => {
                 transition={{ duration: 0.3 }}
                 src={stageLinkLogo}
                 alt="StageLink Logo"
-                className="h-8 sm:h-10 w-auto origin-left rounded-full"
+                className="h-8 sm:h-10 w-auto origin-left"
               />
               <motion.span 
                 style={{ scale: logoScale }}
