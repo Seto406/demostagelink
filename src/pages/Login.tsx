@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/floating-input";
@@ -9,10 +9,42 @@ import { toast } from "@/hooks/use-toast";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { shakeVariants } from "@/hooks/use-shake";
-import { Eye, EyeOff, Check, X } from "lucide-react";
+import { Eye, EyeOff, Check, X, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 
 type UserType = "audience" | "producer" | null;
 type AuthMode = "login" | "signup";
+type PasswordStrength = "weak" | "medium" | "strong";
+
+// Password strength calculation
+const calculatePasswordStrength = (password: string): { strength: PasswordStrength; score: number; tips: string[] } => {
+  let score = 0;
+  const tips: string[] = [];
+  
+  if (password.length >= 6) score += 1;
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  
+  if (/[a-z]/.test(password)) score += 1;
+  else tips.push("Add lowercase letters");
+  
+  if (/[A-Z]/.test(password)) score += 1;
+  else tips.push("Add uppercase letters");
+  
+  if (/[0-9]/.test(password)) score += 1;
+  else tips.push("Add numbers");
+  
+  if (/[^a-zA-Z0-9]/.test(password)) score += 1;
+  else tips.push("Add special characters");
+  
+  if (password.length < 6) tips.unshift("Use at least 6 characters");
+  
+  let strength: PasswordStrength;
+  if (score <= 3) strength = "weak";
+  else if (score <= 5) strength = "medium";
+  else strength = "strong";
+  
+  return { strength, score, tips: tips.slice(0, 2) };
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -30,6 +62,10 @@ const Login = () => {
   // Password match validation
   const passwordsMatch = password === confirmPassword && password.length > 0;
   const showMatchIndicator = authMode === "signup" && confirmPassword.length > 0;
+  
+  // Password strength
+  const passwordStrength = useMemo(() => calculatePasswordStrength(password), [password]);
+  const showStrengthIndicator = authMode === "signup" && password.length > 0;
 
   // Redirect if already logged in
   useEffect(() => {
@@ -124,6 +160,30 @@ const Login = () => {
     }
     
     setIsSubmitting(false);
+  };
+
+  const getStrengthColor = (strength: PasswordStrength) => {
+    switch (strength) {
+      case "weak": return "bg-red-500";
+      case "medium": return "bg-yellow-500";
+      case "strong": return "bg-green-500";
+    }
+  };
+
+  const getStrengthTextColor = (strength: PasswordStrength) => {
+    switch (strength) {
+      case "weak": return "text-red-500";
+      case "medium": return "text-yellow-500";
+      case "strong": return "text-green-500";
+    }
+  };
+
+  const getStrengthIcon = (strength: PasswordStrength) => {
+    switch (strength) {
+      case "weak": return <ShieldAlert className="w-4 h-4" />;
+      case "medium": return <Shield className="w-4 h-4" />;
+      case "strong": return <ShieldCheck className="w-4 h-4" />;
+    }
   };
 
   if (loading) {
@@ -255,23 +315,62 @@ const Login = () => {
                   />
 
                   {/* Password Field with Eye Toggle */}
-                  <div className="relative">
-                    <FloatingInput
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      label="Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <FloatingInput
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        label="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    
+                    {/* Password Strength Indicator (Signup only) */}
+                    {showStrengthIndicator && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        {/* Strength Bar */}
+                        <div className="flex gap-1">
+                          <div className={`h-1 flex-1 rounded-full transition-colors ${
+                            passwordStrength.score >= 1 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                          }`} />
+                          <div className={`h-1 flex-1 rounded-full transition-colors ${
+                            passwordStrength.score >= 3 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                          }`} />
+                          <div className={`h-1 flex-1 rounded-full transition-colors ${
+                            passwordStrength.score >= 5 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                          }`} />
+                          <div className={`h-1 flex-1 rounded-full transition-colors ${
+                            passwordStrength.score >= 7 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                          }`} />
+                        </div>
+                        
+                        {/* Strength Label */}
+                        <div className={`flex items-center gap-2 text-xs ${getStrengthTextColor(passwordStrength.strength)}`}>
+                          {getStrengthIcon(passwordStrength.strength)}
+                          <span className="capitalize font-medium">{passwordStrength.strength}</span>
+                          {passwordStrength.tips.length > 0 && (
+                            <span className="text-muted-foreground">
+                              • {passwordStrength.tips[0]}
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                    
                     {authMode === "login" && (
                       <button 
                         type="button"
