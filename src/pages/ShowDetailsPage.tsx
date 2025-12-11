@@ -39,7 +39,7 @@ const ShowDetailsPage = () => {
   useEffect(() => {
     const fetchShow = async () => {
       if (!id) {
-        setError("Show not found");
+        setError("Production not found");
         setLoading(false);
         return;
       }
@@ -62,9 +62,9 @@ const ShowDetailsPage = () => {
 
       if (fetchError) {
         console.error("Error fetching show:", fetchError);
-        setError("Failed to load show details");
+        setError("Failed to load production details");
       } else if (!data) {
-        setError("Show not found or not yet approved");
+        setError("Production not found or not yet approved");
       } else {
         setShow(data as ShowDetails);
         // Update page title for shareability
@@ -117,7 +117,7 @@ const ShowDetailsPage = () => {
         <main className="pt-24 pb-16">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-center min-h-[50vh]">
-              <BrandedLoader size="lg" text="Loading show details..." />
+              <BrandedLoader size="lg" text="Loading production details..." />
             </div>
           </div>
         </main>
@@ -134,10 +134,10 @@ const ShowDetailsPage = () => {
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
               <div className="text-6xl mb-6">🎭</div>
               <h1 className="text-2xl font-serif text-foreground mb-4">
-                {error || "Show Not Found"}
+                {error || "Production Not Found"}
               </h1>
               <p className="text-muted-foreground mb-8">
-                This show may have been removed or is still pending approval.
+                This production may have been removed or is still pending approval.
               </p>
               <Button variant="outline" onClick={() => navigate("/")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -356,7 +356,7 @@ const ShowDetailsPage = () => {
                     to={`/producer/${show.profiles.id}`}
                     className="text-secondary hover:underline text-sm mt-4 inline-block"
                   >
-                    View all shows by this group →
+                    View all productions by this group →
                   </Link>
                 </div>
               </motion.div>
@@ -369,7 +369,7 @@ const ShowDetailsPage = () => {
           <div className="container mx-auto px-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-muted-foreground text-sm">
-                Share this show with fellow theater lovers
+                Share this production with fellow theater lovers
               </p>
               <div className="flex items-center gap-3">
                 <Button 

@@ -130,7 +130,7 @@ const UpcomingShows = () => {
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground">
-              Upcoming Shows
+              Upcoming Productions
             </h2>
           </div>
           <Link

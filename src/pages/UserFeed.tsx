@@ -237,7 +237,7 @@ const UserFeed = () => {
           <section>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-serif font-bold text-foreground">
-                Upcoming Shows
+                Upcoming Productions
               </h2>
               <Link to="/shows">
                 <Button variant="ghost" className="text-secondary">
@@ -248,7 +248,7 @@ const UserFeed = () => {
 
             {loadingShows ? (
               <div className="flex justify-center py-12">
-                <BrandedLoader size="md" text="Loading shows..." />
+                <BrandedLoader size="md" text="Loading productions..." />
               </div>
             ) : (
               <>
@@ -260,7 +260,7 @@ const UserFeed = () => {
                     className="mb-6 p-4 bg-secondary/10 border border-secondary/30 rounded-xl text-center"
                   >
                     <p className="text-muted-foreground text-sm">
-                      🎭 No live shows yet! Here are some sample productions to show you what's coming.
+                      🎭 No live productions yet! Here are some samples to show you what's coming.
                     </p>
                   </motion.div>
                 )}

@@ -424,7 +424,7 @@ const Dashboard = () => {
               }`}
             >
               <Film className="w-5 h-5" />
-              {sidebarOpen && <span>My Shows</span>}
+              {sidebarOpen && <span>My Productions</span>}
             </button>
 
             <button
@@ -465,7 +465,7 @@ const Dashboard = () => {
           </button>
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "dashboard" && "Dashboard"}
-            {activeTab === "shows" && "My Shows"}
+            {activeTab === "shows" && "My Productions"}
             {activeTab === "profile" && "Group Profile"}
           </h1>
           <div className="w-10" />
@@ -482,7 +482,7 @@ const Dashboard = () => {
             >
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="bg-card border border-secondary/20 p-6">
-                  <p className="text-muted-foreground text-sm mb-2">Total Shows</p>
+                  <p className="text-muted-foreground text-sm mb-2">Total Productions</p>
                   <p className="text-3xl font-serif text-foreground">{shows.length}</p>
                 </div>
                 <div className="bg-card border border-secondary/20 p-6">
