@@ -20,6 +20,11 @@ interface ShowDetails {
   niche: "local" | "university" | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
+  genre: string | null;
+  director: string | null;
+  duration: string | null;
+  tags: string[] | null;
+  cast_members: string[] | null;
   profiles: {
     id: string;
     group_name: string | null;
@@ -311,6 +316,63 @@ const ShowDetailsPage = () => {
                       "Details about this production will be announced soon. Stay tuned for more information about the synopsis, cast, and creative team."}
                   </p>
                 </div>
+
+                {/* Production Details */}
+                {(show.genre || show.director || show.duration) && (
+                  <div className="mt-8 grid sm:grid-cols-3 gap-4">
+                    {show.genre && (
+                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
+                        <p className="text-muted-foreground text-sm mb-1">Genre</p>
+                        <p className="text-foreground font-medium">{show.genre}</p>
+                      </div>
+                    )}
+                    {show.director && (
+                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
+                        <p className="text-muted-foreground text-sm mb-1">Director</p>
+                        <p className="text-foreground font-medium">{show.director}</p>
+                      </div>
+                    )}
+                    {show.duration && (
+                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
+                        <p className="text-muted-foreground text-sm mb-1">Duration</p>
+                        <p className="text-foreground font-medium">{show.duration}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Cast */}
+                {show.cast_members && show.cast_members.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-serif font-semibold text-foreground mb-4">Cast</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {show.cast_members.map((member, index) => (
+                        <span 
+                          key={index}
+                          className="px-3 py-1.5 bg-card border border-secondary/20 text-foreground text-sm rounded-full"
+                        >
+                          {member}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {show.tags && show.tags.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex flex-wrap gap-2">
+                      {show.tags.map((tag, index) => (
+                        <span 
+                          key={index}
+                          className="px-2 py-1 bg-secondary/10 text-secondary text-xs rounded"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </div>
           </div>

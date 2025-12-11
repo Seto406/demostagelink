@@ -40,6 +40,11 @@ interface Show {
   poster_url: string | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
+  genre: string | null;
+  director: string | null;
+  duration: string | null;
+  tags: string[] | null;
+  cast_members: string[] | null;
 }
 
 const Dashboard = () => {
@@ -64,6 +69,11 @@ const Dashboard = () => {
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [newShowTicketLink, setNewShowTicketLink] = useState("");
+  const [newShowGenre, setNewShowGenre] = useState("");
+  const [newShowDirector, setNewShowDirector] = useState("");
+  const [newShowDuration, setNewShowDuration] = useState("");
+  const [newShowTags, setNewShowTags] = useState("");
+  const [newShowCast, setNewShowCast] = useState("");
 
   // Profile form states
   const [groupName, setGroupName] = useState("");
@@ -168,6 +178,11 @@ const Dashboard = () => {
     setNewShowCity("");
     setNewShowNiche("local");
     setNewShowTicketLink("");
+    setNewShowGenre("");
+    setNewShowDirector("");
+    setNewShowDuration("");
+    setNewShowTags("");
+    setNewShowCast("");
     clearPoster();
     setEditingShow(null);
   };
@@ -186,6 +201,11 @@ const Dashboard = () => {
     setNewShowCity(show.city || "");
     setNewShowNiche(show.niche || "local");
     setNewShowTicketLink(show.ticket_link || "");
+    setNewShowGenre(show.genre || "");
+    setNewShowDirector(show.director || "");
+    setNewShowDuration(show.duration || "");
+    setNewShowTags(show.tags?.join(", ") || "");
+    setNewShowCast(show.cast_members?.join(", ") || "");
     setPosterPreview(show.poster_url);
     setPosterFile(null);
     setShowModal(true);
@@ -231,7 +251,12 @@ const Dashboard = () => {
           niche: newShowNiche,
           status: "pending",
           poster_url: posterUrl,
-          ticket_link: newShowTicketLink || null
+          ticket_link: newShowTicketLink || null,
+          genre: newShowGenre || null,
+          director: newShowDirector || null,
+          duration: newShowDuration || null,
+          tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
+          cast_members: newShowCast ? newShowCast.split(",").map(c => c.trim()).filter(Boolean) : null,
         });
 
       if (error) {
@@ -291,7 +316,12 @@ const Dashboard = () => {
           city: newShowCity || null,
           niche: newShowNiche,
           poster_url: posterUrl,
-          ticket_link: newShowTicketLink || null
+          ticket_link: newShowTicketLink || null,
+          genre: newShowGenre || null,
+          director: newShowDirector || null,
+          duration: newShowDuration || null,
+          tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
+          cast_members: newShowCast ? newShowCast.split(",").map(c => c.trim()).filter(Boolean) : null,
         })
         .eq("id", editingShow.id);
 
@@ -743,6 +773,69 @@ const Dashboard = () => {
               />
               <p className="text-xs text-muted-foreground">
                 Link to your ticket sales page (optional)
+              </p>
+            </div>
+
+            {/* New Fields: Genre, Director, Duration */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="showGenre">Genre</Label>
+                <Input
+                  id="showGenre"
+                  value={newShowGenre}
+                  onChange={(e) => setNewShowGenre(e.target.value)}
+                  placeholder="e.g., Drama, Musical, Comedy"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="showDuration">Duration</Label>
+                <Input
+                  id="showDuration"
+                  value={newShowDuration}
+                  onChange={(e) => setNewShowDuration(e.target.value)}
+                  placeholder="e.g., 2 hours"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showDirector">Director</Label>
+              <Input
+                id="showDirector"
+                value={newShowDirector}
+                onChange={(e) => setNewShowDirector(e.target.value)}
+                placeholder="Director name"
+                className="bg-background border-secondary/30"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showCast">Cast Members</Label>
+              <Input
+                id="showCast"
+                value={newShowCast}
+                onChange={(e) => setNewShowCast(e.target.value)}
+                placeholder="Comma-separated names (e.g., John Doe, Jane Smith)"
+                className="bg-background border-secondary/30"
+              />
+              <p className="text-xs text-muted-foreground">
+                Separate names with commas
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showTags">Tags (SEO)</Label>
+              <Input
+                id="showTags"
+                value={newShowTags}
+                onChange={(e) => setNewShowTags(e.target.value)}
+                placeholder="Comma-separated tags (e.g., Filipino, Original, Award-winning)"
+                className="bg-background border-secondary/30"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tags help users find your show
               </p>
             </div>
 
