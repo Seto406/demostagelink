@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          show_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          group_id: string
+          id: string
+          member_name: string
+          role_in_group: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          member_name: string
+          role_in_group?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          member_name?: string
+          role_in_group?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producer_requests: {
         Row: {
           created_at: string
@@ -52,6 +122,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
           created_at: string
           description: string | null
@@ -67,6 +138,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           description?: string | null
@@ -82,6 +154,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           created_at?: string
           description?: string | null
@@ -100,48 +173,63 @@ export type Database = {
       }
       shows: {
         Row: {
+          cast_members: string[] | null
           city: string | null
           created_at: string
           date: string | null
           deleted_at: string | null
           description: string | null
+          director: string | null
+          duration: string | null
+          genre: string | null
           id: string
           niche: Database["public"]["Enums"]["niche_type"] | null
           poster_url: string | null
           producer_id: string
           status: Database["public"]["Enums"]["show_status"]
+          tags: string[] | null
           ticket_link: string | null
           title: string
           updated_at: string
           venue: string | null
         }
         Insert: {
+          cast_members?: string[] | null
           city?: string | null
           created_at?: string
           date?: string | null
           deleted_at?: string | null
           description?: string | null
+          director?: string | null
+          duration?: string | null
+          genre?: string | null
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
           producer_id: string
           status?: Database["public"]["Enums"]["show_status"]
+          tags?: string[] | null
           ticket_link?: string | null
           title: string
           updated_at?: string
           venue?: string | null
         }
         Update: {
+          cast_members?: string[] | null
           city?: string | null
           created_at?: string
           date?: string | null
           deleted_at?: string | null
           description?: string | null
+          director?: string | null
+          duration?: string | null
+          genre?: string | null
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
           producer_id?: string
           status?: Database["public"]["Enums"]["show_status"]
+          tags?: string[] | null
           ticket_link?: string | null
           title?: string
           updated_at?: string

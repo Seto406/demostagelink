@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import { FavoriteButton } from "@/components/ui/favorite-button";
+import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +73,7 @@ const dummyShows: Show[] = [
 const UserFeed = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
+  const { toggleFavorite, isFavorited } = useFavorites();
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [producerRequestModal, setProducerRequestModal] = useState(false);
@@ -315,59 +318,71 @@ const UserFeed = () => {
                         </div>
                       ) : (
                         // Real show cards are clickable
-                        <Link to={`/show/${show.id}`}>
-                          <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-all group">
-                            <div className="aspect-[3/4] relative overflow-hidden">
-                              {show.poster_url ? (
-                                <img
-                                  src={show.poster_url}
-                                  alt={show.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-muted flex items-center justify-center">
-                                  <span className="text-4xl">🎭</span>
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                            </div>
-                            <div className="p-4">
-                              <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
-                                {show.title}
-                              </h3>
-                              <div className="flex items-center gap-2 mb-2">
-                                {show.profiles?.avatar_url ? (
-                                  <img 
-                                    src={show.profiles.avatar_url} 
-                                    alt={show.profiles.group_name || "Producer"} 
-                                    className="w-5 h-5 rounded-full object-cover border border-secondary/30"
+                        <div className="relative">
+                          <Link to={`/show/${show.id}`}>
+                            <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-all group">
+                              <div className="aspect-[3/4] relative overflow-hidden">
+                                {show.poster_url ? (
+                                  <img
+                                    src={show.poster_url}
+                                    alt={show.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                   />
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">
-                                    🎭
+                                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                                    <span className="text-4xl">🎭</span>
                                   </div>
                                 )}
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {show.profiles?.group_name || "Unknown Group"}
-                                </p>
+                                <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                               </div>
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                {show.date && (
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {new Date(show.date).toLocaleDateString()}
-                                  </span>
-                                )}
-                                {show.city && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {show.city}
-                                  </span>
-                                )}
+                              <div className="p-4">
+                                <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
+                                  {show.title}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {show.profiles?.avatar_url ? (
+                                    <img 
+                                      src={show.profiles.avatar_url} 
+                                      alt={show.profiles.group_name || "Producer"} 
+                                      className="w-5 h-5 rounded-full object-cover border border-secondary/30"
+                                    />
+                                  ) : (
+                                    <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                                      🎭
+                                    </div>
+                                  )}
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {show.profiles?.group_name || "Unknown Group"}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                  {show.date && (
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" />
+                                      {new Date(show.date).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                  {show.city && (
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {show.city}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
+                          </Link>
+                          <FavoriteButton
+                            isFavorited={isFavorited(show.id)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleFavorite(show.id);
+                            }}
+                            className="absolute top-3 right-3 z-10"
+                            size="sm"
+                          />
+                        </div>
                       )}
                     </motion.div>
                   ))}

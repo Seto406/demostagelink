@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Shield, Menu, X, Settings } from "lucide-react";
+import { Shield, Menu, X, Settings, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
@@ -31,6 +31,7 @@ const Navbar = () => {
         { path: "/feed", label: "Home" },
         { path: "/shows", label: "Shows" },
         { path: "/directory", label: "Directory" },
+        { path: "/favorites", label: "Favorites" },
         { path: "/about", label: "About" },
       ]
     : [
