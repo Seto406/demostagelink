@@ -5,6 +5,7 @@ import { Shield, Menu, X, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Navbar = () => {
   const location = useLocation();
@@ -151,16 +152,20 @@ const Navbar = () => {
                       <Settings className="w-4 h-4" />
                     </Button>
                   </Link>
+                  <ThemeToggle />
                   <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
                 </>
               ) : (
-                <Link to="/login">
-                  <Button variant="outline" size="sm" className="rounded-xl">
-                    Login
-                  </Button>
-                </Link>
+                <>
+                  <ThemeToggle />
+                  <Link to="/login">
+                    <Button variant="outline" size="sm" className="rounded-xl">
+                      Login
+                    </Button>
+                  </Link>
+                </>
               )}
             </div>
 
@@ -368,6 +373,9 @@ const Navbar = () => {
                           Settings
                         </Button>
                       </Link>
+                      <div className="flex justify-center py-2">
+                        <ThemeToggle />
+                      </div>
                       <Button variant="outline" className="w-full font-sans rounded-xl" onClick={handleSignOut}>
                         Sign Out
                       </Button>
