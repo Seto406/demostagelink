@@ -25,7 +25,9 @@ import {
   X,
   Sun,
   Moon,
-  Palette
+  Palette,
+  Facebook,
+  Instagram
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,8 @@ const Settings = () => {
   const [description, setDescription] = useState("");
   const [foundedYear, setFoundedYear] = useState<string>("");
   const [niche, setNiche] = useState<string>("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
   const [saving, setSaving] = useState(false);
   
   // Password change state
@@ -110,6 +114,10 @@ const Settings = () => {
       setNiche(profile.niche || "");
       // @ts-ignore - avatar_url is newly added
       setAvatarUrl(profile.avatar_url || null);
+      // @ts-ignore - social links are newly added
+      setFacebookUrl(profile.facebook_url || "");
+      // @ts-ignore
+      setInstagramUrl(profile.instagram_url || "");
     }
   }, [profile]);
 
@@ -144,6 +152,8 @@ const Settings = () => {
         updateData.description = description || null;
         updateData.founded_year = foundedYear ? parseInt(foundedYear) : null;
         updateData.niche = niche || null;
+        updateData.facebook_url = facebookUrl || null;
+        updateData.instagram_url = instagramUrl || null;
       }
 
       const { error } = await supabase
@@ -522,6 +532,39 @@ const Settings = () => {
                           <SelectItem value="university">University Theater</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                  {/* Social Media Links */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label className="text-muted-foreground text-sm mb-3 block">Social Media Links</Label>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="facebookUrl" className="flex items-center gap-2 text-sm">
+                          <Facebook className="w-4 h-4" />
+                          Facebook
+                        </Label>
+                        <Input
+                          id="facebookUrl"
+                          value={facebookUrl}
+                          onChange={(e) => setFacebookUrl(e.target.value)}
+                          placeholder="https://facebook.com/yourpage"
+                          className="mt-1 bg-background border-secondary/30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="instagramUrl" className="flex items-center gap-2 text-sm">
+                          <Instagram className="w-4 h-4" />
+                          Instagram
+                        </Label>
+                        <Input
+                          id="instagramUrl"
+                          value={instagramUrl}
+                          onChange={(e) => setInstagramUrl(e.target.value)}
+                          placeholder="https://instagram.com/yourhandle"
+                          className="mt-1 bg-background border-secondary/30"
+                        />
+                      </div>
                     </div>
                   </div>
 

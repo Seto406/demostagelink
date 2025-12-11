@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, Facebook, Instagram } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 
 interface Producer {
@@ -14,6 +14,8 @@ interface Producer {
   founded_year: number | null;
   niche: "local" | "university" | null;
   avatar_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
 }
 
 interface Show {
@@ -39,7 +41,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url")
+        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url")
         .eq("id", id)
         .maybeSingle();
 
@@ -170,6 +172,34 @@ const ProducerProfile = () => {
                       <span>{shows.length} {shows.length === 1 ? "Show" : "Shows"}</span>
                     </div>
                   </div>
+                  
+                  {/* Social Media Links */}
+                  {(producer.facebook_url || producer.instagram_url) && (
+                    <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
+                      {producer.facebook_url && (
+                        <a 
+                          href={producer.facebook_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                        >
+                          <Facebook className="w-5 h-5" />
+                          <span className="text-sm">Facebook</span>
+                        </a>
+                      )}
+                      {producer.instagram_url && (
+                        <a 
+                          href={producer.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                        >
+                          <Instagram className="w-5 h-5" />
+                          <span className="text-sm">Instagram</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

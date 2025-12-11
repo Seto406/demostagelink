@@ -55,9 +55,11 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           description: string | null
+          facebook_url: string | null
           founded_year: number | null
           group_name: string | null
           id: string
+          instagram_url: string | null
           map_screenshot_url: string | null
           niche: Database["public"]["Enums"]["niche_type"] | null
           role: Database["public"]["Enums"]["user_role"]
@@ -68,9 +70,11 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           description?: string | null
+          facebook_url?: string | null
           founded_year?: number | null
           group_name?: string | null
           id?: string
+          instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -81,9 +85,11 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           description?: string | null
+          facebook_url?: string | null
           founded_year?: number | null
           group_name?: string | null
           id?: string
+          instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
