@@ -169,7 +169,7 @@ const ProducerProfile = () => {
                     )}
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4 text-secondary" />
-                      <span>{shows.length} {shows.length === 1 ? "Show" : "Shows"}</span>
+                      <span>{shows.length} {shows.length === 1 ? "Production" : "Productions"}</span>
                     </div>
                   </div>
                   
@@ -217,7 +217,7 @@ const ProducerProfile = () => {
             
             {shows.length === 0 ? (
               <div className="bg-card border border-secondary/20 p-12 text-center">
-                <p className="text-muted-foreground">No approved shows yet.</p>
+                <p className="text-muted-foreground">No approved productions yet.</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

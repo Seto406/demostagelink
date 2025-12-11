@@ -280,7 +280,7 @@ const Shows = () => {
               <Sparkles className="w-4 h-4 text-secondary" />
             </motion.div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
-              All Shows
+              All Productions
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
               Discover theatrical productions across Metro Manila
@@ -298,7 +298,7 @@ const Shows = () => {
             <div className="relative max-w-md mx-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search shows or theater groups..."
+                placeholder="Search productions or theater groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 bg-card border-secondary/30 focus:border-secondary h-12"
@@ -414,7 +414,7 @@ const Shows = () => {
           >
             {loading
               ? "Loading..."
-              : `${filteredShows.length} ${filteredShows.length === 1 ? "show" : "shows"} found`}
+              : `${filteredShows.length} ${filteredShows.length === 1 ? "production" : "productions"} found`}
           </motion.div>
 
           {/* Shows Grid */}
@@ -432,7 +432,7 @@ const Shows = () => {
             >
               <div className="text-6xl mb-4 opacity-30">🎭</div>
               <p className="text-muted-foreground mb-4">
-                No shows found matching your criteria.
+                No productions found matching your criteria.
               </p>
               <button
                 onClick={clearFilters}

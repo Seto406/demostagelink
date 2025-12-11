@@ -261,13 +261,13 @@ const AdminPanel = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to approve show.",
+        description: "Failed to approve production.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Show Approved",
-        description: "The show is now visible on the public feed.",
+        title: "Production Approved",
+        description: "The production is now visible on the public feed.",
       });
       sendNotification(showId, showTitle, "approved", producerId);
       fetchShows();
@@ -284,12 +284,12 @@ const AdminPanel = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to reject show.",
+        description: "Failed to reject production.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Show Rejected",
+        title: "Production Rejected",
         description: "The producer will be notified.",
       });
       sendNotification(showId, showTitle, "rejected", producerId);
@@ -409,13 +409,13 @@ const AdminPanel = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to delete show.",
+        description: "Failed to delete production.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Show Deleted",
-        description: "Show has been moved to trash. You can restore it later.",
+        title: "Production Deleted",
+        description: "Production has been moved to trash. You can restore it later.",
       });
       fetchShows();
       fetchStats();
@@ -432,13 +432,13 @@ const AdminPanel = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to restore show.",
+        description: "Failed to restore production.",
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Show Restored",
-        description: "Show has been restored successfully.",
+        title: "Production Restored",
+        description: "Production has been restored successfully.",
       });
       fetchShows();
       fetchStats();
@@ -531,7 +531,7 @@ const AdminPanel = () => {
 
         toast({
           title: "Factory Reset Complete",
-          description: "All shows, requests cleared. Non-admin users reset to audience.",
+          description: "All productions, requests cleared. Non-admin users reset to audience.",
         });
       } else {
         // Delete all shows only
@@ -544,7 +544,7 @@ const AdminPanel = () => {
 
         toast({
           title: "Reset Complete",
-          description: "All shows have been cleared from the database.",
+          description: "All productions have been cleared from the database.",
         });
       }
       
@@ -748,7 +748,7 @@ const AdminPanel = () => {
                   <Theater className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Total Shows</p>
+                  <p className="text-muted-foreground text-xs">Total Productions</p>
                   <p className="text-xl font-semibold text-foreground">{stats.totalShows}</p>
                 </div>
               </div>
@@ -792,7 +792,7 @@ const AdminPanel = () => {
                     filterStatus === "all" ? "border-secondary" : "border-secondary/20 hover:border-secondary/50"
                   }`}
                 >
-                  <p className="text-muted-foreground text-sm mb-1">All Shows</p>
+                  <p className="text-muted-foreground text-sm mb-1">All Productions</p>
                   <p className="text-2xl font-serif text-foreground">{shows.length}</p>
                 </button>
                 <button
@@ -841,13 +841,13 @@ const AdminPanel = () => {
 
               {/* Shows Table */}
               {loadingShows ? (
-                <div className="text-muted-foreground text-center py-8">Loading shows...</div>
+                <div className="text-muted-foreground text-center py-8">Loading productions...</div>
               ) : shows.length === 0 ? (
                 <div className="bg-card border border-secondary/20 p-12 text-center rounded-xl">
                   <p className="text-muted-foreground">
                     {filterStatus === "pending" 
-                      ? "No pending shows to review." 
-                      : `No ${filterStatus === "all" ? "" : filterStatus} shows found.`}
+                      ? "No pending productions to review." 
+                      : `No ${filterStatus === "all" ? "" : filterStatus} productions found.`}
                   </p>
                 </div>
               ) : (
@@ -1282,8 +1282,8 @@ const AdminPanel = () => {
                       : "border-secondary/30 hover:border-secondary/50"
                   }`}
                 >
-                  <p className="font-medium text-foreground">Clear Shows</p>
-                  <p className="text-xs text-muted-foreground mt-1">Delete all shows only</p>
+                  <p className="font-medium text-foreground">Clear Productions</p>
+                  <p className="text-xs text-muted-foreground mt-1">Delete all productions only</p>
                 </button>
                 <button
                   type="button"
