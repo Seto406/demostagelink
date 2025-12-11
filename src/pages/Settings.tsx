@@ -27,8 +27,7 @@ import {
   Moon,
   Palette,
   Facebook,
-  Instagram,
-  MapPin
+  Instagram
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -75,11 +74,6 @@ const Settings = () => {
   const [niche, setNiche] = useState<string>("");
   const [facebookUrl, setFacebookUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
-  const [address, setAddress] = useState("");
-  
-  // Map screenshot state
-  const [mapScreenshotUrl, setMapScreenshotUrl] = useState<string | null>(null);
-  const [uploadingMap, setUploadingMap] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Password change state
@@ -124,10 +118,6 @@ const Settings = () => {
       setFacebookUrl(profile.facebook_url || "");
       // @ts-ignore
       setInstagramUrl(profile.instagram_url || "");
-      // @ts-ignore
-      setAddress(profile.address || "");
-      // @ts-ignore
-      setMapScreenshotUrl(profile.map_screenshot_url || null);
     }
   }, [profile]);
 
@@ -164,7 +154,6 @@ const Settings = () => {
         updateData.niche = niche || null;
         updateData.facebook_url = facebookUrl || null;
         updateData.instagram_url = instagramUrl || null;
-        updateData.address = address || null;
       }
 
       const { error } = await supabase
@@ -386,105 +375,6 @@ const Settings = () => {
     setUploadingAvatar(false);
   };
 
-  const handleMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Invalid File",
-        description: "Please upload a JPG, PNG, or WebP image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please upload an image under 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadingMap(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/map.${fileExt}`;
-
-      // Delete old map if exists
-      await supabase.storage.from('avatars').remove([`${user.id}/map.jpg`, `${user.id}/map.png`, `${user.id}/map.webp`]);
-
-      // Upload new map
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ map_screenshot_url: urlData.publicUrl })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      setMapScreenshotUrl(urlData.publicUrl);
-      await refreshProfile();
-
-      toast({
-        title: "Map Uploaded",
-        description: "Your venue map has been uploaded.",
-      });
-    } catch (error) {
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload map. Please try again.",
-        variant: "destructive",
-      });
-    }
-    setUploadingMap(false);
-  };
-
-  const handleRemoveMap = async () => {
-    if (!user) return;
-
-    setUploadingMap(true);
-    try {
-      await supabase.storage.from('avatars').remove([`${user.id}/map.jpg`, `${user.id}/map.png`, `${user.id}/map.webp`]);
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ map_screenshot_url: null })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setMapScreenshotUrl(null);
-      await refreshProfile();
-
-      toast({
-        title: "Map Removed",
-        description: "Your venue map has been removed.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove map.",
-        variant: "destructive",
-      });
-    }
-    setUploadingMap(false);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -645,18 +535,6 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  {/* Address */}
-                  <div>
-                    <Label htmlFor="address">Address / Location</Label>
-                    <Input
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter your group's address or venue location"
-                      className="mt-1 bg-background border-secondary/30"
-                    />
-                  </div>
-
                   {/* Social Media Links */}
                   <div className="pt-4 border-t border-secondary/10">
                     <Label className="text-muted-foreground text-sm mb-3 block">Social Media Links</Label>
@@ -739,58 +617,6 @@ const Settings = () => {
                         <p className="text-xs text-muted-foreground">JPG, PNG or WebP. Max 2MB.</p>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Map Screenshot Upload */}
-                  <div className="pt-4 border-t border-secondary/10">
-                    <Label className="text-muted-foreground text-sm mb-3 block">Venue Map Screenshot (Optional)</Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Upload a screenshot of your venue location from Google Maps to help audiences find you.
-                    </p>
-                    {mapScreenshotUrl ? (
-                      <div className="relative">
-                        <img 
-                          src={mapScreenshotUrl} 
-                          alt="Venue Map" 
-                          className="w-full max-h-48 object-cover rounded-xl border border-secondary/30"
-                        />
-                        {uploadingMap && (
-                          <div className="absolute inset-0 bg-background/80 rounded-xl flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <button
-                          onClick={handleRemoveMap}
-                          disabled={uploadingMap}
-                          className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-secondary/50 transition-colors block rounded-xl">
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleMapUpload}
-                          className="hidden"
-                          disabled={uploadingMap}
-                        />
-                        {uploadingMap ? (
-                          <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin mx-auto" />
-                        ) : (
-                          <>
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                            <p className="text-muted-foreground text-sm">
-                              Click to upload map screenshot
-                            </p>
-                            <p className="text-muted-foreground text-xs mt-1">
-                              JPG, PNG or WebP (max 5MB)
-                            </p>
-                          </>
-                        )}
-                      </label>
-                    )}
                   </div>
 
                   <Button
