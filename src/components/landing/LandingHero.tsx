@@ -65,7 +65,7 @@ const LandingHero = () => {
             to discover the magic of local productions across Metro Manila.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Both redirect to login for gatekeeping */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,17 +75,17 @@ const LandingHero = () => {
             <Link to="/login">
               <Button 
                 size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg group shadow-lg shadow-primary/25"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg group shadow-lg shadow-primary/25 rounded-xl"
               >
                 Get Started for Free
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            <Link to="/shows">
+            <Link to="/login">
               <Button 
                 size="lg" 
                 variant="outline"
-                className="border-secondary/50 text-foreground hover:bg-muted px-8 py-6 text-lg group"
+                className="border-secondary/50 text-foreground hover:bg-muted px-8 py-6 text-lg group rounded-xl"
               >
                 <Play className="mr-2 w-5 h-5" />
                 Explore Shows

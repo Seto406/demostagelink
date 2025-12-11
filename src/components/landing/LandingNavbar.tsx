@@ -18,9 +18,9 @@ const LandingNavbar = () => {
             <img 
               src={stagelinkLogo} 
               alt="StageLink" 
-              className="h-8 sm:h-10 w-auto"
+              className="h-8 sm:h-10 w-auto rounded-full"
             />
-            <span className="text-lg sm:text-xl font-serif font-bold text-foreground tracking-wide">
+            <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
               Stage<span className="text-secondary">Link</span>
             </span>
           </Link>
@@ -40,13 +40,13 @@ const LandingNavbar = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <Link to="/shows">
+            <Link to="/login">
               <Button variant="ghost" className="text-foreground hover:bg-muted hidden sm:inline-flex">
                 Explore Shows
               </Button>
             </Link>
             <Link to="/login">
-              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
                 Login
               </Button>
             </Link>
