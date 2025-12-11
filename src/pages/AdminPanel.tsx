@@ -32,7 +32,8 @@ import {
   UserCheck,
   ChevronUp,
   ChevronDown,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 interface Show {
   id: string;
@@ -101,6 +103,11 @@ const AdminPanel = () => {
   const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0 });
   const [activeTab, setActiveTab] = useState("shows");
+
+  // Dev reset state
+  const [devModalOpen, setDevModalOpen] = useState(false);
+  const [devPassword, setDevPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -419,6 +426,49 @@ const AdminPanel = () => {
     }
   };
 
+  // Dev reset function
+  const handleDevReset = async () => {
+    if (devPassword !== "dev123") {
+      toast({
+        title: "Invalid Password",
+        description: "The dev password is incorrect.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetting(true);
+    try {
+      // Delete all shows from the database
+      const { error } = await supabase
+        .from("shows")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // Delete all (this matches everything)
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Reset Complete",
+        description: "All shows have been cleared from the database.",
+      });
+      setDevModalOpen(false);
+      setDevPassword("");
+      fetchShows();
+      fetchStats();
+    } catch (error) {
+      console.error("Error resetting shows:", error);
+      toast({
+        title: "Reset Failed",
+        description: "Failed to reset shows. Check console for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -488,7 +538,14 @@ const AdminPanel = () => {
           )}
 
           {/* Logout */}
-          <div className="p-4 border-t border-sidebar-border">
+          <div className="p-4 border-t border-sidebar-border space-y-2">
+            <button
+              onClick={() => setDevModalOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-orange-500/10 hover:text-orange-500 transition-colors rounded-lg"
+            >
+              <Trash2 className="w-5 h-5" />
+              {sidebarOpen && <span>Dev Reset</span>}
+            </button>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors rounded-lg"
@@ -995,6 +1052,53 @@ const AdminPanel = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dev Reset Modal */}
+      <Dialog open={devModalOpen} onOpenChange={setDevModalOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Dev Reset - Clear All Shows
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete ALL shows from the database. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">
+                Enter dev password to confirm:
+              </label>
+              <Input
+                type="password"
+                placeholder="Enter password..."
+                value={devPassword}
+                onChange={(e) => setDevPassword(e.target.value)}
+                className="bg-background border-border"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDevModalOpen(false);
+                  setDevPassword("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDevReset}
+                disabled={resetting || !devPassword}
+              >
+                {resetting ? "Resetting..." : "Reset All Shows"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
