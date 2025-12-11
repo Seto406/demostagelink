@@ -103,6 +103,52 @@ html {
     --landing-accent: 220 100% 60%;
     --landing-border: 220 15% 90%;
   }
+
+  .dark {
+    /* Dark theme is the default - same as :root */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 100% 25%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 72% 52%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 43 72% 52%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 43 72% 52%;
+    --input: 0 0% 15%;
+    --ring: 43 72% 52%;
+  }
+
+  .light {
+    /* Light Theme - Elegant Theater */
+    --background: 40 20% 98%;
+    --foreground: 0 0% 10%;
+    --card: 40 15% 95%;
+    --card-foreground: 0 0% 10%;
+    --popover: 40 15% 95%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 70% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 80% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 40 10% 90%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 43 80% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 20% 85%;
+    --input: 40 15% 92%;
+    --ring: 43 80% 45%;
+  }
 }
 
 @layer base {

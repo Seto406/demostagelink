@@ -30,6 +30,7 @@ interface Show {
   profiles?: {
     group_name: string | null;
     id: string;
+    avatar_url: string | null;
   };
 }
 
@@ -66,7 +67,8 @@ const UserFeed = () => {
           poster_url,
           profiles:producer_id (
             group_name,
-            id
+            id,
+            avatar_url
           )
         `)
         .eq("status", "approved")
@@ -243,9 +245,22 @@ const UserFeed = () => {
                           <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
                             {show.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {show.profiles?.group_name || "Unknown Group"}
-                          </p>
+                          <div className="flex items-center gap-2 mb-2">
+                            {show.profiles?.avatar_url ? (
+                              <img 
+                                src={show.profiles.avatar_url} 
+                                alt={show.profiles.group_name || "Producer"} 
+                                className="w-5 h-5 rounded-full object-cover border border-secondary/30"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                                🎭
+                              </div>
+                            )}
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {show.profiles?.group_name || "Unknown Group"}
+                            </p>
+                          </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
                             {show.date && (
                               <span className="flex items-center gap-1">

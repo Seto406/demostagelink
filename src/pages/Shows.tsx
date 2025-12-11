@@ -50,6 +50,7 @@ interface Show {
   profiles: {
     id: string;
     group_name: string | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -111,13 +112,26 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
               <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
                 {show.title}
               </h3>
-              <Link
-                to={`/producer/${show.profiles?.id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
-              >
-                {show.profiles?.group_name || "Theater Group"}
-              </Link>
+              <div className="flex items-center gap-2">
+                {show.profiles?.avatar_url ? (
+                  <img 
+                    src={show.profiles.avatar_url} 
+                    alt={show.profiles.group_name || "Producer"} 
+                    className="w-5 h-5 rounded-full object-cover border border-secondary/40"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-primary/30 flex items-center justify-center text-[10px]">
+                    🎭
+                  </div>
+                )}
+                <Link
+                  to={`/producer/${show.profiles?.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
+                >
+                  {show.profiles?.group_name || "Theater Group"}
+                </Link>
+              </div>
 
               <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
                 {show.date && (
@@ -181,7 +195,8 @@ const Shows = () => {
         poster_url,
         profiles:producer_id (
           id,
-          group_name
+          group_name,
+          avatar_url
         )
       `)
       .eq("status", "approved")
