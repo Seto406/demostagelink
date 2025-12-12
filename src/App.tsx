@@ -39,26 +39,29 @@ const ToastHandlerInit = () => {
   return null;
 };
 
-// Page transition variants
+// Premium page transition variants - theatrical fade with subtle scale
 const pageVariants: Variants = {
   initial: {
     opacity: 0,
-    y: 12,
+    scale: 0.98,
+    filter: "blur(4px)",
   },
   animate: {
     opacity: 1,
-    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
     transition: {
-      duration: 0.3,
-      ease: [0.25, 0.1, 0.25, 1],
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1], // Custom easeOutQuint for smooth deceleration
     },
   },
   exit: {
     opacity: 0,
-    y: -12,
+    scale: 1.01,
+    filter: "blur(2px)",
     transition: {
-      duration: 0.2,
-      ease: [0.25, 0.1, 0.25, 1],
+      duration: 0.3,
+      ease: [0.22, 1, 0.36, 1],
     },
   },
 };
