@@ -92,6 +92,17 @@ const ResetPassword = () => {
     setIsSubmitting(false);
   };
 
+  // Password must be 8+ characters with at least one number or special character
+  const validatePassword = (pwd: string): { isValid: boolean; message: string } => {
+    if (pwd.length < 8) {
+      return { isValid: false, message: "Password must be at least 8 characters" };
+    }
+    if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
+      return { isValid: false, message: "Password must include at least one number or special character" };
+    }
+    return { isValid: true, message: "" };
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -104,10 +115,11 @@ const ResetPassword = () => {
       return;
     }
 
-    if (password.length < 6) {
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters.",
+        title: "Password Requirements Not Met",
+        description: passwordValidation.message,
         variant: "destructive",
       });
       return;
@@ -231,8 +243,11 @@ const ResetPassword = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         className="bg-background border-secondary/30 focus:border-secondary"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Must be at least 8 characters with a number or special character
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -245,7 +260,7 @@ const ResetPassword = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="bg-background border-secondary/30 focus:border-secondary"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                     </div>
 

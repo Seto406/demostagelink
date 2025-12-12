@@ -16,12 +16,26 @@ type AuthMode = "login" | "signup";
 type PasswordStrength = "weak" | "medium" | "strong";
 
 // Password strength calculation
-const calculatePasswordStrength = (password: string): { strength: PasswordStrength; score: number; tips: string[] } => {
+// Password must be 8+ characters with at least one number or special character
+const PASSWORD_REGEX = /^(?=.*[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
+const validatePassword = (password: string): { isValid: boolean; message: string } => {
+  if (password.length < 8) {
+    return { isValid: false, message: "Password must be at least 8 characters" };
+  }
+  if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return { isValid: false, message: "Password must include at least one number or special character" };
+  }
+  return { isValid: true, message: "" };
+};
+
+const calculatePasswordStrength = (password: string): { strength: PasswordStrength; score: number; tips: string[]; isValid: boolean } => {
   let score = 0;
   const tips: string[] = [];
   
-  if (password.length >= 6) score += 1;
-  if (password.length >= 8) score += 1;
+  if (password.length >= 8) score += 2;
+  else tips.push("Use at least 8 characters");
+  
   if (password.length >= 12) score += 1;
   
   if (/[a-z]/.test(password)) score += 1;
@@ -30,20 +44,18 @@ const calculatePasswordStrength = (password: string): { strength: PasswordStreng
   if (/[A-Z]/.test(password)) score += 1;
   else tips.push("Add uppercase letters");
   
-  if (/[0-9]/.test(password)) score += 1;
-  else tips.push("Add numbers");
-  
-  if (/[^a-zA-Z0-9]/.test(password)) score += 1;
-  else tips.push("Add special characters");
-  
-  if (password.length < 6) tips.unshift("Use at least 6 characters");
+  const hasNumberOrSpecial = /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  if (hasNumberOrSpecial) score += 2;
+  else tips.push("Add a number or special character");
   
   let strength: PasswordStrength;
   if (score <= 3) strength = "weak";
   else if (score <= 5) strength = "medium";
   else strength = "strong";
   
-  return { strength, score, tips: tips.slice(0, 2) };
+  const isValid = password.length >= 8 && hasNumberOrSpecial;
+  
+  return { strength, score, tips: tips.slice(0, 2), isValid };
 };
 
 const Login = () => {
@@ -98,6 +110,19 @@ const Login = () => {
           toast({
             title: "Error",
             description: "Please select your account type",
+            variant: "destructive",
+          });
+          triggerShake();
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validate password meets requirements
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+          toast({
+            title: "Password Requirements Not Met",
+            description: passwordValidation.message,
             variant: "destructive",
           });
           triggerShake();
@@ -314,7 +339,6 @@ const Login = () => {
                     required
                   />
 
-                  {/* Password Field with Eye Toggle */}
                   <div className="space-y-2">
                     <div className="relative">
                       <FloatingInput
@@ -324,7 +348,7 @@ const Login = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                       <button
                         type="button"
@@ -334,6 +358,13 @@ const Login = () => {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
+                    
+                    {/* Password Requirements Helper (Signup only) */}
+                    {authMode === "signup" && password.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Must be at least 8 characters with a number or special character
+                      </p>
+                    )}
                     
                     {/* Password Strength Indicator (Signup only) */}
                     {showStrengthIndicator && (

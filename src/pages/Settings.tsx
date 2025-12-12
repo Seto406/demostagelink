@@ -23,15 +23,11 @@ import {
   Camera,
   Upload,
   X,
-  Sun,
-  Moon,
-  Palette,
   Facebook,
   Instagram,
   MapPin,
   Image
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,7 +58,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { toast } from "@/hooks/use-toast";
 
 const Settings = () => {
@@ -917,23 +912,7 @@ const Settings = () => {
             </motion.section>
 
             {/* Appearance */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.28 }}
-              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl bg-secondary/10">
-                  <Palette className="w-5 h-5 text-secondary" />
-                </div>
-                <h2 className="text-xl font-serif font-semibold text-foreground">
-                  Appearance
-                </h2>
-              </div>
-
-              <ThemeToggle />
-            </motion.section>
+            {/* Appearance section hidden - dark mode only for now */}
 
             {/* Security */}
             <motion.section
