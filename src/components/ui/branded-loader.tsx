@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import stageLinkLogo from "@/assets/stagelink-logo-new.png";
 
 interface BrandedLoaderProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -64,7 +65,7 @@ export const BrandedLoader = ({
           }}
         />
 
-        {/* Theater Mask SVG */}
+        {/* StageLink Logo */}
         <motion.div
           className={cn("relative", sizeClasses[size])}
           animate={{
@@ -76,103 +77,11 @@ export const BrandedLoader = ({
             ease: "easeInOut",
           }}
         >
-          <svg
-            viewBox="0 0 100 100"
-            className="w-full h-full"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Mask Shape */}
-            <motion.path
-              d="M50 10C30 10 15 30 15 50C15 75 30 90 50 90C70 90 85 75 85 50C85 30 70 10 50 10Z"
-              fill="hsl(var(--primary))"
-              stroke="hsl(var(--secondary))"
-              strokeWidth="2"
-              animate={{
-                fillOpacity: [0.8, 1, 0.8],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            
-            {/* Left Eye - Chain Link */}
-            <motion.g
-              animate={{ rotate: [0, 360] }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{ transformOrigin: "35px 40px" }}
-            >
-              <ellipse
-                cx="35"
-                cy="40"
-                rx="8"
-                ry="10"
-                fill="none"
-                stroke="hsl(var(--foreground))"
-                strokeWidth="3"
-              />
-            </motion.g>
-            
-            {/* Right Eye - Chain Link */}
-            <motion.g
-              animate={{ rotate: [0, -360] }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{ transformOrigin: "65px 40px" }}
-            >
-              <ellipse
-                cx="65"
-                cy="40"
-                rx="8"
-                ry="10"
-                fill="none"
-                stroke="hsl(var(--foreground))"
-                strokeWidth="3"
-              />
-            </motion.g>
-
-            {/* Connecting chain between eyes */}
-            <motion.path
-              d="M43 40 H57"
-              stroke="hsl(var(--foreground))"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-              animate={{
-                strokeDashoffset: [0, -12],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            />
-
-            {/* Subtle smile/expression */}
-            <motion.path
-              d="M35 65 Q50 75 65 65"
-              fill="none"
-              stroke="hsl(var(--secondary))"
-              strokeWidth="2"
-              strokeLinecap="round"
-              animate={{
-                d: ["M35 65 Q50 75 65 65", "M35 67 Q50 78 65 67", "M35 65 Q50 75 65 65"],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          </svg>
+          <img 
+            src={stageLinkLogo} 
+            alt="StageLink" 
+            className="w-full h-full object-contain"
+          />
         </motion.div>
       </div>
 
