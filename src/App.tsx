@@ -23,6 +23,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
 import ShowDetailsPage from "./pages/ShowDetailsPage";
 import ProducerProfile from "./pages/ProducerProfile";
+import GroupProfile from "./pages/GroupProfile";
 import Settings from "./pages/Settings";
 import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
@@ -103,6 +104,7 @@ const AnimatedRoutes = () => {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />
           <Route path="/producer/:id" element={<ProducerProfile />} />
+          <Route path="/group/:id" element={<GroupProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/favorites" element={<Favorites />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
