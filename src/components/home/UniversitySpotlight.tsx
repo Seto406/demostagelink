@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import rtuDulaangRizaliaLogo from "@/assets/groups/rtu-dulaang-rizalia.png";
 
 const UniversitySpotlight = () => {
   return (
@@ -25,12 +26,12 @@ const UniversitySpotlight = () => {
             </h2>
             <div className="border-l-2 border-secondary/50 pl-6 mb-8">
               <h3 className="text-2xl font-serif text-foreground mb-2">
-                Rizal Technological University
+                RTU Dulaang Rizalia
               </h3>
               <p className="text-muted-foreground">
-                Home to one of Metro Manila's most vibrant university theater programs, 
-                RTU's drama ensemble has been producing compelling performances that 
-                showcase Filipino storytelling and talent.
+                The official theater arts group of Rizal Technological University, 
+                beaming with masterful storytelling, dedicated preparation, and 
+                high-caliber theatrical artistry.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 mb-8">
@@ -43,8 +44,8 @@ const UniversitySpotlight = () => {
                 <p className="text-xs text-muted-foreground">Members</p>
               </div>
               <div className="border border-secondary/30 px-4 py-2">
-                <span className="text-secondary text-lg font-bold">1975</span>
-                <p className="text-xs text-muted-foreground">Founded</p>
+                <span className="text-secondary text-lg font-bold">Est.</span>
+                <p className="text-xs text-muted-foreground">Mandaluyong</p>
               </div>
             </div>
             <Link to="/directory?niche=University%20Theater%20Group">
@@ -63,14 +64,18 @@ const UniversitySpotlight = () => {
             className="relative"
           >
             <div className="aspect-[4/3] bg-gradient-to-br from-card to-muted border border-secondary/30 relative overflow-hidden">
-              {/* Decorative mask icons */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-8xl opacity-20">🎭</div>
+              {/* Logo display */}
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <img 
+                  src={rtuDulaangRizaliaLogo} 
+                  alt="RTU Dulaang Rizalia Logo" 
+                  className="max-w-full max-h-full object-contain"
+                />
               </div>
               {/* Content overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background/90 to-transparent">
-                <p className="text-secondary text-sm uppercase tracking-wider mb-1">RTU Drama Ensemble</p>
-                <p className="text-foreground font-serif text-xl">Preserving the Art of Filipino Theater</p>
+                <p className="text-secondary text-sm uppercase tracking-wider mb-1">RTU Dulaang Rizalia</p>
+                <p className="text-foreground font-serif text-xl">Masterful Storytelling & High-Caliber Artistry</p>
               </div>
               {/* Corner accents */}
               <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-secondary/50" />
