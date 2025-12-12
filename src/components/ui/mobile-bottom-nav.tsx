@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const { scrollY } = useScroll();
-  const [isVisible, setIsVisible] = React.useState(false);
+  const [isVisible, setIsVisible] = React.useState(true);
   const [lastScrollY, setLastScrollY] = React.useState(0);
 
   // Check for reduced motion preference
@@ -37,17 +37,16 @@ export const MobileBottomNav: React.FC = () => {
   }, []);
 
   useMotionValueEvent(scrollY, "change", (current) => {
-    // Show after scrolling down 100px and when scrolling up
-    if (current > 100) {
-      if (current < lastScrollY) {
-        // Scrolling up
-        setIsVisible(true);
-      } else if (current > lastScrollY + 10) {
-        // Scrolling down significantly
-        setIsVisible(false);
-      }
-    } else {
+    // Hide when scrolling down quickly, show when scrolling up or near top
+    if (current < 50) {
+      // Always show near the top
+      setIsVisible(true);
+    } else if (current > lastScrollY + 5) {
+      // Scrolling down - hide
       setIsVisible(false);
+    } else if (current < lastScrollY - 5) {
+      // Scrolling up - show
+      setIsVisible(true);
     }
     setLastScrollY(current);
   });
