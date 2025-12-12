@@ -273,7 +273,7 @@ const Directory = () => {
                         className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20 transition-transform duration-300 group-hover:scale-110">
+                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-full overflow-hidden border-2 border-secondary/30 transition-all duration-300 group-hover:scale-110 group-hover:border-secondary/60 shadow-md">
                             {group.logo ? (
                               <img 
                                 src={group.logo} 
@@ -308,7 +308,7 @@ const Directory = () => {
                         className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20 transition-transform duration-300 group-hover:scale-110">
+                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-full overflow-hidden border-2 border-secondary/30 transition-all duration-300 group-hover:scale-110 group-hover:border-secondary/60 shadow-md">
                             {group.logo ? (
                               <img 
                                 src={group.logo} 
