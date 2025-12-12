@@ -8,6 +8,17 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
 
+// Group logos
+import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
+import rtuDulaangRizaliaLogo from "@/assets/groups/rtu-dulaang-rizalia.png";
+import starTcuLogo from "@/assets/groups/star-tcu.jpg";
+import culturaUmakLogo from "@/assets/groups/cultura-umak.png";
+import genesisToJesusLogo from "@/assets/groups/genesis-to-jesus.jpg";
+import pupTanghalangMolaveLogo from "@/assets/groups/pup-tanghalang-molave.jpg";
+import feuTheaterGuildLogo from "@/assets/groups/feu-theater-guild.jpg";
+import pnuThespianLogo from "@/assets/groups/pnu-thespian.jpg";
+import dulaangUpLogo from "@/assets/groups/dulaang-up.jpg";
+
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
 
@@ -17,6 +28,7 @@ interface TheaterGroup {
   description: string | null;
   niche: "local" | "university" | null;
   city?: string;
+  logo?: string;
 }
 
 // Demo theater groups for display when no real data
@@ -26,14 +38,16 @@ const demoGroups: TheaterGroup[] = [
     group_name: "Artistang Artlets",
     description: "The long-standing theatre guild of the Faculty of Arts and Letters of the University of Santo Tomas, built upon the virtues of respect and hierarchy, fueled by passion for theatre and the performing arts.",
     niche: "university",
-    city: "Manila"
+    city: "Manila",
+    logo: artistangArtletsLogo
   },
   {
     id: "demo-2",
     group_name: "RTU Dulaang Rizalia",
     description: "The official theater arts group of Rizal Technological University, beaming with masterful storytelling, dedicated preparation, and high-caliber theatrical artistry.",
     niche: "university",
-    city: "Mandaluyong"
+    city: "Mandaluyong",
+    logo: rtuDulaangRizaliaLogo
   },
   {
     id: "demo-3",
@@ -47,49 +61,56 @@ const demoGroups: TheaterGroup[] = [
     group_name: "Student Theater Artist Repertory (STAR)",
     description: "Student theatre guild composed of passionate and creative university students at TCU, ready to bring stories to life on stage and behind the scenes.",
     niche: "university",
-    city: "Taguig"
+    city: "Taguig",
+    logo: starTcuLogo
   },
   {
     id: "demo-5",
     group_name: "Cultura Performing Arts Guild (UMAK)",
     description: "Theater guild from the University of Makati that aims to inspire and provide artistic and intellectual capabilities through dance, music, and variety of performing-arts works.",
     niche: "university",
-    city: "Makati"
+    city: "Makati",
+    logo: culturaUmakLogo
   },
   {
     id: "demo-6",
     group_name: "Genesis To Jesus Productions Inc.",
     description: "A local theatre production from the City of Mandaluyong that produces plays or performances with a religious or evangelistic orientation.",
     niche: "local",
-    city: "Mandaluyong"
+    city: "Mandaluyong",
+    logo: genesisToJesusLogo
   },
   {
     id: "demo-7",
     group_name: "PUP Tanghalang Molave",
     description: "Student theatre organization of Polytechnic University of the Philippines (PUP) that stages Filipino plays (both classical/commentary works) in student-led productions, engaging with social issues, history, and contemporary themes.",
     niche: "university",
-    city: "Manila"
+    city: "Manila",
+    logo: pupTanghalangMolaveLogo
   },
   {
     id: "demo-8",
     group_name: "FEU Theater Guild (FTG)",
     description: "The theater organization of Far Eastern University, known for a history going back decades, mixing traditional and experimental theater.",
     niche: "university",
-    city: "Manila"
+    city: "Manila",
+    logo: feuTheaterGuildLogo
   },
   {
     id: "demo-9",
     group_name: "PNU The Thespian Society",
     description: "A non-stock, non-profit, university-based theatre organization based at Philippine National University (PNU) using theatre and the arts as a means of education and expression.",
     niche: "university",
-    city: "Manila"
+    city: "Manila",
+    logo: pnuThespianLogo
   },
   {
     id: "demo-10",
     group_name: "Dulaang UP (DUP)",
     description: "The official theatre group of University of the Philippines – Diliman that stages both classics and Filipino plays, often by established and emerging playwrights.",
     niche: "university",
-    city: "Quezon City"
+    city: "Quezon City",
+    logo: dulaangUpLogo
   }
 ];
 
@@ -249,8 +270,16 @@ const Directory = () => {
                     {isUsingDemo ? (
                       <div className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group cursor-default">
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
-                            🎭
+                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20">
+                            {group.logo ? (
+                              <img 
+                                src={group.logo} 
+                                alt={`${group.group_name} logo`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-2xl">🎭</span>
+                            )}
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <span className="text-xs text-secondary uppercase tracking-wider">
