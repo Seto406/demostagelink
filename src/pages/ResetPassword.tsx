@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 
 type ResetMode = "request" | "update";
 
@@ -20,6 +21,8 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Check if we have a recovery token in the URL
   useEffect(() => {
@@ -235,33 +238,89 @@ const ResetPassword = () => {
                   <form onSubmit={handleUpdatePassword} className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="password">New Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter new password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="bg-background border-secondary/30 focus:border-secondary"
-                        required
-                        minLength={8}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Must be at least 8 characters with a number or special character
-                      </p>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter new password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="bg-background border-secondary/30 focus:border-secondary pr-10"
+                          required
+                          minLength={8}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      
+                      {/* Password Requirements Checklist */}
+                      <div className="flex flex-col gap-1 mt-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          {password.length >= 8 ? (
+                            <Check className="w-3.5 h-3.5 text-green-500" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                          <span className={password.length >= 8 ? "text-green-500" : "text-muted-foreground"}>
+                            At least 8 characters
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? (
+                            <Check className="w-3.5 h-3.5 text-green-500" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                          <span className={/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "text-green-500" : "text-muted-foreground"}>
+                            Number or special character
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="Confirm new password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-background border-secondary/30 focus:border-secondary"
-                        required
-                        minLength={8}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm new password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="bg-background border-secondary/30 focus:border-secondary pr-10"
+                          required
+                          minLength={8}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      
+                      {/* Password Match Indicator */}
+                      {confirmPassword.length > 0 && (
+                        <div className="flex items-center gap-2 text-xs mt-1">
+                          {password === confirmPassword ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-green-500" />
+                              <span className="text-green-500">Passwords match</span>
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-3.5 h-3.5 text-red-500" />
+                              <span className="text-red-500">Passwords don't match</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <Button type="submit" variant="hero" className="w-full" disabled={isSubmitting}>

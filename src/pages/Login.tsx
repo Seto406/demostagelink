@@ -360,45 +360,62 @@ const Login = () => {
                     </div>
                     
                     {/* Password Requirements Helper (Signup only) */}
-                    {authMode === "signup" && password.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Must be at least 8 characters with a number or special character
-                      </p>
-                    )}
-                    
-                    {/* Password Strength Indicator (Signup only) */}
-                    {showStrengthIndicator && (
+                    {/* Password Requirements Checklist (Signup only) */}
+                    {authMode === "signup" && (
                       <motion.div
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-2"
                       >
-                        {/* Strength Bar */}
-                        <div className="flex gap-1">
-                          <div className={`h-1 flex-1 rounded-full transition-colors ${
-                            passwordStrength.score >= 1 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
-                          }`} />
-                          <div className={`h-1 flex-1 rounded-full transition-colors ${
-                            passwordStrength.score >= 3 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
-                          }`} />
-                          <div className={`h-1 flex-1 rounded-full transition-colors ${
-                            passwordStrength.score >= 5 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
-                          }`} />
-                          <div className={`h-1 flex-1 rounded-full transition-colors ${
-                            passwordStrength.score >= 7 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
-                          }`} />
+                        {/* Requirements Checklist */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-xs">
+                            {password.length >= 8 ? (
+                              <Check className="w-3.5 h-3.5 text-green-500" />
+                            ) : (
+                              <X className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                            <span className={password.length >= 8 ? "text-green-500" : "text-muted-foreground"}>
+                              At least 8 characters
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            {/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? (
+                              <Check className="w-3.5 h-3.5 text-green-500" />
+                            ) : (
+                              <X className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                            <span className={/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "text-green-500" : "text-muted-foreground"}>
+                              Number or special character
+                            </span>
+                          </div>
                         </div>
                         
-                        {/* Strength Label */}
-                        <div className={`flex items-center gap-2 text-xs ${getStrengthTextColor(passwordStrength.strength)}`}>
-                          {getStrengthIcon(passwordStrength.strength)}
-                          <span className="capitalize font-medium">{passwordStrength.strength}</span>
-                          {passwordStrength.tips.length > 0 && (
-                            <span className="text-muted-foreground">
-                              • {passwordStrength.tips[0]}
-                            </span>
-                          )}
-                        </div>
+                        {/* Strength Bar */}
+                        {showStrengthIndicator && (
+                          <>
+                            <div className="flex gap-1 mt-2">
+                              <div className={`h-1 flex-1 rounded-full transition-colors ${
+                                passwordStrength.score >= 1 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                              }`} />
+                              <div className={`h-1 flex-1 rounded-full transition-colors ${
+                                passwordStrength.score >= 3 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                              }`} />
+                              <div className={`h-1 flex-1 rounded-full transition-colors ${
+                                passwordStrength.score >= 5 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                              }`} />
+                              <div className={`h-1 flex-1 rounded-full transition-colors ${
+                                passwordStrength.score >= 7 ? getStrengthColor(passwordStrength.strength) : "bg-muted"
+                              }`} />
+                            </div>
+                            
+                            {/* Strength Label */}
+                            <div className={`flex items-center gap-2 text-xs ${getStrengthTextColor(passwordStrength.strength)}`}>
+                              {getStrengthIcon(passwordStrength.strength)}
+                              <span className="capitalize font-medium">{passwordStrength.strength}</span>
+                            </div>
+                          </>
+                        )}
                       </motion.div>
                     )}
                     
