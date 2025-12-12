@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users, ArrowLeft } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -501,12 +501,20 @@ const Dashboard = () => {
       <main className="flex-1 min-h-screen">
         {/* Top Bar */}
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-muted transition-colors"
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to="/feed">
+              <button className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline text-sm">Back to Home</span>
+              </button>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-muted transition-colors"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "dashboard" && "Dashboard"}
             {activeTab === "shows" && "My Productions"}
@@ -737,43 +745,46 @@ const Dashboard = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Location & Schedule Section */}
+            <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-secondary/20">
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Location & Schedule</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="showDate">Show Date</Label>
+                  <Input
+                    id="showDate"
+                    type="date"
+                    value={newShowDate}
+                    onChange={(e) => setNewShowDate(e.target.value)}
+                    className="bg-background border-secondary/30"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="showCity">City</Label>
+                  <Select value={newShowCity} onValueChange={setNewShowCity}>
+                    <SelectTrigger className="bg-background border-secondary/30">
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-secondary/30">
+                      <SelectItem value="Mandaluyong">Mandaluyong</SelectItem>
+                      <SelectItem value="Taguig">Taguig</SelectItem>
+                      <SelectItem value="Manila">Manila</SelectItem>
+                      <SelectItem value="Quezon City">Quezon City</SelectItem>
+                      <SelectItem value="Makati">Makati</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="showDate">Show Date</Label>
+                <Label htmlFor="showVenue">Venue</Label>
                 <Input
-                  id="showDate"
-                  type="date"
-                  value={newShowDate}
-                  onChange={(e) => setNewShowDate(e.target.value)}
+                  id="showVenue"
+                  value={newShowVenue}
+                  onChange={(e) => setNewShowVenue(e.target.value)}
+                  placeholder="Where will the show be held?"
                   className="bg-background border-secondary/30"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="showCity">City</Label>
-                <Select value={newShowCity} onValueChange={setNewShowCity}>
-                  <SelectTrigger className="bg-background border-secondary/30">
-                    <SelectValue placeholder="Select city" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-secondary/30">
-                    <SelectItem value="Mandaluyong">Mandaluyong</SelectItem>
-                    <SelectItem value="Taguig">Taguig</SelectItem>
-                    <SelectItem value="Manila">Manila</SelectItem>
-                    <SelectItem value="Quezon City">Quezon City</SelectItem>
-                    <SelectItem value="Makati">Makati</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showVenue">Venue</Label>
-              <Input
-                id="showVenue"
-                value={newShowVenue}
-                onChange={(e) => setNewShowVenue(e.target.value)}
-                placeholder="Where will the show be held?"
-                className="bg-background border-secondary/30"
-              />
             </div>
 
             <div className="space-y-2">

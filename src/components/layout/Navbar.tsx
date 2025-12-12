@@ -5,7 +5,6 @@ import { Shield, Menu, X, Settings, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const Navbar = () => {
   const location = useLocation();
@@ -26,12 +25,12 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
 
   // Dynamic nav links based on auth state
+  // Nav links without Favorites - moved to user section
   const navLinks = user
     ? [
         { path: "/feed", label: "Home" },
         { path: "/shows", label: "Shows" },
         { path: "/directory", label: "Directory" },
-        { path: "/favorites", label: "Favorites" },
         { path: "/about", label: "About" },
       ]
     : [
@@ -153,14 +152,17 @@ const Navbar = () => {
                       <Settings className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <ThemeToggle variant="icon" />
+                  <Link to="/favorites">
+                    <Button variant="ghost" size="sm">
+                      <Heart className="w-4 h-4" />
+                    </Button>
+                  </Link>
                   <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
                 </>
               ) : (
                 <>
-                  <ThemeToggle variant="icon" />
                   <Link to="/login">
                     <Button variant="outline" size="sm" className="rounded-xl">
                       Login
@@ -374,9 +376,12 @@ const Navbar = () => {
                           Settings
                         </Button>
                       </Link>
-                      <div className="flex justify-center py-2">
-                        <ThemeToggle variant="icon" />
-                      </div>
+                      <Link to="/favorites" className="w-full">
+                        <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
+                          <Heart className="w-4 h-4 mr-2" />
+                          Favorites
+                        </Button>
+                      </Link>
                       <Button variant="outline" className="w-full font-sans rounded-xl" onClick={handleSignOut}>
                         Sign Out
                       </Button>

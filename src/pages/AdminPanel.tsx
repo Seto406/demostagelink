@@ -34,7 +34,8 @@ import {
   ChevronDown,
   Image as ImageIcon,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  ArrowLeft
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -716,12 +717,20 @@ const AdminPanel = () => {
       <main className="flex-1 min-h-screen">
         {/* Top Bar */}
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-muted transition-colors rounded-lg"
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to="/feed">
+              <button className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline text-sm">Back to Home</span>
+              </button>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-muted transition-colors rounded-lg"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "shows" ? "Show Approvals" : "User Management"}
           </h1>
