@@ -22,7 +22,7 @@ const plans = [
   },
   {
     name: "Pro Producer",
-    price: "₱499",
+    price: "₱399",
     period: "/month",
     description: "For established groups ready to grow their audience",
     features: [
