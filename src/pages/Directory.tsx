@@ -268,9 +268,12 @@ const Directory = () => {
                     transition={{ duration: 0.5, delay: index * 0.05 }}
                   >
                     {isUsingDemo ? (
-                      <div className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group cursor-default">
+                      <Link 
+                        to={`/group/${group.id}`}
+                        className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
+                      >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20">
+                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20 transition-transform duration-300 group-hover:scale-110">
                             {group.logo ? (
                               <img 
                                 src={group.logo} 
@@ -292,25 +295,40 @@ const Directory = () => {
                             )}
                           </div>
                         </div>
-                        <h3 className="font-serif text-xl text-foreground mb-2">
+                        <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
                           {group.group_name}
                         </h3>
                         <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                           {group.description || "A theater group in Metro Manila."}
                         </p>
-                      </div>
+                      </Link>
                     ) : (
                       <Link 
                         to={`/producer/${group.id}`}
                         className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="w-12 h-12 bg-primary/20 flex items-center justify-center text-2xl">
-                            🎭
+                          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/20 transition-transform duration-300 group-hover:scale-110">
+                            {group.logo ? (
+                              <img 
+                                src={group.logo} 
+                                alt={`${group.group_name} logo`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-2xl">🎭</span>
+                            )}
                           </div>
-                          <span className="text-xs text-secondary uppercase tracking-wider">
-                            {getNicheLabel(group.niche)}
-                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-xs text-secondary uppercase tracking-wider">
+                              {getNicheLabel(group.niche)}
+                            </span>
+                            {group.city && (
+                              <span className="text-xs text-muted-foreground">
+                                {group.city}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
                           {group.group_name}
