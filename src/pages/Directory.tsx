@@ -23,66 +23,73 @@ interface TheaterGroup {
 const demoGroups: TheaterGroup[] = [
   {
     id: "demo-1",
-    group_name: "Tanghalang Pilipino",
-    description: "The resident theater company of the Cultural Center of the Philippines, dedicated to producing Filipino plays and musicals.",
-    niche: "local",
+    group_name: "Artistang Artlets",
+    description: "The long-standing theatre guild of the Faculty of Arts and Letters of the University of Santo Tomas, built upon the virtues of respect and hierarchy, fueled by passion for theatre and the performing arts.",
+    niche: "university",
     city: "Manila"
   },
   {
     id: "demo-2",
-    group_name: "Manila Repertory",
-    description: "One of the leading theater companies in the Philippines, known for innovative productions of both Filipino and international plays.",
-    niche: "local",
-    city: "Manila"
-  },
-  {
-    id: "demo-3",
-    group_name: "Ateneo Blue Repertory",
-    description: "The premier student theater organization of Ateneo de Manila University, producing quality musicals and plays since 1993.",
-    niche: "university",
-    city: "Quezon City"
-  },
-  {
-    id: "demo-4",
-    group_name: "UP Repertory Company",
-    description: "The official theater group of the University of the Philippines, dedicated to Filipino drama and experimental theater.",
-    niche: "university",
-    city: "Quezon City"
-  },
-  {
-    id: "demo-5",
-    group_name: "PETA",
-    description: "Asia's largest theater company, committed to community-based and educational theater for social change since 1967.",
-    niche: "local",
-    city: "Quezon City"
-  },
-  {
-    id: "demo-6",
-    group_name: "Trumpets Inc.",
-    description: "A Manila-based theater company known for world-class productions and family-friendly musicals.",
-    niche: "local",
-    city: "Makati"
-  },
-  {
-    id: "demo-7",
-    group_name: "RTU Drama Ensemble",
-    description: "The theater arm of Rizal Technological University, nurturing young Filipino theater talents.",
+    group_name: "RTU Dulaang Rizalia",
+    description: "The official theater arts group of Rizal Technological University, beaming with masterful storytelling, dedicated preparation, and high-caliber theatrical artistry.",
     niche: "university",
     city: "Mandaluyong"
   },
   {
+    id: "demo-3",
+    group_name: "Trick Creative Production",
+    description: "A theater production group that presents stage plays and musicals, making works include original Filipino musicals and plays, and unconventional theatre performances.",
+    niche: "local",
+    city: "Quezon City"
+  },
+  {
+    id: "demo-4",
+    group_name: "Student Theater Artist Repertory (STAR)",
+    description: "Student theatre guild composed of passionate and creative university students at TCU, ready to bring stories to life on stage and behind the scenes.",
+    niche: "university",
+    city: "Taguig"
+  },
+  {
+    id: "demo-5",
+    group_name: "Cultura Performing Arts Guild (UMAK)",
+    description: "Theater guild from the University of Makati that aims to inspire and provide artistic and intellectual capabilities through dance, music, and variety of performing-arts works.",
+    niche: "university",
+    city: "Makati"
+  },
+  {
+    id: "demo-6",
+    group_name: "Genesis To Jesus Productions Inc.",
+    description: "A local theatre production from the City of Mandaluyong that produces plays or performances with a religious or evangelistic orientation.",
+    niche: "local",
+    city: "Mandaluyong"
+  },
+  {
+    id: "demo-7",
+    group_name: "PUP Tanghalang Molave",
+    description: "Student theatre organization of Polytechnic University of the Philippines (PUP) that stages Filipino plays (both classical/commentary works) in student-led productions, engaging with social issues, history, and contemporary themes.",
+    niche: "university",
+    city: "Manila"
+  },
+  {
     id: "demo-8",
-    group_name: "De La Salle Theater Guild",
-    description: "The official theater organization of De La Salle University Manila, producing original Filipino works.",
+    group_name: "FEU Theater Guild (FTG)",
+    description: "The theater organization of Far Eastern University, known for a history going back decades, mixing traditional and experimental theater.",
     niche: "university",
     city: "Manila"
   },
   {
     id: "demo-9",
-    group_name: "Repertory Philippines",
-    description: "One of the longest-running theater companies in Asia, bringing Broadway and West End productions to Manila.",
-    niche: "local",
-    city: "Makati"
+    group_name: "PNU The Thespian Society",
+    description: "A non-stock, non-profit, university-based theatre organization based at Philippine National University (PNU) using theatre and the arts as a means of education and expression.",
+    niche: "university",
+    city: "Manila"
+  },
+  {
+    id: "demo-10",
+    group_name: "Dulaang UP (DUP)",
+    description: "The official theatre group of University of the Philippines – Diliman that stages both classics and Filipino plays, often by established and emerging playwrights.",
+    niche: "university",
+    city: "Quezon City"
   }
 ];
 
