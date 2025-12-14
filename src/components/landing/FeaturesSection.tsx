@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Calendar, Users, MapPin, Search, Heart, Shield, UserPlus, Globe } from "lucide-react";
+import { Calendar, Users, MapPin, Search, Heart, Shield, UserPlus, Ticket } from "lucide-react";
 
 const features = [
   {
@@ -9,6 +9,12 @@ const features = [
     title: "Show Listings Management",
     description: "Create, edit, and manage your productions with our intuitive dashboard. Track approval status and update details anytime.",
     color: "bg-primary"
+  },
+  {
+    icon: Ticket,
+    title: "Ticket Link Integration",
+    description: "Add ticket purchase links directly to your show pages. Audiences can find and buy tickets in one click.",
+    color: "bg-secondary"
   },
   {
     icon: Users,
@@ -39,12 +45,6 @@ const features = [
     title: "Favorites & Watchlist",
     description: "Audiences can save shows they're interested in and build a personal theater watchlist for easy access.",
     color: "bg-pink-500"
-  },
-  {
-    icon: Globe,
-    title: "Social Links Integration",
-    description: "Connect your Facebook and Instagram profiles so audiences can follow your group on social media.",
-    color: "bg-cyan-500"
   },
   {
     icon: Shield,
