@@ -1,44 +1,44 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Calendar, Ticket, Users, BarChart3, MapPin, Bell } from "lucide-react";
+import { Calendar, Users, MapPin, Search, Heart, Shield } from "lucide-react";
 
 const features = [
   {
     icon: Calendar,
-    title: "Seamless Show Management",
-    description: "Create, edit, and manage your productions with our intuitive dashboard. Schedule shows and track submissions effortlessly.",
-    color: "bg-blue-500"
-  },
-  {
-    icon: Ticket,
-    title: "Digital Ticketing",
-    description: "Connect your ticket links directly to your show pages. Audiences can find and purchase tickets in one click.",
+    title: "Show Listings Management",
+    description: "Create, edit, and manage your productions with our intuitive dashboard. Schedule shows and track approval status.",
     color: "bg-primary"
   },
   {
     icon: Users,
     title: "Group Profiles",
-    description: "Showcase your theater group with dedicated profile pages featuring your history, productions, and team.",
+    description: "Showcase your theater group with dedicated profile pages featuring your history, team members, and contact info.",
     color: "bg-purple-500"
   },
   {
-    icon: BarChart3,
-    title: "Real-time Analytics",
-    description: "Track views, engagement, and discover insights about your audience to grow your reach.",
-    color: "bg-green-500"
-  },
-  {
     icon: MapPin,
-    title: "Location Discovery",
-    description: "Help audiences find shows near them with city-based browsing and venue information.",
+    title: "City-Based Discovery",
+    description: "Help audiences find shows near them with location browsing across Metro Manila venues.",
     color: "bg-orange-500"
   },
   {
-    icon: Bell,
-    title: "Smart Notifications",
-    description: "Keep producers updated on approval status and notify audiences about upcoming shows.",
+    icon: Search,
+    title: "Theater Directory",
+    description: "Browse and discover local and university theater groups. Find new productions and follow your favorites.",
+    color: "bg-blue-500"
+  },
+  {
+    icon: Heart,
+    title: "Favorites & Watchlist",
+    description: "Save shows you're interested in and build your personal theater watchlist for easy access.",
     color: "bg-pink-500"
+  },
+  {
+    icon: Shield,
+    title: "Curated Quality",
+    description: "All shows go through an approval process to ensure quality listings for audiences.",
+    color: "bg-green-500"
   }
 ];
 
