@@ -17,6 +17,7 @@ import { Clock } from "lucide-react";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE_MS = 5 * 60 * 1000; // 5 minutes before timeout
+const STORAGE_KEY = "stagelink_last_activity";
 
 interface IdleTimerProviderProps {
   children: React.ReactNode;
@@ -29,13 +30,45 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+  const initializedRef = useRef(false);
   
   const [showWarning, setShowWarning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(5 * 60); // 5 minutes in seconds
 
+  // Get last activity from localStorage
+  const getStoredLastActivity = useCallback((): number => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        return parseInt(stored, 10);
+      }
+    } catch {
+      // localStorage not available
+    }
+    return Date.now();
+  }, []);
+
+  // Save last activity to localStorage
+  const setStoredLastActivity = useCallback((timestamp: number) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, timestamp.toString());
+    } catch {
+      // localStorage not available
+    }
+  }, []);
+
+  // Clear stored activity on logout
+  const clearStoredActivity = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // localStorage not available
+    }
+  }, []);
+
   const handleLogout = useCallback(async () => {
     setShowWarning(false);
+    clearStoredActivity();
     await supabase.auth.signOut();
     toast({
       title: "Session Expired",
@@ -43,7 +76,7 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
       variant: "default",
     });
     navigate("/login");
-  }, [navigate]);
+  }, [navigate, clearStoredActivity]);
 
   const clearAllTimers = useCallback(() => {
     if (timeoutRef.current) {
@@ -60,48 +93,97 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
     }
   }, []);
 
-  const resetTimer = useCallback(() => {
-    lastActivityRef.current = Date.now();
+  const startCountdown = useCallback((initialSeconds: number) => {
+    setRemainingTime(initialSeconds);
+    
+    countdownRef.current = setInterval(() => {
+      setRemainingTime((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const resetTimer = useCallback((fromActivity: boolean = true) => {
+    const now = Date.now();
+    setStoredLastActivity(now);
     setShowWarning(false);
     setRemainingTime(5 * 60);
     clearAllTimers();
 
     if (user) {
-      // Set warning timer (25 minutes)
+      // Set warning timer (25 minutes from now)
       warningTimeoutRef.current = setTimeout(() => {
         setShowWarning(true);
-        setRemainingTime(5 * 60);
-        
-        // Start countdown
-        countdownRef.current = setInterval(() => {
-          setRemainingTime((prev) => {
-            if (prev <= 1) {
-              clearInterval(countdownRef.current!);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
+        startCountdown(Math.floor(WARNING_BEFORE_MS / 1000));
       }, IDLE_TIMEOUT_MS - WARNING_BEFORE_MS);
 
-      // Set logout timer (30 minutes)
+      // Set logout timer (30 minutes from now)
       timeoutRef.current = setTimeout(() => {
         handleLogout();
       }, IDLE_TIMEOUT_MS);
     }
-  }, [user, handleLogout, clearAllTimers]);
+  }, [user, handleLogout, clearAllTimers, setStoredLastActivity, startCountdown]);
+
+  // Initialize from stored state on mount
+  const initializeFromStorage = useCallback(() => {
+    if (!user || initializedRef.current) return;
+    initializedRef.current = true;
+
+    const lastActivity = getStoredLastActivity();
+    const now = Date.now();
+    const elapsed = now - lastActivity;
+
+    if (elapsed >= IDLE_TIMEOUT_MS) {
+      // Session already expired - log out immediately
+      handleLogout();
+      return;
+    }
+
+    const timeUntilWarning = (IDLE_TIMEOUT_MS - WARNING_BEFORE_MS) - elapsed;
+    const timeUntilLogout = IDLE_TIMEOUT_MS - elapsed;
+
+    if (timeUntilWarning <= 0) {
+      // Already in warning period - show warning with correct remaining time
+      setShowWarning(true);
+      const remainingSeconds = Math.floor(timeUntilLogout / 1000);
+      startCountdown(remainingSeconds);
+
+      // Set logout timer for remaining time
+      timeoutRef.current = setTimeout(() => {
+        handleLogout();
+      }, timeUntilLogout);
+    } else {
+      // Normal state - set timers from remaining time
+      warningTimeoutRef.current = setTimeout(() => {
+        setShowWarning(true);
+        startCountdown(Math.floor(WARNING_BEFORE_MS / 1000));
+      }, timeUntilWarning);
+
+      timeoutRef.current = setTimeout(() => {
+        handleLogout();
+      }, timeUntilLogout);
+    }
+  }, [user, getStoredLastActivity, handleLogout, startCountdown]);
 
   const handleStayLoggedIn = useCallback(() => {
     setShowWarning(false);
-    resetTimer();
+    resetTimer(true);
   }, [resetTimer]);
 
+  // Initialize on user login
   useEffect(() => {
     if (!user) {
       clearAllTimers();
       setShowWarning(false);
+      initializedRef.current = false;
       return;
     }
+
+    initializeFromStorage();
 
     // Events that indicate user activity
     const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
@@ -109,7 +191,7 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
     const handleActivity = () => {
       // Only reset if warning is not showing
       if (!showWarning) {
-        resetTimer();
+        resetTimer(true);
       }
     };
 
@@ -118,21 +200,18 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // Initialize timer
-    resetTimer();
-
     return () => {
       events.forEach((event) => {
         window.removeEventListener(event, handleActivity);
       });
       clearAllTimers();
     };
-  }, [user, resetTimer, clearAllTimers, showWarning]);
+  }, [user, initializeFromStorage, resetTimer, clearAllTimers, showWarning]);
 
-  // Reset timer on route changes (indicates activity)
+  // Update stored activity on route changes
   useEffect(() => {
     if (user && !showWarning) {
-      resetTimer();
+      resetTimer(true);
     }
   }, [location.pathname, user, resetTimer, showWarning]);
 
