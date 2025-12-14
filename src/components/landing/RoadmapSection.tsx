@@ -12,9 +12,10 @@ const phases = [
     features: [
       "Show listings & management",
       "Group profiles & directory",
+      "Team member showcase",
       "City-based discovery",
       "Favorites & watchlist",
-      "Admin approval workflow"
+      "Social links integration"
     ]
   },
   {
