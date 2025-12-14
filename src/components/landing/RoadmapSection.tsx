@@ -140,14 +140,19 @@ const RoadmapSection = () => {
         </div>
 
         {/* Note */}
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.6 }}
-          className="text-center text-muted-foreground text-sm mt-10"
+          className="text-center mt-10 space-y-1"
         >
-          Roadmap is subject to change based on user feedback and priorities.
-        </motion.p>
+          <p className="text-muted-foreground text-sm">
+            This roadmap is for discussion purposes and is not final.
+          </p>
+          <p className="text-muted-foreground/70 text-xs">
+            Features and timelines may change based on user feedback and priorities.
+          </p>
+        </motion.div>
       </div>
     </section>
   );
