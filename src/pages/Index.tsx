@@ -10,6 +10,7 @@ import RoadmapSection from "@/components/landing/RoadmapSection";
 import FAQSection from "@/components/landing/FAQSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import LandingFooter from "@/components/landing/LandingFooter";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 
 const Index = () => {
@@ -52,6 +53,7 @@ const Index = () => {
       </main>
       
       <LandingFooter />
+      <ScrollToTop />
     </div>
   );
 };
