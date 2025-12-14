@@ -18,7 +18,7 @@ const plans = [
     description: "Perfect for new theater groups just getting started",
     features: [
       "Group profile with social links",
-      "Show listings management",
+      "Show listings with ticket links",
       "Team member showcase",
       "Included in Theater Directory",
       "City-based discovery",
@@ -35,11 +35,12 @@ const plans = [
     description: "For established groups ready to grow their audience",
     features: [
       "Everything in Free, plus:",
-      "Ticket link integration",
       "Real-time analytics dashboard",
-      "Email notifications",
+      "Email & SMS notifications",
       "Priority search placement",
-      "Featured productions badge"
+      "Featured productions badge",
+      "Rich media gallery",
+      "Audience engagement insights"
     ],
     cta: "Coming Soon",
     popular: true,
