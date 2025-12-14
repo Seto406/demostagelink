@@ -1,43 +1,55 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Calendar, Users, MapPin, Search, Heart, Shield } from "lucide-react";
+import { Calendar, Users, MapPin, Search, Heart, Shield, UserPlus, Globe } from "lucide-react";
 
 const features = [
   {
     icon: Calendar,
     title: "Show Listings Management",
-    description: "Create, edit, and manage your productions with our intuitive dashboard. Schedule shows and track approval status.",
+    description: "Create, edit, and manage your productions with our intuitive dashboard. Track approval status and update details anytime.",
     color: "bg-primary"
   },
   {
     icon: Users,
     title: "Group Profiles",
-    description: "Showcase your theater group with dedicated profile pages featuring your history, team members, and contact info.",
+    description: "Showcase your theater group with dedicated pages featuring history, social links, avatars, and contact info.",
     color: "bg-purple-500"
+  },
+  {
+    icon: UserPlus,
+    title: "Team Member Showcase",
+    description: "Add and display your cast and crew members with roles and photos. Let audiences know who's behind the magic.",
+    color: "bg-indigo-500"
   },
   {
     icon: MapPin,
     title: "City-Based Discovery",
-    description: "Help audiences find shows near them with location browsing across Metro Manila venues.",
+    description: "Help audiences find shows near them with location browsing across Metro Manila venues and real show counts.",
     color: "bg-orange-500"
   },
   {
     icon: Search,
     title: "Theater Directory",
-    description: "Browse and discover local and university theater groups. Find new productions and follow your favorites.",
+    description: "Browse and discover local and university theater groups. Explore group profiles and their complete production catalogs.",
     color: "bg-blue-500"
   },
   {
     icon: Heart,
     title: "Favorites & Watchlist",
-    description: "Save shows you're interested in and build your personal theater watchlist for easy access.",
+    description: "Audiences can save shows they're interested in and build a personal theater watchlist for easy access.",
     color: "bg-pink-500"
+  },
+  {
+    icon: Globe,
+    title: "Social Links Integration",
+    description: "Connect your Facebook and Instagram profiles so audiences can follow your group on social media.",
+    color: "bg-cyan-500"
   },
   {
     icon: Shield,
     title: "Curated Quality",
-    description: "All shows go through an approval process to ensure quality listings for audiences.",
+    description: "All shows go through an admin approval process to ensure quality listings for audiences.",
     color: "bg-green-500"
   }
 ];
