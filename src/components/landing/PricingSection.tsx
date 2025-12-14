@@ -17,11 +17,12 @@ const plans = [
     price: "Free",
     description: "Perfect for new theater groups just getting started",
     features: [
-      "Basic group profile",
+      "Group profile with social links",
       "Show listings management",
+      "Team member showcase",
       "Included in Theater Directory",
-      "Search & discovery visibility",
-      "Unlimited audience access"
+      "City-based discovery",
+      "Audience favorites & watchlist"
     ],
     cta: "Get Started",
     popular: false,
@@ -33,11 +34,12 @@ const plans = [
     period: "/month",
     description: "For established groups ready to grow their audience",
     features: [
+      "Everything in Free, plus:",
       "Ticket link integration",
-      "Enhanced group profile",
       "Real-time analytics dashboard",
-      "Email notifications & calendar sync",
-      "Location-based discovery priority"
+      "Email notifications",
+      "Priority search placement",
+      "Featured productions badge"
     ],
     cta: "Coming Soon",
     popular: true,
