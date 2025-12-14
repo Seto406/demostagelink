@@ -6,6 +6,7 @@ import LandingHero from "@/components/landing/LandingHero";
 import MissionSection from "@/components/landing/MissionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PricingSection from "@/components/landing/PricingSection";
+import RoadmapSection from "@/components/landing/RoadmapSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import { BrandedLoader } from "@/components/ui/branded-loader";
@@ -44,6 +45,7 @@ const Index = () => {
         <MissionSection />
         <FeaturesSection />
         <PricingSection />
+        <RoadmapSection />
         <ShowcaseSection />
       </main>
       
