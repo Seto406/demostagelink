@@ -26,15 +26,18 @@ const LandingNavbar = () => {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Features
             </a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Pricing
             </a>
-            <a href="#showcase" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Showcase
+            <a href="#roadmap" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Roadmap
+            </a>
+            <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              FAQ
             </a>
             <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               About
