@@ -3,6 +3,19 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import stagelinkLogo from "@/assets/stagelink-logo-mask.png";
 
+const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+  e.preventDefault();
+  const element = document.getElementById(sectionId);
+  if (element) {
+    const navbarHeight = 80; // Account for fixed navbar
+    const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: elementPosition - navbarHeight,
+      behavior: "smooth"
+    });
+  }
+};
+
 const LandingNavbar = () => {
   return (
     <motion.header
@@ -27,16 +40,32 @@ const LandingNavbar = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <a 
+              href="#features" 
+              onClick={(e) => scrollToSection(e, "features")}
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
               Features
             </a>
-            <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <a 
+              href="#pricing" 
+              onClick={(e) => scrollToSection(e, "pricing")}
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
               Pricing
             </a>
-            <a href="#roadmap" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <a 
+              href="#roadmap" 
+              onClick={(e) => scrollToSection(e, "roadmap")}
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
               Roadmap
             </a>
-            <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <a 
+              href="#faq" 
+              onClick={(e) => scrollToSection(e, "faq")}
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
               FAQ
             </a>
             <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
