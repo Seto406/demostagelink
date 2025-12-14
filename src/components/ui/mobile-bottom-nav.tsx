@@ -1,8 +1,9 @@
 import * as React from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, User, Calendar, Info } from "lucide-react";
+import { Home, Search, User, Calendar, Info, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   icon: React.ElementType;
@@ -10,7 +11,7 @@ interface NavItem {
   path: string;
 }
 
-const navItems: NavItem[] = [
+const publicNavItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Search, label: "Shows", path: "/shows" },
   { icon: Calendar, label: "Directory", path: "/directory" },
@@ -21,6 +22,7 @@ const navItems: NavItem[] = [
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const { scrollY } = useScroll();
+  const { user, profile } = useAuth();
   const [isVisible, setIsVisible] = React.useState(true);
   const [lastScrollY, setLastScrollY] = React.useState(0);
 
@@ -51,7 +53,33 @@ export const MobileBottomNav: React.FC = () => {
     setLastScrollY(current);
   });
 
-  // Don't show on dashboard or admin pages
+  // Build nav items based on auth state
+  const navItems = React.useMemo(() => {
+    if (!user) {
+      return publicNavItems;
+    }
+
+    // Logged in - determine last button based on role
+    const baseItems: NavItem[] = [
+      { icon: Home, label: "Home", path: "/feed" },
+      { icon: Search, label: "Shows", path: "/shows" },
+      { icon: Calendar, label: "Directory", path: "/directory" },
+      { icon: Info, label: "About", path: "/about" },
+    ];
+
+    if (profile?.role === "producer") {
+      baseItems.push({ icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" });
+    } else if (profile?.role === "admin") {
+      baseItems.push({ icon: LayoutDashboard, label: "Admin", path: "/admin" });
+    } else {
+      // Audience users get Profile/Settings
+      baseItems.push({ icon: User, label: "Profile", path: "/settings" });
+    }
+
+    return baseItems;
+  }, [user, profile]);
+
+  // Don't show on dashboard, admin, login, reset-password, verify-email pages
   const excludedPaths = ["/dashboard", "/admin", "/login", "/reset-password", "/verify-email"];
   if (excludedPaths.some((path) => location.pathname.startsWith(path))) {
     return null;

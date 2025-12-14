@@ -3,11 +3,12 @@ import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-secondary/10 py-12">
-      <div className="container mx-auto px-6">
-        <div className="grid md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="md:col-span-2">
+    <footer className="bg-card border-t border-secondary/10 py-8 sm:py-12">
+      <div className="container mx-auto px-4 sm:px-6">
+        {/* Mobile: 2-column grid for links, Desktop: 4-column */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+          {/* Brand - Full width on mobile */}
+          <div className="col-span-2">
             <Link to="/" className="flex items-center gap-3 mb-4">
               <img 
                 src={stageLinkLogo} 
@@ -19,18 +20,22 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-md">
-              Connecting audiences with the vibrant world of local theater across Metro Manila. 
-              Discover, support, and celebrate Filipino theatrical arts.
+              Connecting audiences with the vibrant world of local theater across Metro Manila.
             </p>
           </div>
 
-          {/* Links */}
+          {/* Links - Side by side on mobile */}
           <div>
-            <h4 className="font-serif text-foreground font-semibold mb-4">Explore</h4>
-            <ul className="space-y-2">
+            <h4 className="font-serif text-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Explore</h4>
+            <ul className="space-y-1.5 sm:space-y-2">
               <li>
                 <Link to="/directory" className="text-muted-foreground hover:text-secondary transition-colors text-sm">
                   Theater Directory
+                </Link>
+              </li>
+              <li>
+                <Link to="/shows" className="text-muted-foreground hover:text-secondary transition-colors text-sm">
+                  All Shows
                 </Link>
               </li>
               <li>
@@ -43,8 +48,8 @@ const Footer = () => {
 
           {/* For Groups */}
           <div>
-            <h4 className="font-serif text-foreground font-semibold mb-4">For Theater Groups</h4>
-            <ul className="space-y-2">
+            <h4 className="font-serif text-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">For Groups</h4>
+            <ul className="space-y-1.5 sm:space-y-2">
               <li>
                 <Link to="/login" className="text-muted-foreground hover:text-secondary transition-colors text-sm">
                   Submit Your Group
@@ -59,13 +64,11 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-secondary/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-muted-foreground text-xs">
+        <div className="border-t border-secondary/10 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+          <p className="text-muted-foreground text-xs text-center sm:text-left">
             © 2026 StageLink. Supporting Local Theater in Metro Manila.
           </p>
-          <div className="flex gap-6">
-            <span className="text-muted-foreground text-xs">Made with ❤️ for Filipino Theater</span>
-          </div>
+          <span className="text-muted-foreground text-xs">Made with ❤️ for Filipino Theater</span>
         </div>
       </div>
     </footer>

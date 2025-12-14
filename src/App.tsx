@@ -11,6 +11,7 @@ import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/comp
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
+import IdleTimerProvider from "@/providers/IdleTimerProvider";
 import Index from "./pages/Index";
 import UserFeed from "./pages/UserFeed";
 import Directory from "./pages/Directory";
@@ -130,8 +131,10 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <AuthProvider>
-                <AnimatedRoutes />
-                <MobileBottomNav />
+                <IdleTimerProvider>
+                  <AnimatedRoutes />
+                  <MobileBottomNav />
+                </IdleTimerProvider>
               </AuthProvider>
             </BrowserRouter>
           </CinematicBackground>

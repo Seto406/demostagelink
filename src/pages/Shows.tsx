@@ -4,11 +4,16 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -169,6 +174,7 @@ const Shows = () => {
   const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Update URL when filters change
   useEffect(() => {
@@ -313,8 +319,9 @@ const Shows = () => {
               )}
             </div>
 
-            {/* Filter Pills - Scrollable on mobile */}
-            <div className="space-y-4">
+            {/* Filter Pills - Desktop: always visible, Mobile: collapsible */}
+            {/* Desktop Filters */}
+            <div className="hidden sm:block space-y-4">
               {/* City Filter */}
               <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1 mr-2">
@@ -383,6 +390,90 @@ const Shows = () => {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Mobile Filters - Collapsible */}
+            <div className="sm:hidden">
+              <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <CollapsibleTrigger className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-card border border-secondary/30 rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Filter className="w-4 h-4" />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-full">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4 space-y-4 p-4 bg-card/50 border border-secondary/20 rounded-lg">
+                  {/* City Filter */}
+                  <div className="space-y-2">
+                    <span className="text-muted-foreground text-xs flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> City
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {cities.map((city) => (
+                        <button
+                          key={city}
+                          onClick={() => setSelectedCity(city)}
+                          className={`px-3 py-1.5 text-xs border transition-all ${
+                            selectedCity === city
+                              ? "border-secondary bg-secondary/20 text-secondary"
+                              : "border-secondary/30 text-muted-foreground"
+                          }`}
+                        >
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Genre Filter */}
+                  <div className="space-y-2">
+                    <span className="text-muted-foreground text-xs flex items-center gap-1">
+                      <Filter className="w-3 h-3" /> Type
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {genres.map((genre) => (
+                        <button
+                          key={genre}
+                          onClick={() => setSelectedGenre(genre)}
+                          className={`px-3 py-1.5 text-xs border transition-all ${
+                            selectedGenre === genre
+                              ? "border-secondary bg-secondary/20 text-secondary"
+                              : "border-secondary/30 text-muted-foreground"
+                          }`}
+                        >
+                          {genre}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Date Filter */}
+                  <div className="space-y-2">
+                    <span className="text-muted-foreground text-xs flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> From Date
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="flex-1 bg-background border-secondary/30 text-sm h-10"
+                      />
+                      {dateFilter && (
+                        <button
+                          onClick={() => setDateFilter("")}
+                          className="text-muted-foreground hover:text-foreground transition-colors p-2"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
 
             {/* Active Filters & Clear */}

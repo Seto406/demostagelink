@@ -93,7 +93,7 @@ type FilterStatus = "all" | "pending" | "approved" | "rejected" | "deleted";
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
@@ -639,15 +639,23 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={`fixed lg:static inset-y-0 left-0 z-50 bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-0 lg:w-20"
-        } overflow-hidden`}
+          sidebarOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0 lg:w-20"
+        }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-sidebar-border">
+          <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
               <img src={stageLinkLogo} alt="StageLink" className="h-10 w-auto" />
               {sidebarOpen && (
@@ -656,6 +664,13 @@ const AdminPanel = () => {
                 </span>
               )}
             </Link>
+            {/* Close button for mobile */}
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation */}
