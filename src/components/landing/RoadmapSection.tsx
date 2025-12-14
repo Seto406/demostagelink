@@ -12,10 +12,10 @@ const phases = [
     features: [
       "Show listings & management",
       "Group profiles & directory",
+      "Ticket link integration",
       "Team member showcase",
       "City-based discovery",
-      "Favorites & watchlist",
-      "Social links integration"
+      "Favorites & watchlist"
     ]
   },
   {
@@ -24,11 +24,11 @@ const phases = [
     status: "upcoming",
     timeline: "Q1 2025",
     features: [
-      "Ticket link integration",
-      "Real-time analytics",
+      "Real-time analytics dashboard",
       "Email notifications",
-      "Enhanced profiles",
-      "Social login (Google)"
+      "Enhanced rich media profiles",
+      "Social login (Google)",
+      "Show performance insights"
     ]
   },
   {
@@ -38,9 +38,9 @@ const phases = [
     timeline: "Q2 2025",
     features: [
       "Mobile app (iOS & Android)",
-      "Pro subscriptions",
-      "Calendar sync",
-      "Audience reviews",
+      "Pro subscriptions & payments",
+      "Calendar sync & reminders",
+      "Audience reviews & ratings",
       "National expansion"
     ]
   }
