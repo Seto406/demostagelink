@@ -11,14 +11,15 @@ const plans = [
     price: "Free",
     description: "Perfect for new theater groups just getting started",
     features: [
-      "Up to 3 show listings",
       "Basic group profile",
-      "Ticket link integration",
-      "Community support",
-      "Standard visibility"
+      "Show listings management",
+      "Included in Theater Directory",
+      "Search & discovery visibility",
+      "Unlimited audience access"
     ],
     cta: "Get Started",
-    popular: false
+    popular: false,
+    comingSoon: false
   },
   {
     name: "Pro Producer",
@@ -26,16 +27,15 @@ const plans = [
     period: "/month",
     description: "For established groups ready to grow their audience",
     features: [
-      "Unlimited show listings",
+      "Ticket link integration",
       "Enhanced group profile",
-      "Priority placement in search",
       "Real-time analytics dashboard",
-      "Email notifications",
-      "Priority support",
-      "Featured productions badge"
+      "Email notifications & calendar sync",
+      "Location-based discovery priority"
     ],
-    cta: "Start Free Trial",
-    popular: true
+    cta: "Coming Soon",
+    popular: true,
+    comingSoon: true
   }
 ];
 
@@ -79,12 +79,16 @@ const PricingSection = () => {
                   : "bg-card border border-secondary/20"
               }`}
             >
-              {/* Popular Badge */}
+              {/* Popular/Coming Soon Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="flex items-center gap-1 bg-secondary text-secondary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                  <div className={`flex items-center gap-1 px-4 py-1 rounded-full text-sm font-semibold ${
+                    plan.comingSoon 
+                      ? "bg-muted text-muted-foreground" 
+                      : "bg-secondary text-secondary-foreground"
+                  }`}>
                     <Star className="w-4 h-4" />
-                    Recommended
+                    {plan.comingSoon ? "Coming Soon" : "Recommended"}
                   </div>
                 </div>
               )}
@@ -125,17 +129,26 @@ const PricingSection = () => {
               </ul>
 
               {/* CTA Button */}
-              <Link to="/login">
+              {plan.comingSoon ? (
                 <Button
-                  className={`w-full py-6 text-lg ${
-                    plan.popular
-                      ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90"
-                  }`}
+                  disabled
+                  className="w-full py-6 text-lg bg-muted text-muted-foreground cursor-not-allowed"
                 >
                   {plan.cta}
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/login">
+                  <Button
+                    className={`w-full py-6 text-lg ${
+                      plan.popular
+                        ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
+              )}
             </motion.div>
           ))}
         </div>
