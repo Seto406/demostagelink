@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Users, Calendar, ExternalLink } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -138,6 +139,16 @@ const GroupProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{`${group.group_name} on StageLink`}</title>
+        <meta name="description" content={(group.description || "").substring(0, 150)} />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={`${group.group_name} on StageLink`} />
+        <meta property="og:description" content={(group.description || "").substring(0, 150)} />
+        {group.logo && <meta property="og:image" content={group.logo} />}
+      </Helmet>
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
