@@ -286,6 +286,35 @@ export type Database = {
           },
         ]
       }
+      show_reminders: {
+        Row: {
+          id: string
+          show_id: string
+          email: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          show_id: string
+          email: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          show_id?: string
+          email?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_reminders_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

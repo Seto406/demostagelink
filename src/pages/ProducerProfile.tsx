@@ -6,6 +6,8 @@ import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Users, Facebook, Instagram } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import { AddToCalendarButton } from "@/components/shows/AddToCalendarButton";
+import { RemindMeDialog } from "@/components/shows/RemindMeDialog";
 
 interface Producer {
   id: string;
@@ -228,47 +230,64 @@ const ProducerProfile = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
                   >
-                    <Link 
-                      to={`/show/${show.id}`}
-                      className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
-                    >
-                      {/* Poster */}
-                      <div className="aspect-[3/2] relative overflow-hidden">
-                        {show.poster_url ? (
-                          <img 
-                            src={show.poster_url} 
-                            alt={show.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                            <span className="text-4xl opacity-30">🎭</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="p-4">
-                        <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
-                          {show.title}
-                        </h3>
-                        
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                          {show.date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(show.date).toLocaleDateString()}
-                            </span>
-                          )}
-                          {show.city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {show.city}
-                            </span>
+                    <div className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300 h-full flex flex-col">
+                      <Link
+                        to={`/show/${show.id}`}
+                        className="block flex-1"
+                      >
+                        {/* Poster */}
+                        <div className="aspect-[3/2] relative overflow-hidden">
+                          {show.poster_url ? (
+                            <img
+                              src={show.poster_url}
+                              alt={show.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                              <span className="text-4xl opacity-30">🎭</span>
+                            </div>
                           )}
                         </div>
+
+                        {/* Content */}
+                        <div className="p-4">
+                          <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
+                            {show.title}
+                          </h3>
+
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                            {show.date && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(show.date).toLocaleDateString()}
+                              </span>
+                            )}
+                            {show.city && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {show.city}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+
+                      {/* Action Buttons */}
+                      <div className="px-4 pb-4 mt-auto flex flex-wrap gap-2">
+                        <AddToCalendarButton
+                          title={show.title}
+                          date={show.date}
+                          venue={show.venue}
+                          city={show.city}
+                          description={show.description}
+                        />
+                        <RemindMeDialog
+                          showId={show.id}
+                          showTitle={show.title}
+                        />
                       </div>
-                    </Link>
+                    </div>
                   </motion.div>
                 ))}
               </div>
