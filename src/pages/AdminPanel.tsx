@@ -138,11 +138,11 @@ const AdminPanel = () => {
   // Fetch stats
   const fetchStats = async () => {
     const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact" }),
-      supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
-      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
-      supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
-      supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
+      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("shows").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "producer"),
+      supabase.from("producer_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("shows").select("id", { count: "exact", head: true }).not("deleted_at", "is", null),
     ]);
 
     setStats({
