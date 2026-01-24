@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          group_id: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          group_id?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          group_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -169,12 +198,15 @@ export type Database = {
           description: string | null
           facebook_url: string | null
           founded_year: number | null
+          gallery_images: string[] | null
           group_name: string | null
           id: string
           instagram_url: string | null
           map_screenshot_url: string | null
           niche: Database["public"]["Enums"]["niche_type"] | null
           role: Database["public"]["Enums"]["user_role"]
+          social_links: Json | null
+          ticket_link: string | null
           updated_at: string
           user_id: string
         }
@@ -185,12 +217,15 @@ export type Database = {
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
+          social_links?: Json | null
+          ticket_link?: string | null
           updated_at?: string
           user_id: string
         }
@@ -201,12 +236,15 @@ export type Database = {
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
+          social_links?: Json | null
+          ticket_link?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -227,6 +265,7 @@ export type Database = {
           niche: Database["public"]["Enums"]["niche_type"] | null
           poster_url: string | null
           producer_id: string
+          show_dates: Json | null
           status: Database["public"]["Enums"]["show_status"]
           tags: string[] | null
           ticket_link: string | null
@@ -248,6 +287,7 @@ export type Database = {
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
           producer_id: string
+          show_dates?: Json | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
           ticket_link?: string | null
@@ -269,6 +309,7 @@ export type Database = {
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
           producer_id?: string
+          show_dates?: Json | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
           ticket_link?: string | null
