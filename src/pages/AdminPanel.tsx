@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,14 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Show {
   id: string;
@@ -97,6 +105,9 @@ const AdminPanel = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject"; show: Show } | null>(null);
@@ -155,9 +166,12 @@ const AdminPanel = () => {
   };
 
   // Fetch all shows for admin
-  const fetchShows = async () => {
+  const fetchShows = useCallback(async () => {
     setLoadingShows(true);
     
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = from + itemsPerPage - 1;
+
     let query = supabase
       .from("shows")
       .select(`
@@ -165,8 +179,7 @@ const AdminPanel = () => {
         profiles:producer_id (
           group_name
         )
-      `)
-      .order("created_at", { ascending: false });
+      `, { count: "exact" });
 
     // Handle deleted filter differently
     if (filterStatus === "deleted") {
@@ -178,7 +191,9 @@ const AdminPanel = () => {
       }
     }
 
-    const { data, error } = await query;
+    const { data, count, error } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching shows:", error);
@@ -189,9 +204,10 @@ const AdminPanel = () => {
       });
     } else {
       setShows(data as Show[]);
+      setTotalItems(count || 0);
     }
     setLoadingShows(false);
-  };
+  }, [currentPage, itemsPerPage, filterStatus]);
 
   // Fetch all users
   const fetchUsers = async () => {
@@ -227,11 +243,17 @@ const AdminPanel = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchShows();
+    }
+  }, [isAdmin, fetchShows]);
+
+  useEffect(() => {
+    if (isAdmin) {
       fetchUsers();
       fetchProducerRequests();
       fetchStats();
     }
-  }, [isAdmin, filterStatus]);
+  }, [isAdmin]);
+
 
   const handleLogout = async () => {
     await signOut();
@@ -637,6 +659,8 @@ const AdminPanel = () => {
     return null;
   }
 
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Mobile Sidebar Overlay */}
@@ -811,7 +835,7 @@ const AdminPanel = () => {
               {/* Show Filter Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <button
-                  onClick={() => setFilterStatus("all")}
+                  onClick={() => { setFilterStatus("all"); setCurrentPage(1); }}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "all" ? "border-secondary" : "border-secondary/20 hover:border-secondary/50"
                   }`}
@@ -820,7 +844,7 @@ const AdminPanel = () => {
                   <p className="text-2xl font-serif text-foreground">{shows.length}</p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("pending")}
+                  onClick={() => { setFilterStatus("pending"); setCurrentPage(1); }}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "pending" ? "border-yellow-500" : "border-secondary/20 hover:border-yellow-500/50"
                   }`}
@@ -831,7 +855,7 @@ const AdminPanel = () => {
                   </p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("approved")}
+                  onClick={() => { setFilterStatus("approved"); setCurrentPage(1); }}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "approved" ? "border-green-500" : "border-secondary/20 hover:border-green-500/50"
                   }`}
@@ -842,7 +866,7 @@ const AdminPanel = () => {
                   </p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("rejected")}
+                  onClick={() => { setFilterStatus("rejected"); setCurrentPage(1); }}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "rejected" ? "border-red-500" : "border-secondary/20 hover:border-red-500/50"
                   }`}
@@ -853,7 +877,7 @@ const AdminPanel = () => {
                   </p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("deleted")}
+                  onClick={() => { setFilterStatus("deleted"); setCurrentPage(1); }}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "deleted" ? "border-orange-500" : "border-secondary/20 hover:border-orange-500/50"
                   }`}
@@ -875,6 +899,7 @@ const AdminPanel = () => {
                   </p>
                 </div>
               ) : (
+                <>
                 <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
                   <table className="w-full min-w-[800px]">
                     <thead className="bg-muted/50">
@@ -999,6 +1024,52 @@ const AdminPanel = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {totalPages > 1 && (
+                  <Pagination className="mt-4">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              isActive={currentPage === pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className="cursor-pointer"
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+                </>
               )}
             </motion.div>
           ) : (
