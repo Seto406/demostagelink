@@ -45,26 +45,16 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
         />
 
         {/* Animated gradient mesh background */}
-        <div className="absolute inset-0">
-          <motion.div
-            className="absolute inset-0"
-            style={{
-              background: `
-                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(139, 0, 0, 0.08) 0%, transparent 50%),
-                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 0, 0, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse 50% 30% at 50% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 50%)
-              `,
-            }}
-            animate={{
-              opacity: [0.8, 1, 0.8],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
+        <div
+          className="absolute inset-0 animate-pulse-subtle"
+          style={{
+            background: `
+              radial-gradient(ellipse 80% 50% at 20% 40%, rgba(139, 0, 0, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 0, 0, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse 50% 30% at 50% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 50%)
+            `,
+          }}
+        />
 
         {/* Ambient Orb 1 - Top Left - Brand Red */}
         <motion.div
