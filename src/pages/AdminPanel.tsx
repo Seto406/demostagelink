@@ -44,6 +44,15 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Show {
   id: string;
@@ -107,6 +116,11 @@ const AdminPanel = () => {
   const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0, deletedShows: 0 });
   const [activeTab, setActiveTab] = useState("shows");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUserCount, setTotalUserCount] = useState(0);
+  const ITEMS_PER_PAGE = 10;
 
   // Dev tools state
   const [devModalOpen, setDevModalOpen] = useState(false);
@@ -196,15 +210,21 @@ const AdminPanel = () => {
   // Fetch all users
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase
+
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE - 1;
+
+    const { data, count, error } = await supabase
       .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(start, end);
 
     if (error) {
       console.error("Error fetching users:", error);
     } else {
       setUsers(data as UserProfile[]);
+      if (count !== null) setTotalUserCount(count);
     }
     setLoadingUsers(false);
   };
@@ -227,11 +247,16 @@ const AdminPanel = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchShows();
-      fetchUsers();
       fetchProducerRequests();
       fetchStats();
     }
   }, [isAdmin, filterStatus]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchUsers();
+    }
+  }, [isAdmin, currentPage]);
 
   const handleLogout = async () => {
     await signOut();
@@ -1061,7 +1086,8 @@ const AdminPanel = () => {
               {loadingUsers ? (
                 <div className="text-muted-foreground text-center py-8">Loading users...</div>
               ) : (
-                <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
+                <>
+                  <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
                   <table className="w-full min-w-[600px]">
                     <thead className="bg-muted/50">
                       <tr>
@@ -1139,6 +1165,79 @@ const AdminPanel = () => {
                     </tbody>
                   </table>
                 </div>
+                {Math.ceil(totalUserCount / ITEMS_PER_PAGE) > 1 && (
+                  <div className="mt-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+
+                        {(() => {
+                          const totalPages = Math.ceil(totalUserCount / ITEMS_PER_PAGE);
+                          const pages = [];
+
+                          // Always show first page
+                          pages.push(1);
+
+                          // Calculate range around current page
+                          const start = Math.max(2, currentPage - 1);
+                          const end = Math.min(totalPages - 1, currentPage + 1);
+
+                          if (start > 2) {
+                            pages.push('ellipsis-start');
+                          }
+
+                          for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                          }
+
+                          if (end < totalPages - 1) {
+                            pages.push('ellipsis-end');
+                          }
+
+                          // Always show last page if > 1
+                          if (totalPages > 1) {
+                            pages.push(totalPages);
+                          }
+
+                          return pages.map((page, i) => {
+                            if (typeof page === 'string') {
+                              return (
+                                <PaginationItem key={`ellipsis-${i}`}>
+                                  <PaginationEllipsis />
+                                </PaginationItem>
+                              );
+                            }
+
+                            return (
+                              <PaginationItem key={page}>
+                                <PaginationLink
+                                  isActive={page === currentPage}
+                                  onClick={() => setCurrentPage(page as number)}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          });
+                        })()}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => setCurrentPage(p => Math.min(Math.ceil(totalUserCount / ITEMS_PER_PAGE), p + 1))}
+                            className={currentPage === Math.ceil(totalUserCount / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+                </>
               )}
             </motion.div>
           )}
