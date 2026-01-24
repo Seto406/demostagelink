@@ -4,7 +4,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
@@ -40,9 +41,6 @@ const posterMap: Record<string, string> = {
   "Batang Rizal": posterBatangRizal,
 };
 
-const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
-const genres = ["All", "Local/Community", "University"];
-
 interface Show {
   id: string;
   title: string;
@@ -52,6 +50,8 @@ interface Show {
   city: string | null;
   niche: "local" | "university" | null;
   poster_url: string | null;
+  genre: string | null;
+  ticket_link: string | null;
   profiles: {
     id: string;
     group_name: string | null;
@@ -74,7 +74,7 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
         <Link
           to={`/show/${show.id}`}
-          className="block bg-card border border-secondary/20 overflow-hidden group relative"
+          className="block bg-card border border-secondary/20 overflow-hidden group relative flex flex-col h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Poster */}
@@ -95,7 +95,7 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
             {/* Niche badge */}
-            {show.niche && (
+            {(show.niche || show.genre) && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -104,7 +104,7 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
                 style={{ transform: "translateZ(30px)" }}
               >
                 <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
-                  {show.niche === "university" ? "University" : "Local"}
+                  {show.genre || (show.niche === "university" ? "University" : "Local")}
                 </span>
               </motion.div>
             )}
@@ -155,6 +155,24 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
                   </span>
                 )}
               </div>
+
+              {/* Buy Ticket Button */}
+              {show.ticket_link && (
+                <div className="mt-4 pt-2 border-t border-white/10">
+                  <Button
+                    size="sm"
+                    className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.open(show.ticket_link || '', '_blank');
+                    }}
+                  >
+                    <Ticket className="w-3 h-3 mr-1" />
+                    Buy Ticket
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Hover border effect */}
@@ -175,6 +193,10 @@ const Shows = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Dynamic filter options
+  const [availableCities, setAvailableCities] = useState<string[]>(["All"]);
+  const [availableGenres, setAvailableGenres] = useState<string[]>(["All"]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -198,6 +220,8 @@ const Shows = () => {
         venue,
         city,
         niche,
+        genre,
+        ticket_link,
         poster_url,
         profiles:producer_id (
           id,
@@ -211,7 +235,28 @@ const Shows = () => {
     if (error) {
       console.error("Error fetching shows:", error);
     } else {
-      setShows(data as Show[]);
+      const fetchedShows = data as Show[];
+      setShows(fetchedShows);
+
+      // Extract unique cities
+      const cities = Array.from(new Set(fetchedShows.map(s => s.city).filter(Boolean))) as string[];
+      setAvailableCities(["All", ...cities.sort()]);
+
+      // Extract unique genres and niches
+      const genres = new Set<string>();
+      fetchedShows.forEach(s => {
+        if (s.genre) genres.add(s.genre);
+      });
+      // Always add niche filters if relevant shows exist or just as standard options
+      // We can also check if any show has niche='university' or 'local'
+      const hasUniversity = fetchedShows.some(s => s.niche === 'university');
+      const hasLocal = fetchedShows.some(s => s.niche === 'local');
+
+      const genreList = Array.from(genres).sort();
+      if (hasLocal) genreList.push("Local/Community");
+      if (hasUniversity) genreList.push("University Theater");
+
+      setAvailableGenres(["All", ...genreList]);
     }
     setLoading(false);
   }, []);
@@ -236,7 +281,8 @@ const Shows = () => {
     const matchesGenre =
       selectedGenre === "All" ||
       (selectedGenre === "Local/Community" && show.niche === "local") ||
-      (selectedGenre === "University" && show.niche === "university");
+      (selectedGenre === "University Theater" && show.niche === "university") ||
+      (show.genre === selectedGenre);
 
     const matchesDate = !dateFilter || (show.date && show.date >= dateFilter);
 
@@ -328,7 +374,7 @@ const Shows = () => {
                   <MapPin className="w-3 h-3" /> City:
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {cities.map((city) => (
+                  {availableCities.map((city) => (
                     <motion.button
                       key={city}
                       whileHover={{ scale: 1.05 }}
@@ -352,7 +398,7 @@ const Shows = () => {
                   <Filter className="w-3 h-3" /> Type:
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {genres.map((genre) => (
+                  {availableGenres.map((genre) => (
                     <motion.button
                       key={genre}
                       whileHover={{ scale: 1.05 }}
@@ -412,7 +458,7 @@ const Shows = () => {
                       <MapPin className="w-3 h-3" /> City
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {cities.map((city) => (
+                      {availableCities.map((city) => (
                         <button
                           key={city}
                           onClick={() => setSelectedCity(city)}
@@ -434,7 +480,7 @@ const Shows = () => {
                       <Filter className="w-3 h-3" /> Type
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {genres.map((genre) => (
+                      {availableGenres.map((genre) => (
                         <button
                           key={genre}
                           onClick={() => setSelectedGenre(genre)}
@@ -523,7 +569,7 @@ const Shows = () => {
             >
               <div className="text-6xl mb-4 opacity-30">🎭</div>
               <p className="text-muted-foreground mb-4">
-                No productions found matching your criteria.
+                No shows found nearby.
               </p>
               <button
                 onClick={clearFilters}
