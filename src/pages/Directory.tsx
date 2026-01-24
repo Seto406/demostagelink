@@ -7,6 +7,14 @@ import { Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 // Group logos
 import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
@@ -114,43 +122,98 @@ const demoGroups: TheaterGroup[] = [
   }
 ];
 
+const ITEMS_PER_PAGE = 9;
+
 const Directory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+  const [totalPages, setTotalPages] = useState(1);
   const [groups, setGroups] = useState<TheaterGroup[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Debounce search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCity, selectedNiche, debouncedSearchQuery]);
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedCity !== "All") params.set("city", selectedCity);
     if (selectedNiche !== "All") params.set("niche", selectedNiche);
+    if (currentPage > 1) params.set("page", currentPage.toString());
     setSearchParams(params, { replace: true });
-  }, [selectedCity, selectedNiche, setSearchParams]);
+  }, [selectedCity, selectedNiche, currentPage, setSearchParams]);
 
   // Fetch producer profiles
   useEffect(() => {
     const fetchGroups = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // If a city is selected, we cannot filter by it on server, and real data doesn't have city.
+      // So we assume no real data matches. We clear groups so demoGroups can take over (or show empty).
+      if (selectedCity !== "All") {
+        setGroups([]);
+        setTotalPages(1);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
         .from("profiles")
-        .select("id, group_name, description, niche")
+        .select("id, group_name, description, niche", { count: "exact" })
         .eq("role", "producer")
         .not("group_name", "is", null);
+
+      // Apply filters
+      if (selectedNiche !== "All") {
+        if (selectedNiche === "Local/Community-based") {
+          query = query.eq("niche", "local");
+        } else if (selectedNiche === "University Theater Group") {
+          query = query.eq("niche", "university");
+        }
+      }
+
+      if (debouncedSearchQuery) {
+        query = query.ilike("group_name", `%${debouncedSearchQuery}%`);
+      }
+
+      // Apply pagination
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data, count, error } = await query.range(from, to);
 
       if (error) {
         console.error("Error fetching groups:", error);
         setGroups([]);
+        setTotalPages(1);
       } else {
         setGroups(data as TheaterGroup[]);
+        if (count) {
+          setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
+        } else {
+          setTotalPages(1);
+        }
       }
       setLoading(false);
     };
 
     fetchGroups();
-  }, []);
+  }, [selectedNiche, debouncedSearchQuery, currentPage, selectedCity]);
 
   // Use demo groups if no real groups exist
   const displayGroups = groups.length > 0 ? groups : demoGroups;
@@ -350,6 +413,68 @@ const Directory = () => {
                 >
                   Featured theater groups • Real listings coming soon
                 </motion.p>
+              )}
+
+              {!isUsingDemo && totalPages > 1 && (
+                <div className="mt-12">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage > 1) {
+                              setCurrentPage((p) => p - 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === currentPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage < totalPages) {
+                              setCurrentPage((p) => p + 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
               )}
             </>
           )}
