@@ -165,48 +165,57 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          cover_image: string | null
           created_at: string
           description: string | null
           facebook_url: string | null
           founded_year: number | null
+          gallery_images: string[] | null
           group_name: string | null
           id: string
           instagram_url: string | null
           map_screenshot_url: string | null
           niche: Database["public"]["Enums"]["niche_type"] | null
           role: Database["public"]["Enums"]["user_role"]
+          twitter_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
+          twitter_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string | null
           avatar_url?: string | null
+          cover_image?: string | null
           created_at?: string
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           role?: Database["public"]["Enums"]["user_role"]
+          twitter_url?: string | null
           updated_at?: string
           user_id?: string
         }
