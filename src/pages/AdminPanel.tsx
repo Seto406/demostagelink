@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,15 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Show {
   id: string;
@@ -104,6 +113,9 @@ const AdminPanel = () => {
   // User management state
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
   const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0, deletedShows: 0 });
   const [activeTab, setActiveTab] = useState("shows");
@@ -193,21 +205,32 @@ const AdminPanel = () => {
     setLoadingShows(false);
   };
 
-  // Fetch all users
-  const fetchUsers = async () => {
+  // Fetch users with pagination
+  const fetchUsers = useCallback(async (page = 1) => {
     setLoadingUsers(true);
-    const { data, error } = await supabase
+    const from = (page - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    const { data, error, count } = await supabase
       .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching users:", error);
     } else {
       setUsers(data as UserProfile[]);
+      if (count !== null) {
+        const newTotalPages = Math.max(1, Math.ceil(count / ITEMS_PER_PAGE));
+        setTotalPages(newTotalPages);
+        if (page > newTotalPages) {
+          setCurrentPage(newTotalPages);
+        }
+      }
     }
     setLoadingUsers(false);
-  };
+  }, []);
 
   // Fetch producer requests
   const fetchProducerRequests = async () => {
@@ -227,11 +250,16 @@ const AdminPanel = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchShows();
-      fetchUsers();
       fetchProducerRequests();
       fetchStats();
     }
   }, [isAdmin, filterStatus]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchUsers(currentPage);
+    }
+  }, [isAdmin, currentPage, fetchUsers]);
 
   const handleLogout = async () => {
     await signOut();
@@ -316,7 +344,7 @@ const AdminPanel = () => {
         title: "User Promoted",
         description: "User is now a Producer.",
       });
-      fetchUsers();
+      fetchUsers(currentPage);
       fetchStats();
     }
   };
@@ -338,7 +366,7 @@ const AdminPanel = () => {
         title: "User Demoted",
         description: "User is now an Audience member.",
       });
-      fetchUsers();
+      fetchUsers(currentPage);
       fetchStats();
     }
   };
@@ -374,7 +402,7 @@ const AdminPanel = () => {
       description: `${request.group_name} is now a Producer.`,
     });
     fetchProducerRequests();
-    fetchUsers();
+    fetchUsers(currentPage);
     fetchStats();
   };
 
@@ -552,7 +580,7 @@ const AdminPanel = () => {
       setDevModalOpen(false);
       setDevPassword("");
       fetchShows();
-      fetchUsers();
+      fetchUsers(1);
       fetchProducerRequests();
       fetchStats();
     } catch (error) {
@@ -613,7 +641,7 @@ const AdminPanel = () => {
       setDeleteUserModal(false);
       setUserToDelete(null);
       setDeleteUserPassword("");
-      fetchUsers();
+      fetchUsers(currentPage);
       fetchStats();
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -1061,8 +1089,9 @@ const AdminPanel = () => {
               {loadingUsers ? (
                 <div className="text-muted-foreground text-center py-8">Loading users...</div>
               ) : (
-                <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
-                  <table className="w-full min-w-[600px]">
+                <div className="space-y-4">
+                  <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
+                    <table className="w-full min-w-[600px]">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
@@ -1138,6 +1167,65 @@ const AdminPanel = () => {
                       ))}
                     </tbody>
                   </table>
+                  </div>
+
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(p => Math.max(1, p - 1));
+                          }}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+
+                      {(() => {
+                        const items = [];
+                        const pages = Array.from({ length: totalPages }).map((_, i) => i + 1).filter(page =>
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        );
+
+                        pages.forEach((page, i) => {
+                           if (i > 0 && pages[i-1] !== page - 1) {
+                             items.push(
+                               <PaginationItem key={`ellipsis-${page}`}>
+                                 <PaginationEllipsis />
+                               </PaginationItem>
+                             );
+                           }
+                           items.push(
+                             <PaginationItem key={page}>
+                               <PaginationLink
+                                 isActive={page === currentPage}
+                                 onClick={(e) => {
+                                   e.preventDefault();
+                                   setCurrentPage(page);
+                                 }}
+                                 className="cursor-pointer"
+                               >
+                                 {page}
+                               </PaginationLink>
+                             </PaginationItem>
+                           );
+                        });
+                        return items;
+                      })()}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(p => Math.min(totalPages, p + 1));
+                          }}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </div>
               )}
             </motion.div>
