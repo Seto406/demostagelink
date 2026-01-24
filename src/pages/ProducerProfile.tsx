@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Users, Facebook, Instagram } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import { trackEvent } from "@/lib/analytics";
 
 interface Producer {
   id: string;
@@ -37,6 +38,9 @@ const ProducerProfile = () => {
   useEffect(() => {
     const fetchProducerData = async () => {
       if (!id) return;
+
+      // Track profile view
+      trackEvent('profile_view', id);
 
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
