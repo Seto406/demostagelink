@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users, ArrowLeft } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { GroupMembers } from "@/components/dashboard/GroupMembers";
 import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 
 interface Show {
   id: string;
@@ -51,9 +52,10 @@ interface Show {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
-  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members" | "analytics">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [editingShow, setEditingShow] = useState<Show | null>(null);
@@ -94,6 +96,19 @@ const Dashboard = () => {
     }
   }, [user, profile, loading, navigate]);
 
+  // Handle URL routing for analytics
+  useEffect(() => {
+    if (location.pathname === "/dashboard/analytics") {
+      setActiveTab("analytics");
+    } else if (location.pathname === "/dashboard") {
+      // Keep dashboard as default, but if we were previously in analytics and clicked back to dashboard,
+      // we might want to ensure tab is synced. But "dashboard" is handled by the default state or user click.
+      if (activeTab === "analytics") {
+        setActiveTab("dashboard");
+      }
+    }
+  }, [location.pathname, activeTab]);
+
   // Load profile data
   useEffect(() => {
     if (profile) {
@@ -105,7 +120,7 @@ const Dashboard = () => {
   }, [profile]);
 
   // Fetch shows (excluding soft-deleted)
-  const fetchShows = async () => {
+  const fetchShows = useCallback(async () => {
     if (!profile) return;
     
     setLoadingShows(true);
@@ -122,13 +137,11 @@ const Dashboard = () => {
       setShows(data as Show[]);
     }
     setLoadingShows(false);
-  };
+  }, [profile]);
 
   useEffect(() => {
-    if (profile) {
-      fetchShows();
-    }
-  }, [profile]);
+    fetchShows();
+  }, [fetchShows]);
 
   const handleLogout = async () => {
     await signOut();
@@ -422,95 +435,13 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
-          sidebarOpen ? "w-64 translate-x-0" : "-translate-x-full lg:translate-x-0 lg:w-20"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
-              <img src={stageLinkLogo} alt="StageLink" className="h-10 w-auto" />
-              {sidebarOpen && (
-                <span className="text-lg font-serif font-bold text-sidebar-foreground">
-                  Stage<span className="text-sidebar-accent">Link</span>
-                </span>
-              )}
-            </Link>
-            {/* Close button for mobile */}
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                activeTab === "dashboard"
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5" />
-              {sidebarOpen && <span>Dashboard</span>}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("shows")}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                activeTab === "shows"
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-              }`}
-            >
-              <Film className="w-5 h-5" />
-              {sidebarOpen && <span>My Productions</span>}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                activeTab === "profile"
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-              }`}
-            >
-              <User className="w-5 h-5" />
-              {sidebarOpen && <span>Profile</span>}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("members")}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                activeTab === "members"
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-              }`}
-            >
-              <Users className="w-5 h-5" />
-              {sidebarOpen && <span>Members</span>}
-            </button>
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-sidebar-border">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              {sidebarOpen && <span>Logout</span>}
-            </button>
-          </div>
-        </div>
-      </aside>
+      <DashboardSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        handleLogout={handleLogout}
+      />
 
       {/* Main Content */}
       <main className="flex-1 min-h-screen">
@@ -532,6 +463,7 @@ const Dashboard = () => {
           </div>
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "dashboard" && "Dashboard"}
+            {activeTab === "analytics" && "Analytics"}
             {activeTab === "shows" && "My Productions"}
             {activeTab === "profile" && "Group Profile"}
             {activeTab === "members" && "Group Members"}
@@ -575,6 +507,11 @@ const Dashboard = () => {
                 </RippleButton>
               </div>
             </motion.div>
+          )}
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && profile && (
+            <AnalyticsDashboard profileId={profile.id} />
           )}
 
           {/* Shows Tab */}
