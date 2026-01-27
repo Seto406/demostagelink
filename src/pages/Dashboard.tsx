@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -105,9 +105,9 @@ const Dashboard = () => {
   }, [profile]);
 
   // Fetch shows (excluding soft-deleted)
-  const fetchShows = async () => {
+  const fetchShows = useCallback(async () => {
     if (!profile) return;
-    
+
     setLoadingShows(true);
     const { data, error } = await supabase
       .from("shows")
@@ -122,13 +122,13 @@ const Dashboard = () => {
       setShows(data as Show[]);
     }
     setLoadingShows(false);
-  };
+  }, [profile]);
 
   useEffect(() => {
     if (profile) {
       fetchShows();
     }
-  }, [profile]);
+  }, [profile, fetchShows]);
 
   const handleLogout = async () => {
     await signOut();

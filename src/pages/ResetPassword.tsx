@@ -100,6 +100,7 @@ const ResetPassword = () => {
     if (pwd.length < 8) {
       return { isValid: false, message: "Password must be at least 8 characters" };
     }
+    // eslint-disable-next-line no-useless-escape
     if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) {
       return { isValid: false, message: "Password must include at least one number or special character" };
     }
@@ -271,11 +272,13 @@ const ResetPassword = () => {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
+                          {/* eslint-disable-next-line no-useless-escape */}
                           {/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? (
                             <Check className="w-3.5 h-3.5 text-green-500" />
                           ) : (
                             <X className="w-3.5 h-3.5 text-muted-foreground" />
                           )}
+                          {/* eslint-disable-next-line no-useless-escape */}
                           <span className={/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? "text-green-500" : "text-muted-foreground"}>
                             Number or special character
                           </span>

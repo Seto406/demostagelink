@@ -32,6 +32,12 @@ export const TiltCard: React.FC<TiltCardProps> = ({
   const glareX = useTransform(mouseXSpring, [-0.5, 0.5], [0, 100]);
   const glareY = useTransform(mouseYSpring, [-0.5, 0.5], [0, 100]);
   const glareOpacity = useMotionValue(0);
+
+  const glareBackground = useTransform(
+    [glareX, glareY],
+    ([x, y]) =>
+      `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.4) 0%, transparent 60%)`
+  );
   
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!ref.current) return;
@@ -95,11 +101,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
           className="absolute inset-0 pointer-events-none rounded-inherit overflow-hidden"
           style={{
             opacity: glareOpacity,
-            background: useTransform(
-              [glareX, glareY],
-              ([x, y]) => 
-                `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.4) 0%, transparent 60%)`
-            ),
+            background: glareBackground,
           }}
         />
       )}

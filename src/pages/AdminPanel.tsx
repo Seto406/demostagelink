@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -136,7 +136,7 @@ const AdminPanel = () => {
   }, [user, profile, isAdmin, loading, navigate]);
 
   // Fetch stats
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
       supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
@@ -152,12 +152,12 @@ const AdminPanel = () => {
       pendingRequests: requestsRes.count || 0,
       deletedShows: deletedRes.count || 0,
     });
-  };
+  }, []);
 
   // Fetch all shows for admin
-  const fetchShows = async () => {
+  const fetchShows = useCallback(async () => {
     setLoadingShows(true);
-    
+
     let query = supabase
       .from("shows")
       .select(`
@@ -191,10 +191,10 @@ const AdminPanel = () => {
       setShows(data as Show[]);
     }
     setLoadingShows(false);
-  };
+  }, [filterStatus]);
 
   // Fetch all users
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     const { data, error } = await supabase
       .from("profiles")
@@ -207,10 +207,10 @@ const AdminPanel = () => {
       setUsers(data as UserProfile[]);
     }
     setLoadingUsers(false);
-  };
+  }, []);
 
   // Fetch producer requests
-  const fetchProducerRequests = async () => {
+  const fetchProducerRequests = useCallback(async () => {
     const { data, error } = await supabase
       .from("producer_requests")
       .select("*")
@@ -222,7 +222,7 @@ const AdminPanel = () => {
     } else {
       setProducerRequests(data as ProducerRequest[]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isAdmin) {
@@ -231,7 +231,7 @@ const AdminPanel = () => {
       fetchProducerRequests();
       fetchStats();
     }
-  }, [isAdmin, filterStatus]);
+  }, [isAdmin, fetchShows, fetchUsers, fetchProducerRequests, fetchStats]);
 
   const handleLogout = async () => {
     await signOut();

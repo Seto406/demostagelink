@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -24,15 +24,9 @@ export function AudienceLinking() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviting, setInviting] = useState(false);
 
-  useEffect(() => {
-    if (profile?.id) {
-      fetchLinks();
-    }
-  }, [profile?.id]);
-
-  const fetchLinks = async () => {
+  const fetchLinks = useCallback(async () => {
     if (!profile?.id) return;
-    
+
     try {
       const { data, error } = await supabase
         .from("group_audience_links")
@@ -47,7 +41,13 @@ export function AudienceLinking() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchLinks();
+    }
+  }, [profile?.id, fetchLinks]);
 
   const inviteAudience = async () => {
     if (!inviteEmail.trim() || !profile?.id) return;

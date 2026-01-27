@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, ReactNode, useCallback } from "react";
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import { BrandedLoader } from "./branded-loader";
 
@@ -28,40 +28,40 @@ export const PullToRefresh = ({
   const scale = useTransform(pullDistance, [0, threshold], [0.5, 1]);
   const rotation = useTransform(pullDistance, [0, threshold * 2], [0, 360]);
 
-  const handleTouchStart = (e: TouchEvent) => {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing) return;
-    
+
     const scrollTop = containerRef.current?.scrollTop || 0;
     if (scrollTop > 0) return;
-    
+
     startY.current = e.touches[0].clientY;
     setIsPulling(true);
-  };
+  }, [disabled, isRefreshing]);
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPulling || disabled || isRefreshing) return;
-    
+
     const scrollTop = containerRef.current?.scrollTop || 0;
     if (scrollTop > 0) {
       pullDistance.set(0);
       return;
     }
-    
+
     currentY.current = e.touches[0].clientY;
     const distance = Math.max(0, (currentY.current - startY.current) * 0.5);
     pullDistance.set(Math.min(distance, threshold * 1.5));
-  };
+  }, [isPulling, disabled, isRefreshing, pullDistance, threshold]);
 
-  const handleTouchEnd = async () => {
+  const handleTouchEnd = useCallback(async () => {
     if (!isPulling || disabled) return;
-    
+
     setIsPulling(false);
     const distance = pullDistance.get();
-    
+
     if (distance >= threshold && !isRefreshing) {
       setIsRefreshing(true);
       pullDistance.set(threshold);
-      
+
       try {
         await onRefresh();
       } finally {
@@ -72,7 +72,7 @@ export const PullToRefresh = ({
     } else {
       pullDistance.set(0);
     }
-  };
+  }, [isPulling, disabled, pullDistance, threshold, isRefreshing, onRefresh, controls]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -87,7 +87,7 @@ export const PullToRefresh = ({
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isPulling, isRefreshing, disabled]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   // Only show on mobile
   const [isMobile, setIsMobile] = useState(false);
