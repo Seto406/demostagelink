@@ -169,6 +169,7 @@ export type Database = {
           description: string | null
           facebook_url: string | null
           founded_year: number | null
+          gallery_images: string[] | null
           group_name: string | null
           id: string
           instagram_url: string | null
@@ -177,6 +178,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           address?: string | null
@@ -185,6 +187,7 @@ export type Database = {
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
@@ -193,6 +196,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           address?: string | null
@@ -201,6 +205,7 @@ export type Database = {
           description?: string | null
           facebook_url?: string | null
           founded_year?: number | null
+          gallery_images?: string[] | null
           group_name?: string | null
           id?: string
           instagram_url?: string | null
@@ -209,6 +214,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: []
       }

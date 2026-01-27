@@ -11,6 +11,12 @@ interface Profile {
   founded_year: number | null;
   niche: "local" | "university" | null;
   map_screenshot_url: string | null;
+  avatar_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  address: string | null;
+  video_url: string | null;
+  gallery_images: string[] | null;
 }
 
 interface AuthContextType {

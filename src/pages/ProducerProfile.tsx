@@ -4,8 +4,15 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Users, Facebook, Instagram } from "lucide-react";
+import { Calendar, MapPin, Users, Facebook, Instagram, Video, Image } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface Producer {
   id: string;
@@ -16,6 +23,8 @@ interface Producer {
   avatar_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  video_url: string | null;
+  gallery_images: string[] | null;
 }
 
 interface Show {
@@ -41,7 +50,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url")
+        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, video_url, gallery_images")
         .eq("id", id)
         .maybeSingle();
 
@@ -80,6 +89,24 @@ const ProducerProfile = () => {
       default:
         return "Theater Group";
     }
+  };
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return null;
+
+    // YouTube
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^#&?]*).*/);
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    return null;
   };
 
   if (loading) {
@@ -203,6 +230,63 @@ const ProducerProfile = () => {
                 </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Rich Media Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-12 space-y-12"
+          >
+            {/* Featured Video */}
+            {producer.video_url && getEmbedUrl(producer.video_url) && (
+              <div className="bg-card border border-secondary/20 p-6 md:p-8 rounded-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <Video className="w-5 h-5 text-secondary" />
+                  <h2 className="text-xl font-serif font-bold text-foreground">Featured Video</h2>
+                </div>
+                <div className="aspect-video w-full rounded-xl overflow-hidden bg-black/5">
+                  <iframe
+                    src={getEmbedUrl(producer.video_url)!}
+                    title="Featured Video"
+                    className="w-full h-full"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Gallery */}
+            {producer.gallery_images && producer.gallery_images.length > 0 && (
+              <div className="bg-card border border-secondary/20 p-6 md:p-8 rounded-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <Image className="w-5 h-5 text-secondary" />
+                  <h2 className="text-xl font-serif font-bold text-foreground">Gallery</h2>
+                </div>
+
+                <Carousel className="w-full max-w-4xl mx-auto">
+                  <CarouselContent>
+                    {producer.gallery_images.map((img, index) => (
+                      <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                        <div className="p-1">
+                          <div className="aspect-square relative rounded-xl overflow-hidden border border-secondary/20">
+                            <img
+                              src={img}
+                              alt={`Gallery image ${index + 1}`}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="hidden md:flex" />
+                  <CarouselNext className="hidden md:flex" />
+                </Carousel>
+              </div>
+            )}
           </motion.div>
 
           {/* Shows Section */}

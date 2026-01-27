@@ -26,7 +26,9 @@ import {
   Facebook,
   Instagram,
   MapPin,
-  Image
+  Image,
+  Video,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +77,11 @@ const Settings = () => {
   const [mapScreenshotUrl, setMapScreenshotUrl] = useState<string | null>(null);
   const [uploadingMap, setUploadingMap] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Rich Media State
+  const [videoUrl, setVideoUrl] = useState("");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
@@ -112,16 +119,13 @@ const Settings = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
-      // @ts-ignore - avatar_url is newly added
       setAvatarUrl(profile.avatar_url || null);
-      // @ts-ignore - social links are newly added
       setFacebookUrl(profile.facebook_url || "");
-      // @ts-ignore
       setInstagramUrl(profile.instagram_url || "");
-      // @ts-ignore
       setAddress(profile.address || "");
-      // @ts-ignore
       setMapScreenshotUrl(profile.map_screenshot_url || null);
+      setVideoUrl(profile.video_url || "");
+      setGalleryImages(profile.gallery_images || []);
     }
   }, [profile]);
 
@@ -159,6 +163,8 @@ const Settings = () => {
         updateData.facebook_url = facebookUrl || null;
         updateData.instagram_url = instagramUrl || null;
         updateData.address = address || null;
+        updateData.video_url = videoUrl || null;
+        updateData.gallery_images = galleryImages.length > 0 ? galleryImages : null;
       }
 
       const { error } = await supabase
@@ -448,6 +454,71 @@ const Settings = () => {
     setUploadingMap(false);
   };
 
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+
+    setUploadingGallery(true);
+    const newImages: string[] = [];
+    let errorCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+      if (!validTypes.includes(file.type)) {
+        errorCount++;
+        continue;
+      }
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        errorCount++;
+        continue;
+      }
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/gallery/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        newImages.push(urlData.publicUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        errorCount++;
+      }
+    }
+
+    if (newImages.length > 0) {
+      setGalleryImages(prev => [...prev, ...newImages]);
+      toast({
+        title: "Gallery Updated",
+        description: `Successfully uploaded ${newImages.length} images.${errorCount > 0 ? ` ${errorCount} failed.` : ""}`,
+      });
+    } else if (errorCount > 0) {
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload images. Check file types and sizes.",
+        variant: "destructive",
+      });
+    }
+
+    setUploadingGallery(false);
+    e.target.value = "";
+  };
+
+  const handleRemoveGalleryImage = (index: number) => {
+    setGalleryImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleRemoveMap = async () => {
     if (!user) return;
 
@@ -687,6 +758,72 @@ const Settings = () => {
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Your location helps audiences find nearby productions
+                    </p>
+                  </div>
+
+                  {/* Featured Video */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label htmlFor="videoUrl" className="flex items-center gap-2 text-sm">
+                      <Video className="w-4 h-4" />
+                      Featured Video (YouTube/Vimeo)
+                    </Label>
+                    <Input
+                      id="videoUrl"
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="mt-1 bg-background border-secondary/30"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Paste a link to a video showcasing your productions
+                    </p>
+                  </div>
+
+                  {/* Gallery */}
+                  <div className="pt-4 border-t border-secondary/10">
+                    <Label className="flex items-center gap-2 text-sm mb-3">
+                      <Image className="w-4 h-4" />
+                      Gallery Images
+                    </Label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                      {galleryImages.map((img, idx) => (
+                        <div key={idx} className="relative aspect-video rounded-lg overflow-hidden group border border-secondary/30">
+                          <img
+                            src={img}
+                            alt={`Gallery ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => handleRemoveGalleryImage(idx)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+
+                      <label className="cursor-pointer relative aspect-video rounded-lg border-2 border-dashed border-secondary/30 hover:border-secondary/60 hover:bg-secondary/5 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-secondary">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          onChange={handleGalleryUpload}
+                          className="hidden"
+                          disabled={uploadingGallery}
+                        />
+                        {uploadingGallery ? (
+                          <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Plus className="w-6 h-6" />
+                            <span className="text-xs font-medium">Add Images</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload photos from your past productions. JPG, PNG or WebP.
                     </p>
                   </div>
 
