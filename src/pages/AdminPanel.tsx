@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -136,7 +136,7 @@ const AdminPanel = () => {
   }, [user, profile, isAdmin, loading, navigate]);
 
   // Fetch stats
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
       supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
@@ -152,11 +152,11 @@ const AdminPanel = () => {
       pendingRequests: requestsRes.count || 0,
       deletedShows: deletedRes.count || 0,
     });
-  };
+  }, []);
 
   // Fetch all shows for admin
-  const fetchShows = async () => {
-    setLoadingShows(true);
+  const fetchShows = useCallback(async (silent = false) => {
+    if (!silent) setLoadingShows(true);
     
     let query = supabase
       .from("shows")
@@ -190,12 +190,12 @@ const AdminPanel = () => {
     } else {
       setShows(data as Show[]);
     }
-    setLoadingShows(false);
-  };
+    if (!silent) setLoadingShows(false);
+  }, [filterStatus]);
 
   // Fetch all users
-  const fetchUsers = async () => {
-    setLoadingUsers(true);
+  const fetchUsers = useCallback(async (silent = false) => {
+    if (!silent) setLoadingUsers(true);
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -206,11 +206,11 @@ const AdminPanel = () => {
     } else {
       setUsers(data as UserProfile[]);
     }
-    setLoadingUsers(false);
-  };
+    if (!silent) setLoadingUsers(false);
+  }, []);
 
   // Fetch producer requests
-  const fetchProducerRequests = async () => {
+  const fetchProducerRequests = useCallback(async () => {
     const { data, error } = await supabase
       .from("producer_requests")
       .select("*")
@@ -222,7 +222,7 @@ const AdminPanel = () => {
     } else {
       setProducerRequests(data as ProducerRequest[]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isAdmin) {
@@ -231,7 +231,44 @@ const AdminPanel = () => {
       fetchProducerRequests();
       fetchStats();
     }
-  }, [isAdmin, filterStatus]);
+  }, [isAdmin, filterStatus, fetchShows, fetchUsers, fetchProducerRequests, fetchStats]);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const channel = supabase
+      .channel("admin-dashboard-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          fetchStats();
+          fetchUsers(true);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shows" },
+        () => {
+          fetchStats();
+          fetchShows(true);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "producer_requests" },
+        () => {
+          fetchStats();
+          fetchProducerRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin, fetchStats, fetchShows, fetchUsers, fetchProducerRequests]);
 
   const handleLogout = async () => {
     await signOut();
