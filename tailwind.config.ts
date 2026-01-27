@@ -117,6 +117,10 @@ export default {
           "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "0.8" },
         },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "0.8" },
+          "50%": { opacity: "1" },
+        },
         "slide-up": {
           "0%": { opacity: "0", transform: "translateY(100%)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
@@ -157,6 +161,7 @@ export default {
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "pulse-subtle": "pulse-subtle 8s ease-in-out infinite",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "slide-down": "slide-down 0.4s ease-out forwards",
         "marquee-right": "marquee-right 30s linear infinite",
