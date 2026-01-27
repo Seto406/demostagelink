@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -99,6 +99,8 @@ interface Stats {
 
 type FilterStatus = "all" | "pending" | "approved" | "rejected" | "deleted";
 
+const ITEMS_PER_PAGE = 10;
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
@@ -120,7 +122,6 @@ const AdminPanel = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUserCount, setTotalUserCount] = useState(0);
-  const ITEMS_PER_PAGE = 10;
 
   // Dev tools state
   const [devModalOpen, setDevModalOpen] = useState(false);
@@ -150,7 +151,7 @@ const AdminPanel = () => {
   }, [user, profile, isAdmin, loading, navigate]);
 
   // Fetch stats
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
       supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
@@ -166,10 +167,10 @@ const AdminPanel = () => {
       pendingRequests: requestsRes.count || 0,
       deletedShows: deletedRes.count || 0,
     });
-  };
+  }, []);
 
   // Fetch all shows for admin
-  const fetchShows = async () => {
+  const fetchShows = useCallback(async () => {
     setLoadingShows(true);
     
     let query = supabase
@@ -205,10 +206,10 @@ const AdminPanel = () => {
       setShows(data as Show[]);
     }
     setLoadingShows(false);
-  };
+  }, [filterStatus]);
 
   // Fetch all users
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
 
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -227,10 +228,10 @@ const AdminPanel = () => {
       if (count !== null) setTotalUserCount(count);
     }
     setLoadingUsers(false);
-  };
+  }, [currentPage]);
 
   // Fetch producer requests
-  const fetchProducerRequests = async () => {
+  const fetchProducerRequests = useCallback(async () => {
     const { data, error } = await supabase
       .from("producer_requests")
       .select("*")
@@ -242,7 +243,7 @@ const AdminPanel = () => {
     } else {
       setProducerRequests(data as ProducerRequest[]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isAdmin) {
@@ -250,13 +251,13 @@ const AdminPanel = () => {
       fetchProducerRequests();
       fetchStats();
     }
-  }, [isAdmin, filterStatus]);
+  }, [isAdmin, filterStatus, fetchShows, fetchProducerRequests, fetchStats]);
 
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
     }
-  }, [isAdmin, currentPage]);
+  }, [isAdmin, currentPage, fetchUsers]);
 
   const handleLogout = async () => {
     await signOut();
