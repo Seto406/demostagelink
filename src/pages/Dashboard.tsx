@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Film, User, Plus, LogOut, Menu, X, Upload, Image, Trash2, Pencil, Users, ArrowLeft, BarChart2 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { GroupMembers } from "@/components/dashboard/GroupMembers";
 import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
+import { ShowPerformance } from "@/components/dashboard/ShowPerformance";
 
 interface Show {
   id: string;
@@ -53,12 +54,13 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
-  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members" | "insights">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [editingShow, setEditingShow] = useState<Show | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
+  const [selectedShowForInsights, setSelectedShowForInsights] = useState<string>("");
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -475,6 +477,18 @@ const Dashboard = () => {
             </button>
 
             <button
+              onClick={() => setActiveTab("insights")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "insights"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <BarChart2 className="w-5 h-5" />
+              {sidebarOpen && <span>Insights</span>}
+            </button>
+
+            <button
               onClick={() => setActiveTab("profile")}
               className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
                 activeTab === "profile"
@@ -533,6 +547,7 @@ const Dashboard = () => {
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "dashboard" && "Dashboard"}
             {activeTab === "shows" && "My Productions"}
+            {activeTab === "insights" && "Insights"}
             {activeTab === "profile" && "Group Profile"}
             {activeTab === "members" && "Group Members"}
           </h1>
@@ -718,6 +733,50 @@ const Dashboard = () => {
             >
               <GroupMembers profileId={profile.id} />
               <AudienceLinking />
+            </motion.div>
+          )}
+
+          {/* Insights Tab */}
+          {activeTab === "insights" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <h2 className="font-serif text-xl text-foreground">Production Insights</h2>
+
+              {shows.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="max-w-xs">
+                    <Label className="mb-2 block">Select Production</Label>
+                    <Select
+                      value={selectedShowForInsights || shows[0]?.id}
+                      onValueChange={setSelectedShowForInsights}
+                    >
+                      <SelectTrigger className="bg-background border-secondary/30">
+                        <SelectValue placeholder="Select a show" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-secondary/30">
+                        {shows.map(show => (
+                          <SelectItem key={show.id} value={show.id}>
+                            {show.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <ShowPerformance showId={selectedShowForInsights || shows[0]?.id} />
+                </div>
+              ) : (
+                <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
+                  <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
+                  <RippleButton onClick={() => setActiveTab("shows")} variant="ios-secondary">
+                    Go to Productions
+                  </RippleButton>
+                </div>
+              )}
             </motion.div>
           )}
         </div>

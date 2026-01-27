@@ -286,12 +286,58 @@ export type Database = {
           },
         ]
       }
+      show_analytics: {
+        Row: {
+          id: string
+          show_id: string
+          date: string
+          views: number
+          clicks: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          show_id: string
+          date?: string
+          views?: number
+          clicks?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          show_id?: string
+          date?: string
+          views?: number
+          clicks?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_analytics_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      increment_show_view: {
+        Args: { show_id_input: string }
+        Returns: void
+      }
+      increment_show_click: {
+        Args: { show_id_input: string }
+        Returns: void
+      }
     }
     Enums: {
       niche_type: "local" | "university"
