@@ -188,7 +188,7 @@ const Shows = () => {
   // Fetch function for shows
   const fetchShows = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("shows")
       .select(`
         id,
@@ -205,8 +205,22 @@ const Shows = () => {
           avatar_url
         )
       `)
-      .eq("status", "approved")
-      .order("date", { ascending: true });
+      .eq("status", "approved");
+
+    if (selectedCity !== "All") {
+      query = query.eq("city", selectedCity);
+    }
+
+    if (selectedGenre !== "All") {
+      const nicheValue = selectedGenre === "Local/Community" ? "local" : "university";
+      query = query.eq("niche", nicheValue);
+    }
+
+    if (dateFilter) {
+      query = query.gte("date", dateFilter);
+    }
+
+    const { data, error } = await query.order("date", { ascending: true });
 
     if (error) {
       console.error("Error fetching shows:", error);
@@ -214,7 +228,7 @@ const Shows = () => {
       setShows(data as Show[]);
     }
     setLoading(false);
-  }, []);
+  }, [selectedCity, selectedGenre, dateFilter]);
 
   // Fetch approved shows
   useEffect(() => {
