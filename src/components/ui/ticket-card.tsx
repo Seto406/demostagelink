@@ -39,7 +39,8 @@ export const TicketCard = ({
       transition={{ duration: 0.5, delay: index * 0.08 }}
       className="group"
     >
-      <CardWrapper {...(wrapperProps as any)} className="block">
+      {/* @ts-expect-error - Dynamic component props typing issue */}
+      <CardWrapper {...wrapperProps} className="block">
         <div className="relative">
           {/* Main ticket body */}
           <div className="relative bg-card border border-secondary/30 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_40px_hsl(0_100%_25%/0.3)]">

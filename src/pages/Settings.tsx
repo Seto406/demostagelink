@@ -112,15 +112,15 @@ const Settings = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
-      // @ts-ignore - avatar_url is newly added
+      // @ts-expect-error - avatar_url is newly added
       setAvatarUrl(profile.avatar_url || null);
-      // @ts-ignore - social links are newly added
+      // @ts-expect-error - social links are newly added
       setFacebookUrl(profile.facebook_url || "");
-      // @ts-ignore
+      // @ts-expect-error - social links are newly added
       setInstagramUrl(profile.instagram_url || "");
-      // @ts-ignore
+      // @ts-expect-error - address is newly added
       setAddress(profile.address || "");
-      // @ts-ignore
+      // @ts-expect-error - map screenshot is newly added
       setMapScreenshotUrl(profile.map_screenshot_url || null);
     }
   }, [profile]);
