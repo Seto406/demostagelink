@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -120,6 +121,17 @@ const ProducerProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{producer.group_name ? `${producer.group_name} on StageLink` : "Producer on StageLink"}</title>
+        <meta name="description" content={producer.description ? producer.description.substring(0, 150) : "Check out this theater producer on StageLink."} />
+
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={producer.group_name ? `${producer.group_name} on StageLink` : "Producer on StageLink"} />
+        <meta property="og:description" content={producer.description ? producer.description.substring(0, 150) : "Check out this theater producer on StageLink."} />
+        {/* Note: cover_image is not available in the database schema, so we use avatar_url as the best available fallback for OG image. */}
+        {producer.avatar_url && <meta property="og:image" content={producer.avatar_url} />}
+      </Helmet>
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
