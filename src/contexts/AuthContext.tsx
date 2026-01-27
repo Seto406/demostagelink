@@ -21,6 +21,7 @@ interface AuthContextType {
   isAdmin: boolean;
   signUp: (email: string, password: string, role: "audience" | "producer") => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const ensureProfile = async (userId: string, userMetadata?: any) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -42,27 +43,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!error && data) {
       setProfile(data as Profile);
+    } else {
+      // Profile doesn't exist, create it
+      // Get role from localStorage or default to audience
+      const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+      let role: "audience" | "producer" = "audience";
+
+      // Validate role
+      if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
+        role = pendingRoleRaw;
+      }
+
+      const newProfile = {
+        user_id: userId,
+        role: role,
+        avatar_url: userMetadata?.avatar_url || null,
+      };
+
+      const { data: createdProfile, error: createError } = await supabase
+        .from("profiles")
+        .insert([newProfile])
+        .select()
+        .single();
+
+      if (createdProfile) {
+        setProfile(createdProfile as Profile);
+        localStorage.removeItem("pendingUserRole");
+      } else {
+        // If insert failed, it might be a race condition (profile created elsewhere)
+        // Try fetching one last time
+        console.warn("Error creating profile, retrying fetch:", createError);
+
+        const { data: retryData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (retryData) {
+          setProfile(retryData as Profile);
+          localStorage.removeItem("pendingUserRole");
+        } else {
+          console.error("Failed to ensure profile:", createError);
+          setProfile(null);
+        }
+      }
     }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await ensureProfile(user.id, user.user_metadata);
     }
   };
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer profile fetch with setTimeout to avoid deadlock
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-          }, 0);
+          await ensureProfile(session.user.id, session.user.user_metadata);
         } else {
           setProfile(null);
         }
@@ -71,11 +114,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await ensureProfile(session.user.id, session.user.user_metadata);
       }
       setLoading(false);
     });
@@ -105,6 +148,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -113,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = profile?.role === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
