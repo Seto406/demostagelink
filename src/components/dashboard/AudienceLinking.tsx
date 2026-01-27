@@ -25,29 +25,29 @@ export function AudienceLinking() {
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
+    const fetchLinks = async () => {
+      if (!profile?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("group_audience_links")
+          .select("*")
+          .eq("group_id", profile.id)
+          .order("invited_at", { ascending: false });
+
+        if (error) throw error;
+        setLinks(data || []);
+      } catch (error) {
+        console.error("Error fetching audience links:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (profile?.id) {
       fetchLinks();
     }
   }, [profile?.id]);
-
-  const fetchLinks = async () => {
-    if (!profile?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from("group_audience_links")
-        .select("*")
-        .eq("group_id", profile.id)
-        .order("invited_at", { ascending: false });
-
-      if (error) throw error;
-      setLinks(data || []);
-    } catch (error) {
-      console.error("Error fetching audience links:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const inviteAudience = async () => {
     if (!inviteEmail.trim() || !profile?.id) return;
