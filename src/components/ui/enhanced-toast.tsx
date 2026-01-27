@@ -156,7 +156,7 @@ export const EnhancedToast: React.FC<EnhancedToastProps> = ({
 };
 
 // Toast container and hook
-interface ToastData extends Omit<EnhancedToastProps, "onDismiss"> {}
+type ToastData = Omit<EnhancedToastProps, "onDismiss">
 
 interface ToastContextValue {
   toasts: ToastData[];

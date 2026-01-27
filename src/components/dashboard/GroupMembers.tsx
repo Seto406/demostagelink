@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Pencil, Trash2, Users, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
@@ -50,7 +50,7 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("group_members")
@@ -64,13 +64,13 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
       setMembers(data as GroupMember[]);
     }
     setLoading(false);
-  };
+  }, [profileId]);
 
   useEffect(() => {
     if (profileId) {
       fetchMembers();
     }
-  }, [profileId]);
+  }, [profileId, fetchMembers]);
 
   const resetForm = () => {
     setMemberName("");

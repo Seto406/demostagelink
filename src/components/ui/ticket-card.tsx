@@ -39,6 +39,7 @@ export const TicketCard = ({
       transition={{ duration: 0.5, delay: index * 0.08 }}
       className="group"
     >
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <CardWrapper {...(wrapperProps as any)} className="block">
         <div className="relative">
           {/* Main ticket body */}
