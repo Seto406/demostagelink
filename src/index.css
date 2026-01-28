@@ -187,13 +187,13 @@ html {
     background-image: var(--gradient-gold);
   }
 
-  /* Hover lift effect */
+  /* Hover lift effect - subtle */
   .hover-lift {
     @apply transition-all duration-300 ease-out;
   }
   .hover-lift:hover {
-    @apply -translate-y-1;
-    box-shadow: 0 10px 40px hsl(0 100% 25% / 0.2);
+    @apply -translate-y-0.5;
+    box-shadow: 0 10px 40px hsl(0 100% 25% / 0.15);
   }
 
   /* Card hover glow */
@@ -255,9 +255,9 @@ html {
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* iOS-style haptic-like feedback */
+  /* iOS-style haptic-like feedback - subtle */
   .ios-press {
-    @apply active:scale-[0.97] transition-transform duration-100;
+    @apply active:scale-[0.98] transition-transform duration-100;
   }
 
   /* iOS blur effects */

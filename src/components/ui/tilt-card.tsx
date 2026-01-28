@@ -13,7 +13,7 @@ interface TiltCardProps {
 export const TiltCard: React.FC<TiltCardProps> = ({
   children,
   className,
-  tiltAmount = 15,
+  tiltAmount = 3,
   glareEnabled = true,
   scale = 1.02,
 }) => {
@@ -22,8 +22,8 @@ export const TiltCard: React.FC<TiltCardProps> = ({
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   
-  const mouseXSpring = useSpring(x, { stiffness: 150, damping: 15 });
-  const mouseYSpring = useSpring(y, { stiffness: 150, damping: 15 });
+  const mouseXSpring = useSpring(x, { stiffness: 200, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 200, damping: 20 });
   
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [tiltAmount, -tiltAmount]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-tiltAmount, tiltAmount]);
@@ -131,7 +131,7 @@ export const TiltShowCard: React.FC<TiltShowCardProps> = ({
     >
       <TiltCard
         className={cn("transform-gpu", className)}
-        tiltAmount={12}
+        tiltAmount={2}
         glareEnabled={true}
         scale={1.03}
       >
