@@ -84,6 +84,7 @@ export const DashboardSidebar = ({
           </button>
 
           <button
+            id="profile-tab"
             onClick={() => setActiveTab("profile")}
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "profile"

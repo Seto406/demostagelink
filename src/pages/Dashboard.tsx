@@ -21,9 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
+import { TourGuide } from "@/components/onboarding/TourGuide";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { GroupMembers } from "@/components/dashboard/GroupMembers";
@@ -496,6 +503,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <TourGuide />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -549,7 +557,7 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <div className="grid md:grid-cols-3 gap-6">
+              <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
                 <div className="bg-card border border-secondary/20 p-6">
                   <p className="text-muted-foreground text-sm mb-2">Total Productions</p>
                   <p className="text-3xl font-serif text-foreground">{shows.length}</p>
@@ -581,7 +589,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <RippleButton onClick={openAddModal} variant="ios" size="lg">
+                  <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
                     <Plus className="w-4 h-4 mr-2" />
                     Add New Show
                   </RippleButton>
@@ -624,7 +632,7 @@ const Dashboard = () => {
                 <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
                   <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
                   {!isTrialExpired && (
-                    <RippleButton onClick={openAddModal} variant="ios-secondary">
+                    <RippleButton id="add-show-button" onClick={openAddModal} variant="ios-secondary">
                       Submit Your First Show
                     </RippleButton>
                   )}
@@ -850,7 +858,19 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="showProductionStatus">Production Status</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="showProductionStatus">Production Status</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Adding past productions helps build trust with new audience members and acts as a digital portfolio.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select value={newShowProductionStatus} onValueChange={(val) => setNewShowProductionStatus(val as "ongoing" | "completed" | "draft")}>
                   <SelectTrigger className="bg-background border-secondary/30">
                     <SelectValue />
