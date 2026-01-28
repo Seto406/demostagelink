@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { ReviewList } from "@/components/reviews/ReviewList";
 
 interface ShowDetails {
   id: string;
@@ -42,6 +44,7 @@ const ShowDetailsPage = () => {
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshReviews, setRefreshReviews] = useState(0);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -494,6 +497,27 @@ const ShowDetailsPage = () => {
             </div>
           </section>
         )}
+
+        {/* Reviews Section */}
+        <section className="py-16 border-t border-secondary/10">
+          <div className="container mx-auto px-6">
+            <div className="max-w-3xl">
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-8">
+                Audience Reviews
+              </h2>
+              <div className="space-y-12">
+                <ReviewForm
+                  showId={show.id}
+                  onReviewSubmitted={() => setRefreshReviews(prev => prev + 1)}
+                />
+                <ReviewList
+                  showId={show.id}
+                  refreshTrigger={refreshReviews}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Share Section */}
         <section className="py-12 border-t border-secondary/10">
