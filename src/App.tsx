@@ -89,7 +89,7 @@ const AnimatedRoutes = () => {
         key={location.pathname}
         variants={shouldReduceMotion ? {} : pageVariants}
         initial={shouldReduceMotion ? false : "initial"}
-        animate="animate"
+        animate={shouldReduceMotion ? undefined : "animate"}
         exit={shouldReduceMotion ? undefined : "exit"}
       >
         <Routes location={location}>
