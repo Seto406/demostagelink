@@ -51,6 +51,50 @@ interface Show {
   cast_members: string[] | null;
 }
 
+const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const resizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(resizedFile);
+            } else {
+              reject(new Error("Canvas to Blob conversion failed"));
+            }
+          },
+          "image/jpeg",
+          0.8
+        );
+      };
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -157,7 +201,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -182,8 +226,20 @@ const Dashboard = () => {
       return;
     }
 
-    setPosterFile(file);
-    setPosterPreview(URL.createObjectURL(file));
+    try {
+      const resizedFile = await resizeImage(file);
+      setPosterFile(resizedFile);
+      setPosterPreview(URL.createObjectURL(resizedFile));
+    } catch (error) {
+      console.error("Image resizing failed:", error);
+      toast({
+        title: "Image optimization failed",
+        description: "Using original image.",
+        variant: "destructive",
+      });
+      setPosterFile(file);
+      setPosterPreview(URL.createObjectURL(file));
+    }
   };
 
   const clearPoster = () => {
