@@ -14,6 +14,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
   const spotlightY = useSpring(cursorY, springConfig);
   
   const [isMobile, setIsMobile] = useState(false);
+  const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -23,7 +24,16 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setShouldReduceMotion(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setShouldReduceMotion(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile || shouldReduceMotion) return;
     
     const handleMouseMove = (e: MouseEvent) => {
       cursorX.set(e.clientX);
@@ -32,7 +42,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [cursorX, cursorY, isMobile]);
+  }, [cursorX, cursorY, isMobile, shouldReduceMotion]);
 
   return (
     <div className="relative min-h-screen">
@@ -131,63 +141,67 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           }}
         />
 
-        {/* Floating particles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                background: i % 3 === 0 
-                  ? "rgba(212, 175, 55, 0.4)" 
-                  : "rgba(139, 0, 0, 0.3)",
-              }}
-              animate={{
-                y: [0, -100, 0],
-                x: [0, Math.random() * 50 - 25, 0],
-                opacity: [0, 0.8, 0],
-                scale: [0, 1.5, 0],
-              }}
-              transition={{
-                duration: 8 + Math.random() * 8,
-                repeat: Infinity,
-                delay: Math.random() * 10,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
+        {/* Floating particles - disabled on reduced motion */}
+        {!shouldReduceMotion && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(15)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  background: i % 3 === 0
+                    ? "rgba(212, 175, 55, 0.4)"
+                    : "rgba(139, 0, 0, 0.3)",
+                }}
+                animate={{
+                  y: [0, -100, 0],
+                  x: [0, Math.random() * 50 - 25, 0],
+                  opacity: [0, 0.8, 0],
+                  scale: [0, 1.5, 0],
+                }}
+                transition={{
+                  duration: 8 + Math.random() * 8,
+                  repeat: Infinity,
+                  delay: Math.random() * 10,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Stage dust particles - larger, slower */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={`dust-${i}`}
-              className="absolute w-2 h-2 rounded-full bg-secondary/10"
-              style={{
-                left: `${10 + Math.random() * 80}%`,
-                top: `${Math.random() * 100}%`,
-                filter: "blur(1px)",
-              }}
-              animate={{
-                y: [0, -200, 0],
-                x: [0, Math.random() * 100 - 50, 0],
-                opacity: [0, 0.4, 0],
-              }}
-              transition={{
-                duration: 15 + Math.random() * 10,
-                repeat: Infinity,
-                delay: Math.random() * 15,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
+        {/* Stage dust particles - disabled on reduced motion */}
+        {!shouldReduceMotion && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={`dust-${i}`}
+                className="absolute w-2 h-2 rounded-full bg-secondary/10"
+                style={{
+                  left: `${10 + Math.random() * 80}%`,
+                  top: `${Math.random() * 100}%`,
+                  filter: "blur(1px)",
+                }}
+                animate={{
+                  y: [0, -200, 0],
+                  x: [0, Math.random() * 100 - 50, 0],
+                  opacity: [0, 0.4, 0],
+                }}
+                transition={{
+                  duration: 15 + Math.random() * 10,
+                  repeat: Infinity,
+                  delay: Math.random() * 15,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Cursor Spotlight - Desktop only */}
-        {!isMobile && (
+        {/* Cursor Spotlight - Desktop only and not reduced motion */}
+        {!isMobile && !shouldReduceMotion && (
           <motion.div
             className="fixed pointer-events-none"
             style={{

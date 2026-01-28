@@ -15,6 +15,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useFavorites } from "@/hooks/use-favorites";
+import { FavoriteButton } from "@/components/ui/favorite-button";
+import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -62,6 +65,7 @@ interface Show {
 // Enhanced Show Card component with 3D tilt
 const ShowCard = ({ show, index }: { show: Show; index: number }) => {
   const posterUrl = posterMap[show.title] || show.poster_url;
+  const { toggleFavorite, isFavorited } = useFavorites();
 
   return (
     <motion.div
@@ -108,6 +112,22 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
                 </span>
               </motion.div>
             )}
+
+            {/* Favorite Button */}
+            <div
+              className="absolute top-3 left-3 z-20"
+              style={{ transform: "translateZ(30px)" }}
+            >
+              <FavoriteButton
+                isFavorited={isFavorited(show.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleFavorite(show.id);
+                }}
+                size="sm"
+              />
+            </div>
 
             {/* Content */}
             <div 
@@ -576,22 +596,22 @@ const Shows = () => {
               ))}
             </div>
           ) : filteredShows.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-16"
-            >
-              <div className="text-6xl mb-4 opacity-30">🎭</div>
-              <p className="text-muted-foreground mb-4">
-                No shows found nearby.
-              </p>
-              <button
-                onClick={clearFilters}
-                className="text-secondary hover:underline"
-              >
-                Clear filters
-              </button>
-            </motion.div>
+            <div className="max-w-md mx-auto py-12">
+              <PremiumEmptyState
+                title="No Productions Found"
+                description="We couldn't find any shows matching your current filters. Try adjusting your search or check back later for new productions."
+                icon={Ticket}
+                action={
+                  <Button
+                    onClick={clearFilters}
+                    variant="outline"
+                    className="border-secondary/30 text-secondary hover:bg-secondary/10 hover:text-secondary"
+                  >
+                    Clear All Filters
+                  </Button>
+                }
+              />
+            </div>
           ) : (
             <motion.div
               layout

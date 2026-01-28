@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
+import { toast } from "sonner";
 
 interface ShowDetails {
   id: string;
@@ -169,21 +170,46 @@ const ShowDetailsPage = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
           
           <div className="container mx-auto px-6 py-12 relative z-10">
-            {/* Back Button */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate(-1)}
-                className="mb-8 text-muted-foreground hover:text-foreground"
+            {/* Back Button & Share */}
+            <div className="flex justify-between items-center mb-8">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </motion.div>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate(-1)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copied to clipboard!");
+                    } catch (err) {
+                      toast.error("Failed to copy link");
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </Button>
+              </motion.div>
+            </div>
 
             <div className="grid lg:grid-cols-3 gap-12">
               {/* Poster */}
@@ -193,7 +219,7 @@ const ShowDetailsPage = () => {
                 transition={{ duration: 0.6 }}
                 className="lg:col-span-1"
               >
-                <div className="aspect-[2/3] bg-gradient-to-br from-card to-muted border border-secondary/30 overflow-hidden relative group">
+                <div className="aspect-[2/3] bg-gradient-to-br from-card to-muted border border-secondary/30 overflow-hidden relative group rounded-sm shadow-2xl">
                   {show.poster_url ? (
                     <img 
                       src={show.poster_url} 
@@ -201,8 +227,18 @@ const ShowDetailsPage = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
-                      <span className="text-8xl opacity-40">🎭</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-6 text-center">
+                      <Ticket className="w-24 h-24 text-secondary/20 mb-4" />
+                      <div className="space-y-2">
+                        <span className="text-xl font-serif text-secondary/40">No Poster Available</span>
+                      </div>
+                      <div
+                        className="absolute inset-0 opacity-10"
+                        style={{
+                          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.2) 1px, transparent 0)`,
+                          backgroundSize: "24px 24px"
+                        }}
+                      />
                     </div>
                   )}
                   {/* Corner accents */}
@@ -320,8 +356,8 @@ const ShowDetailsPage = () => {
                 <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                   About This Production
                 </h2>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-muted-foreground leading-relaxed text-lg">
+                <div className="prose prose-lg prose-invert max-w-none">
+                  <p className="text-muted-foreground leading-relaxed tracking-wide">
                     {show.description || 
                       "Details about this production will be announced soon. Stay tuned for more information about the synopsis, cast, and creative team."}
                   </p>
