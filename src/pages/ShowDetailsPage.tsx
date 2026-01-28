@@ -160,6 +160,20 @@ const ShowDetailsPage = () => {
 
   const dateInfo = formatDate(show.date);
 
+  const googleCalendarLink = (() => {
+    if (!show || !show.date) return "";
+    const title = encodeURIComponent(show.title);
+    const details = encodeURIComponent(show.description || "");
+    const location = encodeURIComponent(show.venue || "");
+
+    // Format date as YYYYMMDD
+    const dateObj = new Date(show.date);
+    const dateStr = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
+    const dates = `${dateStr}/${dateStr}`; // All day event
+
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+  })();
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -294,6 +308,15 @@ const ShowDetailsPage = () => {
                       <div>
                         <p className="text-muted-foreground text-sm">Date</p>
                         <p className="text-foreground font-medium">{dateInfo.full}</p>
+                        <a
+                          href={googleCalendarLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 mt-1.5 transition-colors"
+                        >
+                          <Calendar className="w-3 h-3" />
+                          Add to Google Calendar
+                        </a>
                       </div>
                     </div>
                   )}

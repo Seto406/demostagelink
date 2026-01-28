@@ -65,9 +65,19 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-secondary/10 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-          <p className="text-muted-foreground text-xs text-center sm:text-left">
-            © 2026 StageLink. Supporting Local Theater in Metro Manila.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <p className="text-muted-foreground text-xs text-center sm:text-left">
+              © 2026 StageLink. Supporting Local Theater in Metro Manila.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/privacy" className="text-muted-foreground hover:text-secondary transition-colors text-xs">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-muted-foreground hover:text-secondary transition-colors text-xs">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
           <span className="text-muted-foreground text-xs">Made with ❤️ for Filipino Theater</span>
         </div>
       </div>

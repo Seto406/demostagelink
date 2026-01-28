@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { FloatingInput } from "@/components/ui/floating-input";
 import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
@@ -80,6 +82,7 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptsConsent, setAcceptsConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(false);
 
@@ -169,6 +172,17 @@ const Login = () => {
           toast({
             title: "Error",
             description: "Passwords do not match",
+            variant: "destructive",
+          });
+          triggerShake();
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (!acceptsConsent) {
+          toast({
+            title: "Data Consent Required",
+            description: "Please agree to the Data Privacy Act terms to continue.",
             variant: "destructive",
           });
           triggerShake();
@@ -469,55 +483,70 @@ const Login = () => {
 
                   {/* Confirm Password Field (Signup only) */}
                   {authMode === "signup" && (
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <FloatingInput
-                          id="confirmPassword"
-                          type={showConfirmPassword ? "text" : "password"}
-                          label="Confirm Password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </button>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <FloatingInput
+                            id="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            label="Confirm Password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+
+                        {/* Password Match Indicator */}
+                        {showMatchIndicator && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex items-center gap-2 text-sm ${
+                              passwordsMatch ? "text-green-500" : "text-red-500"
+                            }`}
+                          >
+                            {passwordsMatch ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                <span>Passwords match</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-4 h-4" />
+                                <span>Passwords do not match</span>
+                              </>
+                            )}
+                          </motion.div>
+                        )}
                       </div>
-                      
-                      {/* Password Match Indicator */}
-                      {showMatchIndicator && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`flex items-center gap-2 text-sm ${
-                            passwordsMatch ? "text-green-500" : "text-red-500"
-                          }`}
-                        >
-                          {passwordsMatch ? (
-                            <>
-                              <Check className="w-4 h-4" />
-                              <span>Passwords match</span>
-                            </>
-                          ) : (
-                            <>
-                              <X className="w-4 h-4" />
-                              <span>Passwords do not match</span>
-                            </>
-                          )}
-                        </motion.div>
-                      )}
+
+                      {/* Data Consent Checkbox */}
+                      <div className="flex items-start space-x-2 pt-2">
+                        <Checkbox
+                          id="consent"
+                          checked={acceptsConsent}
+                          onCheckedChange={(checked) => setAcceptsConsent(checked as boolean)}
+                          className="mt-1"
+                        />
+                        <Label htmlFor="consent" className="text-sm text-muted-foreground leading-snug">
+                          I agree to the <a href="/terms" target="_blank" className="text-secondary hover:underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-secondary hover:underline">Privacy Policy</a>, and I consent to the processing of my personal data in compliance with the Data Privacy Act.
+                        </Label>
+                      </div>
                     </div>
                   )}
 
                   <Button 
                     type="submit" 
                     className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base transition-all active:scale-[0.98]" 
-                    disabled={isSubmitting || (authMode === "signup" && !passwordsMatch)}
+                    disabled={isSubmitting || (authMode === "signup" && (!passwordsMatch || !acceptsConsent))}
                   >
                     {isSubmitting ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
                   </Button>

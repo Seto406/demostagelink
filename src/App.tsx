@@ -27,6 +27,8 @@ import ProducerProfile from "./pages/ProducerProfile";
 import GroupProfile from "./pages/GroupProfile";
 import Settings from "./pages/Settings";
 import Favorites from "./pages/Favorites";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -112,6 +114,8 @@ const AnimatedRoutes = () => {
           <Route path="/group/:id" element={<GroupProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
