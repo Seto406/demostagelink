@@ -67,21 +67,7 @@ const VerifyEmail = () => {
             localStorage.removeItem("pendingVerificationEmail");
             localStorage.removeItem("lastVerificationEmailSent");
             
-            if (data.user?.email) {
-              const userRole = localStorage.getItem("pendingUserRole") as "audience" | "producer" || "audience";
-              try {
-                await supabase.functions.invoke("send-welcome-email", {
-                  body: {
-                    email: data.user.email,
-                    name: data.user.user_metadata?.group_name,
-                    role: userRole,
-                  },
-                });
-              } catch (err) {
-                console.error("Failed to send welcome email:", err);
-              }
-              localStorage.removeItem("pendingUserRole");
-            }
+            localStorage.removeItem("pendingUserRole");
             
             toast({
               title: "Email verified!",

@@ -28,6 +28,7 @@ interface Show {
   venue: string | null;
   city: string | null;
   poster_url: string | null;
+  production_status: string | null;
 }
 
 const ProducerProfile = () => {
@@ -59,9 +60,10 @@ const ProducerProfile = () => {
       // Fetch producer's approved shows
       const { data: showsData, error: showsError } = await supabase
         .from("shows")
-        .select("id, title, description, date, venue, city, poster_url")
+        .select("id, title, description, date, venue, city, poster_url, production_status")
         .eq("producer_id", id)
         .eq("status", "approved")
+        .neq("production_status", "draft") // Exclude draft shows from public profile
         .order("date", { ascending: false });
 
       if (showsError) {
@@ -227,67 +229,138 @@ const ProducerProfile = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
-              Productions
-            </h2>
-            
             {shows.length === 0 ? (
               <div className="bg-card border border-secondary/20 p-12 text-center">
                 <p className="text-muted-foreground">No approved productions yet.</p>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {shows.map((show, index) => (
-                  <motion.div
-                    key={show.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                  >
-                    <Link 
-                      to={`/show/${show.id}`}
-                      className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
-                    >
-                      {/* Poster */}
-                      <div className="aspect-[3/2] relative overflow-hidden">
-                        {show.poster_url ? (
-                          <img 
-                            src={show.poster_url} 
-                            alt={show.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                            <span className="text-4xl opacity-30">🎭</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="p-4">
-                        <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
-                          {show.title}
-                        </h3>
-                        
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                          {show.date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {new Date(show.date).toLocaleDateString()}
-                            </span>
-                          )}
-                          {show.city && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {show.city}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
+              <>
+                {/* Current/Upcoming Productions */}
+                {shows.some(s => s.production_status !== "completed") && (
+                  <div className="mb-12">
+                    <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
+                      Current Productions
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {shows
+                        .filter(s => s.production_status !== "completed")
+                        .map((show, index) => (
+                          <motion.div
+                            key={show.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                          >
+                            <Link
+                              to={`/show/${show.id}`}
+                              className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
+                            >
+                              {/* Poster */}
+                              <div className="aspect-[3/2] relative overflow-hidden">
+                                {show.poster_url ? (
+                                  <img
+                                    src={show.poster_url}
+                                    alt={show.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                                    <span className="text-4xl opacity-30">🎭</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content */}
+                              <div className="p-4">
+                                <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
+                                  {show.title}
+                                </h3>
+
+                                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                  {show.date && (
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" />
+                                      {new Date(show.date).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                  {show.city && (
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {show.city}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Past Productions */}
+                {shows.some(s => s.production_status === "completed") && (
+                  <div>
+                    <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
+                      Past Productions
+                    </h2>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {shows
+                        .filter(s => s.production_status === "completed")
+                        .map((show, index) => (
+                          <motion.div
+                            key={show.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.1 }}
+                          >
+                            <Link
+                              to={`/show/${show.id}`}
+                              className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300 opacity-80 hover:opacity-100"
+                            >
+                              {/* Poster */}
+                              <div className="aspect-[3/2] relative overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
+                                {show.poster_url ? (
+                                  <img
+                                    src={show.poster_url}
+                                    alt={show.title}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                                    <span className="text-4xl opacity-30">🎭</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content */}
+                              <div className="p-4">
+                                <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
+                                  {show.title}
+                                </h3>
+
+                                <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                  {show.date && (
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3" />
+                                      {new Date(show.date).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                  {show.city && (
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {show.city}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </motion.div>
         </div>

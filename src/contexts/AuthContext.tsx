@@ -11,6 +11,7 @@ interface Profile {
   founded_year: number | null;
   niche: "local" | "university" | null;
   map_screenshot_url: string | null;
+  created_at: string;
 }
 
 interface AuthContextType {
@@ -68,6 +69,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (createdProfile) {
         setProfile(createdProfile as Profile);
+
+        // Trigger welcome email for new user
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.email) {
+            await supabase.functions.invoke("send-welcome-email", {
+              body: {
+                email: user.email,
+                name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
+                role: role,
+              },
+            });
+          }
+        } catch (emailError) {
+          console.error("Failed to trigger welcome email:", emailError);
+        }
+
         localStorage.removeItem("pendingUserRole");
       } else {
         // If insert failed, it might be a race condition (profile created elsewhere)

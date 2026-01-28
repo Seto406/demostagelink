@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ interface Show {
   ticket_link: string | null;
   poster_url: string | null;
   status: "pending" | "approved" | "rejected";
+  production_status: "ongoing" | "completed" | "draft";
   created_at: string;
   genre: string | null;
   director: string | null;
@@ -78,6 +79,7 @@ const Dashboard = () => {
   const [newShowDuration, setNewShowDuration] = useState("");
   const [newShowTags, setNewShowTags] = useState("");
   const [newShowCast, setNewShowCast] = useState("");
+  const [newShowProductionStatus, setNewShowProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
 
   // Profile form states
   const [groupName, setGroupName] = useState("");
@@ -117,6 +119,13 @@ const Dashboard = () => {
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
     }
+  }, [profile]);
+
+  const isTrialExpired = useMemo(() => {
+    if (!profile?.created_at) return false;
+    const trialDuration = 30 * 24 * 60 * 60 * 1000; // 30 days
+    const created = new Date(profile.created_at).getTime();
+    return Date.now() - created > trialDuration;
   }, [profile]);
 
   // Fetch shows (excluding soft-deleted)
@@ -198,6 +207,7 @@ const Dashboard = () => {
     setNewShowDuration("");
     setNewShowTags("");
     setNewShowCast("");
+    setNewShowProductionStatus("ongoing");
     clearPoster();
     setEditingShow(null);
   };
@@ -221,6 +231,7 @@ const Dashboard = () => {
     setNewShowDuration(show.duration || "");
     setNewShowTags(show.tags?.join(", ") || "");
     setNewShowCast(show.cast_members?.join(", ") || "");
+    setNewShowProductionStatus(show.production_status || "ongoing");
     setPosterPreview(show.poster_url);
     setPosterFile(null);
     setShowModal(true);
@@ -265,6 +276,7 @@ const Dashboard = () => {
           city: newShowCity || null,
           niche: newShowNiche,
           status: "pending",
+          production_status: newShowProductionStatus,
           poster_url: posterUrl,
           ticket_link: newShowTicketLink || null,
           genre: newShowGenre || null,
@@ -331,6 +343,7 @@ const Dashboard = () => {
           city: newShowCity || null,
           niche: newShowNiche,
           poster_url: posterUrl,
+          production_status: newShowProductionStatus,
           ticket_link: newShowTicketLink || null,
           genre: newShowGenre || null,
           director: newShowDirector || null,
@@ -501,10 +514,22 @@ const Dashboard = () => {
 
               <div className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
-                <RippleButton onClick={openAddModal} variant="ios" size="lg">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Show
-                </RippleButton>
+                {isTrialExpired ? (
+                  <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-4">
+                    <AlertTriangle className="w-6 h-6 text-destructive" />
+                    <div>
+                      <h3 className="font-medium text-destructive">Trial Expired</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your 1-month free trial has ended. Please upgrade to continue creating shows.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <RippleButton onClick={openAddModal} variant="ios" size="lg">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add New Show
+                  </RippleButton>
+                )}
               </div>
             </motion.div>
           )}
@@ -524,10 +549,17 @@ const Dashboard = () => {
             >
               <div className="flex justify-between items-center">
                 <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
-                <RippleButton onClick={openAddModal} variant="ios">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Show
-                </RippleButton>
+                {isTrialExpired ? (
+                  <Button variant="outline" disabled className="opacity-50 cursor-not-allowed">
+                    <Lock className="w-4 h-4 mr-2" />
+                    Add Show (Expired)
+                  </Button>
+                ) : (
+                  <RippleButton onClick={openAddModal} variant="ios">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Show
+                  </RippleButton>
+                )}
               </div>
 
               {loadingShows ? (
@@ -535,9 +567,11 @@ const Dashboard = () => {
               ) : shows.length === 0 ? (
                 <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
                   <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
-                  <RippleButton onClick={openAddModal} variant="ios-secondary">
-                    Submit Your First Show
-                  </RippleButton>
+                  {!isTrialExpired && (
+                    <RippleButton onClick={openAddModal} variant="ios-secondary">
+                      Submit Your First Show
+                    </RippleButton>
+                  )}
                 </div>
               ) : (
                 <div className="bg-card border border-secondary/20 overflow-hidden">
@@ -546,7 +580,8 @@ const Dashboard = () => {
                       <tr>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Status</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Approval</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Production Status</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
                       </tr>
                     </thead>
@@ -560,6 +595,11 @@ const Dashboard = () => {
                           <td className="p-4">
                             <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
                               {getStatusLabel(show.status)}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-3 py-1 text-xs border border-secondary/30 bg-secondary/10 text-secondary rounded-full capitalize">
+                              {show.production_status || "ongoing"}
                             </span>
                           </td>
                           <td className="p-4">
@@ -739,17 +779,33 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="showNiche">Type</Label>
-              <Select value={newShowNiche} onValueChange={(val) => setNewShowNiche(val as "local" | "university")}>
-                <SelectTrigger className="bg-background border-secondary/30">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border-secondary/30">
-                  <SelectItem value="local">Local/Community</SelectItem>
-                  <SelectItem value="university">University</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="showNiche">Type</Label>
+                <Select value={newShowNiche} onValueChange={(val) => setNewShowNiche(val as "local" | "university")}>
+                  <SelectTrigger className="bg-background border-secondary/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-secondary/30">
+                    <SelectItem value="local">Local/Community</SelectItem>
+                    <SelectItem value="university">University</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="showProductionStatus">Production Status</Label>
+                <Select value={newShowProductionStatus} onValueChange={(val) => setNewShowProductionStatus(val as "ongoing" | "completed" | "draft")}>
+                  <SelectTrigger className="bg-background border-secondary/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-secondary/30">
+                    <SelectItem value="ongoing">Ongoing/Upcoming</SelectItem>
+                    <SelectItem value="completed">Completed (Past)</SelectItem>
+                    <SelectItem value="draft">Draft (Hidden)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
