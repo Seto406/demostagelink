@@ -98,7 +98,7 @@ html {
     --landing-primary: 0 75% 45%;
     --landing-gold: 43 90% 55%;
     --landing-text: 220 15% 15%;
-    --landing-muted: 220 10% 50%;
+    --landing-muted: 220 15% 40%;
     --landing-surface: 220 20% 97%;
     --landing-accent: 220 100% 60%;
     --landing-border: 220 15% 90%;
@@ -137,17 +137,17 @@ html {
     --popover-foreground: 0 0% 10%;
     --primary: 0 70% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 43 80% 45%;
+    --secondary: 43 90% 30%;
     --secondary-foreground: 0 0% 100%;
     --muted: 40 10% 90%;
     --muted-foreground: 0 0% 40%;
-    --accent: 43 80% 45%;
+    --accent: 43 90% 30%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 50%;
     --destructive-foreground: 0 0% 100%;
     --border: 40 20% 85%;
     --input: 40 15% 92%;
-    --ring: 43 80% 45%;
+    --ring: 43 90% 30%;
   }
 }
 
