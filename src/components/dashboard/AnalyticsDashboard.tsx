@@ -4,6 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { motion } from "framer-motion";
+import { HelpCircle } from "lucide-react";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AnalyticsDashboardProps {
   profileId: string;
@@ -137,8 +144,18 @@ export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
         </Card>
         <Card className="bg-card border-secondary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               Click-Through Rate
+              <TooltipProvider>
+                <UiTooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-4 h-4 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">This shows the percentage of visitors who clicked your ticket link. Higher CTR means your show description is working!</p>
+                  </TooltipContent>
+                </UiTooltip>
+              </TooltipProvider>
             </CardTitle>
           </CardHeader>
           <CardContent>
