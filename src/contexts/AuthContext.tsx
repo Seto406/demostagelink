@@ -36,76 +36,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const ensureProfile = async (userId: string, userMetadata?: Record<string, unknown> & { avatar_url?: string }) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (!error && data) {
-      setProfile(data as Profile);
-    } else {
-      // Profile doesn't exist, create it
-      // Get role from localStorage or default to audience
-      const pendingRoleRaw = localStorage.getItem("pendingUserRole");
-      let role: "audience" | "producer" = "audience";
-
-      // Validate role
-      if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
-        role = pendingRoleRaw;
-      }
-
-      const newProfile = {
-        user_id: userId,
-        role: role,
-        avatar_url: userMetadata?.avatar_url || null,
-      };
-
-      const { data: createdProfile, error: createError } = await supabase
+    try {
+      const { data, error } = await supabase
         .from("profiles")
-        .insert([newProfile])
-        .select()
-        .single();
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-      if (createdProfile) {
-        setProfile(createdProfile as Profile);
+      if (!error && data) {
+        setProfile(data as Profile);
+      } else {
+        // Profile doesn't exist, create it
+        // Get role from localStorage or default to audience
+        const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+        let role: "audience" | "producer" = "audience";
 
-        // Trigger welcome email for new user
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user?.email) {
-            await supabase.functions.invoke("send-welcome-email", {
-              body: {
-                email: user.email,
-                name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
-                role: role,
-              },
-            });
-          }
-        } catch (emailError) {
-          console.error("Failed to trigger welcome email:", emailError);
+        // Validate role
+        if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
+          role = pendingRoleRaw;
         }
 
-        localStorage.removeItem("pendingUserRole");
-      } else {
-        // If insert failed, it might be a race condition (profile created elsewhere)
-        // Try fetching one last time
-        console.warn("Error creating profile, retrying fetch:", createError);
+        const newProfile = {
+          user_id: userId,
+          role: role,
+          avatar_url: userMetadata?.avatar_url || null,
+        };
 
-        const { data: retryData } = await supabase
+        const { data: createdProfile, error: createError } = await supabase
           .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
+          .insert([newProfile])
+          .select()
+          .single();
 
-        if (retryData) {
-          setProfile(retryData as Profile);
+        if (createdProfile) {
+          setProfile(createdProfile as Profile);
+
+          // Trigger welcome email for new user
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.email) {
+              await supabase.functions.invoke("send-welcome-email", {
+                body: {
+                  email: user.email,
+                  name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
+                  role: role,
+                },
+              });
+            }
+          } catch (emailError) {
+            console.error("Failed to trigger welcome email:", emailError);
+          }
+
           localStorage.removeItem("pendingUserRole");
         } else {
-          console.error("Failed to ensure profile:", createError);
-          setProfile(null);
+          // If insert failed, it might be a race condition (profile created elsewhere)
+          // Try fetching one last time
+          console.warn("Error creating profile, retrying fetch:", createError);
+
+          const { data: retryData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
+
+          if (retryData) {
+            setProfile(retryData as Profile);
+            localStorage.removeItem("pendingUserRole");
+          } else {
+            console.error("Failed to ensure profile:", createError);
+            setProfile(null);
+          }
         }
       }
+    } catch (error) {
+      console.error("Unexpected error in ensureProfile:", error);
+      // Even if profile fetch fails, we don't want to leave the user completely blocked
+      // checking if we can proceed without profile or if we should set it to null
+      setProfile(null);
     }
   };
 
@@ -119,26 +126,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await ensureProfile(session.user.id, session.user.user_metadata);
-        } else {
-          setProfile(null);
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+
+          if (session?.user) {
+            await ensureProfile(session.user.id, session.user.user_metadata);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+          console.error("Error handling auth state change:", error);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await ensureProfile(session.user.id, session.user.user_metadata);
+      try {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await ensureProfile(session.user.id, session.user.user_metadata);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
