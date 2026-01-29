@@ -5,8 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
-import { AnimatePresence, motion, Variants } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
@@ -42,46 +41,9 @@ const ToastHandlerInit = () => {
   return null;
 };
 
-// Premium page transition variants - theatrical fade with subtle scale
-const pageVariants: Variants = {
-  initial: {
-    opacity: 0,
-    scale: 0.98,
-    filter: "blur(4px)",
-  },
-  animate: {
-    opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: {
-      duration: 0.5,
-      ease: [0.22, 1, 0.36, 1], // Custom easeOutQuint for smooth deceleration
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 1.01,
-    filter: "blur(2px)",
-    transition: {
-      duration: 0.3,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  },
-};
-
-// Animated routes wrapper
-const AnimatedRoutes = () => {
+// Main routes wrapper
+const AppRoutes = () => {
   const location = useLocation();
-  const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setShouldReduceMotion(mediaQuery.matches);
-    
-    const handler = (e: MediaQueryListEvent) => setShouldReduceMotion(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
 
   // Scroll to top on route change
   useEffect(() => {
@@ -89,38 +51,28 @@ const AnimatedRoutes = () => {
   }, [location.pathname]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.pathname}
-        variants={shouldReduceMotion ? {} : pageVariants}
-        initial={shouldReduceMotion ? false : "initial"}
-        animate="animate"
-        exit={shouldReduceMotion ? undefined : "exit"}
-      >
-        <Routes location={location}>
-          <Route path="/" element={<Index />} />
-          <Route path="/feed" element={<UserFeed />} />
-          <Route path="/directory" element={<Directory />} />
-          <Route path="/shows" element={<Shows />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/analytics" element={<Dashboard />} />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/show/:id" element={<ShowDetailsPage />} />
-          <Route path="/producer/:id" element={<ProducerProfile />} />
-          <Route path="/group/:id" element={<GroupProfile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+    <Routes location={location}>
+      <Route path="/" element={<Index />} />
+      <Route path="/feed" element={<UserFeed />} />
+      <Route path="/directory" element={<Directory />} />
+      <Route path="/shows" element={<Shows />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard/analytics" element={<Dashboard />} />
+      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/show/:id" element={<ShowDetailsPage />} />
+      <Route path="/producer/:id" element={<ProducerProfile />} />
+      <Route path="/group/:id" element={<GroupProfile />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/favorites" element={<Favorites />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -137,7 +89,7 @@ const App = () => (
             <BrowserRouter>
               <AuthProvider>
                 <IdleTimerProvider>
-                  <AnimatedRoutes />
+                  <AppRoutes />
                   <MobileBottomNav />
                 </IdleTimerProvider>
               </AuthProvider>
