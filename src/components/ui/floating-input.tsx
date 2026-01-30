@@ -8,9 +8,9 @@ interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 }
 
 const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
-  ({ className, label, error, type = "text", value, onChange, onFocus, onBlur, ...props }, ref) => {
+  ({ className, label, error, type = "text", value, onChange, onFocus, onBlur, id: propId, ...props }, ref) => {
     const generatedId = React.useId();
-    const id = props.id || generatedId;
+    const id = propId || generatedId;
     const [isFocused, setIsFocused] = React.useState(false);
     const [hasValue, setHasValue] = React.useState(!!value);
 
@@ -132,9 +132,9 @@ interface FloatingTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAre
 }
 
 const FloatingTextarea = React.forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
-  ({ className, label, error, value, onChange, onFocus, onBlur, ...props }, ref) => {
+  ({ className, label, error, value, onChange, onFocus, onBlur, id: propId, ...props }, ref) => {
     const generatedId = React.useId();
-    const id = props.id || generatedId;
+    const id = propId || generatedId;
     const [isFocused, setIsFocused] = React.useState(false);
     const [hasValue, setHasValue] = React.useState(!!value);
 
