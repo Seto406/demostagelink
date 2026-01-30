@@ -9,6 +9,8 @@ interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 
 const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
   ({ className, label, error, type = "text", value, onChange, onFocus, onBlur, ...props }, ref) => {
+    const generatedId = React.useId();
+    const id = props.id || generatedId;
     const [isFocused, setIsFocused] = React.useState(false);
     const [hasValue, setHasValue] = React.useState(!!value);
 
@@ -36,6 +38,7 @@ const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
     return (
       <div className="relative">
         <motion.label
+          htmlFor={id}
           initial={false}
           animate={{
             y: isFloating ? -24 : 0,
@@ -61,9 +64,11 @@ const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
           )}
         >
           {label}
+          {props.required && <span className="text-destructive ml-1">*</span>}
         </motion.label>
         
         <input
+          id={id}
           type={type}
           ref={ref}
           value={value}
@@ -128,6 +133,8 @@ interface FloatingTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAre
 
 const FloatingTextarea = React.forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
   ({ className, label, error, value, onChange, onFocus, onBlur, ...props }, ref) => {
+    const generatedId = React.useId();
+    const id = props.id || generatedId;
     const [isFocused, setIsFocused] = React.useState(false);
     const [hasValue, setHasValue] = React.useState(!!value);
 
@@ -155,6 +162,7 @@ const FloatingTextarea = React.forwardRef<HTMLTextAreaElement, FloatingTextareaP
     return (
       <div className="relative">
         <motion.label
+          htmlFor={id}
           initial={false}
           animate={{
             y: isFloating ? -24 : 0,
@@ -180,9 +188,11 @@ const FloatingTextarea = React.forwardRef<HTMLTextAreaElement, FloatingTextareaP
           )}
         >
           {label}
+          {props.required && <span className="text-destructive ml-1">*</span>}
         </motion.label>
         
         <textarea
+          id={id}
           ref={ref}
           value={value}
           onChange={handleChange}
