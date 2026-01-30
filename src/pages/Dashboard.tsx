@@ -503,7 +503,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <TourGuide />
+      <TourGuide isTrialExpired={isTrialExpired} />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -576,7 +576,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-card border border-secondary/20 p-6">
+              <div id="quick-actions-container" className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
                 {isTrialExpired ? (
                   <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-4">
