@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import ReactJoyride, { Step, CallBackProps, STATUS } from "react-joyride";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const TourGuide = () => {
+interface TourGuideProps {
+  isTrialExpired?: boolean;
+}
+
+export const TourGuide = ({ isTrialExpired = false }: TourGuideProps) => {
   const { user } = useAuth();
   const [run, setRun] = useState(false);
 
@@ -39,8 +43,10 @@ export const TourGuide = () => {
       content: "This is your command center. Once you have shows live, you'll see your ticket click-through rates and audience engagement here.",
     },
     {
-      target: "#add-show-button",
-      content: "Ready to show off? Click here to add an Ongoing Show or archive a Previous Show to build your portfolio.",
+      target: isTrialExpired ? "#quick-actions-container" : "#add-show-button",
+      content: isTrialExpired
+        ? "Your trial has ended. This section allows you to manage your subscription and shows."
+        : "Ready to show off? Click here to add an Ongoing Show or archive a Previous Show to build your portfolio.",
     },
     {
       target: "#profile-tab",
