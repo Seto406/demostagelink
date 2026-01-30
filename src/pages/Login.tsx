@@ -403,6 +403,7 @@ const Login = () => {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Toggle password visibility"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -499,6 +500,7 @@ const Login = () => {
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label="Toggle confirm password visibility"
                           >
                             {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                           </button>
@@ -565,7 +567,7 @@ const Login = () => {
                     className="w-full h-12 rounded-xl border-input hover:bg-accent hover:text-accent-foreground transition-all"
                     onClick={handleGoogleLogin}
                   >
-                    <GoogleIcon />
+                    <span aria-hidden="true"><GoogleIcon /></span>
                     <span className="ml-2">Google</span>
                   </Button>
                 </form>
