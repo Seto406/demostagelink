@@ -112,6 +112,7 @@ const Dashboard = () => {
   const [editingShow, setEditingShow] = useState<Show | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
+  const [runTour, setRunTour] = useState(false);
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -201,6 +202,26 @@ const Dashboard = () => {
   useEffect(() => {
     fetchShows();
   }, [fetchShows]);
+
+  // Handle tour
+  useEffect(() => {
+    if (user) {
+      const hasSeenTour = localStorage.getItem(`stagelink_tour_seen_${user.id}`);
+      if (!hasSeenTour) {
+        // Delay tour start to ensure Dashboard DOM is fully rendered (stats, buttons, sidebar)
+        // 500ms accounts for loading state + motion animations (0.3s) + paint
+        const timer = setTimeout(() => setRunTour(true), 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user]);
+
+  const handleRestartTour = () => {
+    if (user) {
+      localStorage.removeItem(`stagelink_tour_seen_${user.id}`);
+      setRunTour(true);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -502,7 +523,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <TourGuide isTrialExpired={isTrialExpired} />
+      <TourGuide isTrialExpired={isTrialExpired} run={runTour} setRun={setRunTour} />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
@@ -748,6 +769,20 @@ const Dashboard = () => {
                   <RippleButton onClick={handleUpdateProfile} variant="ios" size="lg" className="w-full">
                     Save Profile
                   </RippleButton>
+                </div>
+              </div>
+
+              {/* Application Settings Section */}
+              <div className="bg-card border border-secondary/20 p-6 ios-rounded">
+                <h2 className="font-serif text-xl text-foreground mb-4">Application Settings</h2>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Onboarding Tour</p>
+                    <p className="text-sm text-muted-foreground">Restart the guided tour of the dashboard.</p>
+                  </div>
+                  <Button variant="outline" onClick={handleRestartTour}>
+                    Restart Tour
+                  </Button>
                 </div>
               </div>
             </motion.div>
