@@ -32,7 +32,7 @@ const ShowcaseSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="showcase" ref={ref} className="py-24 bg-muted/30 overflow-hidden">
+    <section id="showcase" ref={ref} className="py-24 bg-muted dark:bg-muted/30 overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <motion.div
@@ -57,8 +57,8 @@ const ShowcaseSection = () => {
       {/* Marquee Container */}
       <div className="relative">
         {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-muted/30 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-muted/30 to-transparent z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-muted dark:from-muted/30 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-muted dark:from-muted/30 to-transparent z-10 pointer-events-none" />
 
         {/* First Row - Moving Right */}
         <div className="flex gap-6 mb-6 animate-marquee-right">
