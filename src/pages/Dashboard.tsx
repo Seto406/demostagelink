@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { TourGuide } from "@/components/onboarding/TourGuide";
@@ -137,6 +137,11 @@ const Dashboard = () => {
   const [description, setDescription] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
   const [niche, setNiche] = useState<"local" | "university" | "">("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [mapFile, setMapFile] = useState<File | null>(null);
+  const [mapPreview, setMapPreview] = useState<string | null>(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
 
   // Redirect if not logged in or not a producer
   useEffect(() => {
@@ -169,6 +174,8 @@ const Dashboard = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
+      setAvatarPreview(profile.avatar_url || null);
+      setMapPreview(profile.map_screenshot_url || null);
     }
   }, [profile]);
 
@@ -221,6 +228,40 @@ const Dashboard = () => {
       localStorage.removeItem(`stagelink_tour_seen_${user.id}`);
       setRunTour(true);
     }
+  };
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an avatar smaller than 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleMapSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a map image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setMapFile(file);
+    setMapPreview(URL.createObjectURL(file));
   };
 
   const handleLogout = async () => {
@@ -461,29 +502,76 @@ const Dashboard = () => {
 
   const handleUpdateProfile = async () => {
     if (!profile) return;
+    setUploadingProfile(true);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        group_name: groupName || null,
-        description: description || null,
-        founded_year: foundedYear ? parseInt(foundedYear) : null,
-        niche: niche || null
-      })
-      .eq("id", profile.id);
+    try {
+      let avatarUrl = profile.avatar_url;
+      let mapUrl = profile.map_screenshot_url;
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
-    } else {
+      // Upload avatar if changed
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split(".").pop();
+        const fileName = `${profile.id}/avatar_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, avatarFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+
+        avatarUrl = publicUrl;
+      }
+
+      // Upload map if changed
+      if (mapFile) {
+        const fileExt = mapFile.name.split(".").pop();
+        const fileName = `${profile.id}/map_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("posters") // Using posters bucket for now as it's general purpose public
+          .upload(fileName, mapFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("posters")
+          .getPublicUrl(fileName);
+
+        mapUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          group_name: groupName || null,
+          description: description || null,
+          founded_year: foundedYear ? parseInt(foundedYear) : null,
+          niche: niche || null,
+          avatar_url: avatarUrl,
+          map_screenshot_url: mapUrl
+        })
+        .eq("id", profile.id);
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Profile updated successfully!",
       });
       refreshProfile();
+    } catch (error) {
+      console.error("Profile update error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingProfile(false);
     }
   };
 
@@ -721,6 +809,37 @@ const Dashboard = () => {
             >
               <div className="bg-card border border-secondary/20 p-6 ios-rounded">
                 <h2 className="font-serif text-xl text-foreground mb-8">Group Information</h2>
+
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center mb-8">
+                  <div className="relative w-32 h-32 mb-4 group cursor-pointer">
+                    <label className="cursor-pointer block w-full h-full rounded-full overflow-hidden border-2 border-dashed border-secondary/30 hover:border-secondary transition-colors relative">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleAvatarSelect}
+                      />
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Avatar preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/10">
+                          <User className="w-10 h-10 text-secondary/50 mb-2" />
+                          <span className="text-xs text-secondary/50">Upload Logo</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Pencil className="w-8 h-8 text-white" />
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Tap to change group logo</p>
+                </div>
+
                 <div className="space-y-8">
                   <FloatingInput
                     label="Group Name"
@@ -758,16 +877,48 @@ const Dashboard = () => {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-muted-foreground">Upload Map Screenshot (Optional)</Label>
-                    <div className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press">
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
-                        Click or drag to upload your venue map
-                      </p>
-                    </div>
+                    {mapPreview ? (
+                      <div className="relative rounded-xl overflow-hidden border border-secondary/30">
+                        <img
+                          src={mapPreview}
+                          alt="Venue Map"
+                          className="w-full max-h-64 object-contain bg-black/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMapFile(null);
+                            setMapPreview(null);
+                          }}
+                          className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press block">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleMapSelect}
+                        />
+                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-muted-foreground text-sm">
+                          Click to upload your venue map
+                        </p>
+                      </label>
+                    )}
                   </div>
 
-                  <RippleButton onClick={handleUpdateProfile} variant="ios" size="lg" className="w-full">
-                    Save Profile
+                  <RippleButton
+                    onClick={handleUpdateProfile}
+                    variant="ios"
+                    size="lg"
+                    className="w-full"
+                    disabled={uploadingProfile}
+                  >
+                    {uploadingProfile ? "Saving..." : "Save Profile"}
                   </RippleButton>
                 </div>
               </div>
