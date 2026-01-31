@@ -1,5 +1,5 @@
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useMemo } from "react";
 
 interface CinematicBackgroundProps {
   children: ReactNode;
@@ -43,6 +43,30 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [cursorX, cursorY, isMobile, shouldReduceMotion]);
+
+  // Generate stable particle configs
+  const fireflies = useMemo(() => {
+    return [...Array(20)].map((_, i) => ({
+      id: i,
+      style: {
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        boxShadow: "0 0 4px 1px rgba(250, 204, 21, 0.4)",
+      },
+      animate: {
+        y: [0, Math.random() * 100 - 50, 0],
+        x: [0, Math.random() * 100 - 50, 0],
+        opacity: [0, 0.8, 0],
+        scale: [0, 1.2, 0],
+      },
+      transition: {
+        duration: 5 + Math.random() * 10,
+        repeat: Infinity,
+        delay: Math.random() * 5,
+        ease: "easeInOut",
+      }
+    }));
+  }, []);
 
   return (
     <div className="relative min-h-screen">
@@ -167,6 +191,21 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
                   delay: Math.random() * 10,
                   ease: "easeInOut",
                 }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Fireflies - slightly brighter, small, random movement */}
+        {!shouldReduceMotion && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {fireflies.map((firefly) => (
+              <motion.div
+                key={`firefly-${firefly.id}`}
+                className="absolute w-[2px] h-[2px] rounded-full bg-yellow-400"
+                style={firefly.style}
+                animate={firefly.animate}
+                transition={firefly.transition}
               />
             ))}
           </div>

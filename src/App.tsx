@@ -10,6 +10,7 @@ import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/comp
 import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
+import PageTransition from "@/components/ui/page-transition";
 import IdleTimerProvider from "@/providers/IdleTimerProvider";
 import Index from "./pages/Index";
 import UserFeed from "./pages/UserFeed";
@@ -51,28 +52,30 @@ const AppRoutes = () => {
   }, [location.pathname]);
 
   return (
-    <Routes location={location}>
-      <Route path="/" element={<Index />} />
-      <Route path="/feed" element={<UserFeed />} />
-      <Route path="/directory" element={<Directory />} />
-      <Route path="/shows" element={<Shows />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/dashboard/analytics" element={<Dashboard />} />
-      <Route path="/admin" element={<AdminPanel />} />
-      <Route path="/show/:id" element={<ShowDetailsPage />} />
-      <Route path="/producer/:id" element={<ProducerProfile />} />
-      <Route path="/group/:id" element={<GroupProfile />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/favorites" element={<Favorites />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <PageTransition>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/feed" element={<UserFeed />} />
+        <Route path="/directory" element={<Directory />} />
+        <Route path="/shows" element={<Shows />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/analytics" element={<Dashboard />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/show/:id" element={<ShowDetailsPage />} />
+        <Route path="/producer/:id" element={<ProducerProfile />} />
+        <Route path="/group/:id" element={<GroupProfile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PageTransition>
   );
 };
 
