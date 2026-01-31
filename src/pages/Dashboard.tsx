@@ -525,7 +525,10 @@ const Dashboard = () => {
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/feed">
-              <button className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground">
+              <button
+                aria-label="Back to Home"
+                className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="hidden sm:inline text-sm">Back to Home</span>
               </button>
@@ -533,6 +536,7 @@ const Dashboard = () => {
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 hover:bg-muted transition-colors"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -672,6 +676,7 @@ const Dashboard = () => {
                               onClick={() => openEditModal(show)}
                               className="h-8 w-8 p-0"
                               title="Edit Show"
+                              aria-label={`Edit ${show.title}`}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -972,6 +977,7 @@ const Dashboard = () => {
                     type="button"
                     onClick={clearPoster}
                     className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                    aria-label="Remove poster"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
