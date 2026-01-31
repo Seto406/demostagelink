@@ -1,28 +1,17 @@
-import { useEffect, useState, useRef } from "react";
+import { useRef } from "react";
 import ReactJoyride, { Step, CallBackProps, STATUS, EVENTS } from "react-joyride";
 import type { StoreHelpers } from "react-joyride";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TourGuideProps {
   isTrialExpired?: boolean;
+  run: boolean;
+  setRun: (run: boolean) => void;
 }
 
-export const TourGuide = ({ isTrialExpired = false }: TourGuideProps) => {
+export const TourGuide = ({ isTrialExpired = false, run, setRun }: TourGuideProps) => {
   const { user } = useAuth();
-  const [run, setRun] = useState(false);
   const helpersRef = useRef<StoreHelpers | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      const hasSeenTour = localStorage.getItem(`stagelink_tour_seen_${user.id}`);
-      if (!hasSeenTour) {
-        // Delay tour start to ensure Dashboard DOM is fully rendered (stats, buttons, sidebar)
-        // 500ms accounts for loading state + motion animations (0.3s) + paint
-        const timer = setTimeout(() => setRun(true), 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user]);
 
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status, type } = data;
