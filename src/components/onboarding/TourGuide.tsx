@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import ReactJoyride, { Step, CallBackProps, STATUS } from "react-joyride";
+import { useEffect, useState, useRef } from "react";
+import ReactJoyride, { Step, CallBackProps, STATUS, EVENTS } from "react-joyride";
+import type { StoreHelpers } from "react-joyride";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TourGuideProps {
@@ -9,19 +10,29 @@ interface TourGuideProps {
 export const TourGuide = ({ isTrialExpired = false }: TourGuideProps) => {
   const { user } = useAuth();
   const [run, setRun] = useState(false);
+  const helpersRef = useRef<StoreHelpers | null>(null);
 
   useEffect(() => {
     if (user) {
       const hasSeenTour = localStorage.getItem(`stagelink_tour_seen_${user.id}`);
       if (!hasSeenTour) {
-        setRun(true);
+        // Delay tour start to ensure Dashboard DOM is fully rendered (stats, buttons, sidebar)
+        // 500ms accounts for loading state + motion animations (0.3s) + paint
+        const timer = setTimeout(() => setRun(true), 500);
+        return () => clearTimeout(timer);
       }
     }
   }, [user]);
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status } = data;
+    const { status, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+
+    if (type === EVENTS.TARGET_NOT_FOUND) {
+      // Skip to next step when target element isn't found (e.g. collapsed sidebar on mobile)
+      helpersRef.current?.next();
+      return;
+    }
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
@@ -64,6 +75,8 @@ export const TourGuide = ({ isTrialExpired = false }: TourGuideProps) => {
       showSkipButton
       showProgress
       callback={handleJoyrideCallback}
+      getHelpers={(helpers) => { helpersRef.current = helpers; }}
+      scrollToFirstStep
       styles={{
         options: {
           primaryColor: "#800000", // Maroon

@@ -79,7 +79,7 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={300} skipDelayDuration={0}>
         <EnhancedToastProvider>
           <CinematicBackground>
             <ToastHandlerInit />

@@ -28,7 +28,6 @@ import { TourGuide } from "@/components/onboarding/TourGuide";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
@@ -860,16 +859,14 @@ const Dashboard = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="showProductionStatus">Production Status</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Adding past productions helps build trust with new audience members and acts as a digital portfolio.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Adding past productions helps build trust with new audience members and acts as a digital portfolio.</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 <Select value={newShowProductionStatus} onValueChange={(val) => setNewShowProductionStatus(val as "ongoing" | "completed" | "draft")}>
                   <SelectTrigger className="bg-background border-secondary/30">

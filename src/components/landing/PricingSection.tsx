@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -99,16 +98,14 @@ const PricingSection = () => {
                     <Star className="w-4 h-4" />
                     {plan.comingSoon ? "Coming Soon" : "Recommended"}
                     {plan.comingSoon && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="w-3.5 h-3.5 ml-1 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-[200px] text-center">
-                            <p>Phase 2 features launching after domain purchase and full platform rollout.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-3.5 h-3.5 ml-1 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[200px] text-center">
+                          <p>Phase 2 features launching after domain purchase and full platform rollout.</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                 </div>

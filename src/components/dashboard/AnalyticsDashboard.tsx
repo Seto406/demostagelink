@@ -8,7 +8,6 @@ import { HelpCircle } from "lucide-react";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -146,16 +145,14 @@ export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               Click-Through Rate
-              <TooltipProvider>
-                <UiTooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="w-4 h-4 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">This shows the percentage of visitors who clicked your ticket link. Higher CTR means your show description is working!</p>
-                  </TooltipContent>
-                </UiTooltip>
-              </TooltipProvider>
+              <UiTooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-4 h-4 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">This shows the percentage of visitors who clicked your ticket link. Higher CTR means your show description is working!</p>
+                </TooltipContent>
+              </UiTooltip>
             </CardTitle>
           </CardHeader>
           <CardContent>

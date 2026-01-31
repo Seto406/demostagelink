@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -19,10 +18,9 @@ export const ThemeToggle = ({ variant = "default" }: ThemeToggleProps) => {
   // Icon-only variant for navbar
   if (variant === "icon") {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -37,7 +35,6 @@ export const ThemeToggle = ({ variant = "default" }: ThemeToggleProps) => {
             <p>Switch to {theme === "dark" ? "light" : "dark"} mode</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
     );
   }
 
