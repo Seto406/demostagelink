@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -209,22 +210,16 @@ const ShowDetailsPage = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                <Button
+                <CopyButton
                   variant="outline"
                   size="sm"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(window.location.href);
-                      toast.success("Link copied to clipboard!");
-                    } catch (err) {
-                      toast.error("Failed to copy link");
-                    }
-                  }}
+                  value={window.location.href}
+                  successMessage="Link copied to clipboard!"
                   className="gap-2"
                 >
                   <Share2 className="w-4 h-4" />
                   Share
-                </Button>
+                </CopyButton>
               </motion.div>
             </div>
 
@@ -527,15 +522,14 @@ const ShowDetailsPage = () => {
                 Share this production with fellow theater lovers
               </p>
               <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline" 
+                <CopyButton
+                  variant="outline"
                   size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                  }}
+                  value={window.location.href}
+                  successMessage="Link copied to clipboard!"
                 >
                   Copy Link
-                </Button>
+                </CopyButton>
               </div>
             </div>
           </div>
