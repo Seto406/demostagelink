@@ -14,7 +14,7 @@ const corsHeaders = {
 interface Show {
   id: string;
   title: string;
-  date: string;
+  show_time: string;
   venue: string | null;
   ticket_link: string | null;
 }
@@ -35,7 +35,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Processing reminder for specific show: ${showId}`);
       const { data: show, error } = await supabase
         .from("shows")
-        .select("id, title, date, venue, ticket_link")
+        .select("id, title, show_time, venue, ticket_link")
         .eq("id", showId)
         .single();
 
@@ -44,17 +44,16 @@ const handler = async (req: Request): Promise<Response> => {
     } else {
       console.log("Processing scheduled reminders for upcoming shows");
       // Find shows starting in 24-25 hours
-      // Note: This logic assumes 'date' is an ISO string or compatible format.
       const now = new Date();
       const startRange = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
       const endRange = new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString();
 
       const { data: shows, error } = await supabase
         .from("shows")
-        .select("id, title, date, venue, ticket_link")
+        .select("id, title, show_time, venue, ticket_link")
         .eq("status", "approved")
-        .gte("date", startRange)
-        .lt("date", endRange);
+        .gte("show_time", startRange)
+        .lt("show_time", endRange);
 
       if (error) {
         console.error("Error fetching scheduled shows:", error);
@@ -68,35 +67,37 @@ const handler = async (req: Request): Promise<Response> => {
     const results = [];
 
     for (const show of showsToRemind) {
-      // Fetch interested users (favorites)
-      // Using 'favorites' table as the source of interest/interaction
-      const { data: favorites, error: favError } = await supabase
-        .from("favorites")
+      // Fetch ticket holders
+      const { data: tickets, error: ticketError } = await supabase
+        .from("tickets")
         .select("user_id")
-        .eq("show_id", show.id);
+        .eq("show_id", show.id)
+        .eq("status", "confirmed");
 
-      if (favError) {
-        console.error(`Error fetching favorites for show ${show.id}:`, favError);
+      if (ticketError) {
+        console.error(`Error fetching tickets for show ${show.id}:`, ticketError);
         continue;
       }
 
-      console.log(`Found ${favorites?.length || 0} interested users for show: ${show.title}`);
+      console.log(`Found ${tickets?.length || 0} ticket holders for show: ${show.title}`);
 
-      for (const fav of favorites || []) {
+      for (const ticket of tickets || []) {
         // Fetch user email using admin API
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(fav.user_id);
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ticket.user_id);
 
         if (userError || !userData?.user?.email) {
-          console.error(`Error fetching user ${fav.user_id}:`, userError);
+          console.error(`Error fetching user ${ticket.user_id}:`, userError);
           continue;
         }
 
         const email = userData.user.email;
-        const showDate = new Date(show.date).toLocaleDateString("en-US", {
+        const showDate = new Date(show.show_time).toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
           month: "long",
           day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
         });
 
         // Send email via Resend
@@ -112,21 +113,19 @@ const handler = async (req: Request): Promise<Response> => {
             subject: `Reminder: "${show.title}" is starting soon!`,
             html: `
               <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #333; margin-bottom: 20px;">Don't Miss the Show! 🎭</h1>
+                <h1 style="color: #333; margin-bottom: 20px;">Your Show is Coming Up! 🎭</h1>
                 <p style="font-size: 16px; line-height: 1.6; color: #333;">
-                  This is a friendly reminder that <strong>"${show.title}"</strong> is coming up soon.
+                  This is a friendly reminder that you have tickets for <strong>"${show.title}"</strong>.
                 </p>
 
                 <div style="margin: 30px 0; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
-                  <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Date:</strong> ${showDate}</p>
+                  <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Date & Time:</strong> ${showDate}</p>
                   ${show.venue ? `<p style="margin: 5px 0; font-size: 16px;"><strong>📍 Venue:</strong> ${show.venue}</p>` : ''}
-                  ${show.ticket_link ? `<p style="margin: 20px 0 0 0;"><a href="${show.ticket_link}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Get Tickets</a></p>` : ''}
+                  <p style="margin: 20px 0 0 0;"><a href="https://www.stagelink.show/show/${show.id}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Show Details</a></p>
                 </div>
 
                 <p style="font-size: 14px; color: #666; margin-top: 40px;">
-                  You received this email because you favorited this show on StageLink.
-                  <br/>
-                  <a href="https://www.stagelink.show/show/${show.id}" style="color: #666; text-decoration: underline;">View Show Details</a>
+                  You received this email because you have a confirmed ticket for this show on StageLink.
                 </p>
               </div>
             `,
