@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Shield, Menu, X, Settings, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import stageLinkLogo from "@/assets/stagelink-logo-new.png";
 
 const Navbar = () => {
   const location = useLocation();

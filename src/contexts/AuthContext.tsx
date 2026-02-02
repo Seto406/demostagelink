@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { FullPageLoader } from "@/components/ui/branded-loader";
 
 interface Profile {
   id: string;
@@ -202,6 +203,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const isAdmin = profile?.role === "admin";
+
+  if (loading) {
+    return <FullPageLoader text="Loading StageLink..." />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile }}>
