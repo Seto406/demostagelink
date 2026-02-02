@@ -14,7 +14,7 @@ const Privacy = () => {
             <section className="mb-8">
               <h2 className="text-xl font-bold text-foreground mb-4">1. Introduction</h2>
               <p className="mb-4">
-                StageLink ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website stagelink.show (the "Site") or use our services.
+                StageLink ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website www.stagelink.show (the "Site") or use our services.
               </p>
             </section>
 

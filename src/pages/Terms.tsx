@@ -14,7 +14,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-xl font-bold text-foreground mb-4">1. Agreement to Terms</h2>
               <p className="mb-4">
-                These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and StageLink ("we," "concerning your access to and use of the stagelink.show website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
+                These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and StageLink ("we," "concerning your access to and use of the www.stagelink.show website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
               </p>
             </section>
 
