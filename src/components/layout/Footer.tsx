@@ -43,6 +43,11 @@ const Footer = () => {
                   About Us
                 </Link>
               </li>
+              <li>
+                <span className="text-muted-foreground/60 text-sm cursor-default">
+                  Mobile App (Coming Soon)
+                </span>
+              </li>
             </ul>
           </div>
 
