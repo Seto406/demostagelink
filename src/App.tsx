@@ -25,6 +25,7 @@ import AdminPanel from "./pages/AdminPanel";
 import ShowDetailsPage from "./pages/ShowDetailsPage";
 import ProducerProfile from "./pages/ProducerProfile";
 import GroupProfile from "./pages/GroupProfile";
+import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Favorites from "./pages/Favorites";
 import Privacy from "./pages/Privacy";
@@ -68,6 +69,8 @@ const AppRoutes = () => {
         <Route path="/show/:id" element={<ShowDetailsPage />} />
         <Route path="/producer/:id" element={<ProducerProfile />} />
         <Route path="/group/:id" element={<GroupProfile />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:id" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/privacy" element={<Privacy />} />

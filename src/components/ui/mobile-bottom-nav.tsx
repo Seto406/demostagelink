@@ -73,7 +73,7 @@ export const MobileBottomNav: React.FC = () => {
       baseItems.push({ icon: LayoutDashboard, label: "Admin", path: "/admin" });
     } else {
       // Audience users get Profile/Settings
-      baseItems.push({ icon: User, label: "Profile", path: "/settings" });
+      baseItems.push({ icon: User, label: "Profile", path: "/profile" });
     }
 
     return baseItems;
