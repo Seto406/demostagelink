@@ -25,6 +25,7 @@ const Privacy = () => {
               </p>
               <ul className="list-disc pl-6 space-y-2 mb-4">
                 <li><strong>Personal Data:</strong> Personally identifiable information, such as your name, email address, and demographic information that you voluntarily give to us when you register with the Site or choose to participate in various activities related to the Site.</li>
+                <li><strong>Google User Data:</strong> If you choose to log in using your Google account, we access your Google profile information, specifically your name, email address, and profile picture, to create and manage your account. We do not access your contacts, calendar, or other personal data. We do not sell or share your Google user data with third parties.</li>
                 <li><strong>Derivative Data:</strong> Information our servers automatically collect when you access the Site, such as your IP address, your browser type, your operating system, your access times, and the pages you have viewed directly before and after accessing the Site.</li>
               </ul>
             </section>
@@ -54,7 +55,14 @@ const Privacy = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-bold text-foreground mb-4">5. Contact Us</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">5. Data Deletion</h2>
+              <p className="mb-4">
+                You have the right to request the deletion of your personal data. To request data deletion, please contact us at <a href="mailto:hello@stagelink.show" className="text-secondary">hello@stagelink.show</a>. We will process your request within 30 days.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-bold text-foreground mb-4">6. Contact Us</h2>
               <p className="mb-4">
                 If you have questions or comments about this Privacy Policy, please contact us at:
               </p>
