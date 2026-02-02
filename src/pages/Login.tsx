@@ -3,7 +3,7 @@ import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrandedLoader } from "@/components/ui/branded-loader";
-import { SplitLanding } from "@/components/landing/SplitLanding";
+import { CinematicLanding } from "@/components/landing/CinematicLanding";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ const Login = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main>
-        <SplitLanding />
+        <CinematicLanding />
       </main>
     </div>
   );
