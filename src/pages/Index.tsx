@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LandingNavbar from "@/components/landing/LandingNavbar";
-import LandingHero from "@/components/landing/LandingHero";
+import { CinematicLanding } from "@/components/landing/CinematicLanding";
 import MissionSection from "@/components/landing/MissionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PricingSection from "@/components/landing/PricingSection";
@@ -43,7 +43,7 @@ const Index = () => {
       <LandingNavbar />
       
       <main>
-        <LandingHero />
+        <CinematicLanding />
         <MissionSection />
         <FeaturesSection />
         <PricingSection />

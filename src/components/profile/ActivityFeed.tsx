@@ -10,6 +10,7 @@ interface ActivityItem {
   action_type: string;
   entity_type: string | null;
   created_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: any; // using any for simplicity with JSONB
 }
 
