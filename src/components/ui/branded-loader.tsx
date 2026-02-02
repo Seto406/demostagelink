@@ -1,5 +1,5 @@
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 interface BrandedLoaderProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -28,7 +28,11 @@ export const BrandedLoader = ({
 }: BrandedLoaderProps) => {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-4", className)}>
-      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
+      <img
+        src={stageLinkLogo}
+        alt="Loading..."
+        className={cn("animate-pulse object-contain", sizeClasses[size])}
+      />
 
       {/* Loading text */}
       {text && (

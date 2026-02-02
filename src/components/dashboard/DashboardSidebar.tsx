@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { LayoutDashboard, Film, User, Users, LogOut, X, BarChart } from "lucide-react";
-import stageLinkLogo from "@/assets/stagelink-logo-new.png";
+import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 export type DashboardTab = "dashboard" | "shows" | "profile" | "members" | "analytics";
 
