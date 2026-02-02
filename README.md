@@ -2,7 +2,7 @@
 
 **A digital platform connecting audiences with local and university theater productions in Metro Manila.**
 
-Built by [La Creneurs](https://stagelink.app) — because every performance deserves an audience.
+Built by [La Creneurs](https://stagelink.show) — because every performance deserves an audience.
 
 ---
 
