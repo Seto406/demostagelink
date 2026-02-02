@@ -12,6 +12,9 @@ interface Profile {
   niche: "local" | "university" | null;
   map_screenshot_url: string | null;
   created_at: string;
+  username: string | null;
+  rank: string | null;
+  xp: number | null;
 }
 
 interface AuthContextType {

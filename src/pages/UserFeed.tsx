@@ -233,7 +233,7 @@ const UserFeed = () => {
     { icon: Calendar, label: "Upcoming Shows", path: "/shows" },
     { icon: Search, label: "Directory", path: "/directory" },
     { icon: Heart, label: "Favorites", path: "/favorites" },
-    { icon: User, label: "Profile", path: "/settings" },
+    { icon: User, label: "Profile", path: "/profile" },
   ];
 
   return (
