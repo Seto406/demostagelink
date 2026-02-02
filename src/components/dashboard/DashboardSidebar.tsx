@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Film, User, Users, LogOut, X, BarChart } from "lucide-react";
+import { LayoutDashboard, Film, User, Users, LogOut, X, BarChart, LucideIcon } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type DashboardTab = "dashboard" | "shows" | "profile" | "members" | "analytics";
 
@@ -11,6 +16,61 @@ interface DashboardSidebarProps {
   setSidebarOpen: (open: boolean) => void;
   handleLogout: () => void;
 }
+
+interface SidebarItemProps {
+  icon: LucideIcon;
+  label: string;
+  isActive?: boolean;
+  onClick: () => void;
+  sidebarOpen: boolean;
+  id?: string;
+  variant?: "default" | "destructive";
+}
+
+const SidebarItem = ({
+  icon: Icon,
+  label,
+  isActive,
+  onClick,
+  sidebarOpen,
+  id,
+  variant = "default",
+}: SidebarItemProps) => {
+  const baseClasses = "w-full flex items-center gap-3 px-4 py-3 transition-colors";
+  const activeClasses = "bg-sidebar-accent text-sidebar-accent-foreground";
+  const inactiveClasses = "text-sidebar-foreground hover:bg-sidebar-accent/10";
+  const destructiveClasses = "text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive";
+
+  let className = baseClasses;
+  if (variant === "destructive") {
+    className = `${baseClasses} ${destructiveClasses}`;
+  } else {
+    className = `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`;
+  }
+
+  const button = (
+    <button
+      id={id}
+      onClick={onClick}
+      aria-label={label}
+      className={className}
+    >
+      <Icon className="w-5 h-5" />
+      {sidebarOpen && <span>{label}</span>}
+    </button>
+  );
+
+  if (sidebarOpen) return button;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side="right">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 export const DashboardSidebar = ({
   activeTab,
@@ -39,6 +99,7 @@ export const DashboardSidebar = ({
           {/* Close button for mobile */}
           <button
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
             className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
@@ -47,77 +108,57 @@ export const DashboardSidebar = ({
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          <button
+          <SidebarItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            isActive={activeTab === "dashboard"}
             onClick={() => setActiveTab("dashboard")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "dashboard"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            {sidebarOpen && <span>Dashboard</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+          />
 
-          <button
+          <SidebarItem
+            icon={BarChart}
+            label="Analytics"
+            isActive={activeTab === "analytics"}
             onClick={() => setActiveTab("analytics")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "analytics"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <BarChart className="w-5 h-5" />
-            {sidebarOpen && <span>Analytics</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+          />
 
-          <button
+          <SidebarItem
+            icon={Film}
+            label="My Productions"
+            isActive={activeTab === "shows"}
             onClick={() => setActiveTab("shows")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "shows"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <Film className="w-5 h-5" />
-            {sidebarOpen && <span>My Productions</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+          />
 
-          <button
+          <SidebarItem
             id="profile-tab"
+            icon={User}
+            label="Profile"
+            isActive={activeTab === "profile"}
             onClick={() => setActiveTab("profile")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "profile"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <User className="w-5 h-5" />
-            {sidebarOpen && <span>Profile</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+          />
 
-          <button
+          <SidebarItem
+            icon={Users}
+            label="Members"
+            isActive={activeTab === "members"}
             onClick={() => setActiveTab("members")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "members"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            {sidebarOpen && <span>Members</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+          />
         </nav>
 
         {/* Logout */}
         <div className="p-4 border-t border-sidebar-border">
-          <button
+          <SidebarItem
+            icon={LogOut}
+            label="Logout"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
+            sidebarOpen={sidebarOpen}
+            variant="destructive"
+          />
         </div>
       </div>
     </aside>
