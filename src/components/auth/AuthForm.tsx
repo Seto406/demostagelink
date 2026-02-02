@@ -7,7 +7,7 @@ import { FloatingInput } from "@/components/ui/floating-input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import stageLinkLogo from "@/assets/stagelink-logo-new.png";
 import { shakeVariants } from "@/hooks/use-shake";
 import { Eye, EyeOff, Check, X, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 
