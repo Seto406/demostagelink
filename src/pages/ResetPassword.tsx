@@ -71,7 +71,7 @@ const ResetPassword = () => {
           await supabase.functions.invoke("send-password-reset", {
             body: {
               email,
-              resetLink: `${window.location.origin}/reset-password?type=recovery`,
+              redirectTo: `${window.location.origin}/reset-password?type=recovery`,
             },
           });
         } catch (emailErr) {

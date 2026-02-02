@@ -107,7 +107,7 @@ serve(async (req) => {
               `}
               
               <!-- CTA Button -->
-              <a href="https://jfttjnoxveekouqcznis.lovable.app/${isProducer ? 'dashboard' : 'shows'}" 
+              <a href="https://www.stagelink.show/${isProducer ? 'dashboard' : 'shows'}"
                  style="display: inline-block; background: linear-gradient(135deg, #800000 0%, #5a0000 100%); color: #FFFFFF; text-decoration: none; 
                         padding: 16px 40px; font-size: 16px; border: 1px solid #D4AF37; font-weight: bold; letter-spacing: 1px;
                         transition: all 0.3s ease;">
@@ -139,7 +139,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "StageLink <onboarding@resend.dev>",
+        from: "StageLink <hello@stagelink.show>",
         to: [email],
         subject: isProducer 
           ? "🎭 Welcome to StageLink - Your Producer Account is Ready!" 
