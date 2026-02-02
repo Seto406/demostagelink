@@ -1,6 +1,5 @@
-import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import stageLinkLogo from "@/assets/stagelink-logo-new.png";
 
 interface BrandedLoaderProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -29,80 +28,18 @@ export const BrandedLoader = ({
 }: BrandedLoaderProps) => {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-4", className)}>
-      <div className="relative">
-        {/* Outer glow ring */}
-        <motion.div
-          className={cn(
-            "absolute inset-0 rounded-full bg-primary/20",
-            sizeClasses[size]
-          )}
-          animate={{
-            scale: [1, 1.4, 1],
-            opacity: [0.5, 0, 0.5],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        
-        {/* Secondary glow ring */}
-        <motion.div
-          className={cn(
-            "absolute inset-0 rounded-full bg-secondary/20",
-            sizeClasses[size]
-          )}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0, 0.3],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.3,
-          }}
-        />
-
-        {/* StageLink Logo */}
-        <motion.div
-          className={cn("relative", sizeClasses[size])}
-          animate={{
-            scale: [1, 1.05, 1],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          <img 
-            src={stageLinkLogo} 
-            alt="StageLink" 
-            className="w-full h-full object-contain"
-          />
-        </motion.div>
-      </div>
+      <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
 
       {/* Loading text */}
       {text && (
-        <motion.p
+        <p
           className={cn(
             "text-muted-foreground font-medium tracking-wide",
             textSizeClasses[size]
           )}
-          animate={{
-            opacity: [0.5, 1, 0.5],
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         >
           {text}
-        </motion.p>
+        </p>
       )}
     </div>
   );
