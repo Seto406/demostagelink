@@ -24,7 +24,7 @@ interface IdleTimerProviderProps {
 }
 
 export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,14 +69,14 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
   const handleLogout = useCallback(async () => {
     setShowWarning(false);
     clearStoredActivity();
-    await supabase.auth.signOut();
+    await signOut();
     toast({
       title: "Session Expired",
       description: "You have been signed out due to inactivity.",
       variant: "default",
     });
     navigate("/login");
-  }, [navigate, clearStoredActivity]);
+  }, [navigate, clearStoredActivity, signOut]);
 
   const clearAllTimers = useCallback(() => {
     if (timeoutRef.current) {
