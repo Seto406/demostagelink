@@ -109,19 +109,19 @@ supabase/
 - City-based discovery
 - Favorites & watchlist
 
-### Phase 2: Growth (Q1 2025)
+### Phase 2: Growth ✅ (Q1 2025)
 - Real-time analytics dashboard
 - Email notifications
 - Enhanced rich media profiles
 - Social login (Google)
 - Show performance insights
 
-### Phase 3: Scale (Q2 2025)
-- Mobile app (iOS & Android)
-- Pro subscriptions & payments
-- Calendar sync & reminders
-- Audience reviews & ratings
-- National expansion
+### Phase 3: Scale (In Progress)
+- Mobile app (iOS & Android) - *Coming Soon*
+- Pro subscriptions & payments - *Waitlist Open*
+- Calendar sync & reminders ✅
+- Audience reviews & ratings ✅
+- National expansion ✅
 
 *Roadmap is for discussion purposes and is not final.*
 

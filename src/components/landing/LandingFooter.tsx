@@ -64,6 +64,7 @@ const LandingFooter = () => {
               <li><Link to="/directory" className="text-muted-foreground hover:text-foreground transition-colors">Theater Directory</Link></li>
               <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
               <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+              <li><span className="text-muted-foreground/60 cursor-default">Mobile App (Coming Soon)</span></li>
             </ul>
           </div>
 

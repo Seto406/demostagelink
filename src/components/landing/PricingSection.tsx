@@ -25,7 +25,9 @@ const plans = [
     ],
     cta: "Get Started",
     popular: false,
-    comingSoon: false
+    comingSoon: false,
+    link: "/login",
+    isExternal: false
   },
   {
     name: "Pro Producer",
@@ -41,9 +43,11 @@ const plans = [
       "Rich media gallery",
       "Audience engagement insights"
     ],
-    cta: "Coming Soon",
+    cta: "Join Waitlist",
     popular: true,
-    comingSoon: true
+    comingSoon: false,
+    link: "mailto:connect.stagelink@gmail.com?subject=Join Pro Producer Waitlist",
+    isExternal: true
   }
 ];
 
@@ -154,8 +158,20 @@ const PricingSection = () => {
                 >
                   {plan.cta}
                 </Button>
+              ) : plan.isExternal ? (
+                <a href={plan.link}>
+                  <Button
+                    className={`w-full py-6 text-lg ${
+                      plan.popular
+                        ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Button>
+                </a>
               ) : (
-                <Link to="/login">
+                <Link to={plan.link || "/login"}>
                   <Button
                     className={`w-full py-6 text-lg ${
                       plan.popular

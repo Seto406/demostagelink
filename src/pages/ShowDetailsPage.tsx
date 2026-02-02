@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import Navbar from "@/components/layout/Navbar";
@@ -178,6 +178,39 @@ const ShowDetailsPage = () => {
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
   })();
 
+  const downloadICS = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!show || !show.date) return;
+
+    // Format date as YYYYMMDD
+    const dateObj = new Date(show.date);
+    const dateStr = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
+    // Create next day string for end date (all day event requires end date to be next day)
+    const nextDay = new Date(dateObj);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART;VALUE=DATE:${dateStr.replace(/-/g, '')}
+DTEND;VALUE=DATE:${nextDayStr.replace(/-/g, '')}
+SUMMARY:${show.title}
+DESCRIPTION:${show.description || ""}
+LOCATION:${show.venue || ""}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', `${show.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -306,15 +339,25 @@ const ShowDetailsPage = () => {
                       <div>
                         <p className="text-muted-foreground text-sm">Date</p>
                         <p className="text-foreground font-medium">{dateInfo.full}</p>
-                        <a
-                          href={googleCalendarLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 mt-1.5 transition-colors"
-                        >
-                          <Calendar className="w-3 h-3" />
-                          Add to Google Calendar
-                        </a>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5">
+                          <a
+                            href={googleCalendarLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 transition-colors"
+                          >
+                            <Calendar className="w-3 h-3" />
+                            Google Calendar
+                          </a>
+                          <a
+                            href="#"
+                            onClick={downloadICS}
+                            className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 transition-colors"
+                          >
+                            <Download className="w-3 h-3" />
+                            Outlook / Apple
+                          </a>
+                        </div>
                       </div>
                     </div>
                   )}
