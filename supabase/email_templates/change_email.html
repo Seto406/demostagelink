@@ -38,9 +38,9 @@
           <tr>
             <td class="content" align="center" valign="top" style="padding-top: 220px; padding-bottom: 150px; padding-left: 40px; padding-right: 40px; color: #333333; font-size: 16px; line-height: 1.6;">
 
-              <h1 style="color: #d12121; margin-bottom: 20px; font-size: 24px;">Confirm your new email, {{ .Data.first_name }}</h1>
+              <h1 style="color: #d12121; margin-bottom: 20px; font-size: 24px;">Confirm your new email{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}</h1>
 
-              <p>Hi {{ .Data.first_name }},</p>
+              <p>Hi{{ if .Data.first_name }} {{ .Data.first_name }}{{ end }},</p>
 
               <p>We received a request to update your email on StageLink from {{ .Email }} to {{ .NewEmail }}.</p>
 

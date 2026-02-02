@@ -27,7 +27,6 @@
     <tr>
       <td align="center" style="padding: 20px 0;">
         <!-- Main Container -->
-        <!-- Note: We use .Data.first_name assuming user metadata contains first_name. If not, fallback handling in SQL or defaulting might be needed, but template logic is limited. -->
         <table role="presentation" class="container" width="600" border="0" cellspacing="0" cellpadding="0"
                style="background-image: url('{{ .SiteURL }}/email/bg_curtains.png');
                       background-repeat: no-repeat;
@@ -41,9 +40,9 @@
             <td class="content" align="center" valign="top" style="padding-top: 220px; padding-bottom: 150px; padding-left: 40px; padding-right: 40px; color: #333333; font-size: 16px; line-height: 1.6;">
 
               <!-- Content -->
-              <h1 style="color: #d12121; margin-bottom: 20px; font-size: 24px;">Welcome to StageLink, {{ .Data.first_name }}!</h1>
+              <h1 style="color: #d12121; margin-bottom: 20px; font-size: 24px;">Welcome to StageLink{{ if .Data.first_name }}, {{ .Data.first_name }}{{ end }}!</h1>
 
-              <p>Hi {{ .Data.first_name }},</p>
+              <p>Hi{{ if .Data.first_name }} {{ .Data.first_name }}{{ end }},</p>
 
               <p>Welcome to StageLink! We’re excited to have you on board.</p>
 
