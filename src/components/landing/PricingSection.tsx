@@ -9,51 +9,56 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const plans = [
-  {
-    name: "Starter",
-    price: "Free",
-    description: "Perfect for new theater groups just getting started",
-    features: [
-      "Group profile with social links",
-      "Show listings with ticket links",
-      "Team member showcase",
-      "Included in Theater Directory",
-      "City-based discovery",
-      "Audience favorites & watchlist"
-    ],
-    cta: "Get Started",
-    popular: false,
-    comingSoon: false,
-    link: "/login",
-    isExternal: false
-  },
-  {
-    name: "Pro Producer",
-    price: "₱399",
-    period: "/month",
-    description: "For established groups ready to grow their audience",
-    features: [
-      "Everything in Free, plus:",
-      "Real-time analytics dashboard",
-      "Email & SMS notifications",
-      "Priority search placement",
-      "Featured productions badge",
-      "Rich media gallery",
-      "Audience engagement insights"
-    ],
-    cta: "Join Waitlist",
-    popular: true,
-    comingSoon: false,
-    link: "mailto:connect.stagelink@gmail.com?subject=Join Pro Producer Waitlist",
-    isExternal: true
-  }
-];
+import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PricingSection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const { user } = useAuth();
+  const { subscribe, isPro, manageSubscription } = useSubscription();
+
+  const plans = [
+    {
+      name: "Starter",
+      price: "Free",
+      description: "Perfect for new theater groups just getting started",
+      features: [
+        "Group profile with social links",
+        "Show listings with ticket links",
+        "Team member showcase",
+        "Included in Theater Directory",
+        "City-based discovery",
+        "Audience favorites & watchlist"
+      ],
+      cta: user ? "Go to Dashboard" : "Get Started",
+      popular: false,
+      comingSoon: false,
+      link: user ? "/dashboard" : "/login",
+      isExternal: false
+    },
+    {
+      name: "Pro Producer",
+      price: "₱399",
+      period: "/month",
+      description: "For established groups ready to grow their audience",
+      features: [
+        "Everything in Free, plus:",
+        "Real-time analytics dashboard",
+        "Email & SMS notifications",
+        "Priority search placement",
+        "Featured productions badge",
+        "Rich media gallery",
+        "Audience engagement insights"
+      ],
+      cta: isPro ? "Manage Subscription" : "Upgrade to Pro",
+      popular: true,
+      comingSoon: false,
+      // If no link is provided, we use the action
+      action: isPro ? manageSubscription : () => subscribe("price_pro_monthly"),
+      isExternal: false
+    }
+  ];
 
   return (
     <section id="pricing" ref={ref} className="py-24 bg-background">
@@ -155,6 +160,17 @@ const PricingSection = () => {
                 <Button
                   disabled
                   className="w-full py-6 text-lg bg-muted text-muted-foreground cursor-not-allowed"
+                >
+                  {plan.cta}
+                </Button>
+              ) : plan.action ? (
+                <Button
+                  onClick={plan.action}
+                  className={`w-full py-6 text-lg ${
+                    plan.popular
+                      ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  }`}
                 >
                   {plan.cta}
                 </Button>

@@ -26,7 +26,9 @@ import {
   Facebook,
   Instagram,
   MapPin,
-  Image
+  Image,
+  CreditCard,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,10 +61,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
+  const { subscription, isPro, manageSubscription, subscribe } = useSubscription();
   
   // Profile form state
   const [groupName, setGroupName] = useState("");
@@ -868,6 +872,51 @@ const Settings = () => {
                 )}
               </motion.section>
             )}
+
+            {/* Subscription */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-secondary/10">
+                  <CreditCard className="w-5 h-5 text-secondary" />
+                </div>
+                <h2 className="text-xl font-serif font-semibold text-foreground">
+                  Subscription
+                </h2>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10 flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-full ${isPro ? 'bg-secondary/20 text-secondary' : 'bg-muted text-muted-foreground'}`}>
+                    <Crown className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-foreground font-medium text-lg">
+                      {isPro ? "Pro Producer" : "Free Plan"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isPro
+                        ? `Next billing date: ${subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'N/A'}`
+                        : "Upgrade to unlock premium features"}
+                    </p>
+                  </div>
+                </div>
+
+                {isPro ? (
+                  <Button variant="outline" onClick={manageSubscription}>
+                    Manage Subscription
+                  </Button>
+                ) : (
+                  <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={() => subscribe()}>
+                    Upgrade to Pro
+                  </Button>
+                )}
+              </div>
+            </motion.section>
 
             {/* Notifications */}
             <motion.section
