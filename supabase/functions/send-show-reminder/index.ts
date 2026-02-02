@@ -107,7 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: "StageLink <reminders@resend.dev>",
+            from: "StageLink <hello@stagelink.show>",
             to: [email],
             subject: `Reminder: "${show.title}" is starting soon!`,
             html: `

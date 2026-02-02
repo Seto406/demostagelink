@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +12,8 @@ const corsHeaders = {
 
 interface PasswordResetRequest {
   email: string;
-  resetLink: string;
+  redirectTo?: string;
+  resetLink?: string; // Legacy parameter, ignored if we generate the link here
 }
 
 serve(async (req) => {
@@ -18,15 +22,38 @@ serve(async (req) => {
   }
 
   try {
-    const { email, resetLink }: PasswordResetRequest = await req.json();
+    const { email, redirectTo, resetLink }: PasswordResetRequest = await req.json();
     console.log("Sending password reset email to:", email);
 
-    if (!email || !resetLink) {
+    if (!email) {
       return new Response(
-        JSON.stringify({ error: "Email and reset link are required" }),
+        JSON.stringify({ error: "Email is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Initialize Supabase Admin Client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Generate valid recovery link
+    // Use the provided redirectTo, or fallback to resetLink (if it was passed as a redirect URL), or default
+    const redirectUrl = redirectTo || (resetLink && resetLink.startsWith("http") ? resetLink : "https://www.stagelink.show/reset-password?type=recovery");
+
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: "recovery",
+      email: email,
+      options: {
+        redirectTo: redirectUrl,
+      },
+    });
+
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error("Error generating reset link:", linkError);
+      throw new Error("Failed to generate password reset link");
+    }
+
+    const actionLink = linkData.properties.action_link;
+    console.log("Generated action link successfully");
 
     const html = `
       <!DOCTYPE html>
@@ -67,7 +94,7 @@ serve(async (req) => {
               </p>
               
               <!-- CTA Button -->
-              <a href="${resetLink}" 
+              <a href="${actionLink}"
                  style="display: inline-block; background: linear-gradient(135deg, #800000 0%, #5a0000 100%); color: #FFFFFF; text-decoration: none; 
                         padding: 16px 40px; font-size: 16px; border: 1px solid #D4AF37; font-weight: bold; letter-spacing: 1px;">
                 Reset Password →
@@ -84,7 +111,7 @@ serve(async (req) => {
               <!-- Fallback Link -->
               <p style="color: #666666; font-size: 12px; margin: 24px 0 0 0; word-break: break-all;">
                 If the button doesn't work, copy and paste this link into your browser:<br>
-                <a href="${resetLink}" style="color: #D4AF37; text-decoration: underline;">${resetLink}</a>
+                <a href="${actionLink}" style="color: #D4AF37; text-decoration: underline;">${actionLink}</a>
               </p>
             </div>
             
@@ -112,7 +139,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "StageLink <onboarding@resend.dev>",
+        from: "StageLink <hello@stagelink.show>",
         to: [email],
         subject: "🔐 Reset Your StageLink Password",
         html,
