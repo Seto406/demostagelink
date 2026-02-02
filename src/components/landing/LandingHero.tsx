@@ -110,7 +110,7 @@ const LandingHero = () => {
                 </div>
                 <div className="flex-1 mx-4">
                   <div className="bg-background rounded-full px-4 py-1 text-sm text-muted-foreground text-center border border-secondary/20">
-                    stagelink.show
+                    www.stagelink.show
                   </div>
                 </div>
               </div>
