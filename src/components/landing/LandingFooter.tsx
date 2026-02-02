@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Mail } from "lucide-react";
-import stagelinkLogo from "@/assets/stagelink-logo-new.png";
+import stagelinkLogo from "@/assets/stagelink-logo-mask.png";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (

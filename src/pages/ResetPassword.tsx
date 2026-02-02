@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import stageLinkLogo from "@/assets/stagelink-logo-new.png";
+import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
 type ResetMode = "request" | "update";
