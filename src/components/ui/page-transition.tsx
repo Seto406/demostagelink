@@ -37,7 +37,7 @@ const fadeSlideVariants: Variants = {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.2,
+      duration: 0.6,
       ease: "easeOut",
     },
   },
@@ -45,7 +45,7 @@ const fadeSlideVariants: Variants = {
     opacity: 0,
     y: -4,
     transition: {
-      duration: 0.15,
+      duration: 0.4,
       ease: "easeIn",
     },
   },
