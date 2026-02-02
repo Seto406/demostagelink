@@ -98,6 +98,20 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  // Notification state
+  const [notifyApprovals, setNotifyApprovals] = useState(() => localStorage.getItem("notifyApprovals") !== "false");
+  const [notifyShows, setNotifyShows] = useState(() => localStorage.getItem("notifyShows") !== "false");
+  const [notifyMarketing, setNotifyMarketing] = useState(() => localStorage.getItem("notifyMarketing") === "true");
+
+  const toggleNotify = (key: string, value: boolean, setter: (v: boolean) => void) => {
+    setter(value);
+    localStorage.setItem(key, String(value));
+    toast({
+        title: "Settings Updated",
+        description: "Your notification preferences have been saved.",
+    });
+  };
+
   // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
@@ -862,19 +876,6 @@ const Settings = () => {
               transition={{ delay: 0.25 }}
               className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6 relative overflow-hidden"
             >
-              {/* Coming Soon Overlay */}
-              <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                <div className="text-center">
-                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/20 text-secondary rounded-full text-sm font-medium">
-                    <Bell className="w-4 h-4" />
-                    Coming Soon!
-                  </span>
-                  <p className="text-muted-foreground text-sm mt-2">
-                    Email notifications will be available in Phase 2
-                  </p>
-                </div>
-              </div>
-
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 rounded-xl bg-secondary/10">
                   <Bell className="w-5 h-5 text-secondary" />
@@ -884,13 +885,16 @@ const Settings = () => {
                 </h2>
               </div>
 
-              <div className="space-y-4 opacity-50">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
                   <div>
                     <p className="text-foreground font-medium">Show Approvals</p>
                     <p className="text-sm text-muted-foreground">Get notified when your shows are approved</p>
                   </div>
-                  <Switch disabled checked={true} />
+                  <Switch
+                    checked={notifyApprovals}
+                    onCheckedChange={(c) => toggleNotify("notifyApprovals", c, setNotifyApprovals)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
@@ -898,7 +902,10 @@ const Settings = () => {
                     <p className="text-foreground font-medium">New Shows</p>
                     <p className="text-sm text-muted-foreground">Updates about new theater productions</p>
                   </div>
-                  <Switch disabled checked={true} />
+                  <Switch
+                    checked={notifyShows}
+                    onCheckedChange={(c) => toggleNotify("notifyShows", c, setNotifyShows)}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-xl bg-background/50 border border-secondary/10">
@@ -906,7 +913,10 @@ const Settings = () => {
                     <p className="text-foreground font-medium">Marketing Emails</p>
                     <p className="text-sm text-muted-foreground">News and promotions from StageLink</p>
                   </div>
-                  <Switch disabled checked={false} />
+                  <Switch
+                    checked={notifyMarketing}
+                    onCheckedChange={(c) => toggleNotify("notifyMarketing", c, setNotifyMarketing)}
+                  />
                 </div>
               </div>
             </motion.section>

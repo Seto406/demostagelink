@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket } from "lucide-react";
@@ -6,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useFavorites } from "@/hooks/use-favorites";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { CommentSection } from "@/components/feed/CommentSection";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface FeedPostProps {
   show: {
@@ -30,6 +33,10 @@ export interface FeedPostProps {
 
 export function FeedPost({ show }: FeedPostProps) {
   const { toggleFavorite, isFavorited } = useFavorites();
+  const [showComments, setShowComments] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
+
   const producerName = show.profiles?.group_name || "Unknown Group";
   const producerAvatar = show.profiles?.avatar_url;
   const initials = producerName
@@ -42,6 +49,45 @@ export function FeedPost({ show }: FeedPostProps) {
   const timeAgo = show.created_at
     ? formatDistanceToNow(new Date(show.created_at), { addSuffix: true })
     : "recently";
+
+  const fetchLikeCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', show.id);
+    if (count !== null) setLikeCount(count);
+  }, [show.id]);
+
+  const fetchCommentCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('show_id', show.id);
+    if (count !== null) setCommentCount(count);
+  }, [show.id]);
+
+  useEffect(() => {
+    fetchLikeCount();
+    fetchCommentCount();
+
+    // Subscriptions for real-time counts
+    const likeChannel = supabase.channel(`likes-${show.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites', filter: `show_id=eq.${show.id}` }, () => {
+         fetchLikeCount();
+      })
+      .subscribe();
+
+    const commentChannel = supabase.channel(`comments-count-${show.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `show_id=eq.${show.id}` }, () => {
+         fetchCommentCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(likeChannel);
+      supabase.removeChannel(commentChannel);
+    };
+  }, [show.id, fetchLikeCount, fetchCommentCount]);
 
   const handleShare = () => {
     navigator.clipboard.writeText(`${window.location.origin}/show/${show.id}`);
@@ -130,28 +176,57 @@ export function FeedPost({ show }: FeedPostProps) {
         </CardContent>
 
         {/* Footer */}
-        <CardFooter className="p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
-          <div className="flex items-center gap-1">
-            <FavoriteButton
-                isFavorited={isFavorited(show.id)}
-                onClick={() => toggleFavorite(show.id)}
-                size="sm"
-                className="hover:bg-background/50"
-            />
-            <Button variant="ghost" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-foreground">
-                <Share2 className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Share</span>
-            </Button>
-          </div>
+        <CardFooter className="flex flex-col p-0">
+            <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                        <FavoriteButton
+                            isFavorited={isFavorited(show.id)}
+                            onClick={() => toggleFavorite(show.id)}
+                            size="sm"
+                            className="hover:bg-background/50"
+                        />
+                        <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
+                    </div>
 
-          <div className="flex items-center gap-2">
-            <Link to={`/show/${show.id}`}>
-                <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
-                    <Ticket className="w-4 h-4 mr-1" />
-                    Get Tickets
-                </Button>
-            </Link>
-          </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowComments(!showComments)}
+                        className={`text-muted-foreground hover:text-foreground hover:bg-background/50 gap-1 ${showComments ? 'text-secondary bg-secondary/10' : ''}`}
+                    >
+                        <MessageCircle className="w-4 h-4" />
+                        <span className="text-xs font-medium">{commentCount}</span>
+                    </Button>
+
+                    <Button variant="ghost" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-foreground hover:bg-background/50">
+                        <Share2 className="w-4 h-4" />
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Link to={`/show/${show.id}`}>
+                        <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
+                            <Ticket className="w-4 h-4 mr-1" />
+                            Get Tickets
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Comments Section */}
+            <AnimatePresence>
+                {showComments && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="w-full px-3 pb-3 bg-secondary/5 border-t border-secondary/5"
+                    >
+                        <CommentSection showId={show.id} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </CardFooter>
       </Card>
     </motion.div>

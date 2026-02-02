@@ -1,7 +1,7 @@
 import * as React from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, User, Calendar, Info, LayoutDashboard } from "lucide-react";
+import { Home, Search, User, Calendar, Info, LayoutDashboard, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -63,8 +63,8 @@ export const MobileBottomNav: React.FC = () => {
     const baseItems: NavItem[] = [
       { icon: Home, label: "Home", path: "/feed" },
       { icon: Search, label: "Shows", path: "/shows" },
+      { icon: Bell, label: "Notifs", path: "/notifications" },
       { icon: Calendar, label: "Directory", path: "/directory" },
-      { icon: Info, label: "About", path: "/about" },
     ];
 
     if (profile?.role === "producer") {
