@@ -126,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <p style="font-size: 14px; color: #666; margin-top: 40px;">
                   You received this email because you favorited this show on StageLink.
                   <br/>
-                  <a href="https://stagelink.app/show/${show.id}" style="color: #666; text-decoration: underline;">View Show Details</a>
+                  <a href="https://stagelink.show/show/${show.id}" style="color: #666; text-decoration: underline;">View Show Details</a>
                 </p>
               </div>
             `,
