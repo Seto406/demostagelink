@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { useEffect, Suspense, lazy } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
-import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
 import PageTransition from "@/components/ui/page-transition";
@@ -94,7 +93,6 @@ const App = () => (
         <EnhancedToastProvider>
           <CinematicBackground>
             <ToastHandlerInit />
-            <ScrollProgress color="gold" height={3} />
             <Toaster />
             <Sonner />
             <BrowserRouter>
