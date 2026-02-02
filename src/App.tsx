@@ -30,6 +30,7 @@ const GroupProfile = lazy(() => import("./pages/GroupProfile"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -76,6 +77,7 @@ const AppRoutes = () => {
           <Route path="/profile/:id" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
