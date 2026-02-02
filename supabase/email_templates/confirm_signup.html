@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to StageLink</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif; }
+    .button {
+        background-color: #d12121;
+        color: white !important;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: bold;
+        display: inline-block;
+        margin: 20px 0;
+    }
+    @media only screen and (max-width: 600px) {
+        .container { width: 100% !important; background-size: cover !important; }
+        .content { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <!-- Main Container -->
+        <!-- Note: We use .Data.first_name assuming user metadata contains first_name. If not, fallback handling in SQL or defaulting might be needed, but template logic is limited. -->
+        <table role="presentation" class="container" width="600" border="0" cellspacing="0" cellpadding="0"
+               style="background-image: url('{{ .SiteURL }}/email/bg_curtains.png');
+                      background-repeat: no-repeat;
+                      background-size: 100% 100%;
+                      background-color: #ffffff;
+                      width: 600px;
+                      min-height: 850px;
+                      border-radius: 8px;
+                      box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td class="content" align="center" valign="top" style="padding-top: 220px; padding-bottom: 150px; padding-left: 40px; padding-right: 40px; color: #333333; font-size: 16px; line-height: 1.6;">
+
+              <!-- Content -->
+              <h1 style="color: #d12121; margin-bottom: 20px; font-size: 24px;">Welcome to StageLink, {{ .Data.first_name }}!</h1>
+
+              <p>Hi {{ .Data.first_name }},</p>
+
+              <p>Welcome to StageLink! We’re excited to have you on board.</p>
+
+              <p>Please confirm your email to activate your account and start exploring opportunities on StageLink:</p>
+
+              <a href="{{ .ConfirmationURL }}" class="button">Confirm Your Email</a>
+
+              <p style="font-size: 14px; margin-top: 10px; word-break: break-all;">
+                Or copy this link: <br>
+                <a href="{{ .ConfirmationURL }}" style="color: #d12121;">{{ .ConfirmationURL }}</a>
+              </p>
+
+              <p>If you didn’t sign up for StageLink, you can safely ignore this email.</p>
+
+              <p style="margin-top: 30px;">
+                Thanks,<br>
+                <strong>The La Creneurs Team</strong>
+              </p>
+
+            </td>
+          </tr>
+        </table>
+
+        <p style="color: #888888; font-size: 12px; margin-top: 20px;">
+            StageLink by La Creneurs<br>
+            <a href="{{ .SiteURL }}" style="color: #888888; text-decoration: none;">www.stagelink.show</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
