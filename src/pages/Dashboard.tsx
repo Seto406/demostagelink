@@ -55,6 +55,7 @@ interface Show {
   duration: string | null;
   tags: string[] | null;
   cast_members: string[] | null;
+  price: number | null;
 }
 
 const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
@@ -125,6 +126,7 @@ const Dashboard = () => {
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [newShowTicketLink, setNewShowTicketLink] = useState("");
+  const [newShowPrice, setNewShowPrice] = useState("");
   const [newShowGenre, setNewShowGenre] = useState("");
   const [newShowDirector, setNewShowDirector] = useState("");
   const [newShowDuration, setNewShowDuration] = useState("");
@@ -326,6 +328,7 @@ const Dashboard = () => {
     setNewShowCity("");
     setNewShowNiche("local");
     setNewShowTicketLink("");
+    setNewShowPrice("");
     setNewShowGenre("");
     setNewShowDirector("");
     setNewShowDuration("");
@@ -350,6 +353,7 @@ const Dashboard = () => {
     setNewShowCity(show.city || "");
     setNewShowNiche(show.niche || "local");
     setNewShowTicketLink(show.ticket_link || "");
+    setNewShowPrice(show.price?.toString() || "");
     setNewShowGenre(show.genre || "");
     setNewShowDirector(show.director || "");
     setNewShowDuration(show.duration || "");
@@ -403,6 +407,7 @@ const Dashboard = () => {
           production_status: newShowProductionStatus,
           poster_url: posterUrl,
           ticket_link: newShowTicketLink || null,
+          price: newShowPrice ? parseFloat(newShowPrice) : 0,
           genre: newShowGenre || null,
           director: newShowDirector || null,
           duration: newShowDuration || null,
@@ -469,6 +474,7 @@ const Dashboard = () => {
           poster_url: posterUrl,
           production_status: newShowProductionStatus,
           ticket_link: newShowTicketLink || null,
+          price: newShowPrice ? parseFloat(newShowPrice) : 0,
           genre: newShowGenre || null,
           director: newShowDirector || null,
           duration: newShowDuration || null,
@@ -1072,19 +1078,38 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="showTicketLink">Ticket Link</Label>
-              <Input
-                id="showTicketLink"
-                type="url"
-                value={newShowTicketLink}
-                onChange={(e) => setNewShowTicketLink(e.target.value)}
-                placeholder="https://tickets.example.com/your-show"
-                className="bg-background border-secondary/30"
-              />
-              <p className="text-xs text-muted-foreground">
-                Link to your ticket sales page (optional)
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="showPrice">Ticket Price (PHP)</Label>
+                <Input
+                  id="showPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newShowPrice}
+                  onChange={(e) => setNewShowPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="bg-background border-secondary/30"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set to 0 for free shows or external ticketing.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="showTicketLink">External Ticket Link</Label>
+                <Input
+                  id="showTicketLink"
+                  type="url"
+                  value={newShowTicketLink}
+                  onChange={(e) => setNewShowTicketLink(e.target.value)}
+                  placeholder="https://tickets.example.com"
+                  className="bg-background border-secondary/30"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional override
+                </p>
+              </div>
             </div>
 
             {/* New Fields: Genre, Director, Duration */}

@@ -30,6 +30,7 @@ interface ShowDetails {
   duration: string | null;
   tags: string[] | null;
   cast_members: string[] | null;
+  price: number | null;
   profiles: {
     id: string;
     group_name: string | null;
@@ -46,6 +47,7 @@ const ShowDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshReviews, setRefreshReviews] = useState(0);
+  const [buyingTicket, setBuyingTicket] = useState(false);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -209,6 +211,36 @@ END:VCALENDAR`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleBuyTicket = async () => {
+    if (!show || !show.price) return;
+    setBuyingTicket(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
+        body: {
+          amount: show.price * 100, // centavos
+          description: `Ticket for ${show.title}`,
+          metadata: {
+             type: "ticket",
+             show_id: show.id
+          },
+          redirect_url: window.location.origin + "/payment/success",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      toast.error("Failed to initiate purchase. Please try again.");
+    } finally {
+      setBuyingTicket(false);
+    }
   };
 
   return (
@@ -379,29 +411,64 @@ END:VCALENDAR`;
                 </div>
 
                 {/* CTA Button */}
-                {show.ticket_link ? (
-                  <a
-                    href={show.ticket_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      if (show.profiles?.id) {
-                        trackEvent('ticket_click', show.profiles.id, show.id);
-                      }
-                    }}
-                  >
-                    <Button variant="hero" size="xl" className="w-full sm:w-auto">
-                      <Ticket className="w-5 h-5 mr-2" />
-                      Get Tickets
-                      <ExternalLink className="w-4 h-4 ml-2" />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  {show.price && show.price > 0 ? (
+                    <Button
+                      variant="hero"
+                      size="xl"
+                      className="w-full sm:w-auto"
+                      onClick={handleBuyTicket}
+                      disabled={buyingTicket}
+                    >
+                      {buyingTicket ? (
+                        "Processing..."
+                      ) : (
+                        <>
+                          <Ticket className="w-5 h-5 mr-2" />
+                          Get Tickets (₱{show.price})
+                        </>
+                      )}
                     </Button>
-                  </a>
-                ) : (
-                  <Button variant="hero" size="xl" className="w-full sm:w-auto" disabled>
-                    <Clock className="w-5 h-5 mr-2" />
-                    Tickets Coming Soon
-                  </Button>
-                )}
+                  ) : null}
+
+                  {show.ticket_link && (
+                    <a
+                      href={show.ticket_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        if (show.profiles?.id) {
+                          trackEvent("ticket_click", show.profiles.id, show.id);
+                        }
+                      }}
+                    >
+                      <Button
+                        variant={show.price && show.price > 0 ? "outline" : "hero"}
+                        size="xl"
+                        className="w-full sm:w-auto"
+                      >
+                        {show.price && show.price > 0 ? (
+                          <>
+                            External Site <ExternalLink className="w-4 h-4 ml-2" />
+                          </>
+                        ) : (
+                          <>
+                            <Ticket className="w-5 h-5 mr-2" />
+                            Get Tickets
+                            <ExternalLink className="w-4 h-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    </a>
+                  )}
+
+                  {!show.ticket_link && (!show.price || show.price === 0) && (
+                    <Button variant="hero" size="xl" className="w-full sm:w-auto" disabled>
+                      <Clock className="w-5 h-5 mr-2" />
+                      Tickets Coming Soon
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             </div>
           </div>

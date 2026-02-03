@@ -393,6 +393,15 @@ const AdminPanel = () => {
 
     if (requestError) {
       console.error("Error updating request:", requestError);
+    } else {
+      // Send email
+      await supabase.functions.invoke("send-producer-status-email", {
+        body: {
+          user_id: request.user_id,
+          status: "approved",
+          group_name: request.group_name,
+        },
+      });
     }
 
     toast({
@@ -417,6 +426,15 @@ const AdminPanel = () => {
         variant: "destructive",
       });
     } else {
+      // Send email
+      await supabase.functions.invoke("send-producer-status-email", {
+        body: {
+          user_id: request.user_id,
+          status: "rejected",
+          group_name: request.group_name,
+        },
+      });
+
       toast({
         title: "Request Rejected",
         description: "The user has been notified.",

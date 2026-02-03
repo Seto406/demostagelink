@@ -336,6 +336,7 @@ export type Database = {
           id: string
           niche: Database["public"]["Enums"]["niche_type"] | null
           poster_url: string | null
+          price: number | null
           producer_id: string
           status: Database["public"]["Enums"]["show_status"]
           tags: string[] | null
@@ -357,6 +358,7 @@ export type Database = {
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
+          price?: number | null
           producer_id: string
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
@@ -378,6 +380,7 @@ export type Database = {
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
+          price?: number | null
           producer_id?: string
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
@@ -390,6 +393,51 @@ export type Database = {
           {
             foreignKeyName: "shows_producer_id_fkey"
             columns: ["producer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          created_at: string
+          id: string
+          show_id: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          payment_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_id: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          payment_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_id?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
