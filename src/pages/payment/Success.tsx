@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
+  const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
 
   useEffect(() => {
@@ -24,9 +24,12 @@ const PaymentSuccess = () => {
           setMessage("Payment successful! Your subscription is now active.");
           // Invalidate subscription query to refresh status
           queryClient.invalidateQueries({ queryKey: ["subscription"] });
+        } else if (data.status === "pending") {
+          setStatus("processing");
+          setMessage(data.message || "Payment is still processing. Please wait a moment.");
         } else {
-          setStatus("failed"); // Or "pending" but user sees it as failed/incomplete
-          setMessage(data.message || "Payment verification failed or pending.");
+          setStatus("failed");
+          setMessage(data.message || "Payment verification failed.");
         }
       } catch (error) {
         console.error("Verification error:", error);
@@ -59,6 +62,24 @@ const PaymentSuccess = () => {
             <Button onClick={() => navigate("/settings")} className="w-full">
               Return to Settings
             </Button>
+          </>
+        )}
+
+        {status === "processing" && (
+          <>
+            <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto">
+              <Clock className="w-8 h-8 text-yellow-500" />
+            </div>
+            <h2 className="text-2xl font-serif font-bold text-foreground">Payment Processing</h2>
+            <p className="text-muted-foreground">{message}</p>
+            <div className="flex flex-col gap-3">
+              <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
+                Check Again
+              </Button>
+              <Button onClick={() => navigate("/settings")} className="w-full">
+                Return to Settings
+              </Button>
+            </div>
           </>
         )}
 
