@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -123,9 +124,16 @@ export function FeedPost({ show }: FeedPostProps) {
               <span className="text-xs text-muted-foreground">{timeAgo}</span>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>More options</p>
+            </TooltipContent>
+          </Tooltip>
         </CardHeader>
 
         {/* Content */}
@@ -189,19 +197,40 @@ export function FeedPost({ show }: FeedPostProps) {
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
 
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowComments(!showComments)}
-                        className={`text-muted-foreground hover:text-foreground hover:bg-background/50 gap-1 ${showComments ? 'text-secondary bg-secondary/10' : ''}`}
-                    >
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs font-medium">{commentCount}</span>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowComments(!showComments)}
+                            className={`text-muted-foreground hover:text-foreground hover:bg-background/50 gap-1 ${showComments ? 'text-secondary bg-secondary/10' : ''}`}
+                            aria-label="View comments"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-xs font-medium">{commentCount}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>View comments</p>
+                      </TooltipContent>
+                    </Tooltip>
 
-                    <Button variant="ghost" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-foreground hover:bg-background/50">
-                        <Share2 className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleShare}
+                          className="text-muted-foreground hover:text-foreground hover:bg-background/50"
+                          aria-label="Share this show"
+                        >
+                            <Share2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Share this show</p>
+                      </TooltipContent>
+                    </Tooltip>
                 </div>
 
                 <div className="flex items-center gap-2">
