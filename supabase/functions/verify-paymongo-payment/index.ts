@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    // 2. Find latest pending payment
+    // 2. Find latest payment
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -42,7 +42,6 @@ serve(async (req) => {
       .from("payments")
       .select("*")
       .eq("user_id", user.id)
-      .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -52,7 +51,7 @@ serve(async (req) => {
 
     if (!payments || payments.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No pending payment found" }),
+        JSON.stringify({ message: "No payment found" }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 404,
@@ -61,6 +60,17 @@ serve(async (req) => {
     }
 
     const payment = payments[0];
+
+    if (payment.status === "paid") {
+      return new Response(
+        JSON.stringify({ status: "paid", message: "Payment successful" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
     const checkoutId = payment.paymongo_checkout_id;
 
     // 3. Check PayMongo Status

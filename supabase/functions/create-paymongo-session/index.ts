@@ -39,6 +39,14 @@ serve(async (req) => {
       throw new Error("Amount is required");
     }
 
+    if (isNaN(Number(amount)) || Number(amount) <= 0) {
+      throw new Error("Amount must be a positive number");
+    }
+
+    if (description && typeof description !== "string") {
+      throw new Error("Description must be a string");
+    }
+
     // 3. Create PayMongo Checkout Session
     const secretKey = Deno.env.get("PAYMONGO_SECRET_KEY");
     if (!secretKey) {
