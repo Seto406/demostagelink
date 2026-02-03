@@ -59,10 +59,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { CreditCard, Zap, Check } from "lucide-react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
+  const { isPro, initiateCheckout, isCheckingOut, isLoading: subLoading } = useSubscription();
   
   // Profile form state
   const [groupName, setGroupName] = useState("");
@@ -580,6 +583,65 @@ const Settings = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+            </motion.section>
+
+            {/* Subscription */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6 relative overflow-hidden"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-xl bg-purple-500/10">
+                  <CreditCard className="w-5 h-5 text-purple-500" />
+                </div>
+                <h2 className="text-xl font-serif font-semibold text-foreground">
+                  Subscription
+                </h2>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-background/50 border border-secondary/10">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-foreground font-medium text-lg">
+                      {isPro ? "Pro Producer" : "Free Plan"}
+                    </p>
+                    {isPro && (
+                      <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 text-xs font-bold uppercase tracking-wider">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isPro
+                      ? "You have access to all premium features."
+                      : "Upgrade to unlock advanced analytics and more."}
+                  </p>
+                </div>
+
+                {!isPro ? (
+                  <Button
+                    onClick={() => initiateCheckout()}
+                    disabled={isCheckingOut || subLoading}
+                    className="bg-purple-600 hover:bg-purple-700 text-white min-w-[140px]"
+                  >
+                    {isCheckingOut ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2 fill-current" />
+                        Upgrade Pro
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled className="text-green-500 border-green-500/20 bg-green-500/10">
+                    <Check className="w-4 h-4 mr-2" />
+                    Pro Active
+                  </Button>
+                )}
               </div>
             </motion.section>
 
