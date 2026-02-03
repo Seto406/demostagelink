@@ -127,26 +127,57 @@ serve(async (req) => {
         .update({ status: "paid", updated_at: new Date() })
         .eq("id", payment.id);
 
-      // Create/Update Subscription
-      // Assume 1 month duration for now (since hardcoded 399/mo)
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 1);
+      // Check metadata for payment type
+      const metadata = session.attributes.metadata || {};
+      const paymentType = metadata.type || "subscription"; // Default to subscription
 
-      const { error: subError } = await supabaseAdmin
-        .from("subscriptions")
-        .upsert({
-          user_id: user.id,
-          status: "active",
-          tier: "pro",
-          current_period_start: startDate.toISOString(),
-          current_period_end: endDate.toISOString(),
-          updated_at: new Date()
-        }, { onConflict: "user_id" });
+      if (paymentType === "ticket") {
+        const showId = metadata.show_id;
+        if (showId) {
+          // Insert Ticket
+          const { error: ticketError } = await supabaseAdmin
+            .from("tickets")
+            .insert({
+              user_id: user.id,
+              show_id: showId,
+              status: "confirmed",
+              payment_id: payment.id,
+            });
 
-      if (subError) {
-        console.error("Subscription Update Error:", subError);
-        // We still return success as payment was processed
+          if (ticketError) {
+            console.error("Ticket Insert Error:", ticketError);
+          } else {
+            // Trigger Email
+            await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
+              body: { user_id: user.id, show_id: showId },
+            });
+          }
+        }
+      } else {
+        // Create/Update Subscription
+        // Assume 1 month duration for now (since hardcoded 399/mo)
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1);
+
+        const { error: subError } = await supabaseAdmin
+          .from("subscriptions")
+          .upsert(
+            {
+              user_id: user.id,
+              status: "active",
+              tier: "pro",
+              current_period_start: startDate.toISOString(),
+              current_period_end: endDate.toISOString(),
+              updated_at: new Date(),
+            },
+            { onConflict: "user_id" }
+          );
+
+        if (subError) {
+          console.error("Subscription Update Error:", subError);
+          // We still return success as payment was processed
+        }
       }
 
       return new Response(

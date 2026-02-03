@@ -33,7 +33,7 @@ serve(async (req) => {
     }
 
     // 2. Parse Request Body
-    const { amount, description, redirect_url } = await req.json();
+    const { amount, description, redirect_url, metadata } = await req.json();
 
     if (!amount) {
       throw new Error("Amount is required");
@@ -77,6 +77,7 @@ serve(async (req) => {
           success_url: successUrl,
           cancel_url: cancelUrl,
           description: description || "Payment",
+          metadata: metadata || {},
         },
       },
     };
