@@ -6,7 +6,7 @@ Built by [La Creneurs](https://www.stagelink.show) — because every performance
 
 ---
 
-## 📋 Phase 1 - Foundation (Now Live)
+## 📋 Phase 2 - General Availability (Now Live)
 
 ### Features
 
@@ -45,7 +45,7 @@ Built by [La Creneurs](https://www.stagelink.show) — because every performance
 | Styling | Tailwind CSS, shadcn/ui |
 | Backend | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
 | Animations | Framer Motion |
-| Email | Resend (Phase 2) |
+| Email | Resend |
 | Hosting | Lovable Cloud |
 
 ---
@@ -109,19 +109,19 @@ supabase/
 - City-based discovery
 - Favorites & watchlist
 
-### Phase 2: Growth ✅ (Q1 2025)
+### Phase 2: Growth ✅ (Released Q1 2026)
 - Real-time analytics dashboard
 - Email notifications
 - Enhanced rich media profiles
 - Social login (Google)
 - Show performance insights
+- Calendar sync & reminders
+- Audience reviews & ratings
+- National expansion
 
-### Phase 3: Scale (In Progress)
+### Phase 3: Scale (Q2 2026)
 - Mobile app (iOS & Android) - *Coming Soon*
 - Pro subscriptions & payments - *Waitlist Open*
-- Calendar sync & reminders ✅
-- Audience reviews & ratings ✅
-- National expansion ✅
 
 *Roadmap is for discussion purposes and is not final.*
 
