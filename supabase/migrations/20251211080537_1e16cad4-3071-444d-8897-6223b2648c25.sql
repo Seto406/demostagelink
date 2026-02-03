@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS public.favorites (
 ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 
 -- Favorites policies
-CREATE POLICY "Users can view their own favorites"
+CREATE POLICY "Anyone can view favorites"
 ON public.favorites FOR SELECT
-USING (auth.uid() = user_id);
+USING (true);
 
 CREATE POLICY "Users can add their own favorites"
 ON public.favorites FOR INSERT
