@@ -176,6 +176,7 @@ export function AudienceLinking() {
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => removeLink(link.id)}
+                    aria-label="Remove audience member"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
