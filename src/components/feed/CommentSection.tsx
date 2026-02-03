@@ -40,7 +40,7 @@ export function CommentSection({ showId }: CommentSectionProps) {
           content,
           created_at,
           user_id,
-          profiles:user_id (
+          profiles (
             username,
             group_name,
             avatar_url
