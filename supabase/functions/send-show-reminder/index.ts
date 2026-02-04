@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { pooledMap } from "https://deno.land/std@0.190.0/async/pool.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -81,64 +82,71 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Found ${tickets?.length || 0} ticket holders for show: ${show.title}`);
 
-      for (const ticket of tickets || []) {
-        // Fetch user email using admin API
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ticket.user_id);
+      if (tickets && tickets.length > 0) {
+        const processTicket = async (ticket: any) => {
+          // Fetch user email using admin API
+          const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ticket.user_id);
 
-        if (userError || !userData?.user?.email) {
-          console.error(`Error fetching user ${ticket.user_id}:`, userError);
-          continue;
-        }
+          if (userError || !userData?.user?.email) {
+            console.error(`Error fetching user ${ticket.user_id}:`, userError);
+            return null;
+          }
 
-        const email = userData.user.email;
-        const showDate = new Date(show.show_time).toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        });
+          const email = userData.user.email;
+          const showDate = new Date(show.show_time).toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+          });
 
-        // Send email via Resend
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${RESEND_API_KEY}`,
-          },
-          body: JSON.stringify({
-            from: "StageLink <hello@stagelink.show>",
-            to: [email],
-            subject: `Reminder: "${show.title}" is starting soon!`,
-            html: `
-              <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #333; margin-bottom: 20px;">Your Show is Coming Up! 🎭</h1>
-                <p style="font-size: 16px; line-height: 1.6; color: #333;">
-                  This is a friendly reminder that you have tickets for <strong>"${show.title}"</strong>.
-                </p>
+          // Send email via Resend
+          const emailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: "StageLink <hello@stagelink.show>",
+              to: [email],
+              subject: `Reminder: "${show.title}" is starting soon!`,
+              html: `
+                <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h1 style="color: #333; margin-bottom: 20px;">Your Show is Coming Up! 🎭</h1>
+                  <p style="font-size: 16px; line-height: 1.6; color: #333;">
+                    This is a friendly reminder that you have tickets for <strong>"${show.title}"</strong>.
+                  </p>
 
-                <div style="margin: 30px 0; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
-                  <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Date & Time:</strong> ${showDate}</p>
-                  ${show.venue ? `<p style="margin: 5px 0; font-size: 16px;"><strong>📍 Venue:</strong> ${show.venue}</p>` : ''}
-                  <p style="margin: 20px 0 0 0;"><a href="https://www.stagelink.show/show/${show.id}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Show Details</a></p>
+                  <div style="margin: 30px 0; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
+                    <p style="margin: 5px 0; font-size: 16px;"><strong>📅 Date & Time:</strong> ${showDate}</p>
+                    ${show.venue ? `<p style="margin: 5px 0; font-size: 16px;"><strong>📍 Venue:</strong> ${show.venue}</p>` : ''}
+                    <p style="margin: 20px 0 0 0;"><a href="https://www.stagelink.show/show/${show.id}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Show Details</a></p>
+                  </div>
+
+                  <p style="font-size: 14px; color: #666; margin-top: 40px;">
+                    You received this email because you have a confirmed ticket for this show on StageLink.
+                  </p>
                 </div>
+              `,
+            }),
+          });
 
-                <p style="font-size: 14px; color: #666; margin-top: 40px;">
-                  You received this email because you have a confirmed ticket for this show on StageLink.
-                </p>
-              </div>
-            `,
-          }),
-        });
+          const emailData = await emailRes.json();
+          return {
+            email,
+            show: show.title,
+            status: emailRes.status,
+            id: emailData.id
+          };
+        };
 
-        const emailData = await emailRes.json();
-        results.push({
-          email,
-          show: show.title,
-          status: emailRes.status,
-          id: emailData.id
-        });
+        const resultsIterator = pooledMap(10, tickets, processTicket);
+        for await (const result of resultsIterator) {
+          if (result) results.push(result);
+        }
       }
     }
 
