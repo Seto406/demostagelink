@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import pLimit from "https://esm.sh/p-limit@4.0.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -64,9 +65,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${showsToRemind.length} shows to send reminders for.`);
 
-    const results = [];
+    const limit = pLimit(5); // Limit concurrency to respect API rate limits
 
-    for (const show of showsToRemind) {
+    const showPromises = showsToRemind.map(async (show) => {
       // Fetch ticket holders
       const { data: tickets, error: ticketError } = await supabase
         .from("tickets")
@@ -76,18 +77,18 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (ticketError) {
         console.error(`Error fetching tickets for show ${show.id}:`, ticketError);
-        continue;
+        return [];
       }
 
       console.log(`Found ${tickets?.length || 0} ticket holders for show: ${show.title}`);
 
-      for (const ticket of tickets || []) {
+      const ticketPromises = (tickets || []).map((ticket) => limit(async () => {
         // Fetch user email using admin API
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ticket.user_id);
 
         if (userError || !userData?.user?.email) {
           console.error(`Error fetching user ${ticket.user_id}:`, userError);
-          continue;
+          return null;
         }
 
         const email = userData.user.email;
@@ -133,14 +134,19 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         const emailData = await emailRes.json();
-        results.push({
+        return {
           email,
           show: show.title,
           status: emailRes.status,
           id: emailData.id
-        });
-      }
-    }
+        };
+      }));
+
+      return Promise.all(ticketPromises);
+    });
+
+    const resultsNested = await Promise.all(showPromises);
+    const results = resultsNested.flat().filter(r => r !== null);
 
     return new Response(JSON.stringify({ success: true, processed: results.length, details: results }), {
       status: 200,
@@ -160,4 +166,5 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+export { handler };
 serve(handler);
