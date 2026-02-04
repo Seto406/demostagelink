@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -154,13 +155,17 @@ export function CommentSection({ showId }: CommentSectionProps) {
 
             return (
               <div key={comment.id} className="flex gap-3">
-                <Avatar className="w-8 h-8 border border-secondary/20">
-                  <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                  <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-                </Avatar>
+                <Link to={`/profile/${comment.user_id}`}>
+                  <Avatar className="w-8 h-8 border border-secondary/20 hover:border-secondary transition-colors">
+                    <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                    <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                  </Avatar>
+                </Link>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">{commenterName}</span>
+                    <Link to={`/profile/${comment.user_id}`} className="hover:underline">
+                      <span className="text-sm font-medium text-foreground">{commenterName}</span>
+                    </Link>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
@@ -185,6 +190,7 @@ export function CommentSection({ showId }: CommentSectionProps) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
+              aria-label="Write a comment"
               className="min-h-[40px] h-[40px] py-2 resize-none bg-background/50 border-secondary/20 focus:ring-secondary/50"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -196,6 +202,7 @@ export function CommentSection({ showId }: CommentSectionProps) {
             <Button
               type="submit"
               size="icon"
+              aria-label="Post comment"
               disabled={submitting || !newComment.trim()}
               className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             >
