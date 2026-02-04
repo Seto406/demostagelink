@@ -339,7 +339,12 @@ const UserFeed = () => {
                       <div key={show.id}>
                         <FeedPost show={show} />
                         {index === 1 && !isPro && (
-                           <AdBanner format="horizontal" />
+                           <AdBanner
+                             format="horizontal"
+                             variant="adsense"
+                             adClient="ca-pub-4021944125309456"
+                             adSlot="5015577702"
+                           />
                         )}
                       </div>
                    ))}
