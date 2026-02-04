@@ -32,6 +32,8 @@ import { FeedPost } from "@/components/feed/FeedPost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourGuide } from "@/components/onboarding/TourGuide";
+import { useSubscription } from "@/hooks/useSubscription";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 // Interface for Shows
 export interface Show {
@@ -99,6 +101,7 @@ const UserFeed = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading } = useAuth();
+  const { isPro } = useSubscription();
   const [shows, setShows] = useState<Show[]>([]);
   const [suggestedProducers, setSuggestedProducers] = useState<Producer[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
@@ -333,7 +336,14 @@ const UserFeed = () => {
              ) : (
                 <div className="space-y-6">
                    {displayShows.map((show, index) => (
-                      <FeedPost key={show.id} show={show} />
+                      <div key={show.id}>
+                         <FeedPost show={show} />
+                         {!isPro && index === 1 && (
+                            <div className="mt-6">
+                               <AdBanner />
+                            </div>
+                         )}
+                      </div>
                    ))}
 
                    <div className="text-center py-8 text-muted-foreground">
@@ -348,6 +358,9 @@ const UserFeed = () => {
 
           {/* Right Sidebar - Widgets */}
           <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6">
+             {/* Ad Widget */}
+             {!isPro && <AdBanner format="box" />}
+
              {/* Suggested Producers Widget */}
              <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="pb-3">
