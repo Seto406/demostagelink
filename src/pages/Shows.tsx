@@ -204,9 +204,12 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
   );
 };
 
+const PAGE_SIZE = 12;
+
 const Shows = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get("genre") || "All");
   const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
@@ -214,9 +217,22 @@ const Shows = () => {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Pagination State
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Dynamic filter options
   const [availableCities, setAvailableCities] = useState<string[]>(["All"]);
   const [availableGenres, setAvailableGenres] = useState<string[]>(["All"]);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -227,9 +243,53 @@ const Shows = () => {
     setSearchParams(params, { replace: true });
   }, [selectedCity, selectedGenre, dateFilter, setSearchParams]);
 
+  // Fetch metadata for filters
+  useEffect(() => {
+    const fetchFilterMetadata = async () => {
+      const { data, error } = await supabase
+        .from("shows")
+        .select("city, genre, niche")
+        .eq("status", "approved");
+
+      if (error) {
+        console.error("Error fetching filter metadata:", error);
+        return;
+      }
+
+      const uniqueCities = Array.from(new Set(data.map((s) => s.city).filter(Boolean))) as string[];
+      setAvailableCities(["All", ...uniqueCities.sort()]);
+
+      const genres = new Set<string>();
+      data.forEach((s) => {
+        if (s.genre) genres.add(s.genre);
+      });
+
+      const hasUniversity = data.some((s) => s.niche === "university");
+      const hasLocal = data.some((s) => s.niche === "local");
+
+      const genreList = Array.from(genres).sort();
+      if (hasLocal) genreList.push("Local/Community");
+      if (hasUniversity) genreList.push("University Theater");
+
+      setAvailableGenres(["All", ...genreList]);
+    };
+
+    fetchFilterMetadata();
+  }, []);
+
   // Fetch function for shows
-  const fetchShows = useCallback(async () => {
-    setLoading(true);
+  const fetchShows = useCallback(async (targetPage = 0) => {
+    // Treat targetPage 0 as a reset
+    if (targetPage === 0) {
+      setLoading(true);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const from = targetPage * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
     let query = supabase
       .from("shows")
       .select(`
@@ -249,7 +309,8 @@ const Shows = () => {
           avatar_url
         )
       `)
-      .eq("status", "approved");
+      .eq("status", "approved")
+      .range(from, to);
 
     if (selectedCity !== "All") {
       query = query.eq("city", selectedCity);
@@ -264,64 +325,42 @@ const Shows = () => {
       query = query.gte("date", dateFilter);
     }
 
+    if (debouncedSearchQuery) {
+      query = query.or(`title.ilike.%${debouncedSearchQuery}%,description.ilike.%${debouncedSearchQuery}%`);
+    }
+
     const { data, error } = await query.order("date", { ascending: true });
 
     if (error) {
       console.error("Error fetching shows:", error);
     } else {
       const fetchedShows = data as Show[];
-      setShows(fetchedShows);
 
-      // Extract unique cities
-      const cities = Array.from(new Set(fetchedShows.map(s => s.city).filter(Boolean))) as string[];
-      setAvailableCities(["All", ...cities.sort()]);
+      if (targetPage === 0) {
+        setShows(fetchedShows);
+      } else {
+        setShows((prev) => [...prev, ...fetchedShows]);
+      }
 
-      // Extract unique genres and niches
-      const genres = new Set<string>();
-      fetchedShows.forEach(s => {
-        if (s.genre) genres.add(s.genre);
-      });
-      // Always add niche filters if relevant shows exist or just as standard options
-      // We can also check if any show has niche='university' or 'local'
-      const hasUniversity = fetchedShows.some(s => s.niche === 'university');
-      const hasLocal = fetchedShows.some(s => s.niche === 'local');
-
-      const genreList = Array.from(genres).sort();
-      if (hasLocal) genreList.push("Local/Community");
-      if (hasUniversity) genreList.push("University Theater");
-
-      setAvailableGenres(["All", ...genreList]);
+      setPage(targetPage);
+      setHasMore(fetchedShows.length === PAGE_SIZE);
     }
     setLoading(false);
-  }, [selectedCity, selectedGenre, dateFilter]);
+    setLoadingMore(false);
+  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery]);
 
-  // Fetch approved shows
+  // Fetch approved shows (reset when filters change)
   useEffect(() => {
-    fetchShows();
+    fetchShows(0);
   }, [fetchShows]);
 
   // Pull to refresh handler
   const handleRefresh = async () => {
-    await fetchShows();
+    await fetchShows(0);
   };
 
-  const filteredShows = shows.filter((show) => {
-    const matchesSearch =
-      show.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      show.profiles?.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCity = selectedCity === "All" || show.city === selectedCity;
-
-    const matchesGenre =
-      selectedGenre === "All" ||
-      (selectedGenre === "Local/Community" && show.niche === "local") ||
-      (selectedGenre === "University Theater" && show.niche === "university") ||
-      (show.genre === selectedGenre);
-
-    const matchesDate = !dateFilter || (show.date && show.date >= dateFilter);
-
-    return matchesSearch && matchesCity && matchesGenre && matchesDate;
-  });
+  // We use the raw shows array now as filtering is done server-side
+  const filteredShows = shows;
 
   const clearFilters = () => {
     setSelectedCity("All");
@@ -613,16 +652,39 @@ const Shows = () => {
               />
             </div>
           ) : (
-            <motion.div
-              layout
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredShows.map((show, index) => (
-                  <ShowCard key={show.id} show={show} index={index} />
-                ))}
-              </AnimatePresence>
-            </motion.div>
+            <>
+              <motion.div
+                layout
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredShows.map((show, index) => (
+                    <ShowCard key={show.id} show={show} index={index} />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <Button
+                    onClick={() => fetchShows(page + 1)}
+                    variant="outline"
+                    disabled={loadingMore}
+                    className="min-w-[150px] border-secondary/30 text-secondary hover:bg-secondary/10"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <span className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load More"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
