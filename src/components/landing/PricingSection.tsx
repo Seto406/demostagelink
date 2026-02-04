@@ -13,10 +13,11 @@ import { SUBSCRIPTION_PRICE_DISPLAY, SUBSCRIPTION_PERIOD } from "@/config/pricin
 
 const plans = [
   {
-    name: "Starter",
+    name: "Viewer & Starter",
     price: "Free",
-    description: "Perfect for new theater groups just getting started",
+    description: "For theater lovers and new groups just getting started",
     features: [
+      "Unlimited show discovery",
       "Group profile with social links",
       "Show listings with ticket links",
       "Team member showcase",

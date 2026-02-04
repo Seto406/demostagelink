@@ -19,6 +19,9 @@ import feuTheaterGuildLogo from "@/assets/groups/feu-theater-guild.jpg";
 import pnuThespianLogo from "@/assets/groups/pnu-thespian.jpg";
 import dulaangUpLogo from "@/assets/groups/dulaang-up.jpg";
 
+// Toggle to control visibility of demo placeholder groups
+const SHOW_DEMO_GROUPS = true;
+
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
 
@@ -153,8 +156,8 @@ const Directory = () => {
   }, []);
 
   // Use demo groups if no real groups exist
-  const displayGroups = groups.length > 0 ? groups : demoGroups;
-  const isUsingDemo = groups.length === 0 && !loading;
+  const displayGroups = groups.length > 0 ? groups : (SHOW_DEMO_GROUPS ? demoGroups : []);
+  const isUsingDemo = groups.length === 0 && !loading && SHOW_DEMO_GROUPS;
 
   const filteredGroups = displayGroups.filter((group) => {
     const matchesSearch = group.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
