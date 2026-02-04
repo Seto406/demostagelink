@@ -95,6 +95,9 @@ interface Stats {
   activeProducers: number;
   pendingRequests: number;
   deletedShows: number;
+  pendingShows: number;
+  approvedShows: number;
+  rejectedShows: number;
 }
 
 type FilterStatus = "all" | "pending" | "approved" | "rejected" | "deleted";
@@ -116,12 +119,23 @@ const AdminPanel = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [producerRequests, setProducerRequests] = useState<ProducerRequest[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalShows: 0, activeProducers: 0, pendingRequests: 0, deletedShows: 0 });
+  const [stats, setStats] = useState<Stats>({
+    totalUsers: 0,
+    totalShows: 0,
+    activeProducers: 0,
+    pendingRequests: 0,
+    deletedShows: 0,
+    pendingShows: 0,
+    approvedShows: 0,
+    rejectedShows: 0
+  });
   const [activeTab, setActiveTab] = useState("shows");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUserCount, setTotalUserCount] = useState(0);
+  const [currentShowsPage, setCurrentShowsPage] = useState(1);
+  const [totalShowsCount, setTotalShowsCount] = useState(0);
 
   // Dev tools state
   const [devModalOpen, setDevModalOpen] = useState(false);
@@ -152,12 +166,15 @@ const AdminPanel = () => {
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
-    const [usersRes, showsRes, producersRes, requestsRes, deletedRes] = await Promise.all([
+    const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact" }),
       supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
       supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
       supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
       supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
+      supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null),
+      supabase.from("shows").select("id", { count: "exact" }).eq("status", "approved").is("deleted_at", null),
+      supabase.from("shows").select("id", { count: "exact" }).eq("status", "rejected").is("deleted_at", null),
     ]);
 
     setStats({
@@ -166,12 +183,18 @@ const AdminPanel = () => {
       activeProducers: producersRes.count || 0,
       pendingRequests: requestsRes.count || 0,
       deletedShows: deletedRes.count || 0,
+      pendingShows: pendingRes.count || 0,
+      approvedShows: approvedRes.count || 0,
+      rejectedShows: rejectedRes.count || 0,
     });
   }, []);
 
   // Fetch all shows for admin
   const fetchShows = useCallback(async () => {
     setLoadingShows(true);
+
+    const start = (currentShowsPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE - 1;
     
     let query = supabase
       .from("shows")
@@ -180,8 +203,7 @@ const AdminPanel = () => {
         profiles:producer_id (
           group_name
         )
-      `)
-      .order("created_at", { ascending: false });
+      `, { count: "exact" });
 
     // Handle deleted filter differently
     if (filterStatus === "deleted") {
@@ -193,7 +215,10 @@ const AdminPanel = () => {
       }
     }
 
-    const { data, error } = await query;
+    // Apply sorting and pagination last
+    const { data, count, error } = await query
+      .order("created_at", { ascending: false })
+      .range(start, end);
 
     if (error) {
       console.error("Error fetching shows:", error);
@@ -204,9 +229,10 @@ const AdminPanel = () => {
       });
     } else {
       setShows(data as Show[]);
+      if (count !== null) setTotalShowsCount(count);
     }
     setLoadingShows(false);
-  }, [filterStatus]);
+  }, [filterStatus, currentShowsPage]);
 
   // Fetch all users
   const fetchUsers = useCallback(async () => {
@@ -488,6 +514,11 @@ const AdminPanel = () => {
       fetchShows();
       fetchStats();
     }
+  };
+
+  const handleFilterChange = (status: FilterStatus) => {
+    setFilterStatus(status);
+    setCurrentShowsPage(1);
   };
 
   const openDetails = (show: Show) => {
@@ -855,49 +886,43 @@ const AdminPanel = () => {
               {/* Show Filter Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <button
-                  onClick={() => setFilterStatus("all")}
+                  onClick={() => handleFilterChange("all")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "all" ? "border-secondary" : "border-secondary/20 hover:border-secondary/50"
                   }`}
                 >
                   <p className="text-muted-foreground text-sm mb-1">All Productions</p>
-                  <p className="text-2xl font-serif text-foreground">{shows.length}</p>
+                  <p className="text-2xl font-serif text-foreground">{stats.totalShows}</p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("pending")}
+                  onClick={() => handleFilterChange("pending")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "pending" ? "border-yellow-500" : "border-secondary/20 hover:border-yellow-500/50"
                   }`}
                 >
                   <p className="text-muted-foreground text-sm mb-1">Pending</p>
-                  <p className="text-2xl font-serif text-yellow-500">
-                    {filterStatus === "all" ? shows.filter(s => s.status === "pending").length : (filterStatus === "pending" ? shows.length : "—")}
-                  </p>
+                  <p className="text-2xl font-serif text-yellow-500">{stats.pendingShows}</p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("approved")}
+                  onClick={() => handleFilterChange("approved")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "approved" ? "border-green-500" : "border-secondary/20 hover:border-green-500/50"
                   }`}
                 >
                   <p className="text-muted-foreground text-sm mb-1">Approved</p>
-                  <p className="text-2xl font-serif text-green-500">
-                    {filterStatus === "all" ? shows.filter(s => s.status === "approved").length : (filterStatus === "approved" ? shows.length : "—")}
-                  </p>
+                  <p className="text-2xl font-serif text-green-500">{stats.approvedShows}</p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("rejected")}
+                  onClick={() => handleFilterChange("rejected")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "rejected" ? "border-red-500" : "border-secondary/20 hover:border-red-500/50"
                   }`}
                 >
                   <p className="text-muted-foreground text-sm mb-1">Rejected</p>
-                  <p className="text-2xl font-serif text-red-500">
-                    {filterStatus === "all" ? shows.filter(s => s.status === "rejected").length : (filterStatus === "rejected" ? shows.length : "—")}
-                  </p>
+                  <p className="text-2xl font-serif text-red-500">{stats.rejectedShows}</p>
                 </button>
                 <button
-                  onClick={() => setFilterStatus("deleted")}
+                  onClick={() => handleFilterChange("deleted")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "deleted" ? "border-orange-500" : "border-secondary/20 hover:border-orange-500/50"
                   }`}
@@ -919,6 +944,7 @@ const AdminPanel = () => {
                   </p>
                 </div>
               ) : (
+                <>
                 <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
                   <table className="w-full min-w-[800px]">
                     <thead className="bg-muted/50">
@@ -1043,6 +1069,79 @@ const AdminPanel = () => {
                     </tbody>
                   </table>
                 </div>
+                {Math.ceil(totalShowsCount / ITEMS_PER_PAGE) > 1 && (
+                  <div className="mt-4">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => setCurrentShowsPage(p => Math.max(1, p - 1))}
+                            className={currentShowsPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+
+                        {(() => {
+                          const totalPages = Math.ceil(totalShowsCount / ITEMS_PER_PAGE);
+                          const pages = [];
+
+                          // Always show first page
+                          pages.push(1);
+
+                          // Calculate range around current page
+                          const start = Math.max(2, currentShowsPage - 1);
+                          const end = Math.min(totalPages - 1, currentShowsPage + 1);
+
+                          if (start > 2) {
+                            pages.push('ellipsis-start');
+                          }
+
+                          for (let i = start; i <= end; i++) {
+                            pages.push(i);
+                          }
+
+                          if (end < totalPages - 1) {
+                            pages.push('ellipsis-end');
+                          }
+
+                          // Always show last page if > 1
+                          if (totalPages > 1) {
+                            pages.push(totalPages);
+                          }
+
+                          return pages.map((page, i) => {
+                            if (typeof page === 'string') {
+                              return (
+                                <PaginationItem key={`ellipsis-${i}`}>
+                                  <PaginationEllipsis />
+                                </PaginationItem>
+                              );
+                            }
+
+                            return (
+                              <PaginationItem key={page}>
+                                <PaginationLink
+                                  isActive={page === currentShowsPage}
+                                  onClick={() => setCurrentShowsPage(page as number)}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          });
+                        })()}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() => setCurrentShowsPage(p => Math.min(Math.ceil(totalShowsCount / ITEMS_PER_PAGE), p + 1))}
+                            className={currentShowsPage === Math.ceil(totalShowsCount / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+                </>
               )}
             </motion.div>
           ) : (
