@@ -13,3 +13,7 @@
 ## 2024-05-24 - Radix Tooltips & Strict Mode
 **Learning:** When testing Radix UI Tooltips with Playwright, standard text selectors (e.g., `get_by_text`) can cause "Strict Mode Violations" because the tooltip content is rendered in the DOM (hidden) *and* in a Portal (visible) simultaneously, or rendered duplicate in React Strict Mode.
 **Action:** Use specific locators like `page.locator("div[role='tooltip']").filter(has_text="...")` or ensure you check for visibility explicitly, but be aware that `is_visible()` throws on duplicates. Use `.first` if purely verifying existence, or fix the test harness to not render double.
+
+## 2024-05-24 - Interactive User Identity
+**Learning:** In social feeds, users expect avatars and names to be clickable links to profiles. Static text breaks this mental model.
+**Action:** Always wrap user identity elements (Avatar, Name) in `Link` components pointing to their profile or group page.
