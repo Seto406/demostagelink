@@ -283,7 +283,7 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
                   <span className="text-3xl">🎟️</span>
                   <div>
                     <h3 className="font-sans font-semibold text-lg text-foreground group-hover:text-secondary transition-colors tracking-tight">
-                      I'm an Audience Member
+                      I'm an Audience Member <span className="text-sm font-normal text-muted-foreground">(Free)</span>
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Discover shows and follow theater groups
@@ -303,7 +303,7 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
                   <span className="text-3xl">🎭</span>
                   <div>
                     <h3 className="font-sans font-semibold text-lg text-foreground group-hover:text-primary transition-colors tracking-tight">
-                      I'm a Theater Group
+                      I'm a Theater Group <span className="text-sm font-normal text-muted-foreground">(Free & Pro)</span>
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Submit shows and manage your group profile
