@@ -122,6 +122,8 @@ const AdminPanel = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUserCount, setTotalUserCount] = useState(0);
+  const [producerRequestsPage, setProducerRequestsPage] = useState(1);
+  const [totalProducerRequestsCount, setTotalProducerRequestsCount] = useState(0);
 
   // Dev tools state
   const [devModalOpen, setDevModalOpen] = useState(false);
@@ -232,18 +234,23 @@ const AdminPanel = () => {
 
   // Fetch producer requests
   const fetchProducerRequests = useCallback(async () => {
-    const { data, error } = await supabase
+    const start = (producerRequestsPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE - 1;
+
+    const { data, count, error } = await supabase
       .from("producer_requests")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", "pending")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(start, end);
 
     if (error) {
       console.error("Error fetching producer requests:", error);
     } else {
       setProducerRequests(data as ProducerRequest[]);
+      if (count !== null) setTotalProducerRequestsCount(count);
     }
-  }, []);
+  }, [producerRequestsPage]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -1098,6 +1105,75 @@ const AdminPanel = () => {
                       </div>
                     ))}
                   </div>
+                  {Math.ceil(totalProducerRequestsCount / ITEMS_PER_PAGE) > 1 && (
+                    <div className="mt-4 border-t border-secondary/20 pt-4">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious
+                              onClick={() => setProducerRequestsPage(p => Math.max(1, p - 1))}
+                              className={producerRequestsPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+
+                          {(() => {
+                            const totalPages = Math.ceil(totalProducerRequestsCount / ITEMS_PER_PAGE);
+                            const pages = [];
+
+                            pages.push(1);
+
+                            const start = Math.max(2, producerRequestsPage - 1);
+                            const end = Math.min(totalPages - 1, producerRequestsPage + 1);
+
+                            if (start > 2) {
+                              pages.push('ellipsis-start');
+                            }
+
+                            for (let i = start; i <= end; i++) {
+                              pages.push(i);
+                            }
+
+                            if (end < totalPages - 1) {
+                              pages.push('ellipsis-end');
+                            }
+
+                            if (totalPages > 1) {
+                              pages.push(totalPages);
+                            }
+
+                            return pages.map((page, i) => {
+                              if (typeof page === 'string') {
+                                return (
+                                  <PaginationItem key={`ellipsis-prod-${i}`}>
+                                    <PaginationEllipsis />
+                                  </PaginationItem>
+                                );
+                              }
+
+                              return (
+                                <PaginationItem key={`prod-${page}`}>
+                                  <PaginationLink
+                                    isActive={page === producerRequestsPage}
+                                    onClick={() => setProducerRequestsPage(page as number)}
+                                    className="cursor-pointer"
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            });
+                          })()}
+
+                          <PaginationItem>
+                            <PaginationNext
+                              onClick={() => setProducerRequestsPage(p => Math.min(Math.ceil(totalProducerRequestsCount / ITEMS_PER_PAGE), p + 1))}
+                              className={producerRequestsPage === Math.ceil(totalProducerRequestsCount / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  )}
                 </div>
               )}
 
