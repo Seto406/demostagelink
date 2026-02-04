@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdBanner } from "@/components/ads/AdBanner";
 import {
   Dialog,
   DialogContent,
@@ -333,7 +334,10 @@ const UserFeed = () => {
              ) : (
                 <div className="space-y-6">
                    {displayShows.map((show, index) => (
-                      <FeedPost key={show.id} show={show} />
+                      <React.Fragment key={show.id}>
+                        <FeedPost show={show} />
+                        {index === 1 && <AdBanner format="horizontal" />}
+                      </React.Fragment>
                    ))}
 
                    <div className="text-center py-8 text-muted-foreground">
@@ -348,6 +352,8 @@ const UserFeed = () => {
 
           {/* Right Sidebar - Widgets */}
           <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6">
+             <AdBanner format="box" />
+
              {/* Suggested Producers Widget */}
              <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="pb-3">
