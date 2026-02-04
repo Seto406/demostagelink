@@ -68,6 +68,7 @@ const Settings = () => {
   const { isPro, initiateCheckout, isCheckingOut, isLoading: subLoading } = useSubscription();
   
   // Profile form state
+  const [username, setUsername] = useState("");
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
   const [foundedYear, setFoundedYear] = useState<string>("");
@@ -125,6 +126,7 @@ const Settings = () => {
   // Load profile data
   useEffect(() => {
     if (profile) {
+      setUsername(profile.username || "");
       setGroupName(profile.group_name || "");
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
@@ -166,7 +168,9 @@ const Settings = () => {
     
     setSaving(true);
     try {
-      const updateData: Record<string, unknown> = {};
+      const updateData: Record<string, unknown> = {
+        username: username || null,
+      };
       
       if (profile.role === "producer") {
         updateData.group_name = groupName || null;
@@ -582,6 +586,29 @@ const Settings = () => {
                       }
                     </span>
                   </div>
+                </div>
+
+                <div className="pt-4 border-t border-secondary/10">
+                  <Label htmlFor="username" className="text-muted-foreground text-sm mb-1 block">Username / Display Name</Label>
+                  <div className="flex gap-3">
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your username"
+                      className="bg-background border-secondary/30"
+                    />
+                    <Button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      size="sm"
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This is how you will appear in comments and reviews.
+                  </p>
                 </div>
               </div>
             </motion.section>

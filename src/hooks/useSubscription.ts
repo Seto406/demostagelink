@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/config/pricing";
 
 export const useSubscription = () => {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ export const useSubscription = () => {
     try {
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
         body: {
-          amount: 39900, // 399.00 PHP in centavos
+          amount: SUBSCRIPTION_PRICE_CENTS,
           description: "StageLink Pro Subscription",
           redirect_url: window.location.origin + "/payment/success",
         },

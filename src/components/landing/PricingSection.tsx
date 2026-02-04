@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SUBSCRIPTION_PRICE_DISPLAY, SUBSCRIPTION_PERIOD } from "@/config/pricing";
 
 const plans = [
   {
@@ -31,8 +32,8 @@ const plans = [
   },
   {
     name: "Pro Producer",
-    price: "₱399",
-    period: "/month",
+    price: SUBSCRIPTION_PRICE_DISPLAY,
+    period: SUBSCRIPTION_PERIOD,
     description: "For established groups ready to grow their audience",
     features: [
       "Everything in Free, plus:",
