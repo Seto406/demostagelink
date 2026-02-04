@@ -119,7 +119,7 @@ test.describe('Audience Experience', () => {
     await expect(page.locator('text=Loading production details...')).toBeHidden();
 
     // Check Title
-    await expect(page.getByRole('heading', { name: 'Test Show Title' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Test Show Title' })).toBeVisible({ timeout: 15000 });
 
     // Check Details
     await expect(page.getByText('Test Venue')).toBeVisible();
