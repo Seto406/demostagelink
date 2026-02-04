@@ -36,6 +36,7 @@ import { GroupMembers } from "@/components/dashboard/GroupMembers";
 import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 interface Show {
   id: string;
@@ -675,6 +676,8 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
+              <AdBanner format="horizontal" />
+
               <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
                 <div className="bg-card border border-secondary/20 p-6">
                   <p className="text-muted-foreground text-sm mb-2">Total Productions</p>

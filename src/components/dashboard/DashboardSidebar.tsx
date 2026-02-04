@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { LayoutDashboard, Film, User, Users, LogOut, X, BarChart } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 export type DashboardTab = "dashboard" | "shows" | "profile" | "members" | "analytics";
 
@@ -108,6 +109,12 @@ export const DashboardSidebar = ({
             {sidebarOpen && <span>Members</span>}
           </button>
         </nav>
+
+        {sidebarOpen && (
+          <div className="px-4 pb-4">
+             <AdBanner format="box" />
+          </div>
+        )}
 
         {/* Logout */}
         <div className="p-4 border-t border-sidebar-border">
