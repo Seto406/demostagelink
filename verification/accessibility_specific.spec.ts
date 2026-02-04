@@ -1,6 +1,23 @@
 import { test, expect } from '@playwright/test';
 
 test('Floating Input Accessibility Check', async ({ page }) => {
+  // Mock Auth to prevent hanging on session check
+  await page.route('**/auth/v1/session', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ session: null })
+    });
+  });
+
+  await page.route('**/auth/v1/user', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ user: null })
+    });
+  });
+
   // Go to login page where FloatingInput is used
   await page.goto('/login');
 
