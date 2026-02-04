@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { AuthForm } from "@/components/auth/AuthForm";
 import heroTheater from "@/assets/landing/hero-theater.jpg";
+import TheaterMarquee from "@/components/ui/theater-marquee";
 
 export const CinematicLanding = () => {
   return (
@@ -15,6 +16,11 @@ export const CinematicLanding = () => {
         {/* Gradients/Overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background/90" />
         <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
+      </div>
+
+      {/* Live Ticker */}
+      <div className="absolute bottom-0 left-0 w-full z-30">
+        <TheaterMarquee />
       </div>
 
       <div className="container relative z-10 px-4 flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-24 pt-20">

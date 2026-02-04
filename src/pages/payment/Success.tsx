@@ -5,10 +5,12 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGamification } from "@/hooks/useGamification";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addXp } = useGamification();
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
 
@@ -22,6 +24,8 @@ const PaymentSuccess = () => {
         if (data.status === "paid") {
           setStatus("success");
           setMessage("Payment successful! Your subscription is now active.");
+          // Award XP for payment
+          addXp(100);
           // Invalidate subscription query to refresh status
           queryClient.invalidateQueries({ queryKey: ["subscription"] });
         } else if (data.status === "pending") {
