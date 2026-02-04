@@ -19,7 +19,7 @@ export const CinematicLanding = () => {
       </div>
 
       {/* Live Ticker */}
-      <div className="absolute bottom-0 left-0 w-full z-30">
+      <div className="fixed bottom-0 left-0 w-full z-30">
         <TheaterMarquee />
       </div>
 
