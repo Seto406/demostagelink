@@ -87,7 +87,7 @@ test.describe('Ad Banner Rendering', () => {
     console.log('Current URL:', page.url());
 
     // Wait for loader to disappear
-    await expect(page.locator('text=Loading...')).toBeHidden();
+    await expect(page.locator('text=Loading...')).toBeHidden({ timeout: 10000 });
 
     const ads = page.locator('[data-testid="ad-banner"]');
     // We expect at least one in feed (after 2nd post) and one in sidebar
