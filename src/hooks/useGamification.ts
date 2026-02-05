@@ -29,18 +29,24 @@ export const useGamification = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from("user_badges")
-        .select("*, badges(*)")
-        .eq("user_id", user.id);
+      try {
+        const { data, error } = await supabase
+          .from("user_badges")
+          .select("*, badges(*)")
+          .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Error fetching badges:", error);
-        throw error;
+        if (error) {
+          console.error("Error fetching badges:", error);
+          // Return empty array on error to prevent crashing
+          return [];
+        }
+
+        // Cast the response to match our interface, assuming Supabase join returns an object or array
+        return data as unknown as UserBadge[];
+      } catch (err) {
+        console.error("Unexpected error fetching badges:", err);
+        return [];
       }
-
-      // Cast the response to match our interface, assuming Supabase join returns an object or array
-      return data as unknown as UserBadge[];
     },
     enabled: !!user,
   });
