@@ -69,18 +69,21 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0 }}
       layout
     >
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
-        <Link
-          to={`/show/${show.id}`}
+        <div
           className="block bg-card border border-secondary/20 overflow-hidden group relative flex flex-col h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
+          <Link to={`/show/${show.id}`} className="absolute inset-0 z-10">
+            <span className="sr-only">View {show.title}</span>
+          </Link>
+
           {/* Poster */}
           <div className="aspect-[2/3] relative overflow-hidden">
             {posterUrl ? (
@@ -137,7 +140,7 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
               <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
                 {show.title}
               </h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 relative z-20">
                 {show.profiles?.avatar_url ? (
                   <img 
                     src={show.profiles.avatar_url} 
@@ -178,7 +181,7 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
 
               {/* Buy Ticket Button */}
               {show.ticket_link && (
-                <div className="mt-4 pt-2 border-t border-white/10">
+                <div className="mt-4 pt-2 border-t border-white/10 relative z-20">
                   <Button
                     size="sm"
                     className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
@@ -196,9 +199,9 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
             </div>
 
             {/* Hover border effect */}
-            <div className="absolute inset-0 border-2 border-secondary/0 group-hover:border-secondary/50 transition-colors duration-300" />
+            <div className="absolute inset-0 border-2 border-secondary/0 group-hover:border-secondary/50 transition-colors duration-300 pointer-events-none" />
           </div>
-        </Link>
+        </div>
       </TiltCard>
     </motion.div>
   );

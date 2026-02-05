@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface PayMongoPayment {
+  attributes: {
+    status: string;
+    [key: string]: unknown;
+  };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -112,7 +119,7 @@ serve(async (req) => {
     // Wait, payment_intent is expanded? Usually id.
     // Let's rely on `payments` attribute.
     const paymentsList = session.attributes.payments || [];
-    const successfulPayment = paymentsList.find((p: any) => p.attributes.status === "paid");
+    const successfulPayment = paymentsList.find((p: PayMongoPayment) => p.attributes.status === "paid");
 
     let isPaid = false;
     if (successfulPayment) {

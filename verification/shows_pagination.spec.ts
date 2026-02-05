@@ -11,16 +11,21 @@ test.describe('Shows Pagination', () => {
     });
 
     // Mock Metadata Fetch
-    await page.route('**/rest/v1/shows?select=city*', async route => {
-         console.log('Mocking Metadata Fetch');
-         await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify([
-                { city: 'Manila', genre: 'Drama', niche: 'local' },
-                { city: 'Quezon City', genre: 'Musical', niche: 'university' }
-            ])
-         });
+    await page.route(/.*rest\/v1\/shows.*/, async route => {
+         const url = route.request().url();
+         if (url.includes('select=city') && !url.includes('id')) {
+             console.log('Mocking Metadata Fetch');
+             await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([
+                    { city: 'Manila', genre: 'Drama', niche: 'local' },
+                    { city: 'Quezon City', genre: 'Musical', niche: 'university' }
+                ])
+             });
+         } else {
+             await route.fallback();
+         }
     });
   });
 
@@ -79,8 +84,11 @@ test.describe('Shows Pagination', () => {
 
     await page.goto('/shows');
 
+    // Wait for loader to disappear
+    await expect(page.locator('text=Loading...')).toBeHidden({ timeout: 20000 });
+
     // Initial Load
-    await expect(page.getByText('Show P0-0')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Show P0-0' })).toBeVisible({ timeout: 20000 });
 
     // Check Load More
     const loadMoreBtn = page.getByRole('button', { name: /Load More/i });
@@ -88,7 +96,7 @@ test.describe('Shows Pagination', () => {
     await loadMoreBtn.click();
 
     // Verify Page 1 (Second page)
-    await expect(page.getByText('Show P1-0')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Show P1-0' })).toBeVisible({ timeout: 20000 });
     await expect(loadMoreBtn).toBeHidden();
   });
 });
