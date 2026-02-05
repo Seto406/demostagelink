@@ -123,7 +123,7 @@ serve(async (req) => {
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
-        user_id: profile.id,
+        user_id: user.id,
         paymongo_checkout_id: checkoutId,
         amount: Number(amount),
         status: "pending",
