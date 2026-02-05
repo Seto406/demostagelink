@@ -36,6 +36,8 @@ import { GroupMembers } from "@/components/dashboard/GroupMembers";
 import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
+import { TagInput } from "@/components/ui/tag-input";
+import { ImageCropper } from "@/components/ui/image-cropper";
 
 interface Show {
   id: string;
@@ -107,7 +109,7 @@ const Dashboard = () => {
   const location = useLocation();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
-  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members" | "analytics">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [editingShow, setEditingShow] = useState<Show | null>(null);
@@ -127,12 +129,14 @@ const Dashboard = () => {
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [newShowTicketLink, setNewShowTicketLink] = useState("");
   const [newShowPrice, setNewShowPrice] = useState("");
-  const [newShowGenre, setNewShowGenre] = useState("");
+  const [newShowGenre, setNewShowGenre] = useState<string[]>([]);
   const [newShowDirector, setNewShowDirector] = useState("");
   const [newShowDuration, setNewShowDuration] = useState("");
   const [newShowTags, setNewShowTags] = useState("");
   const [newShowCast, setNewShowCast] = useState("");
   const [newShowProductionStatus, setNewShowProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
 
   // Profile form states
   const [groupName, setGroupName] = useState("");
@@ -156,18 +160,12 @@ const Dashboard = () => {
     }
   }, [user, profile, loading, navigate]);
 
-  // Handle URL routing for analytics
+  // Handle URL routing
   useEffect(() => {
     if (location.pathname === "/dashboard/analytics") {
-      setActiveTab("analytics");
-    } else if (location.pathname === "/dashboard") {
-      // Keep dashboard as default, but if we were previously in analytics and clicked back to dashboard,
-      // we might want to ensure tab is synced. But "dashboard" is handled by the default state or user click.
-      if (activeTab === "analytics") {
-        setActiveTab("dashboard");
-      }
+      setActiveTab("dashboard");
     }
-  }, [location.pathname, activeTab]);
+  }, [location.pathname]);
 
   // Load profile data
   useEffect(() => {
@@ -271,7 +269,7 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handlePosterSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -296,20 +294,21 @@ const Dashboard = () => {
       return;
     }
 
-    try {
-      const resizedFile = await resizeImage(file);
-      setPosterFile(resizedFile);
-      setPosterPreview(URL.createObjectURL(resizedFile));
-    } catch (error) {
-      console.error("Image resizing failed:", error);
-      toast({
-        title: "Image optimization failed",
-        description: "Using original image.",
-        variant: "destructive",
-      });
-      setPosterFile(file);
-      setPosterPreview(URL.createObjectURL(file));
-    }
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setTempPosterSrc(reader.result?.toString() || "");
+      setCropperOpen(true);
+    });
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const onCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], "poster.jpg", { type: "image/jpeg" });
+    setPosterFile(file);
+    setPosterPreview(URL.createObjectURL(croppedBlob));
+    setCropperOpen(false);
+    setTempPosterSrc(null);
   };
 
   const clearPoster = () => {
@@ -329,7 +328,7 @@ const Dashboard = () => {
     setNewShowNiche("local");
     setNewShowTicketLink("");
     setNewShowPrice("");
-    setNewShowGenre("");
+    setNewShowGenre([]);
     setNewShowDirector("");
     setNewShowDuration("");
     setNewShowTags("");
@@ -354,7 +353,7 @@ const Dashboard = () => {
     setNewShowNiche(show.niche || "local");
     setNewShowTicketLink(show.ticket_link || "");
     setNewShowPrice(show.price?.toString() || "");
-    setNewShowGenre(show.genre || "");
+    setNewShowGenre(show.genre ? show.genre.split(",").map(g => g.trim()) : []);
     setNewShowDirector(show.director || "");
     setNewShowDuration(show.duration || "");
     setNewShowTags(show.tags?.join(", ") || "");
@@ -368,6 +367,22 @@ const Dashboard = () => {
   const handleAddShow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !user) return;
+
+    const errors: string[] = [];
+    if (!newShowTitle) errors.push("Title");
+    if (!newShowDate) errors.push("Show Date");
+    if (!newShowVenue) errors.push("Venue");
+    if (!newShowCity) errors.push("City");
+    if (!newShowNiche) errors.push("Type (Niche)");
+
+    if (errors.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please fill in: ${errors.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploadingPoster(true);
     let posterUrl: string | null = null;
@@ -408,7 +423,7 @@ const Dashboard = () => {
           poster_url: posterUrl,
           ticket_link: newShowTicketLink || null,
           price: newShowPrice ? parseFloat(newShowPrice) : 0,
-          genre: newShowGenre || null,
+          genre: newShowGenre.length > 0 ? newShowGenre.join(", ") : null,
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
@@ -475,7 +490,7 @@ const Dashboard = () => {
           production_status: newShowProductionStatus,
           ticket_link: newShowTicketLink || null,
           price: newShowPrice ? parseFloat(newShowPrice) : 0,
-          genre: newShowGenre || null,
+          genre: newShowGenre.length > 0 ? newShowGenre.join(", ") : null,
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
@@ -658,7 +673,6 @@ const Dashboard = () => {
           </div>
           <h1 className="font-serif text-xl text-foreground">
             {activeTab === "dashboard" && "Dashboard"}
-            {activeTab === "analytics" && "Analytics"}
             {activeTab === "shows" && "My Productions"}
             {activeTab === "profile" && "Group Profile"}
             {activeTab === "members" && "Group Members"}
@@ -694,6 +708,13 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {profile && (
+                <div className="space-y-4">
+                  <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
+                  <AnalyticsDashboard profileId={profile.id} />
+                </div>
+              )}
+
               <div id="quick-actions-container" className="bg-card border border-secondary/20 p-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
                 {isTrialExpired ? (
@@ -714,11 +735,6 @@ const Dashboard = () => {
                 )}
               </div>
             </motion.div>
-          )}
-
-          {/* Analytics Tab */}
-          {activeTab === "analytics" && profile && (
-            <AnalyticsDashboard profileId={profile.id} />
           )}
 
           {/* Shows Tab */}
@@ -960,6 +976,19 @@ const Dashboard = () => {
         </div>
       </main>
 
+      {tempPosterSrc && (
+        <ImageCropper
+          imageSrc={tempPosterSrc}
+          open={cropperOpen}
+          onCropComplete={onCropComplete}
+          onCancel={() => {
+            setCropperOpen(false);
+            setTempPosterSrc(null);
+          }}
+          aspect={2 / 3}
+        />
+      )}
+
       {/* Add/Edit Show Modal */}
       <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) resetForm(); }}>
         <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto">
@@ -1116,12 +1145,17 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="showGenre">Genre</Label>
-                <Input
+                <TagInput
                   id="showGenre"
-                  value={newShowGenre}
-                  onChange={(e) => setNewShowGenre(e.target.value)}
-                  placeholder="e.g., Drama, Musical, Comedy"
-                  className="bg-background border-secondary/30"
+                  tags={newShowGenre}
+                  setTags={setNewShowGenre}
+                  placeholder="Type genre and press Enter..."
+                  suggestions={[
+                    "Drama", "Comedy", "Musical", "Tragedy", "Opera",
+                    "Ballet", "Improv", "Experimental", "Children's Theatre",
+                    "Pantomime", "Farce", "Satire", "Historical"
+                  ]}
+                  className="bg-background"
                 />
               </div>
               <div className="space-y-2">

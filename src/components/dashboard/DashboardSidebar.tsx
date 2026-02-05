@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Film, User, Users, LogOut, X, BarChart } from "lucide-react";
+import { LayoutDashboard, Film, User, Users, LogOut, X } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
-export type DashboardTab = "dashboard" | "shows" | "profile" | "members" | "analytics";
+export type DashboardTab = "dashboard" | "shows" | "profile" | "members";
 
 interface DashboardSidebarProps {
   activeTab: string;
@@ -57,18 +57,6 @@ export const DashboardSidebar = ({
           >
             <LayoutDashboard className="w-5 h-5" />
             {sidebarOpen && <span>Dashboard</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "analytics"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <BarChart className="w-5 h-5" />
-            {sidebarOpen && <span>Analytics</span>}
           </button>
 
           <button
