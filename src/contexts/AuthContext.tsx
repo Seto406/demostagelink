@@ -48,6 +48,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
         console.log("Playwright Test detected: Force disabling auth loader");
+        // Inject mock user if provided
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mockUser = (window as any).PlaywrightUser;
+
+        if (mockUser) {
+            console.log("Injecting Playwright Mock User");
+            setUser(mockUser);
+            setSession({
+                access_token: "mock-token",
+                token_type: "bearer",
+                expires_in: 3600,
+                refresh_token: "mock-refresh",
+                user: mockUser,
+                expires_at: 9999999999
+            } as Session);
+            // We also need to trigger profile load or set profile
+            ensureProfile(mockUser.id, mockUser.user_metadata);
+        }
         setLoading(false);
     }
   }, []);
@@ -140,6 +158,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // SKIP Supabase Auth listeners if in Playwright Test mode to prevent race conditions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
+        console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
+        return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
