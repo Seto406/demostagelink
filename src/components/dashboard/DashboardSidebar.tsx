@@ -27,9 +27,9 @@ export const DashboardSidebar = ({
     >
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
+        <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <img src={stageLinkLogo} alt="StageLink" className="h-10 w-auto" />
+            <img src={stageLinkLogo} alt="StageLink" className="h-10 w-auto shrink-0" />
             {sidebarOpen && (
               <span className="text-lg font-serif font-bold text-sidebar-foreground">
                 Stage<span className="text-sidebar-accent">Link</span>
