@@ -166,27 +166,36 @@ const AdminPanel = () => {
 
   // Fetch stats
   const fetchStats = useCallback(async () => {
-    const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact" }),
-      supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
-      supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
-      supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
-      supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
-      supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null),
-      supabase.from("shows").select("id", { count: "exact" }).eq("status", "approved").is("deleted_at", null),
-      supabase.from("shows").select("id", { count: "exact" }).eq("status", "rejected").is("deleted_at", null),
-    ]);
+    try {
+      const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact" }),
+        supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
+        supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
+        supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
+        supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
+        supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null),
+        supabase.from("shows").select("id", { count: "exact" }).eq("status", "approved").is("deleted_at", null),
+        supabase.from("shows").select("id", { count: "exact" }).eq("status", "rejected").is("deleted_at", null),
+      ]);
 
-    setStats({
-      totalUsers: usersRes.count || 0,
-      totalShows: showsRes.count || 0,
-      activeProducers: producersRes.count || 0,
-      pendingRequests: requestsRes.count || 0,
-      deletedShows: deletedRes.count || 0,
-      pendingShows: pendingRes.count || 0,
-      approvedShows: approvedRes.count || 0,
-      rejectedShows: rejectedRes.count || 0,
-    });
+      setStats({
+        totalUsers: usersRes.count || 0,
+        totalShows: showsRes.count || 0,
+        activeProducers: producersRes.count || 0,
+        pendingRequests: requestsRes.count || 0,
+        deletedShows: deletedRes.count || 0,
+        pendingShows: pendingRes.count || 0,
+        approvedShows: approvedRes.count || 0,
+        rejectedShows: rejectedRes.count || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics.",
+        variant: "destructive",
+      });
+    }
   }, []);
 
   // Fetch all shows for admin
