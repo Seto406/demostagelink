@@ -4,13 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 export const useFavorites = () => {
-  const { user } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch user's favorites
   const fetchFavorites = useCallback(async () => {
-    if (!user) {
+    // Wait for auth initialization
+    if (authLoading) return;
+
+    if (!user || !profile) {
       setFavorites([]);
       setLoading(false);
       return;
@@ -20,7 +23,7 @@ export const useFavorites = () => {
       const { data, error } = await supabase
         .from('favorites')
         .select('show_id')
-        .eq('user_id', user.id);
+        .eq('user_id', profile.id);
 
       if (error) throw error;
       setFavorites(data?.map(f => f.show_id) || []);
@@ -28,7 +31,7 @@ export const useFavorites = () => {
       console.error('Error fetching favorites:', error);
     }
     setLoading(false);
-  }, [user]);
+  }, [user, profile, authLoading]);
 
   useEffect(() => {
     fetchFavorites();
@@ -40,6 +43,15 @@ export const useFavorites = () => {
         title: "Login Required",
         description: "Please log in to save favorites.",
         variant: "destructive",
+      });
+      return;
+    }
+
+    if (!profile) {
+      toast({
+        title: "Profile Loading",
+        description: "Please wait while your profile loads.",
+        variant: "default", // Informational
       });
       return;
     }
@@ -58,14 +70,14 @@ export const useFavorites = () => {
         const { error } = await supabase
           .from('favorites')
           .delete()
-          .eq('user_id', user.id)
+          .eq('user_id', profile.id)
           .eq('show_id', showId);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('favorites')
-          .insert({ user_id: user.id, show_id: showId });
+          .insert({ user_id: profile.id, show_id: showId });
 
         if (error) throw error;
         
@@ -86,6 +98,7 @@ export const useFavorites = () => {
         description: "Failed to update favorites.",
         variant: "destructive",
       });
+      console.error('Toggle favorite error:', error);
     }
   };
 
