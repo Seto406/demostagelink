@@ -134,6 +134,20 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
     initializedRef.current = true;
 
     const lastActivity = getStoredLastActivity();
+
+    // Check if this is a fresh login or verification
+    // If the user signed in AFTER the last stored activity, it's a new session
+    const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : 0;
+    const isFreshLogin = lastSignIn > lastActivity;
+
+    // Also explicitly handle verification page to avoid race conditions
+    const isVerifying = location.pathname === "/verify-email";
+
+    if (isFreshLogin || isVerifying) {
+      resetTimer(true);
+      return;
+    }
+
     const now = Date.now();
     const elapsed = now - lastActivity;
 
@@ -167,7 +181,7 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
         handleLogout();
       }, timeUntilLogout);
     }
-  }, [user, getStoredLastActivity, handleLogout, startCountdown]);
+  }, [user, getStoredLastActivity, handleLogout, startCountdown, resetTimer, location.pathname]);
 
   const handleStayLoggedIn = useCallback(() => {
     setShowWarning(false);
