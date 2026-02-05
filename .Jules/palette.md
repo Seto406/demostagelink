@@ -17,3 +17,7 @@
 ## 2024-05-24 - Interactive User Identity
 **Learning:** In social feeds, users expect avatars and names to be clickable links to profiles. Static text breaks this mental model.
 **Action:** Always wrap user identity elements (Avatar, Name) in `Link` components pointing to their profile or group page.
+
+## 2025-05-15 - Tooltips on Icon Buttons
+**Learning:** Icon-only buttons (Settings, Notifications, Favorites) in the Navbar were inaccessible and ambiguous. Adding Tooltips resolved this, but verifying authenticated states via Playwright proved difficult due to Supabase Auth mocking complexities.
+**Action:** Consistently apply Tooltips to all icon-only buttons. For verification, if auth mocking is flaky, rely on unauthenticated state checks and code review/build validation.

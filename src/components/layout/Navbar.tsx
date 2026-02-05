@@ -6,6 +6,11 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Navbar = () => {
   const location = useLocation();
@@ -177,24 +182,52 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
-                  <Link to="/settings">
-                    <Button variant="ghost" size="sm">
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                  <Link to="/notifications">
-                    <Button variant="ghost" size="sm" className="relative">
-                      <Bell className="w-4 h-4" />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
-                      )}
-                    </Button>
-                  </Link>
-                  <Link to="/favorites">
-                    <Button variant="ghost" size="sm">
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to="/settings">
+                        <Button variant="ghost" size="sm" aria-label="Settings">
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Settings</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to="/notifications">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="relative"
+                          aria-label="Notifications"
+                        >
+                          <Bell className="w-4 h-4" />
+                          {unreadCount > 0 && (
+                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+                          )}
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Notifications</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to="/favorites">
+                        <Button variant="ghost" size="sm" aria-label="Favorites">
+                          <Heart className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Favorites</p>
+                    </TooltipContent>
+                  </Tooltip>
                   <Button variant="outline" size="sm" onClick={handleSignOut} className="rounded-xl">
                     Sign Out
                   </Button>
