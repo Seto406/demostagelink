@@ -131,15 +131,10 @@ const Settings = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
-      // @ts-expect-error - avatar_url is newly added
       setAvatarUrl(profile.avatar_url || null);
-      // @ts-expect-error - social links are newly added
       setFacebookUrl(profile.facebook_url || "");
-      // @ts-expect-error - social links are newly added
       setInstagramUrl(profile.instagram_url || "");
-      // @ts-expect-error - address is newly added
       setAddress(profile.address || "");
-      // @ts-expect-error - map screenshot is newly added
       setMapScreenshotUrl(profile.map_screenshot_url || null);
     }
   }, [profile]);

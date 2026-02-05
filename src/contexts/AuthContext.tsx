@@ -16,6 +16,10 @@ interface Profile {
   username: string | null;
   rank: string | null;
   xp: number | null;
+  avatar_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  address: string | null;
 }
 
 interface AuthContextType {
