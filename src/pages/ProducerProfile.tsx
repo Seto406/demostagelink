@@ -18,6 +18,7 @@ interface Producer {
   avatar_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  map_screenshot_url: string | null;
 }
 
 interface Show {
@@ -47,7 +48,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url")
+        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, map_screenshot_url")
         .eq("id", id)
         .maybeSingle();
 
@@ -222,6 +223,40 @@ const ProducerProfile = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Location Section */}
+          {producer.map_screenshot_url && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="mb-12"
+            >
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
+                Location
+              </h2>
+              <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden shadow-sm">
+                {producer.map_screenshot_url.startsWith("<iframe") ? (
+                   <div
+                     className="w-full aspect-video [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
+                     dangerouslySetInnerHTML={{ __html: producer.map_screenshot_url }}
+                   />
+                ) : (
+                  <div className="w-full h-64 md:h-80 bg-muted relative">
+                    <img
+                      src={producer.map_screenshot_url}
+                      alt="Location Map"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-medium border border-secondary/20 shadow-sm flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-secondary" />
+                      View Location
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Shows Section */}
           <motion.div
