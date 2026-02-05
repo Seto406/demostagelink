@@ -105,7 +105,7 @@ test.describe('Audience Experience', () => {
     await expect(page.getByRole('heading', { name: 'All Productions' })).toBeVisible({ timeout: 15000 });
 
     // Check Show Card
-    await expect(page.getByText('Test Show Title')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Test Show Title' })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Test Producer Group')).toBeVisible();
 
     // Check City Filter (verifies cities were extracted)
