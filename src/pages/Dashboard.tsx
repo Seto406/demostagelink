@@ -147,6 +147,7 @@ const Dashboard = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [mapPreview, setMapPreview] = useState<string | null>(null);
+  const [mapEmbedUrl, setMapEmbedUrl] = useState("");
   const [uploadingProfile, setUploadingProfile] = useState(false);
 
   // Redirect if not logged in or not a producer
@@ -175,7 +176,13 @@ const Dashboard = () => {
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
       setAvatarPreview(profile.avatar_url || null);
-      setMapPreview(profile.map_screenshot_url || null);
+      if (profile.map_screenshot_url && profile.map_screenshot_url.startsWith("<iframe")) {
+        setMapEmbedUrl(profile.map_screenshot_url);
+        setMapPreview(null);
+      } else {
+        setMapPreview(profile.map_screenshot_url || null);
+        setMapEmbedUrl("");
+      }
     }
   }, [profile]);
 
@@ -547,8 +554,12 @@ const Dashboard = () => {
         avatarUrl = publicUrl;
       }
 
-      // Upload map if changed
-      if (mapFile) {
+      // Handle Map Update logic
+      if (mapEmbedUrl.trim()) {
+        // If embed URL is provided, prioritize it
+        mapUrl = mapEmbedUrl.trim();
+      } else if (mapFile) {
+        // Upload map if changed and no embed URL
         const fileExt = mapFile.name.split(".").pop();
         const fileName = `${profile.id}/map_${Date.now()}.${fileExt}`;
 
@@ -563,6 +574,9 @@ const Dashboard = () => {
           .getPublicUrl(fileName);
 
         mapUrl = publicUrl;
+      } else if (!mapPreview && !mapEmbedUrl) {
+        // If both are empty/cleared
+        mapUrl = null;
       }
 
       const { error } = await supabase
@@ -588,7 +602,7 @@ const Dashboard = () => {
       console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -827,13 +841,14 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="max-w-2xl space-y-6"
+              className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
             >
-              <div className="bg-card border border-secondary/20 p-6 ios-rounded">
-                <h2 className="font-serif text-xl text-foreground mb-8">Group Information</h2>
+              {/* Left Column: Basic Info */}
+              <div className="bg-card border border-secondary/20 p-6 ios-rounded space-y-6">
+                <h2 className="font-serif text-xl text-foreground mb-4">Group Information</h2>
 
                 {/* Avatar Upload */}
-                <div className="flex flex-col items-center mb-8">
+                <div className="flex flex-col items-center mb-6">
                   <div className="relative w-32 h-32 mb-4 group cursor-pointer">
                     <label className="cursor-pointer block w-full h-full rounded-full overflow-hidden border-2 border-dashed border-secondary/30 hover:border-secondary transition-colors relative">
                       <input
@@ -862,7 +877,7 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">Tap to change group logo</p>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-6">
                   <FloatingInput
                     label="Group Name"
                     value={groupName}
@@ -897,7 +912,24 @@ const Dashboard = () => {
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
+                  <RippleButton
+                    onClick={handleUpdateProfile}
+                    variant="ios"
+                    size="lg"
+                    className="w-full"
+                    disabled={uploadingProfile}
+                  >
+                    {uploadingProfile ? "Saving..." : "Save Profile"}
+                  </RippleButton>
+                </div>
+              </div>
+
+              {/* Right Column: Location & Visuals */}
+              <div className="space-y-6">
+                <div className="bg-card border border-secondary/20 p-6 ios-rounded">
+                  <h2 className="font-serif text-xl text-foreground mb-4">Location & Visuals</h2>
+
+                  <div className="space-y-4">
                     <Label className="text-sm font-medium text-muted-foreground">Upload Map Screenshot (Optional)</Label>
                     {mapPreview ? (
                       <div className="relative rounded-xl overflow-hidden border border-secondary/30">
@@ -917,7 +949,7 @@ const Dashboard = () => {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    ) : (
+                    ) : !mapEmbedUrl ? (
                       <label className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press block">
                         <input
                           type="file"
@@ -930,23 +962,41 @@ const Dashboard = () => {
                           Click to upload your venue map
                         </p>
                       </label>
-                    )}
+                    ) : null}
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-secondary/20" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">Or using Google Maps</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="mapEmbedUrl" className="text-sm font-medium text-muted-foreground">Google Maps Embed Link</Label>
+                      <Input
+                        id="mapEmbedUrl"
+                        value={mapEmbedUrl}
+                        onChange={(e) => {
+                          setMapEmbedUrl(e.target.value);
+                          if (e.target.value) {
+                            setMapFile(null);
+                            setMapPreview(null);
+                          }
+                        }}
+                        placeholder='<iframe src="https://www.google.com/maps/embed?...'
+                        className="bg-background border-secondary/30"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Paste the "Embed a map" HTML code from Google Maps here. This will override any uploaded map image.
+                      </p>
+                    </div>
                   </div>
-
-                  <RippleButton
-                    onClick={handleUpdateProfile}
-                    variant="ios"
-                    size="lg"
-                    className="w-full"
-                    disabled={uploadingProfile}
-                  >
-                    {uploadingProfile ? "Saving..." : "Save Profile"}
-                  </RippleButton>
                 </div>
-              </div>
 
-              {/* Application Settings Section */}
-              <div className="bg-card border border-secondary/20 p-6 ios-rounded">
+                {/* Application Settings Section (Moved to Right Column) */}
+                <div className="bg-card border border-secondary/20 p-6 ios-rounded">
                 <h2 className="font-serif text-xl text-foreground mb-4">Application Settings</h2>
                 <div className="flex items-center justify-between">
                   <div>
@@ -957,6 +1007,7 @@ const Dashboard = () => {
                     Restart Tour
                   </Button>
                 </div>
+              </div>
               </div>
             </motion.div>
           )}

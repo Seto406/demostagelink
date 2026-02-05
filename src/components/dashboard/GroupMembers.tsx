@@ -138,7 +138,7 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
       // Upload avatar if selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `members/${profileId}/${Date.now()}.${fileExt}`;
+        const fileName = `${profileId}/members/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from("avatars")
