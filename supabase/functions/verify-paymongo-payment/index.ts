@@ -45,10 +45,21 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Fetch Profile ID
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error("Failed to find user profile");
+    }
+
     const { data: payments, error: paymentError } = await supabaseAdmin
       .from("payments")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -145,7 +156,7 @@ serve(async (req) => {
           const { error: ticketError } = await supabaseAdmin
             .from("tickets")
             .insert({
-              user_id: user.id,
+              user_id: profile.id,
               show_id: showId,
               status: "confirmed",
               payment_id: payment.id,
