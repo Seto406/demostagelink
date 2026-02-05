@@ -30,6 +30,7 @@ export const useSubscription = () => {
     if (!user) return;
     setIsCheckingOut(true);
     try {
+      console.log("Initiating checkout...");
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
         body: {
           amount: SUBSCRIPTION_PRICE_CENTS,
@@ -38,18 +39,25 @@ export const useSubscription = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Function Error:", error);
+        throw error;
+      }
+
+      console.log("Checkout session created:", data);
 
       if (data?.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        throw new Error("No checkout URL returned");
+        console.error("Missing checkoutUrl in response:", data);
+        throw new Error("No checkout URL returned from payment provider");
       }
     } catch (error) {
       console.error("Checkout error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
         title: "Checkout Failed",
-        description: "Could not initiate payment. Please try again.",
+        description: `Could not initiate payment: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {

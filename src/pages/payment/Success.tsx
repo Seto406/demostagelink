@@ -25,7 +25,12 @@ const PaymentSuccess = () => {
           setStatus("success");
           setMessage("Payment successful! Your subscription is now active.");
           // Award XP for payment
-          addXp(100);
+          try {
+            await addXp(100);
+          } catch (xpError) {
+            console.error("Failed to award XP:", xpError);
+            // Non-blocking error
+          }
           // Invalidate subscription query to refresh status
           queryClient.invalidateQueries({ queryKey: ["subscription"] });
         } else if (data.status === "pending") {
