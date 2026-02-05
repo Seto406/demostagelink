@@ -108,10 +108,22 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Fetch Profile ID
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("Profile Fetch Error:", profileError);
+      throw new Error("Failed to find user profile");
+    }
+
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
-        user_id: user.id,
+        user_id: profile.id,
         paymongo_checkout_id: checkoutId,
         amount: Number(amount),
         status: "pending",
