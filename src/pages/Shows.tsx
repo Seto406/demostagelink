@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -63,12 +63,13 @@ interface Show {
 }
 
 // Enhanced Show Card component with 3D tilt
-const ShowCard = ({ show, index }: { show: Show; index: number }) => {
+const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ show, index }, ref) => {
   const posterUrl = posterMap[show.title] || show.poster_url;
   const { toggleFavorite, isFavorited } = useFavorites();
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -205,7 +206,8 @@ const ShowCard = ({ show, index }: { show: Show; index: number }) => {
       </TiltCard>
     </motion.div>
   );
-};
+});
+ShowCard.displayName = "ShowCard";
 
 const PAGE_SIZE = 12;
 
