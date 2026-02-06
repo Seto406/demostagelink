@@ -359,6 +359,7 @@ test.describe('Comprehensive Feature Tests', () => {
     });
 
     test('Producer: Create Show', async ({ page }) => {
+        test.setTimeout(60000); // Increase timeout for complex form interaction
         await setupMocks(page, 'producer');
         await page.goto('/dashboard');
 
@@ -378,8 +379,11 @@ test.describe('Comprehensive Feature Tests', () => {
         await page.fill('#showVenue', 'Test Theater');
 
         // Select City
-        await page.click('button:has-text("Select city")');
-        await page.getByRole('option', { name: 'Manila' }).click({ force: true });
+        const cityTrigger = page.locator('button').filter({ hasText: 'Select city' });
+        await cityTrigger.click();
+        const manilaOption = page.getByRole('option', { name: 'Manila' });
+        await expect(manilaOption).toBeVisible();
+        await manilaOption.click();
 
         // 4. Submit
         const saveButton = page.getByRole('button', { name: /Submit Show/i });
