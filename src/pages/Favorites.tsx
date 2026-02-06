@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import { Button } from "@/components/ui/button";
 import { FavoriteButton } from "@/components/ui/favorite-button";
+import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Heart } from "lucide-react";
@@ -110,19 +112,20 @@ const Favorites = () => {
               <BrandedLoader size="md" text="Loading favorites..." />
             </div>
           ) : shows.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <div className="text-6xl mb-4">💔</div>
-              <p className="text-muted-foreground mb-4">
-                No favorites yet. Start exploring shows and save the ones you love!
-              </p>
-              <Link to="/shows" className="text-secondary hover:underline">
-                Browse Shows →
-              </Link>
-            </motion.div>
+            <div className="max-w-lg mx-auto py-12">
+              <PremiumEmptyState
+                title="No Favorites Yet"
+                description="You haven't saved any shows to your favorites list. Explore our collection and click the heart icon to save shows for later."
+                icon={Heart}
+                action={
+                  <Link to="/shows">
+                    <Button className="bg-secondary hover:bg-secondary/90 text-primary-foreground">
+                      Browse Shows
+                    </Button>
+                  </Link>
+                }
+              />
+            </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {shows.map((show, index) => (
