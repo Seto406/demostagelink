@@ -179,6 +179,16 @@ test.describe('Full Site QA', () => {
             });
         });
 
+        // Mock User Badges
+        await page.route('**/rest/v1/user_badges*', async (route) => {
+             await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                headers: { 'Content-Range': '*/0' },
+                body: JSON.stringify([])
+            });
+        });
+
          // Mock Favorites
         await page.route('**/rest/v1/favorites*', async (route) => {
             const method = route.request().method();
