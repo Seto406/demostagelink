@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 const Footer = () => {
   return (
@@ -67,6 +68,10 @@ const Footer = () => {
               </li>
             </ul>
           </div>
+        </div>
+
+        <div className="mt-8 sm:mt-12">
+          <AdBanner format="horizontal" variant="placeholder" />
         </div>
 
         <div className="border-t border-secondary/10 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">

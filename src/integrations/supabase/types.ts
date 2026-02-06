@@ -190,6 +190,44 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          paymongo_checkout_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paymongo_checkout_id: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paymongo_checkout_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       producer_requests: {
         Row: {
           created_at: string
@@ -338,12 +376,14 @@ export type Database = {
           poster_url: string | null
           price: number | null
           producer_id: string
+          show_time: string | null
           status: Database["public"]["Enums"]["show_status"]
           tags: string[] | null
           ticket_link: string | null
           title: string
           updated_at: string
           venue: string | null
+          video_url: string | null
         }
         Insert: {
           cast_members?: string[] | null
@@ -360,12 +400,14 @@ export type Database = {
           poster_url?: string | null
           price?: number | null
           producer_id: string
+          show_time?: string | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
           ticket_link?: string | null
           title: string
           updated_at?: string
           venue?: string | null
+          video_url?: string | null
         }
         Update: {
           cast_members?: string[] | null
@@ -382,12 +424,14 @@ export type Database = {
           poster_url?: string | null
           price?: number | null
           producer_id?: string
+          show_time?: string | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
           ticket_link?: string | null
           title?: string
           updated_at?: string
           venue?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
