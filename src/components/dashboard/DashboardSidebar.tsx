@@ -49,6 +49,7 @@ export const DashboardSidebar = ({
         <nav className="flex-1 p-4 space-y-2">
           <button
             onClick={() => setActiveTab("dashboard")}
+            aria-label="Dashboard"
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "dashboard"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -61,6 +62,7 @@ export const DashboardSidebar = ({
 
           <button
             onClick={() => setActiveTab("shows")}
+            aria-label="My Productions"
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "shows"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -74,6 +76,7 @@ export const DashboardSidebar = ({
           <button
             id="profile-tab"
             onClick={() => setActiveTab("profile")}
+            aria-label="Profile"
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "profile"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -86,6 +89,7 @@ export const DashboardSidebar = ({
 
           <button
             onClick={() => setActiveTab("members")}
+            aria-label="Members"
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "members"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
