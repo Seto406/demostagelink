@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -152,17 +152,8 @@ const Directory = () => {
     setSearchParams(params, { replace: true });
   }, [selectedCity, selectedNiche, setSearchParams]);
 
-  // Reset pagination when filters change
-  useEffect(() => {
-    setPage(0);
-    // Don't clear groups here to avoid flash, but handle in fetch
-    // fetchGroups will be called with page=0 because page reset or direct call?
-    // We'll rely on the fetchGroups call.
-    fetchGroups(0, false);
-  }, [debouncedSearchQuery, selectedNiche, selectedCity]);
-
   // Fetch producer profiles
-  const fetchGroups = async (currentPage: number, isLoadMore: boolean) => {
+  const fetchGroups = useCallback(async (currentPage: number, isLoadMore: boolean) => {
     if (isLoadMore) {
         setIsFetchingMore(true);
     } else {
@@ -226,7 +217,16 @@ const Directory = () => {
         setLoading(false);
         setIsFetchingMore(false);
     }
-  };
+  }, [debouncedSearchQuery, selectedNiche, selectedCity]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setPage(0);
+    // Don't clear groups here to avoid flash, but handle in fetch
+    // fetchGroups will be called with page=0 because page reset or direct call?
+    // We'll rely on the fetchGroups call.
+    fetchGroups(0, false);
+  }, [fetchGroups]);
 
   const loadMore = () => {
     if (!loading && !isFetchingMore && hasMore) {
