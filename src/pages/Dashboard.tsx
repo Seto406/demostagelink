@@ -39,6 +39,11 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 
+interface CastMember {
+  name: string;
+  role: string;
+}
+
 interface Show {
   id: string;
   title: string;
@@ -56,7 +61,7 @@ interface Show {
   director: string | null;
   duration: string | null;
   tags: string[] | null;
-  cast_members: string[] | null;
+  cast_members: CastMember[] | null;
   price: number | null;
 }
 
@@ -133,7 +138,9 @@ const Dashboard = () => {
   const [newShowDirector, setNewShowDirector] = useState("");
   const [newShowDuration, setNewShowDuration] = useState("");
   const [newShowTags, setNewShowTags] = useState("");
-  const [newShowCast, setNewShowCast] = useState("");
+  const [newShowCast, setNewShowCast] = useState<CastMember[]>([]);
+  const [tempCastName, setTempCastName] = useState("");
+  const [tempCastRole, setTempCastRole] = useState("");
   const [newShowProductionStatus, setNewShowProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
   const [cropperOpen, setCropperOpen] = useState(false);
   const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
@@ -339,7 +346,9 @@ const Dashboard = () => {
     setNewShowDirector("");
     setNewShowDuration("");
     setNewShowTags("");
-    setNewShowCast("");
+    setNewShowCast([]);
+    setTempCastName("");
+    setTempCastRole("");
     setNewShowProductionStatus("ongoing");
     clearPoster();
     setEditingShow(null);
@@ -364,11 +373,29 @@ const Dashboard = () => {
     setNewShowDirector(show.director || "");
     setNewShowDuration(show.duration || "");
     setNewShowTags(show.tags?.join(", ") || "");
-    setNewShowCast(show.cast_members?.join(", ") || "");
+
+    // Parse cast members safely
+    const castData = show.cast_members && Array.isArray(show.cast_members)
+      ? (show.cast_members as unknown as CastMember[])
+      : [];
+    setNewShowCast(castData);
+
     setNewShowProductionStatus(show.production_status || "ongoing");
     setPosterPreview(show.poster_url);
     setPosterFile(null);
     setShowModal(true);
+  };
+
+  const handleAddCastMember = () => {
+    if (tempCastName.trim() && tempCastRole.trim()) {
+      setNewShowCast([...newShowCast, { name: tempCastName.trim(), role: tempCastRole.trim() }]);
+      setTempCastName("");
+      setTempCastRole("");
+    }
+  };
+
+  const handleRemoveCastMember = (index: number) => {
+    setNewShowCast(newShowCast.filter((_, i) => i !== index));
   };
 
   const handleAddShow = async (e: React.FormEvent) => {
@@ -434,7 +461,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          cast_members: newShowCast ? newShowCast.split(",").map(c => c.trim()).filter(Boolean) : null,
+          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
         });
 
       if (error) {
@@ -501,7 +528,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          cast_members: newShowCast ? newShowCast.split(",").map(c => c.trim()).filter(Boolean) : null,
+          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
         })
         .eq("id", editingShow.id);
 
@@ -1232,18 +1259,79 @@ const Dashboard = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="showCast">Cast Members</Label>
-              <Input
-                id="showCast"
-                value={newShowCast}
-                onChange={(e) => setNewShowCast(e.target.value)}
-                placeholder="Comma-separated names (e.g., John Doe, Jane Smith)"
-                className="bg-background border-secondary/30"
-              />
-              <p className="text-xs text-muted-foreground">
-                Separate names with commas
-              </p>
+            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
+              <div className="flex items-center justify-between">
+                <Label>Cast Members</Label>
+                <span className="text-xs text-muted-foreground">{newShowCast.length} added</span>
+              </div>
+
+              <div className="space-y-3">
+                {/* List of added members */}
+                {newShowCast.map((member, index) => (
+                  <div key={index} className="flex items-center gap-2 bg-background p-2 rounded-lg border border-secondary/20">
+                    <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
+                      <div className="font-medium text-foreground truncate" title={member.name}>{member.name}</div>
+                      <div className="text-muted-foreground border-l border-secondary/20 pl-2 truncate" title={member.role}>{member.role}</div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveCastMember(index)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {/* Input fields for new member */}
+                <div className="grid grid-cols-[1fr,1fr,auto] items-end gap-2 pt-2 border-t border-secondary/10">
+                  <div className="space-y-1">
+                    <Label htmlFor="castName" className="text-xs text-muted-foreground">Name</Label>
+                    <Input
+                      id="castName"
+                      value={tempCastName}
+                      onChange={(e) => setTempCastName(e.target.value)}
+                      placeholder="Actor Name"
+                      className="bg-background border-secondary/30 h-9 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById('castRole')?.focus();
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="castRole" className="text-xs text-muted-foreground">Role</Label>
+                    <Input
+                      id="castRole"
+                      value={tempCastRole}
+                      onChange={(e) => setTempCastRole(e.target.value)}
+                      placeholder="Role"
+                      className="bg-background border-secondary/30 h-9 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCastMember();
+                        }
+                      }}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleAddCastMember}
+                    variant="secondary"
+                    size="sm"
+                    className="h-9 w-9 p-0"
+                    disabled={!tempCastName.trim() || !tempCastRole.trim()}
+                    title="Add Cast Member"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

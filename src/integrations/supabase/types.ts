@@ -362,7 +362,7 @@ export type Database = {
       }
       shows: {
         Row: {
-          cast_members: string[] | null
+          cast_members: Json | null
           city: string | null
           created_at: string
           date: string | null
@@ -386,7 +386,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
-          cast_members?: string[] | null
+          cast_members?: Json | null
           city?: string | null
           created_at?: string
           date?: string | null
@@ -410,7 +410,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
-          cast_members?: string[] | null
+          cast_members?: Json | null
           city?: string | null
           created_at?: string
           date?: string | null

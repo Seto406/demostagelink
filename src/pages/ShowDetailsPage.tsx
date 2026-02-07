@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewList } from "@/components/reviews/ReviewList";
 
+interface CastMember {
+  name: string;
+  role: string;
+}
+
 interface ShowDetails {
   id: string;
   title: string;
@@ -29,7 +34,7 @@ interface ShowDetails {
   director: string | null;
   duration: string | null;
   tags: string[] | null;
-  cast_members: string[] | null;
+  cast_members: CastMember[] | null;
   price: number | null;
   profiles: {
     id: string;
@@ -79,7 +84,12 @@ const ShowDetailsPage = () => {
       } else if (!data) {
         setError("Production not found or not yet approved");
       } else {
-        setShow(data as ShowDetails);
+        // Safe cast for the JSONB structure
+        const showData = {
+          ...data,
+          cast_members: (data.cast_members as unknown) as CastMember[] | null
+        };
+        setShow(showData as ShowDetails);
         // Update page title for shareability
         document.title = `${data.title} | StageLink`;
       }
@@ -522,14 +532,15 @@ END:VCALENDAR`;
                 {show.cast_members && show.cast_members.length > 0 && (
                   <div className="mt-8">
                     <h3 className="text-lg font-serif font-semibold text-foreground mb-4">Cast</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {show.cast_members.map((member, index) => (
-                        <span 
+                        <div
                           key={index}
-                          className="px-3 py-1.5 bg-card border border-secondary/20 text-foreground text-sm rounded-full"
+                          className="flex flex-col p-3 bg-card border border-secondary/20 rounded-lg"
                         >
-                          {member}
-                        </span>
+                          <span className="font-medium text-foreground">{member.name}</span>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide mt-1">{member.role}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
