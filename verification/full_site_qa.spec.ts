@@ -1,28 +1,5 @@
-import { test, expect } from '@playwright/test';
-
-// Define types for mock data
-interface User {
-    id: string;
-    email: string;
-    user_metadata: {
-        full_name?: string;
-        avatar_url?: string | null;
-    };
-    app_metadata: {
-        provider?: string;
-        [key: string]: any;
-    };
-    aud: string;
-    created_at: string;
-}
-
-interface Session {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-    token_type: string;
-    user: User;
-}
+import { test, expect, Page } from '@playwright/test';
+import { User, Session, CustomWindow } from './test-types';
 
 test.describe('Full Site QA', () => {
     // Enable console logging from the browser
@@ -54,13 +31,14 @@ test.describe('Full Site QA', () => {
     };
 
     // Helper to setup common mocks
-    const setupMocks = async (page: any, authenticated = false) => {
+    const setupMocks = async (page: Page, authenticated = false) => {
         // Initialize global variables and inject user if authenticated
         await page.addInitScript((data) => {
-            (window as any).adsbygoogle = [];
-            (window as any).PlaywrightTest = true;
+            const win = window as unknown as CustomWindow;
+            win.adsbygoogle = [];
+            win.PlaywrightTest = true;
             if (data.authenticated) {
-                (window as any).PlaywrightUser = data.mockUser;
+                win.PlaywrightUser = data.mockUser;
                 console.log("PlaywrightUser injected:", data.mockUser.email);
             }
         }, { authenticated, mockUser });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { CustomWindow } from './test-types';
 
 test.describe('Interactivity Check', () => {
     test.beforeEach(async ({ page }) => {
@@ -6,11 +7,12 @@ test.describe('Interactivity Check', () => {
 
         // Mock Auth
         await page.addInitScript(() => {
-            (window as any).PlaywrightTest = true;
-            (window as any).PlaywrightUser = {
+            const win = window as unknown as CustomWindow;
+            win.PlaywrightTest = true;
+            win.PlaywrightUser = {
                 id: 'test-user-id',
                 email: 'test@example.com',
-                user_metadata: { full_name: 'Test User' },
+                user_metadata: { full_name: 'Test User', avatar_url: null },
                 app_metadata: { provider: 'email' },
                 aud: 'authenticated',
                 created_at: new Date().toISOString()

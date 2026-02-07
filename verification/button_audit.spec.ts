@@ -1,28 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-
-// Define types for mock data
-interface User {
-    id: string;
-    email: string;
-    user_metadata: {
-        full_name?: string;
-        avatar_url?: string | null;
-    };
-    app_metadata: {
-        provider?: string;
-        [key: string]: any;
-    };
-    aud: string;
-    created_at: string;
-}
-
-interface Session {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-    token_type: string;
-    user: User;
-}
+import { User, Session, CustomWindow } from './test-types';
 
 test.describe('Button Audit & Interaction Check', () => {
     // Enable console logging from the browser
@@ -59,10 +36,11 @@ test.describe('Button Audit & Interaction Check', () => {
     // Helper to setup common mocks
     const setupMocks = async (page: Page, authenticated = false) => {
         await page.addInitScript((data) => {
-            (window as any).adsbygoogle = [];
-            (window as any).PlaywrightTest = true;
+            const win = window as unknown as CustomWindow;
+            win.adsbygoogle = [];
+            win.PlaywrightTest = true;
             if (data.authenticated) {
-                (window as any).PlaywrightUser = data.mockUser;
+                win.PlaywrightUser = data.mockUser;
                 // Disable Joyride tour
                 localStorage.setItem(`stagelink_tour_seen_${data.mockUser.id}`, 'true');
             }
