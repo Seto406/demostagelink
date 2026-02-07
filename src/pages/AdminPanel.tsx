@@ -167,6 +167,19 @@ const AdminPanel = () => {
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
+      // Try to use RPC for performance optimization (single request vs 8 parallel requests)
+      const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
+
+      if (!statsError && statsData) {
+        setStats(statsData as Stats);
+        return;
+      }
+
+      if (statsError) {
+        console.warn("RPC fetch failed, falling back to parallel requests:", statsError);
+      }
+
+      // Fallback: Fetch all stats in parallel
       const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact" }),
         supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
