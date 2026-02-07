@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
@@ -44,34 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // TESTING BACKDOOR: Force loading false if window.PlaywrightTest is set
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
-        console.log("Playwright Test detected: Force disabling auth loader");
-        // Inject mock user if provided
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mockUser = (window as any).PlaywrightUser;
-
-        if (mockUser) {
-            console.log("Injecting Playwright Mock User");
-            setUser(mockUser);
-            setSession({
-                access_token: "mock-token",
-                token_type: "bearer",
-                expires_in: 3600,
-                refresh_token: "mock-refresh",
-                user: mockUser,
-                expires_at: 9999999999
-            } as Session);
-            // We also need to trigger profile load or set profile
-            ensureProfile(mockUser.id, mockUser.user_metadata);
-        }
-        setLoading(false);
-    }
-  }, []);
-
-  const ensureProfile = async (userId: string, userMetadata?: Record<string, unknown> & { avatar_url?: string }) => {
+  const ensureProfile = useCallback(async (userId: string, userMetadata?: Record<string, unknown> & { avatar_url?: string }) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -150,13 +123,108 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // checking if we can proceed without profile or if we should set it to null
       setProfile(null);
     }
-  };
+  }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await ensureProfile(user.id, user.user_metadata);
     }
-  };
+  }, [user, ensureProfile]);
+
+  const signUp = useCallback(async (email: string, password: string, role: "audience" | "producer") => {
+    const redirectUrl = `${window.location.origin}/verify-email`;
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: { role }
+      }
+    });
+    return { error };
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return { error };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    return { error };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Sign out timed out')), 5000)
+      );
+
+      await Promise.race([
+        supabase.auth.signOut(),
+        timeoutPromise
+      ]);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setProfile(null);
+      setSession(null);
+      setUser(null);
+      // Optional: Clear any local storage items if needed, though supabase client handles this
+    }
+  }, []);
+
+  const isAdmin = profile?.role === "admin";
+
+  const value = useMemo(() => ({
+    user,
+    session,
+    profile,
+    loading,
+    isAdmin,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    refreshProfile
+  }), [user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile]);
+
+  // TESTING BACKDOOR: Force loading false if window.PlaywrightTest is set
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
+        console.log("Playwright Test detected: Force disabling auth loader");
+        // Inject mock user if provided
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mockUser = (window as any).PlaywrightUser;
+
+        if (mockUser) {
+            console.log("Injecting Playwright Mock User");
+            setUser(mockUser);
+            setSession({
+                access_token: "mock-token",
+                token_type: "bearer",
+                expires_in: 3600,
+                refresh_token: "mock-refresh",
+                user: mockUser,
+                expires_at: 9999999999
+            } as Session);
+            // We also need to trigger profile load or set profile
+            ensureProfile(mockUser.id, mockUser.user_metadata);
+        }
+        setLoading(false);
+    }
+  }, [ensureProfile]);
 
   useEffect(() => {
     // SKIP Supabase Auth listeners if in Playwright Test mode to prevent race conditions
@@ -216,69 +284,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       subscription.unsubscribe();
       clearTimeout(timeoutId);
     };
-  }, []);
-
-  const signUp = async (email: string, password: string, role: "audience" | "producer") => {
-    const redirectUrl = `${window.location.origin}/verify-email`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { role }
-      }
-    });
-    return { error };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    return { error };
-  };
-
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-    return { error };
-  };
-
-  const signOut = async () => {
-    try {
-      // Create a timeout promise to prevent hanging
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Sign out timed out')), 5000)
-      );
-
-      await Promise.race([
-        supabase.auth.signOut(),
-        timeoutPromise
-      ]);
-    } catch (error) {
-      console.error("Error signing out:", error);
-    } finally {
-      setProfile(null);
-      setSession(null);
-      setUser(null);
-      // Optional: Clear any local storage items if needed, though supabase client handles this
-    }
-  };
-
-  const isAdmin = profile?.role === "admin";
+  }, [ensureProfile]);
 
   if (loading) {
     return <FullPageLoader text="Loading StageLink..." />;
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
