@@ -3,10 +3,11 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
+import { Button } from "@/components/ui/button";
 
 // Group logos
 import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
@@ -21,6 +22,7 @@ import dulaangUpLogo from "@/assets/groups/dulaang-up.jpg";
 
 // Toggle to control visibility of demo placeholder groups
 const SHOW_DEMO_GROUPS = true;
+const ITEMS_PER_PAGE = 12;
 
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
@@ -32,6 +34,7 @@ interface TheaterGroup {
   niche: "local" | "university" | null;
   city?: string;
   logo?: string;
+  address?: string | null;
 }
 
 // Demo theater groups for display when no real data
@@ -122,8 +125,24 @@ const Directory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
+
   const [groups, setGroups] = useState<TheaterGroup[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination State
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -133,40 +152,106 @@ const Directory = () => {
     setSearchParams(params, { replace: true });
   }, [selectedCity, selectedNiche, setSearchParams]);
 
-  // Fetch producer profiles
+  // Reset pagination when filters change
   useEffect(() => {
-    const fetchGroups = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, group_name, description, niche")
-        .eq("role", "producer")
-        .not("group_name", "is", null);
+    setPage(0);
+    // Don't clear groups here to avoid flash, but handle in fetch
+    // fetchGroups will be called with page=0 because page reset or direct call?
+    // We'll rely on the fetchGroups call.
+    fetchGroups(0, false);
+  }, [debouncedSearchQuery, selectedNiche, selectedCity]);
 
-      if (error) {
-        console.error("Error fetching groups:", error);
-        setGroups([]);
-      } else {
-        setGroups(data as TheaterGroup[]);
-      }
-      setLoading(false);
-    };
+  // Fetch producer profiles
+  const fetchGroups = async (currentPage: number, isLoadMore: boolean) => {
+    if (isLoadMore) {
+        setIsFetchingMore(true);
+    } else {
+        setLoading(true);
+    }
 
-    fetchGroups();
-  }, []);
+    try {
+        let query = supabase
+            .from("profiles")
+            .select("id, group_name, description, niche, address")
+            .eq("role", "producer")
+            .not("group_name", "is", null);
 
-  // Use demo groups if no real groups exist
-  const displayGroups = groups.length > 0 ? groups : (SHOW_DEMO_GROUPS ? demoGroups : []);
+        // Server-side filtering
+        if (debouncedSearchQuery) {
+            query = query.ilike("group_name", `%${debouncedSearchQuery}%`);
+        }
+
+        if (selectedNiche !== "All") {
+             if (selectedNiche === "Local/Community-based") {
+                query = query.eq("niche", "local");
+             } else if (selectedNiche === "University Theater Group") {
+                query = query.eq("niche", "university");
+             }
+        }
+
+        // Apply City filter if available on server side (via address)
+        if (selectedCity !== "All") {
+             query = query.ilike("address", `%${selectedCity}%`);
+        }
+
+        // Pagination
+        const from = currentPage * ITEMS_PER_PAGE;
+        const to = from + ITEMS_PER_PAGE; // Fetch one extra to check hasMore
+
+        const { data, error } = await query.range(from, to);
+
+        if (error) {
+            console.error("Error fetching groups:", error);
+            if (!isLoadMore) setGroups([]);
+        } else {
+            const mappedData = (data || []).map(p => ({
+                ...p,
+                city: p.address || undefined
+            })) as TheaterGroup[];
+
+            const hasNextPage = mappedData.length > ITEMS_PER_PAGE;
+            const newGroups = hasNextPage ? mappedData.slice(0, ITEMS_PER_PAGE) : mappedData;
+
+            setHasMore(hasNextPage);
+
+            if (isLoadMore) {
+                setGroups(prev => [...prev, ...newGroups]);
+            } else {
+                setGroups(newGroups);
+            }
+        }
+    } catch (err) {
+        console.error("Unexpected error:", err);
+    } finally {
+        setLoading(false);
+        setIsFetchingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loading && !isFetchingMore && hasMore) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchGroups(nextPage, true);
+    }
+  };
+
+  // Logic for Demo Groups Fallback
+  // If we have real groups, we use them.
+  // If we have NO real groups (after loading), AND show demo is on, we use demo groups.
+  // IMPORTANT: If we use Demo Groups, we must apply CLIENT-SIDE filtering to them,
+  // because the server-side filters obviously returned nothing (since we are here).
+
   const isUsingDemo = groups.length === 0 && !loading && SHOW_DEMO_GROUPS;
 
-  const filteredGroups = displayGroups.filter((group) => {
-    const matchesSearch = group.group_name?.toLowerCase().includes(searchQuery.toLowerCase());
+  const displayGroups = isUsingDemo ? demoGroups.filter((group) => {
+    const matchesSearch = group.group_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
     const matchesCity = selectedCity === "All" || group.city === selectedCity;
     const matchesNiche = selectedNiche === "All" || 
       (selectedNiche === "Local/Community-based" && group.niche === "local") ||
       (selectedNiche === "University Theater Group" && group.niche === "university");
     return matchesSearch && matchesCity && matchesNiche;
-  });
+  }) : groups;
 
   const getNicheLabel = (niche: string | null) => {
     switch (niche) {
@@ -263,7 +348,7 @@ const Directory = () => {
           ) : (
             <>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredGroups.map((group, index) => (
+                {displayGroups.map((group, index) => (
                   <motion.div
                     key={group.id}
                     initial={{ opacity: 0, y: 30 }}
@@ -345,6 +430,27 @@ const Directory = () => {
                 ))}
               </div>
               
+              {/* Load More Button */}
+              {!isUsingDemo && hasMore && (
+                <div className="mt-12 text-center">
+                    <Button
+                        onClick={loadMore}
+                        disabled={isFetchingMore}
+                        variant="outline"
+                        className="min-w-[150px]"
+                    >
+                        {isFetchingMore ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Loading...
+                            </>
+                        ) : (
+                            "Load More"
+                        )}
+                    </Button>
+                </div>
+              )}
+
               {isUsingDemo && (
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -357,7 +463,7 @@ const Directory = () => {
             </>
           )}
 
-          {!loading && filteredGroups.length === 0 && (
+          {!loading && displayGroups.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No theater groups found matching your criteria.</p>
               <p className="text-sm text-muted-foreground">
