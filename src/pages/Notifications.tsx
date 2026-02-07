@@ -94,7 +94,6 @@ const Notifications = () => {
   if (!user) {
      return (
         <div className="min-h-screen bg-background">
-           {/* Fix import in next step if Navbar is default */}
            <Navbar />
            <div className="pt-24 container mx-auto px-4 text-center">
               <p>Please log in to view notifications.</p>
