@@ -15,16 +15,16 @@ interface AnalyticsDashboardProps {
   profileId: string;
 }
 
-interface AnalyticsEvent {
-  id: string;
-  event_type: string;
-  group_id: string;
-  created_at: string;
-}
-
 interface ChartDataPoint {
   date: string;
   clicks: number;
+}
+
+interface AnalyticsSummary {
+  views: number;
+  clicks: number;
+  ctr: number;
+  chartData: { date: string; clicks: number }[];
 }
 
 export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
@@ -34,49 +34,30 @@ export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
 
   const fetchData = useCallback(async () => {
     try {
-      // Fetch all events for this group
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from("analytics_events" as any) as any)
-        .select("*")
-        .eq("group_id", profileId);
+      // Use RPC function for server-side aggregation
+      // This is much faster than fetching thousands of rows to the client
+      const { data, error } = await supabase.rpc('get_analytics_summary', { group_id: profileId });
 
       if (error) throw error;
 
-      const events = (data || []) as AnalyticsEvent[];
+      if (data) {
+        // Cast to unknown first to avoid type errors since the RPC type isn't generated yet
+        const result = data as unknown as AnalyticsSummary;
 
-      const views = events.filter((e) => e.event_type === "profile_view").length;
-      const clicks = events.filter((e) => e.event_type === "ticket_click").length;
-      const ctr = views > 0 ? (clicks / views) * 100 : 0;
+        setStats({
+          views: result.views,
+          clicks: result.clicks,
+          ctr: result.ctr
+        });
 
-      setStats({ views, clicks, ctr });
+        const formattedChartData = (result.chartData || []).map((item) => ({
+          // Format date from YYYY-MM-DD to "Mon DD"
+          date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          clicks: item.clicks
+        }));
 
-      // Process chart data (last 7 days)
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split("T")[0];
-      });
-
-      const chartDataMap = last7Days.reduce((acc, date) => {
-        acc[date] = 0;
-        return acc;
-      }, {} as Record<string, number>);
-
-      events.forEach((e) => {
-        if (e.event_type === "ticket_click") {
-          const date = e.created_at.split("T")[0];
-          if (chartDataMap[date] !== undefined) {
-            chartDataMap[date]++;
-          }
-        }
-      });
-
-      const formattedChartData = last7Days.map(date => ({
-        date: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        clicks: chartDataMap[date]
-      }));
-
-      setChartData(formattedChartData);
+        setChartData(formattedChartData);
+      }
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {
