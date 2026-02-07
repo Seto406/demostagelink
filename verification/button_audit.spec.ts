@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 // Define types for mock data
 interface User {
@@ -40,7 +40,7 @@ test.describe('Button Audit & Interaction Check', () => {
 
     // Shared mock data
     const mockUser: User = {
-        id: 'test-user-id',
+        id: '00000000-0000-0000-0000-000000000001',
         email: 'test@example.com',
         user_metadata: { full_name: 'Test Producer', avatar_url: null },
         app_metadata: { provider: 'email' },
@@ -57,7 +57,7 @@ test.describe('Button Audit & Interaction Check', () => {
     };
 
     // Helper to setup common mocks
-    const setupMocks = async (page: any, authenticated = false) => {
+    const setupMocks = async (page: Page, authenticated = false) => {
         await page.addInitScript((data) => {
             (window as any).adsbygoogle = [];
             (window as any).PlaywrightTest = true;
@@ -96,8 +96,8 @@ test.describe('Button Audit & Interaction Check', () => {
                     contentType: 'application/json',
                     headers: { 'Content-Range': '0-0/1' },
                     body: JSON.stringify([{
-                        id: 'prod-123',
-                        user_id: 'test-user-id',
+                        id: '00000000-0000-0000-0000-000000000002',
+                        user_id: '00000000-0000-0000-0000-000000000001',
                         group_name: 'QA Productions',
                         username: 'QA Productions',
                         description: 'We test things.',
@@ -137,7 +137,7 @@ test.describe('Button Audit & Interaction Check', () => {
                 niche: 'local',
                 ticket_link: 'https://example.com/tickets',
                 profiles: {
-                    id: 'prod-123',
+                    id: '00000000-0000-0000-0000-000000000002',
                     group_name: 'QA Productions',
                     avatar_url: null
                 }
