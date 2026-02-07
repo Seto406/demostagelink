@@ -198,6 +198,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.23(postcss@8.5.6)
+      bcryptjs:
+        specifier: ^3.0.3
+        version: 3.0.3
       eslint:
         specifier: ^9.32.0
         version: 9.39.2(jiti@1.21.7)
@@ -1710,6 +1713,10 @@ packages:
 
   baseline-browser-mapping@2.9.19:
     resolution: {integrity: sha512-ipDqC8FrAl/76p2SSWKSI+H9tFwm7vYqXQrItCuiVPt26Km0jS+NzSsBWAaBusvSbQcfJG+JitdMm+wZAgTYqg==}
+    hasBin: true
+
+  bcryptjs@3.0.3:
+    resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
 
   binary-extensions@2.3.0:
@@ -4097,6 +4104,8 @@ snapshots:
   balanced-match@1.0.2: {}
 
   baseline-browser-mapping@2.9.19: {}
+
+  bcryptjs@3.0.3: {}
 
   binary-extensions@2.3.0: {}
 
