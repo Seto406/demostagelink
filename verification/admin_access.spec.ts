@@ -63,14 +63,38 @@ test.describe('Admin Access', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
         });
 
-        // Mock Shows for Admin Panel
+        // Mock Shows for Admin Panel (One Pending Show)
         await page.route('**/rest/v1/shows*', async (route) => {
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                headers: { 'Content-Range': '0-0/1' },
-                body: JSON.stringify([]) // Empty list for now, just testing access
-            });
+            const url = route.request().url();
+            // Only return the pending show if querying shows
+            if (url.includes('select=') && !url.includes('count=exact')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    headers: { 'Content-Range': '0-0/1' },
+                    body: JSON.stringify([{
+                        id: 'pending-show-id',
+                        title: 'A Pending Masterpiece',
+                        description: 'Waiting for approval.',
+                        date: '2025-01-01T12:00:00Z',
+                        venue: 'Test Venue',
+                        city: 'Test City',
+                        niche: 'local',
+                        status: 'pending',
+                        created_at: new Date().toISOString(),
+                        producer_id: 'prod-id',
+                        poster_url: null,
+                        profiles: { group_name: 'Test Producer Group' }
+                    }])
+                });
+            } else {
+                 await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    headers: { 'Content-Range': '*/0' },
+                    body: JSON.stringify([])
+                });
+            }
         });
 
         // Mock Stats RPC
@@ -84,8 +108,8 @@ test.describe('Admin Access', () => {
                     activeProducers: 2,
                     pendingRequests: 1,
                     deletedShows: 0,
-                    pendingShows: 0,
-                    approvedShows: 5,
+                    pendingShows: 1,
+                    approvedShows: 4,
                     rejectedShows: 0
                 })
             });
@@ -102,7 +126,7 @@ test.describe('Admin Access', () => {
         });
     };
 
-    test('Admin user can access /admin/dashboard', async ({ page }) => {
+    test('Admin user can see pending shows and approval buttons', async ({ page }) => {
         await setupAdminMocks(page);
         await page.goto('/admin/dashboard');
 
@@ -112,7 +136,13 @@ test.describe('Admin Access', () => {
         // Expect specific Admin Panel elements
         await expect(page.getByRole('heading', { name: /Show Approvals|User Management/ })).toBeVisible({ timeout: 15000 });
 
-        // Check if stats are visible (mocked)
-        await expect(page.getByText('Total Users')).toBeVisible();
+        // Check for the pending show
+        await expect(page.getByText('A Pending Masterpiece')).toBeVisible();
+        await expect(page.getByText('Test Producer Group')).toBeVisible();
+
+        // Check for Approve and Reject buttons (using titles or icons if text is hidden)
+        // In the code: title="Approve" and title="Reject"
+        await expect(page.locator('button[title="Approve"]')).toBeVisible();
+        await expect(page.locator('button[title="Reject"]')).toBeVisible();
     });
 });

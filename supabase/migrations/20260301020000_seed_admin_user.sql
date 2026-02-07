@@ -3,12 +3,11 @@
 
 DO $$
 DECLARE
-    v_admin_email TEXT := 'admin@stagelink.show';
-    v_client_email TEXT := 'janine@stagelink.show'; -- Replace with actual client email if different
+    v_admin_email TEXT := 'connect.stagelink@gmail.com';
     v_admin_id UUID;
-    v_client_id UUID;
+    v_profile_id UUID;
 BEGIN
-    -- 1. Ensure a fallback admin user exists (admin@stagelink.show)
+    -- 1. Ensure a fallback admin user exists (connect.stagelink@gmail.com)
     -- Check if user exists in auth.users
     SELECT id INTO v_admin_id FROM auth.users WHERE email = v_admin_email;
 
@@ -16,9 +15,8 @@ BEGIN
         -- Generate a new UUID
         v_admin_id := gen_random_uuid();
 
-        -- Insert into auth.users (with a dummy password hash)
-        -- Note: In a real scenario, the user would need to reset their password or use a known hash.
-        -- Using a dummy hash here.
+        -- Insert into auth.users with provided hash
+        -- Password: stagelink_adminpass5
         INSERT INTO auth.users (
             id,
             email,
@@ -33,7 +31,7 @@ BEGIN
         ) VALUES (
             v_admin_id,
             v_admin_email,
-            '$2a$10$wT.v7r.F/y/q.u/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a', -- dummy hash
+            '$2b$10$uoNbOpJEJWuM/L/ZKnSeouwspbL6vnaYhLhlYnQPOd.kfBZBfJPpm', -- stagelink_adminpass5
             now(),
             '{"provider":"email","providers":["email"]}',
             '{"role":"admin"}',
@@ -45,23 +43,18 @@ BEGIN
     END IF;
 
     -- Ensure profile exists and is admin
-    INSERT INTO public.profiles (user_id, role, group_name)
-    VALUES (v_admin_id, 'admin', 'System Admin')
-    ON CONFLICT (user_id) DO UPDATE
-    SET role = 'admin', group_name = 'System Admin';
+    -- We can't use INSERT ... ON CONFLICT DO UPDATE cleanly if the profile already exists but we want to force role update
+    -- So we'll try to update first, then insert if no rows affected (standard UPSERT logic in SQL blocks)
 
-    -- 2. Upgrade the client user if they exist (janine@stagelink.show)
-    SELECT id INTO v_client_id FROM auth.users WHERE email = v_client_email;
+    UPDATE public.profiles
+    SET role = 'admin', group_name = 'System Admin'
+    WHERE user_id = v_admin_id;
 
-    IF v_client_id IS NOT NULL THEN
-        -- Update their profile to be admin
-        UPDATE public.profiles
-        SET role = 'admin'
-        WHERE user_id = v_client_id;
-
-        RAISE NOTICE 'Upgraded client user % to admin.', v_client_email;
-    ELSE
-        RAISE NOTICE 'Client user % not found. They will need to be manually upgraded or sign up first.', v_client_email;
+    IF NOT FOUND THEN
+        INSERT INTO public.profiles (user_id, role, group_name)
+        VALUES (v_admin_id, 'admin', 'System Admin');
     END IF;
+
+    RAISE NOTICE 'Ensured admin user % exists and has admin role.', v_admin_email;
 
 END $$;
