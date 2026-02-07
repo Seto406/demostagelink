@@ -82,16 +82,32 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log(`Found ${tickets?.length || 0} ticket holders for show: ${show.title}`);
 
-      const ticketPromises = (tickets || []).map((ticket) => limit(async () => {
-        // Fetch user email using admin API
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(ticket.user_id);
+      // Batch fetch user emails
+      const userIds = tickets?.map((t) => t.user_id) || [];
+      const emailMap = new Map<string, string>();
 
-        if (userError || !userData?.user?.email) {
-          console.error(`Error fetching user ${ticket.user_id}:`, userError);
+      if (userIds.length > 0) {
+        const { data: userEmails, error: emailError } = await supabase.rpc("get_user_emails", {
+          user_ids: userIds,
+        });
+
+        if (emailError) {
+          console.error(`Error fetching emails for show ${show.id}:`, emailError);
+        } else if (userEmails) {
+          userEmails.forEach((u: { user_id: string; email: string }) => {
+            if (u.email) emailMap.set(u.user_id, u.email);
+          });
+        }
+      }
+
+      const ticketPromises = (tickets || []).map((ticket) => limit(async () => {
+        const email = emailMap.get(ticket.user_id);
+
+        if (!email) {
+          console.error(`Email not found for user ${ticket.user_id}`);
           return null;
         }
 
-        const email = userData.user.email;
         const showDate = new Date(show.show_time).toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
