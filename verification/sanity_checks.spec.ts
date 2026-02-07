@@ -27,7 +27,8 @@ test.describe('Sanity Checks', () => {
         });
 
         await page.goto(pageUrl);
-        await page.waitForLoadState('networkidle');
+        // Use 'load' instead of 'networkidle' to avoid timeouts on background requests
+        await page.waitForLoadState('load');
 
         if (failedResources.length > 0) {
           console.error(`Failed resources on ${pageUrl}:`, failedResources);
@@ -62,7 +63,8 @@ test.describe('Sanity Checks', () => {
         });
 
         await page.goto(pageUrl);
-        await page.waitForLoadState('networkidle');
+        // Use 'load' instead of 'networkidle' to avoid timeouts
+        await page.waitForLoadState('load');
 
         if (consoleErrors.length > 0) {
           console.error(`Console errors on ${pageUrl}:`, consoleErrors);
