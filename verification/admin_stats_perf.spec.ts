@@ -59,6 +59,11 @@ test.describe('Admin Stats Performance', () => {
   });
 
   test('should load stats using multiple requests (baseline)', async ({ page }) => {
+    // Force RPC to fail so it falls back to multiple requests
+    await page.route('**/rest/v1/rpc/get_admin_dashboard_stats', async (route) => {
+        await route.fulfill({ status: 500 });
+    });
+
     // Mock the 8 stats requests
     let requestCount = 0;
 
@@ -67,8 +72,11 @@ test.describe('Admin Stats Performance', () => {
         const headers = route.request().headers();
         const prefer = headers['prefer'] || '';
 
-        // Only intercept stats requests (they select only 'id')
-        if (prefer.includes('count=exact') && (url.includes('select=id') || url.includes('select=%22id%22'))) {
+        // Only intercept stats requests (they select ONLY 'id')
+        // We use regex to ensure 'id' is not followed by other fields (comma or %2C)
+        const isIdOnlySelect = /select=(%22)?id(%22)?(&|$)/.test(url);
+
+        if (prefer.includes('count=exact') && isIdOnlySelect) {
              requestCount++;
              // Simulate network delay
              await new Promise(r => setTimeout(r, 50));
@@ -135,8 +143,10 @@ test.describe('Admin Stats Performance', () => {
         const headers = route.request().headers();
         const prefer = headers['prefer'] || '';
 
-        // Only intercept stats requests (they select only 'id')
-        if (prefer.includes('count=exact') && (url.includes('select=id') || url.includes('select=%22id%22'))) {
+        // Only intercept stats requests (they select ONLY 'id')
+        const isIdOnlySelect = /select=(%22)?id(%22)?(&|$)/.test(url);
+
+        if (prefer.includes('count=exact') && isIdOnlySelect) {
              fallbackRequestCount++;
              await route.fulfill({
                  status: 200,
