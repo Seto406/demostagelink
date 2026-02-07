@@ -39,6 +39,7 @@ interface ShowDetails {
   profiles: {
     id: string;
     group_name: string | null;
+    username: string | null;
     description: string | null;
     founded_year: number | null;
     niche: "local" | "university" | null;
@@ -69,6 +70,7 @@ const ShowDetailsPage = () => {
           profiles:producer_id (
             id,
             group_name,
+            username,
             description,
             founded_year,
             niche
@@ -354,7 +356,7 @@ END:VCALENDAR`;
                 </h1>
 
                 {/* Theater Group */}
-                {show.profiles?.group_name && (
+                {show.profiles && (show.profiles.group_name || show.profiles.username) && (
                   <Link 
                     to={`/producer/${show.profiles.id}`}
                     className="flex items-center gap-3 group w-fit"
@@ -364,7 +366,7 @@ END:VCALENDAR`;
                     </div>
                     <div>
                       <p className="text-foreground font-medium group-hover:text-secondary transition-colors">
-                        {show.profiles.group_name}
+                        {show.profiles.group_name || show.profiles.username}
                       </p>
                       {show.profiles.founded_year && (
                         <p className="text-muted-foreground text-sm">Est. {show.profiles.founded_year}</p>
@@ -590,7 +592,7 @@ END:VCALENDAR`;
                     </div>
                     <div>
                       <h3 className="text-xl font-serif text-foreground group-hover:text-secondary transition-colors">
-                        {show.profiles.group_name || "Theater Group"}
+                        {show.profiles.group_name || show.profiles.username || "Theater Group"}
                       </h3>
                       <p className="text-secondary text-sm">
                         {getNicheLabel(show.profiles.niche)}
