@@ -59,41 +59,39 @@ export const TheaterMarquee = () => {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="relative bg-primary border-y-2 border-secondary overflow-hidden"
         >
-          {/* Light bulb border effect */}
-          <div className="absolute inset-x-0 top-0 h-0.5 flex">
-            {[...Array(50)].map((_, i) => (
-              <motion.div
-                key={`top-${i}`}
-                className="flex-1 h-full bg-secondary"
-                animate={{
-                  opacity: [0.3, 1, 0.3],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.05,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
-          <div className="absolute inset-x-0 bottom-0 h-0.5 flex">
-            {[...Array(50)].map((_, i) => (
-              <motion.div
-                key={`bottom-${i}`}
-                className="flex-1 h-full bg-secondary"
-                animate={{
-                  opacity: [1, 0.3, 1],
-                }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  delay: i * 0.05,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
+          {/* Light bulb border effect - Optimized */}
+          <motion.div
+            className="absolute inset-x-0 top-0 h-0.5"
+            style={{
+              backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 10px, hsl(var(--secondary)) 10px, hsl(var(--secondary)) 20px)",
+              backgroundSize: "200% 100%",
+              opacity: 0.7
+            }}
+            animate={{
+              backgroundPosition: ["0% 0", "100% 0"],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+          <motion.div
+            className="absolute inset-x-0 bottom-0 h-0.5"
+            style={{
+              backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 10px, hsl(var(--secondary)) 10px, hsl(var(--secondary)) 20px)",
+              backgroundSize: "200% 100%",
+              opacity: 0.7
+            }}
+            animate={{
+              backgroundPosition: ["100% 0", "0% 0"],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
 
           {/* Decorative left corner */}
           <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-primary via-primary to-transparent z-10 flex items-center justify-center">
