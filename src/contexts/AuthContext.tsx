@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
@@ -43,6 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
+  const profileRef = useRef(profile);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   // TESTING BACKDOOR: Force loading false if window.PlaywrightTest is set
   useEffect(() => {
@@ -71,90 +77,113 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const ensureProfile = async (userId: string, userMetadata?: Record<string, unknown> & { avatar_url?: string }) => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+  const ensureProfile = async (
+    userId: string,
+    userMetadata?: Record<string, unknown> & { avatar_url?: string },
+    force = false
+  ) => {
+    // Skip if profile is already loaded for this user and we are not forcing a refresh
+    if (!force && profileRef.current?.user_id === userId) {
+      return;
+    }
 
-      if (!error && data) {
-        setProfile(data as Profile);
-      } else {
-        // Profile doesn't exist, create it
-        // Get role from localStorage or default to audience
-        const pendingRoleRaw = localStorage.getItem("pendingUserRole");
-        let role: "audience" | "producer" = "audience";
+    // Check if there is an in-flight request for this user
+    if (fetchingProfileRef.current[userId]) {
+      return fetchingProfileRef.current[userId]!;
+    }
 
-        // Validate role
-        if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
-          role = pendingRoleRaw;
-        }
-
-        const newProfile = {
-          user_id: userId,
-          role: role,
-          avatar_url: userMetadata?.avatar_url || null,
-        };
-
-        const { data: createdProfile, error: createError } = await supabase
+    const fetchPromise = (async () => {
+      try {
+        const { data, error } = await supabase
           .from("profiles")
-          .insert([newProfile])
-          .select()
-          .single();
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        if (createdProfile) {
-          setProfile(createdProfile as Profile);
+        if (!error && data) {
+          setProfile(data as Profile);
+        } else {
+          // Profile doesn't exist, create it
+          // Get role from localStorage or default to audience
+          const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+          let role: "audience" | "producer" = "audience";
 
-          // Trigger welcome email for new user
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user?.email) {
-              await supabase.functions.invoke("send-welcome-email", {
-                body: {
-                  email: user.email,
-                  name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
-                  role: role,
-                },
-              });
-            }
-          } catch (emailError) {
-            console.error("Failed to trigger welcome email:", emailError);
+          // Validate role
+          if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
+            role = pendingRoleRaw;
           }
 
-          localStorage.removeItem("pendingUserRole");
-        } else {
-          // If insert failed, it might be a race condition (profile created elsewhere)
-          // Try fetching one last time
-          console.warn("Error creating profile, retrying fetch:", createError);
+          const newProfile = {
+            user_id: userId,
+            role: role,
+            avatar_url: userMetadata?.avatar_url || null,
+          };
 
-          const { data: retryData } = await supabase
+          const { data: createdProfile, error: createError } = await supabase
             .from("profiles")
-            .select("*")
-            .eq("user_id", userId)
-            .maybeSingle();
+            .insert([newProfile])
+            .select()
+            .single();
 
-          if (retryData) {
-            setProfile(retryData as Profile);
+          if (createdProfile) {
+            setProfile(createdProfile as Profile);
+
+            // Trigger welcome email for new user
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user?.email) {
+                await supabase.functions.invoke("send-welcome-email", {
+                  body: {
+                    email: user.email,
+                    name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
+                    role: role,
+                  },
+                });
+              }
+            } catch (emailError) {
+              console.error("Failed to trigger welcome email:", emailError);
+            }
+
             localStorage.removeItem("pendingUserRole");
           } else {
-            console.error("Failed to ensure profile:", createError);
-            setProfile(null);
+            // If insert failed, it might be a race condition (profile created elsewhere)
+            // Try fetching one last time
+            console.warn("Error creating profile, retrying fetch:", createError);
+
+            const { data: retryData } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("user_id", userId)
+              .maybeSingle();
+
+            if (retryData) {
+              setProfile(retryData as Profile);
+              localStorage.removeItem("pendingUserRole");
+            } else {
+              console.error("Failed to ensure profile:", createError);
+              setProfile(null);
+            }
           }
         }
+      } catch (error) {
+        console.error("Unexpected error in ensureProfile:", error);
+        // Even if profile fetch fails, we don't want to leave the user completely blocked
+        // checking if we can proceed without profile or if we should set it to null
+        setProfile(null);
+      } finally {
+        // Clean up the in-flight promise
+        delete fetchingProfileRef.current[userId];
       }
-    } catch (error) {
-      console.error("Unexpected error in ensureProfile:", error);
-      // Even if profile fetch fails, we don't want to leave the user completely blocked
-      // checking if we can proceed without profile or if we should set it to null
-      setProfile(null);
-    }
+    })();
+
+    fetchingProfileRef.current[userId] = fetchPromise;
+    return fetchPromise;
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await ensureProfile(user.id, user.user_metadata);
+      // Force refresh
+      await ensureProfile(user.id, user.user_metadata, true);
     }
   };
 
