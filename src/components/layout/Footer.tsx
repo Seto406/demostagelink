@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Footer = () => {
+  const { profile } = useAuth();
+
   return (
     <footer className="bg-card border-t border-secondary/10 py-8 sm:py-12">
       <div className="container mx-auto px-4 sm:px-6">
@@ -70,9 +73,11 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-8 sm:mt-12">
-          <AdBanner format="horizontal" variant="placeholder" />
-        </div>
+        {(!profile || profile.role !== "producer") && (
+          <div className="mt-8 sm:mt-12">
+            <AdBanner format="horizontal" variant="placeholder" />
+          </div>
+        )}
 
         <div className="border-t border-secondary/10 mt-8 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">

@@ -18,6 +18,8 @@ import {
 import { useFavorites } from "@/hooks/use-favorites";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
+import { useAuth } from "@/contexts/AuthContext";
+import { AdBanner } from "@/components/ads/AdBanner";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -212,6 +214,7 @@ ShowCard.displayName = "ShowCard";
 const PAGE_SIZE = 12;
 
 const Shows = () => {
+  const { profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -620,6 +623,12 @@ const Shows = () => {
               )}
             </AnimatePresence>
           </motion.div>
+
+          {(!profile || profile.role !== "producer") && (
+            <div className="mb-8">
+              <AdBanner format="horizontal" variant="placeholder" />
+            </div>
+          )}
 
           {/* Results Count */}
           <motion.div

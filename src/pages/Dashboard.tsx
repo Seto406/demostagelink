@@ -769,10 +769,12 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Show
-                  </RippleButton>
+                  profile?.role === "producer" && (
+                    <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Show
+                    </RippleButton>
+                  )
                 )}
               </div>
             </motion.div>
@@ -794,10 +796,12 @@ const Dashboard = () => {
                     Add Show (Expired)
                   </Button>
                 ) : (
-                  <RippleButton onClick={openAddModal} variant="ios">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Show
-                  </RippleButton>
+                  profile?.role === "producer" && (
+                    <RippleButton onClick={openAddModal} variant="ios">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Show
+                    </RippleButton>
+                  )
                 )}
               </div>
 
@@ -806,7 +810,7 @@ const Dashboard = () => {
               ) : shows.length === 0 ? (
                 <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
                   <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
-                  {!isTrialExpired && (
+                  {!isTrialExpired && profile?.role === "producer" && (
                     <RippleButton id="add-show-button" onClick={openAddModal} variant="ios-secondary">
                       Submit Your First Show
                     </RippleButton>
