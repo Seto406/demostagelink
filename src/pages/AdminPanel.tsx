@@ -208,7 +208,18 @@ const AdminPanel = () => {
     let query = supabase
       .from("shows")
       .select(`
-        *,
+        id,
+        title,
+        description,
+        date,
+        venue,
+        city,
+        niche,
+        status,
+        created_at,
+        producer_id,
+        poster_url,
+        deleted_at,
         profiles:producer_id (
           group_name
         )
