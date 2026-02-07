@@ -1,28 +1,5 @@
-import { test, expect } from '@playwright/test';
-
-// Define types for mock data
-interface User {
-    id: string;
-    email: string;
-    user_metadata: {
-        full_name?: string;
-        avatar_url?: string | null;
-    };
-    app_metadata: {
-        provider?: string;
-        [key: string]: any;
-    };
-    aud: string;
-    created_at: string;
-}
-
-interface Session {
-    access_token: string;
-    refresh_token: string;
-    expires_in: number;
-    token_type: string;
-    user: User;
-}
+import { test, expect, Page } from '@playwright/test';
+import { User, Session, CustomWindow } from './test-types';
 
 test.describe('Comprehensive Feature Tests', () => {
     test.beforeEach(({ page }) => {
@@ -70,17 +47,18 @@ test.describe('Comprehensive Feature Tests', () => {
     };
 
     // Helper to setup common mocks
-    const setupMocks = async (page: any, role: 'viewer' | 'producer' | 'guest' = 'guest') => {
+    const setupMocks = async (page: Page, role: 'viewer' | 'producer' | 'guest' = 'guest') => {
         const currentUser = role === 'producer' ? mockProducerUser : mockUser;
         const currentSession = role === 'producer' ? mockProducerSession : mockSession;
         const isAuthenticated = role !== 'guest';
 
         // Initialize global variables and inject user if authenticated
         await page.addInitScript((data) => {
-            (window as any).adsbygoogle = [];
-            (window as any).PlaywrightTest = true;
+            const win = window as unknown as CustomWindow;
+            win.adsbygoogle = [];
+            win.PlaywrightTest = true;
             if (data.isAuthenticated) {
-                (window as any).PlaywrightUser = data.currentUser;
+                win.PlaywrightUser = data.currentUser;
             }
             // Disable Tour
             window.localStorage.setItem('stagelink_tour_seen_test-user-id', 'true');
