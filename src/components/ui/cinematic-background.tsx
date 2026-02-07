@@ -94,10 +94,10 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Ambient Orb 1 - Top Left - Brand Red */}
         <motion.div
+          data-testid="ambient-orb-1"
           className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.15) 0%, transparent 70%)",
-            filter: "blur(80px)",
             transform: "translate3d(0,0,0)",
             willChange: "transform",
           }}
@@ -115,10 +115,10 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Ambient Orb 2 - Bottom Right - Brand Red */}
         <motion.div
+          data-testid="ambient-orb-2"
           className="absolute -bottom-48 -right-48 w-[800px] h-[800px] rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.12) 0%, transparent 60%)",
-            filter: "blur(100px)",
             transform: "translate3d(0,0,0)",
             willChange: "transform",
           }}
@@ -137,10 +137,10 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Wandering orb - moves across screen */}
         <motion.div
+          data-testid="wandering-orb"
           className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, rgba(212, 175, 55, 0.06) 0%, transparent 60%)",
-            filter: "blur(60px)",
             transform: "translate3d(0,0,0)",
             willChange: "transform",
           }}
@@ -157,10 +157,10 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Pulsing center glow */}
         <motion.div
+          data-testid="pulsing-center-glow"
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] rounded-full pointer-events-none"
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.04) 0%, transparent 40%)",
-            filter: "blur(100px)",
             transform: "translate3d(0,0,0)",
             willChange: "transform",
           }}
@@ -268,7 +268,6 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
               className="w-[400px] h-[400px] rounded-full"
               style={{
                 background: "radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.02) 30%, transparent 60%)",
-                filter: "blur(40px)",
                 willChange: "transform",
                 transform: "translate3d(0,0,0)",
               }}
@@ -278,7 +277,6 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full"
               style={{
                 background: "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 60%)",
-                filter: "blur(20px)",
                 willChange: "transform",
                 transform: "translate3d(0,0,0)",
               }}
