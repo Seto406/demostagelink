@@ -46,12 +46,14 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
   // Generate stable particle configs
   const fireflies = useMemo(() => {
-    return [...Array(20)].map((_, i) => ({
+    // Reduced from 20 to 10 for performance
+    return [...Array(10)].map((_, i) => ({
       id: i,
       style: {
         left: `${Math.random() * 100}%`,
         top: `${Math.random() * 100}%`,
         boxShadow: "0 0 4px 1px rgba(250, 204, 21, 0.4)",
+        willChange: "transform, opacity",
       },
       animate: {
         y: [0, Math.random() * 100 - 50, 0],
@@ -96,6 +98,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.15) 0%, transparent 70%)",
             filter: "blur(80px)",
+            transform: "translate3d(0,0,0)",
+            willChange: "transform",
           }}
           animate={{
             x: [0, 50, 20, 0],
@@ -115,6 +119,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.12) 0%, transparent 60%)",
             filter: "blur(100px)",
+            transform: "translate3d(0,0,0)",
+            willChange: "transform",
           }}
           animate={{
             x: [0, -60, -30, 0],
@@ -135,6 +141,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             background: "radial-gradient(circle, rgba(212, 175, 55, 0.06) 0%, transparent 60%)",
             filter: "blur(60px)",
+            transform: "translate3d(0,0,0)",
+            willChange: "transform",
           }}
           animate={{
             x: ["10%", "70%", "30%", "80%", "10%"],
@@ -153,6 +161,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             background: "radial-gradient(circle, rgba(139, 0, 0, 0.04) 0%, transparent 40%)",
             filter: "blur(100px)",
+            transform: "translate3d(0,0,0)",
+            willChange: "transform",
           }}
           animate={{
             scale: [1, 1.2, 1],
@@ -178,6 +188,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
                   background: i % 3 === 0
                     ? "rgba(212, 175, 55, 0.4)"
                     : "rgba(139, 0, 0, 0.3)",
+                  willChange: "transform, opacity",
                 }}
                 animate={{
                   y: [0, -100, 0],
@@ -214,7 +225,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
         {/* Stage dust particles - disabled on reduced motion */}
         {!shouldReduceMotion && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[...Array(8)].map((_, i) => (
+            {/* Reduced from 8 to 5 */}
+            {[...Array(5)].map((_, i) => (
               <motion.div
                 key={`dust-${i}`}
                 className="absolute w-2 h-2 rounded-full bg-secondary/10"
@@ -222,6 +234,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
                   left: `${10 + Math.random() * 80}%`,
                   top: `${Math.random() * 100}%`,
                   filter: "blur(1px)",
+                  willChange: "transform, opacity",
                 }}
                 animate={{
                   y: [0, -200, 0],
@@ -256,6 +269,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
               style={{
                 background: "radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.02) 30%, transparent 60%)",
                 filter: "blur(40px)",
+                willChange: "transform",
+                transform: "translate3d(0,0,0)",
               }}
             />
             {/* Inner bright spot */}
@@ -264,6 +279,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
               style={{
                 background: "radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 60%)",
                 filter: "blur(20px)",
+                willChange: "transform",
+                transform: "translate3d(0,0,0)",
               }}
             />
           </motion.div>
@@ -284,6 +301,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='15' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)'/%3E%3C/svg%3E")`,
             backgroundRepeat: "repeat",
+            willChange: "opacity",
           }}
           animate={{
             opacity: [0.02, 0.04, 0.015, 0.03, 0.02],
@@ -344,6 +362,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
             className="absolute inset-0"
             style={{
               background: "linear-gradient(90deg, rgba(255,255,255,0.02) 0%, transparent 100%)",
+              willChange: "transform",
             }}
             animate={{
               x: [-5, 0, -5],
@@ -398,6 +417,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
             className="absolute inset-0"
             style={{
               background: "linear-gradient(-90deg, rgba(255,255,255,0.02) 0%, transparent 100%)",
+              willChange: "transform",
             }}
             animate={{
               x: [5, 0, 5],
@@ -418,6 +438,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
             style={{
               background: "linear-gradient(180deg, rgba(212, 175, 55, 0.15) 0%, transparent 100%)",
               filter: "blur(2px)",
+              transform: "translate3d(0,0,0)",
+              willChange: "opacity, transform",
             }}
             animate={{
               opacity: [0.3, 0.7, 0.3],
@@ -434,6 +456,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
             style={{
               background: "linear-gradient(180deg, rgba(212, 175, 55, 0.15) 0%, transparent 100%)",
               filter: "blur(2px)",
+              transform: "translate3d(0,0,0)",
+              willChange: "opacity, transform",
             }}
             animate={{
               opacity: [0.3, 0.7, 0.3],
@@ -451,6 +475,8 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
             style={{
               background: "linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%)",
               filter: "blur(3px)",
+              transform: "translate3d(0,0,0)",
+              willChange: "opacity",
             }}
             animate={{
               opacity: [0.2, 0.5, 0.2],
@@ -469,6 +495,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           style={{
             background: "linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.2) 50%, transparent 100%)",
             boxShadow: "0 0 80px 40px rgba(212, 175, 55, 0.05)",
+            willChange: "opacity",
           }}
           animate={{
             opacity: [0.4, 0.8, 0.4],
