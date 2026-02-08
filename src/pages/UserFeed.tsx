@@ -17,7 +17,9 @@ import {
   Settings,
   PlusSquare,
   TrendingUp,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,6 +113,7 @@ const UserFeed = () => {
   const [submitting, setSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<{ status: string } | null>(null);
   const [runTour, setRunTour] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -246,55 +249,82 @@ const UserFeed = () => {
       <TourGuide run={runTour} setRun={setRunTour} />
       <Navbar />
       <div className="pt-20 container mx-auto px-4 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-6 xl:gap-8">
+        <div className={`grid grid-cols-1 ${isSidebarCollapsed ? "lg:grid-cols-[80px_1fr_300px]" : "lg:grid-cols-[240px_1fr_300px]"} gap-6 xl:gap-8 transition-all duration-300`}>
 
           {/* Left Sidebar - Navigation */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)]">
+          <aside className="hidden lg:flex flex-col sticky top-24 h-[calc(100vh-6rem)] transition-all duration-300">
+            {/* Toggle Button */}
+            <div className={`flex ${isSidebarCollapsed ? "justify-center" : "justify-end"} mb-2`}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    aria-label="Toggle Sidebar"
+                    className="text-muted-foreground hover:text-foreground"
+                >
+                    {isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                </Button>
+            </div>
+
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
-                  <Link to={item.path} key={item.label}>
+                  <Link to={item.path} key={item.label} title={isSidebarCollapsed ? item.label : undefined}>
                     <Button
                       variant="ghost"
-                      className={`w-full justify-start text-lg px-4 py-6 rounded-xl transition-all duration-300 ${
+                      className={`w-full ${isSidebarCollapsed ? "justify-center px-2" : "justify-start px-4"} py-6 rounded-xl transition-all duration-300 ${
                         isActive
                           ? "bg-secondary/10 text-secondary font-semibold"
                           : "text-muted-foreground hover:bg-secondary/5 hover:text-foreground hover:pl-6"
                       }`}
                     >
-                      <item.icon className={`w-6 h-6 mr-4 ${isActive ? "text-secondary" : "text-muted-foreground"}`} />
-                      {item.label}
+                      <item.icon className={`w-6 h-6 ${isSidebarCollapsed ? "mr-0" : "mr-4"} ${isActive ? "text-secondary" : "text-muted-foreground"}`} />
+                      {!isSidebarCollapsed && item.label}
                     </Button>
                   </Link>
                 );
               })}
             </nav>
 
-            <div className="mt-8 px-4">
+            <div className={`mt-8 ${isSidebarCollapsed ? "px-2" : "px-4"}`}>
                {profile?.role === "producer" ? (
-                  <Link to="/dashboard">
-                    <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold shadow-[0_0_20px_hsl(43_72%_52%/0.3)]">
-                       <PlusSquare className="w-5 h-5 mr-2" />
-                       Manage Shows
+                  <Link to="/dashboard" title={isSidebarCollapsed ? "Manage Shows" : undefined}>
+                    <Button className={`w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold shadow-[0_0_20px_hsl(43_72%_52%/0.3)] ${isSidebarCollapsed ? "px-0 justify-center" : ""}`}>
+                       <PlusSquare className={`w-5 h-5 ${isSidebarCollapsed ? "mr-0" : "mr-2"}`} />
+                       {!isSidebarCollapsed && "Manage Shows"}
                     </Button>
                   </Link>
                ) : (
-                  <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10 text-center">
-                     <p className="text-sm text-muted-foreground mb-3">Are you a theater group?</p>
-                     <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setProducerRequestModal(true)}
-                        className="w-full border-secondary/50 text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                     >
-                        Producer Access
-                     </Button>
-                  </div>
+                  !isSidebarCollapsed ? (
+                      <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10 text-center">
+                         <p className="text-sm text-muted-foreground mb-3">Are you a theater group?</p>
+                         <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setProducerRequestModal(true)}
+                            className="w-full border-secondary/50 text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                         >
+                            Producer Access
+                         </Button>
+                      </div>
+                  ) : (
+                      <div className="flex justify-center">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setProducerRequestModal(true)}
+                            className="border-secondary/50 text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                            title="Producer Access"
+                          >
+                            <Users className="w-5 h-5" />
+                          </Button>
+                      </div>
+                  )
                )}
             </div>
 
-            <div className="mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground">
+            <div className={`mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground ${isSidebarCollapsed ? "hidden" : "block"}`}>
                <p>© 2024 StageLink</p>
                <div className="flex gap-2 mt-1">
                   <Link to="/privacy" className="hover:underline">Privacy</Link>
