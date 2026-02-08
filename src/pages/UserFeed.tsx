@@ -33,7 +33,6 @@ import { toast } from "@/hooks/use-toast";
 import { FeedPost } from "@/components/feed/FeedPost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TourGuide } from "@/components/onboarding/TourGuide";
 
 // Interface for Shows
 export interface Show {
@@ -110,7 +109,6 @@ const UserFeed = () => {
   const [portfolioLink, setPortfolioLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<{ status: string } | null>(null);
-  const [runTour, setRunTour] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -243,13 +241,12 @@ const UserFeed = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <TourGuide run={runTour} setRun={setRunTour} />
       <Navbar />
       <div className="pt-20 container mx-auto px-4 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-6 xl:gap-8">
 
           {/* Left Sidebar - Navigation */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)]">
+          <aside className="hidden lg:flex flex-col sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -294,7 +291,7 @@ const UserFeed = () => {
                )}
             </div>
 
-            <div className="mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground">
+            <div className="mt-auto w-full px-4 pb-6 text-xs text-muted-foreground">
                <p>© 2024 StageLink</p>
                <div className="flex gap-2 mt-1">
                   <Link to="/privacy" className="hover:underline">Privacy</Link>
