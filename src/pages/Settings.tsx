@@ -161,6 +161,27 @@ const Settings = () => {
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
     
+    // Username validation
+    if (username) {
+      if (username.length < 3 || username.length > 20) {
+        toast({
+          title: "Invalid Username",
+          description: "Username must be between 3 and 20 characters.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        toast({
+          title: "Invalid Username",
+          description: "Username can only contain letters, numbers, and underscores.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const updateData: Record<string, unknown> = {
@@ -190,12 +211,20 @@ const Settings = () => {
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        toast({
+          title: "Error",
+          description: "Username already taken.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update profile. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
     setSaving(false);
   };
