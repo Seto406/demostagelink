@@ -83,10 +83,11 @@ test.describe('Sanity Checks', () => {
       await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
 
       // Expect the text "Page not found"
-      await expect(page.getByText('Oops! Page not found')).toBeVisible();
+      await expect(page.getByText('Page not found', { exact: true })).toBeVisible();
+      await expect(page.getByText(/Oops!/)).toBeVisible();
 
-      // Check for "Go Home" or similar button
-      await expect(page.getByRole('link', { name: /Home/i })).toBeVisible();
+      // Check for "Go Home" button
+      await expect(page.getByRole('link', { name: 'Go Home' })).toBeVisible();
     });
   });
 
