@@ -94,6 +94,10 @@ export const EnhancedToast: React.FC<EnhancedToastProps> = ({
       transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+      role={variant === 'error' ? 'alert' : 'status'}
+      aria-live={variant === 'error' ? 'assertive' : 'polite'}
       className={cn(
         "relative overflow-hidden rounded-lg border shadow-lg backdrop-blur-sm",
         "w-full max-w-sm pointer-events-auto",
@@ -138,6 +142,7 @@ export const EnhancedToast: React.FC<EnhancedToastProps> = ({
           whileTap={{ scale: 0.9 }}
           onClick={() => onDismiss(id)}
           className="text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Close notification"
         >
           <X className="h-4 w-4" />
         </motion.button>

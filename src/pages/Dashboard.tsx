@@ -461,6 +461,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
         });
 
@@ -528,6 +529,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
         })
         .eq("id", editingShow.id);
