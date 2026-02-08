@@ -12,6 +12,8 @@ import { trackEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewList } from "@/components/reviews/ReviewList";
+import { useAuth } from "@/contexts/AuthContext";
+import { AdBanner } from "@/components/ads/AdBanner";
 
 interface CastMember {
   name: string;
@@ -46,6 +48,7 @@ interface ShowDetails {
 }
 
 const ShowDetailsPage = () => {
+  const { profile } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [show, setShow] = useState<ShowDetails | null>(null);
@@ -483,6 +486,12 @@ END:VCALENDAR`;
             </div>
           </div>
         </section>
+
+        {(!profile || profile.role !== "producer") && (
+          <div className="container mx-auto px-6 py-6">
+            <AdBanner format="horizontal" variant="placeholder" />
+          </div>
+        )}
 
         {/* Description Section */}
         <section className="py-16">
