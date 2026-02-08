@@ -182,6 +182,19 @@ const handler = async (req: Request): Promise<Response> => {
     // Analyze results
     const successfulBatches = results.filter(r => !r.error && r.data).length;
 
+    // 7. Update last_broadcast_at
+    if (successfulBatches > 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from("shows")
+        .update({ last_broadcast_at: new Date().toISOString() })
+        .eq("id", showId);
+
+      if (updateError) {
+        console.error("Failed to update last_broadcast_at:", updateError);
+        // We don't fail the request, just log it.
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       message: `Broadcast processed.`,

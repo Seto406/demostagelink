@@ -68,6 +68,7 @@ interface Show {
   producer_id: string;
   poster_url: string | null;
   deleted_at: string | null;
+  last_broadcast_at: string | null;
   profiles?: {
     group_name: string | null;
   };
@@ -235,6 +236,7 @@ const AdminPanel = () => {
         producer_id,
         poster_url,
         deleted_at,
+        last_broadcast_at,
         profiles:producer_id (
           group_name
         )
@@ -1099,10 +1101,18 @@ const AdminPanel = () => {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => setConfirmAction({ type: "broadcast", show })}
-                                      className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
-                                      title="Broadcast to Audience"
+                                      className={`h-8 w-8 p-0 ${
+                                        show.last_broadcast_at
+                                          ? "text-gray-400 hover:text-gray-300 hover:bg-gray-500/10"
+                                          : "text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                      }`}
+                                      title={
+                                        show.last_broadcast_at
+                                          ? `Last broadcast: ${new Date(show.last_broadcast_at).toLocaleString()}`
+                                          : "Broadcast to Audience"
+                                      }
                                     >
-                                      <Megaphone className="w-4 h-4" />
+                                      <Megaphone className={`w-4 h-4 ${show.last_broadcast_at ? "opacity-50" : ""}`} />
                                     </Button>
                                   )}
                                   {show.status !== "pending" && (
@@ -1549,7 +1559,16 @@ const AdminPanel = () => {
                 ? `Are you sure you want to approve "${confirmAction?.show.title}"? It will become visible on the public feed.`
                 : confirmAction?.type === "reject"
                   ? `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified.`
-                  : `Are you sure you want to broadcast "${confirmAction?.show.title}" to all audience members? This will send an email notification.`
+                  : (
+                    <>
+                      {confirmAction?.show.last_broadcast_at && (
+                        <p className="text-orange-500 font-medium mb-2">
+                          ⚠️ Warning: This show was already broadcast on {new Date(confirmAction.show.last_broadcast_at).toLocaleDateString()}.
+                        </p>
+                      )}
+                      Are you sure you want to broadcast "{confirmAction?.show.title}" to all audience members? This will send an email notification.
+                    </>
+                  )
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
