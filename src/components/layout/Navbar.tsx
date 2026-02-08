@@ -246,6 +246,13 @@ const Navbar = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
+                        <Link to="/profile" className="w-full cursor-pointer">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
                         <Link to="/settings" className="w-full cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Settings</span>
@@ -468,6 +475,12 @@ const Navbar = () => {
                           </Button>
                         </Link>
                       )}
+                      <Link to="/profile" className="w-full">
+                        <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
+                          <User className="w-4 h-4 mr-2" />
+                          Profile
+                        </Button>
+                      </Link>
                       <Link to="/settings" className="w-full">
                         <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
                           <Settings className="w-4 h-4 mr-2" />
