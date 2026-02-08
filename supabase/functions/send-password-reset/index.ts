@@ -124,7 +124,7 @@ serve(async (req) => {
                 Connecting audiences with local theater in Metro Manila
               </p>
               <p style="color: #444444; font-size: 11px; margin: 0;">
-                © 2024 StageLink. All rights reserved.
+                © 2026 StageLink. All rights reserved.
               </p>
             </div>
           </div>
