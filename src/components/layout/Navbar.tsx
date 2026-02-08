@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Shield, Menu, X, Settings, Heart, Bell, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -38,35 +38,7 @@ const Navbar = () => {
   const borderOpacity = useTransform(scrollY, [0, 50], [0.1, 0.3]);
   
   const [scrolled, setScrolled] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchUnread = async () => {
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
-      setUnreadCount(count || 0);
-    };
-
-    fetchUnread();
-
-    const channel = supabase
-      .channel(`unread-notifications-${user.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => fetchUnread()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+  const { unreadCount } = useNotifications();
 
   // Dynamic nav links based on auth state
   // Nav links without Favorites - moved to user section
