@@ -35,7 +35,8 @@ import {
   Image as ImageIcon,
   Trash2,
   RotateCcw,
-  ArrowLeft
+  ArrowLeft,
+  Megaphone
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -113,8 +114,9 @@ const AdminPanel = () => {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject"; show: Show } | null>(null);
-  
+  const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject" | "broadcast"; show: Show } | null>(null);
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+
   // User management state
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -381,6 +383,31 @@ const AdminPanel = () => {
       sendNotification(showId, showTitle, "rejected", producerId);
       fetchShows();
       fetchStats();
+    }
+  };
+
+  const handleBroadcast = async (showId: string) => {
+    setBroadcastLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("broadcast-new-show", {
+        body: { showId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Broadcast Sent",
+        description: `Notification sent to audience members.`,
+      });
+    } catch (error) {
+      console.error("Broadcast failed:", error);
+      toast({
+        title: "Broadcast Failed",
+        description: "Failed to broadcast notification.",
+        variant: "destructive",
+      });
+    } finally {
+      setBroadcastLoading(false);
     }
   };
 
@@ -1067,6 +1094,17 @@ const AdminPanel = () => {
                                       </Button>
                                     </>
                                   )}
+                                  {show.status === "approved" && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setConfirmAction({ type: "broadcast", show })}
+                                      className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                      title="Broadcast to Audience"
+                                    >
+                                      <Megaphone className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                   {show.status !== "pending" && (
                                     <Button
                                       variant="ghost"
@@ -1500,12 +1538,18 @@ const AdminPanel = () => {
         <AlertDialogContent className="bg-card border-secondary/30">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">
-              {confirmAction?.type === "approve" ? "Approve Show" : "Reject Show"}
+              {confirmAction?.type === "approve"
+                ? "Approve Show"
+                : confirmAction?.type === "reject"
+                  ? "Reject Show"
+                  : "Broadcast Show"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "approve" 
                 ? `Are you sure you want to approve "${confirmAction?.show.title}"? It will become visible on the public feed.`
-                : `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified.`
+                : confirmAction?.type === "reject"
+                  ? `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified.`
+                  : `Are you sure you want to broadcast "${confirmAction?.show.title}" to all audience members? This will send an email notification.`
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1516,15 +1560,24 @@ const AdminPanel = () => {
                 if (confirmAction) {
                   if (confirmAction.type === "approve") {
                     handleApprove(confirmAction.show.id, confirmAction.show.title, confirmAction.show.producer_id);
-                  } else {
+                  } else if (confirmAction.type === "reject") {
                     handleReject(confirmAction.show.id, confirmAction.show.title, confirmAction.show.producer_id);
+                  } else if (confirmAction.type === "broadcast") {
+                    handleBroadcast(confirmAction.show.id);
                   }
                   setConfirmAction(null);
                 }
               }}
               className={confirmAction?.type === "reject" ? "bg-destructive hover:bg-destructive/90" : ""}
+              disabled={broadcastLoading}
             >
-              {confirmAction?.type === "approve" ? "Approve" : "Reject"}
+              {broadcastLoading
+                ? "Sending..."
+                : confirmAction?.type === "approve"
+                  ? "Approve"
+                  : confirmAction?.type === "reject"
+                    ? "Reject"
+                    : "Broadcast"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
