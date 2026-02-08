@@ -357,7 +357,7 @@ const UserFeed = () => {
           </main>
 
           {/* Right Sidebar - Widgets */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6">
+          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6 overflow-y-auto scrollbar-hide pb-6">
              {!isPro && (
                 <AdBanner format="box" />
              )}
