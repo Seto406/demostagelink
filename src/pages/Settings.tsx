@@ -252,14 +252,27 @@ const Settings = () => {
     if (!user) return;
 
     setSubmittingRequest(true);
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
     try {
-      const { error } = await supabase
+      // Create a timeout promise (15 seconds)
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("Request timed out")), 15000);
+      });
+
+      // Create the insert promise
+      const insertPromise = supabase
         .from("producer_requests")
         .insert({
           user_id: user.id,
           group_name: requestGroupName,
           portfolio_link: portfolioLink,
         });
+
+      // Race the request against the timeout
+      type InsertResponse = Awaited<ReturnType<typeof insertPromise>>;
+      const result = await Promise.race([insertPromise, timeoutPromise]) as InsertResponse;
+      const { error } = result;
 
       if (error) throw error;
 
@@ -269,14 +282,19 @@ const Settings = () => {
       });
       setProducerRequestModal(false);
       setExistingRequest({ status: "pending" });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Producer request error:", error);
       toast({
         title: "Error",
-        description: "Failed to submit request. You may already have a pending request.",
+        description: error.message === "Request timed out"
+          ? "The request is taking longer than expected. Please check your internet connection."
+          : "Failed to submit request. You may already have a pending request.",
         variant: "destructive",
       });
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+      setSubmittingRequest(false);
     }
-    setSubmittingRequest(false);
   };
 
   const handleSignOut = async () => {
