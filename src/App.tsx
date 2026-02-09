@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ThemeProvider } from "next-themes";
 import { useEffect, Suspense, lazy } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
@@ -104,10 +105,12 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <AuthProvider>
-                <IdleTimerProvider>
-                  <AppRoutes />
-                  <MobileBottomNav />
-                </IdleTimerProvider>
+                <NotificationProvider>
+                  <IdleTimerProvider>
+                    <AppRoutes />
+                    <MobileBottomNav />
+                  </IdleTimerProvider>
+                </NotificationProvider>
               </AuthProvider>
             </BrowserRouter>
           </CinematicBackground>

@@ -1,39 +1,62 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
-import { CheckCheck, BellOff } from "lucide-react";
+import { CheckCheck, BellOff, Loader2 } from "lucide-react";
 import { NotificationItem, Notification } from "@/components/notifications/NotificationItem";
 import { motion } from "framer-motion";
 
+const ITEMS_PER_PAGE = 20;
+
 const Notifications = () => {
   const { user, loading: authLoading } = useAuth();
+  const { refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (pageIndex: number, isInitial = false) => {
     if (!user) return;
+
     try {
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
+      const from = pageIndex * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      setNotifications(data as Notification[]);
+
+      const newNotifications = data as Notification[];
+
+      if (newNotifications.length < ITEMS_PER_PAGE) {
+        setHasMore(false);
+      }
+
+      setNotifications(prev => isInitial ? newNotifications : [...prev, ...newNotifications]);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [user]);
 
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      fetchNotifications(0, true);
 
       // Subscribe to real-time notifications
       const channel = supabase
@@ -48,6 +71,7 @@ const Notifications = () => {
           },
           (payload) => {
             setNotifications(prev => [payload.new as Notification, ...prev]);
+            refreshUnreadCount();
           }
         )
         .subscribe();
@@ -58,7 +82,13 @@ const Notifications = () => {
     } else if (!authLoading) {
         setLoading(false);
     }
-  }, [user, authLoading, fetchNotifications]);
+  }, [user, authLoading, fetchNotifications, refreshUnreadCount]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchNotifications(nextPage);
+  };
 
   const markAsRead = async (id: string) => {
     // Optimistic update
@@ -70,6 +100,8 @@ const Notifications = () => {
       .from("notifications")
       .update({ read: true })
       .eq("id", id);
+
+    refreshUnreadCount();
   };
 
   const markAllAsRead = async () => {
@@ -81,6 +113,8 @@ const Notifications = () => {
       .update({ read: true })
       .eq("user_id", user!.id)
       .eq("read", false);
+
+    refreshUnreadCount();
   };
 
   if (authLoading || (loading && user)) {
@@ -137,6 +171,23 @@ const Notifications = () => {
                   />
                 </motion.div>
               ))}
+
+              {hasMore && (
+                <div className="p-4 flex justify-center">
+                  <Button
+                    variant="ghost"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="w-full text-muted-foreground hover:text-secondary"
+                  >
+                    {loadingMore ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      "Load more"
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
