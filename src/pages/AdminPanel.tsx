@@ -332,8 +332,6 @@ const AdminPanel = () => {
       });
       if (error) {
         console.error("Failed to send notification:", error);
-      } else {
-        console.log("Notification sent successfully");
       }
     } catch (err) {
       console.error("Error sending notification:", err);

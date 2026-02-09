@@ -211,8 +211,8 @@ const Settings = () => {
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-    } catch (error: any) {
-      if (error?.code === '23505') {
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === '23505') {
         toast({
           title: "Error",
           description: "Username already taken.",
@@ -311,11 +311,12 @@ const Settings = () => {
       });
       setProducerRequestModal(false);
       setExistingRequest({ status: "pending" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Producer request error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: error.message === "Request timed out"
+        description: errorMessage === "Request timed out"
           ? "The request is taking longer than expected. Please check your internet connection."
           : "Failed to submit request. You may already have a pending request.",
         variant: "destructive",

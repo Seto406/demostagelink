@@ -30,7 +30,6 @@ export const useSubscription = () => {
     if (!user) return;
     setIsCheckingOut(true);
     try {
-      console.log("Initiating checkout...");
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
         body: {
           amount: SUBSCRIPTION_PRICE_CENTS,
@@ -43,8 +42,6 @@ export const useSubscription = () => {
         console.error("Supabase Function Error:", error);
         throw error;
       }
-
-      console.log("Checkout session created:", data);
 
       if (data?.checkoutUrl) {
         window.location.href = data.checkoutUrl;

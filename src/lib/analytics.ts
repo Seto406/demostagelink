@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 export type EventType = 'ticket_click' | 'profile_view';
 
@@ -6,8 +7,7 @@ export const trackEvent = async (
   eventType: EventType,
   groupId: string,
   showId?: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta?: Record<string, any>
+  meta?: Json
 ) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
