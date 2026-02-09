@@ -387,7 +387,7 @@ test.describe('Comprehensive Feature Tests', () => {
         await saveButton.click();
 
         // Verify Toast
-        await expect(page.getByText(/Profile Updated/i)).toBeVisible();
+        await expect(page.getByText('Profile Updated', { exact: true })).toBeVisible();
     });
 
     test('404 Page Not Found', async ({ page }) => {
