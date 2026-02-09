@@ -295,7 +295,7 @@ const UserFeed = () => {
             </div>
 
             <div className="mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground">
-               <p>© 2024 StageLink</p>
+               <p>© 2026 StageLink</p>
                <div className="flex gap-2 mt-1">
                   <Link to="/privacy" className="hover:underline">Privacy</Link>
                   <span>•</span>
