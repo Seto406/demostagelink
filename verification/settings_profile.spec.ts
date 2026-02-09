@@ -94,6 +94,37 @@ test.describe('Settings Profile', () => {
         await expect(page.getByText('Username already taken.', { exact: true })).toBeVisible();
     });
 
+    test('Should display specific error message for generic server error', async ({ page }) => {
+        // Override the route to simulate a 500 error
+        await page.route('**/rest/v1/profiles?user_id=eq.test-user-id', async (route) => {
+             if (route.request().method() === 'PATCH') {
+                 await route.fulfill({
+                    status: 500,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        message: 'Simulated database error'
+                    })
+                });
+             } else {
+                 await route.fallback();
+             }
+        });
+
+        await page.goto('/settings');
+        const usernameInput = page.getByLabel('Username / Display Name');
+        await expect(usernameInput).toHaveValue('current_user', { timeout: 10000 });
+
+        // Change username to something valid (not duplicate)
+        await usernameInput.fill('valid_user');
+
+        // Click save
+        await page.getByRole('button', { name: 'Save' }).first().click();
+
+        // Check for specific error toast
+        await expect(page.getByText('Simulated database error', { exact: true })).toBeVisible();
+        await page.screenshot({ path: 'verification/error_toast.png' });
+    });
+
     test('Should validate username format', async ({ page }) => {
         await page.goto('/settings');
         const usernameInput = page.getByLabel('Username / Display Name');
