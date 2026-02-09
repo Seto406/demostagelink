@@ -225,11 +225,12 @@ const UserFeed = () => {
       });
       setProducerRequestModal(false);
       setExistingRequest({ status: "pending" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Producer request error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error",
-        description: error.message === "Request timed out"
+        description: errorMessage === "Request timed out"
           ? "The request is taking longer than expected. Please check your internet connection."
           : "Failed to submit request. You may already have a pending request.",
         variant: "destructive",

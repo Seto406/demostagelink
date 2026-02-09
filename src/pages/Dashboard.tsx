@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import { toast } from "@/hooks/use-toast";
 import { GroupMembers } from "@/components/dashboard/GroupMembers";
 import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
@@ -461,8 +462,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
+          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
         });
 
       if (error) {
@@ -529,8 +529,7 @@ const Dashboard = () => {
           director: newShowDirector || null,
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as any[]) : null,
+          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
         })
         .eq("id", editingShow.id);
 
