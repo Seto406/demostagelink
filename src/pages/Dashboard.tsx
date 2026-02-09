@@ -433,7 +433,7 @@ const Dashboard = () => {
           .upload(fileName, posterFile);
 
         if (uploadError) {
-          throw new Error("Failed to upload poster");
+          throw new Error(`Failed to upload poster: ${uploadError.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -466,7 +466,7 @@ const Dashboard = () => {
         });
 
       if (error) {
-        throw new Error("Failed to submit show");
+        throw new Error(`Failed to submit show: ${error.message}`);
       }
 
       resetForm();
@@ -502,7 +502,7 @@ const Dashboard = () => {
           .upload(fileName, posterFile);
 
         if (uploadError) {
-          throw new Error("Failed to upload poster");
+          throw new Error(`Failed to upload poster: ${uploadError.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -534,7 +534,7 @@ const Dashboard = () => {
         .eq("id", editingShow.id);
 
       if (error) {
-        throw new Error("Failed to update show");
+        throw new Error(`Failed to update show: ${error.message}`);
       }
 
       toast({
