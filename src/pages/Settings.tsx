@@ -219,9 +219,11 @@ const Settings = () => {
           variant: "destructive",
         });
       } else {
+        console.error("Profile update error:", error);
+        const message = (error as { message?: string })?.message || "Failed to update profile. Please try again.";
         toast({
           title: "Error",
-          description: "Failed to update profile. Please try again.",
+          description: message,
           variant: "destructive",
         });
       }

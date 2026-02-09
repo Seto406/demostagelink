@@ -474,9 +474,10 @@ const Dashboard = () => {
       setSuccessModal(true);
       fetchShows();
     } catch (error) {
+      const message = (error as { message?: string })?.message || "Failed to submit show. Please try again.";
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit show. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -546,9 +547,10 @@ const Dashboard = () => {
       setShowModal(false);
       fetchShows();
     } catch (error) {
+      const message = (error as { message?: string })?.message || "Failed to update show. Please try again.";
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update show. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -628,9 +630,10 @@ const Dashboard = () => {
       refreshProfile();
     } catch (error) {
       console.error("Profile update error:", error);
+      const message = (error as { message?: string })?.message || "Failed to update profile. Please try again.";
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
