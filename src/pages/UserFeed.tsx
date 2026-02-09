@@ -268,7 +268,7 @@ const UserFeed = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-6 xl:gap-8">
 
           {/* Left Sidebar - Navigation */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)]">
+          <aside className="hidden lg:flex flex-col sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -313,7 +313,7 @@ const UserFeed = () => {
                )}
             </div>
 
-            <div className="mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground">
+            <div className="mt-auto w-full px-4 pb-6 text-xs text-muted-foreground">
                <p>© 2026 StageLink</p>
                <div className="flex gap-2 mt-1">
                   <Link to="/privacy" className="hover:underline">Privacy</Link>
@@ -379,7 +379,7 @@ const UserFeed = () => {
           </main>
 
           {/* Right Sidebar - Widgets */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6">
+          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] overflow-y-auto scrollbar-hide space-y-6 pb-6">
              {!isPro && (
                 <AdBanner format="box" />
              )}
