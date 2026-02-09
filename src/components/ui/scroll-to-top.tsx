@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ScrollToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -32,13 +38,24 @@ const ScrollToTop = () => {
           transition={{ duration: 0.2 }}
           className="fixed bottom-20 right-6 z-50"
         >
-          <Button
-            onClick={scrollToTop}
-            size="icon"
-            className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground shadow-lg hover:bg-secondary/90 hover:scale-110 transition-transform"
-          >
-            <ChevronUp className="h-6 w-6" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={scrollToTop}
+                  size="icon"
+                  className="h-12 w-12 rounded-full bg-secondary text-secondary-foreground shadow-lg hover:bg-secondary/90 hover:scale-110 transition-transform"
+                  aria-label="Scroll to top"
+                  data-testid="scroll-to-top-btn"
+                >
+                  <ChevronUp className="h-6 w-6" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Scroll to top</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </motion.div>
       )}
     </AnimatePresence>
