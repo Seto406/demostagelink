@@ -254,16 +254,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Failsafe: Stop loading after 3 seconds
+  // Failsafe: Stop loading after 10 seconds
   useEffect(() => {
     if (!loading) return;
 
     const timeoutId = setTimeout(() => {
-      console.warn("Auth loading timed out (3s). executing fail-safe...");
+      console.warn("Auth loading timed out (10s). executing fail-safe...");
       localStorage.clear();
       setLoading(false);
       navigate("/login");
-    }, 3000);
+    }, 10000);
 
     return () => clearTimeout(timeoutId);
   }, [loading, navigate]);
