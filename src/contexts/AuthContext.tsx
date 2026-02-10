@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
@@ -39,6 +40,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -161,15 +163,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               localStorage.removeItem("pendingUserRole");
             } else {
               console.error("Failed to ensure profile:", createError);
-              setProfile(null);
+              await signOut();
             }
           }
         }
       } catch (error) {
         console.error("Unexpected error in ensureProfile:", error);
-        // Even if profile fetch fails, we don't want to leave the user completely blocked
-        // checking if we can proceed without profile or if we should set it to null
-        setProfile(null);
+        // Hard Logout
+        await signOut();
       } finally {
         // Clean up the in-flight promise
         delete fetchingProfileRef.current[userId];
@@ -216,7 +217,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error("Error retrieving session:", error);
+        localStorage.clear();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
         setSession(session);
         setUser(session?.user ?? null);
@@ -224,28 +234,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await ensureProfile(session.user.id, session.user.user_metadata);
         }
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("Error processing session:", error);
+        localStorage.clear();
+        setSession(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
+    }).catch((err) => {
+      console.error("Unexpected error checking session:", err);
+      localStorage.clear();
+      setSession(null);
+      setUser(null);
+      setLoading(false);
     });
-
-    // Failsafe: Stop loading after 5 seconds
-    const timeoutId = setTimeout(() => {
-      setLoading(prev => {
-        if (prev) {
-          console.warn("Auth loading timed out, forcing render.");
-          return false;
-        }
-        return prev;
-      });
-    }, 5000);
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(timeoutId);
     };
   }, []);
+
+  // Failsafe: Stop loading after 3 seconds
+  useEffect(() => {
+    if (!loading) return;
+
+    const timeoutId = setTimeout(() => {
+      console.warn("Auth loading timed out (3s). executing fail-safe...");
+      localStorage.clear();
+      setLoading(false);
+      navigate("/login");
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [loading, navigate]);
 
   const signUp = async (email: string, password: string, role: "audience" | "producer") => {
     const redirectUrl = `${window.location.origin}/verify-email`;
