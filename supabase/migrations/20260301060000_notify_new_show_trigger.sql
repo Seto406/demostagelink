@@ -15,19 +15,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  -- SECURITY WARNING: DO NOT COMMIT REAL SECRETS TO GIT
-  -- Ideally, use a secure vault or environment variable if supported by your setup.
-  -- For this migration to work, you MUST replace these placeholders with your actual project URL and Service Role Key.
-  project_url TEXT := 'YOUR_PROJECT_URL';
-  service_role_key TEXT := 'YOUR_SERVICE_ROLE_KEY';
+  -- SECURITY WARNING: THIS FILE CONTAINS SECRETS. DO NOT COMMIT TO PUBLIC REPO.
+  project_url TEXT := 'https://dssbduklgbmxezpjpuen.supabase.co';
+  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzc2JkdWtsZ2JteGV6cGpwdWVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTc2NjQ0OCwiZXhwIjoyMDg1MzQyNDQ4fQ.XCdOnAkx7o_B0OADTbbuEBSBOHo3DSL8U8OdNHVgx08';
   request_id BIGINT;
 BEGIN
-  -- Validate configuration
-  IF project_url = 'YOUR_PROJECT_URL' OR service_role_key = 'YOUR_SERVICE_ROLE_KEY' THEN
-    RAISE WARNING 'Trigger trigger_notify_new_show is not configured. Please set project_url and service_role_key.';
-    RETURN NEW;
-  END IF;
-
   -- Construct the payload matches standard Supabase webhook format
   -- Call the Edge Function via pg_net
   -- Note: We use net.http_post to make an asynchronous request
@@ -69,5 +61,5 @@ WHEN (OLD.status IS DISTINCT FROM 'approved' AND NEW.status = 'approved')
 EXECUTE FUNCTION public.trigger_notify_new_show();
 
 -- Comments
-COMMENT ON FUNCTION public.trigger_notify_new_show IS 'Trigger function to call notify-new-show Edge Function via pg_net. REQUIRES CONFIGURATION of URL and KEY.';
+COMMENT ON FUNCTION public.trigger_notify_new_show IS 'Trigger function to call notify-new-show Edge Function via pg_net.';
 COMMENT ON TRIGGER on_show_approved ON public.shows IS 'Trigger to notify audience when a show is approved';
