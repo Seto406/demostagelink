@@ -5,9 +5,12 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Users, Facebook, Instagram } from "lucide-react";
+import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Producer {
   id: string;
@@ -34,9 +37,15 @@ interface Show {
 
 const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Follow State
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     const fetchProducerData = async () => {
@@ -73,11 +82,35 @@ const ProducerProfile = () => {
         setShows(showsData as Show[]);
       }
 
+      // Fetch Follower Count
+      const { count, error: countError } = await supabase
+        .from("follows")
+        .select("*", { count: 'exact', head: true })
+        .eq("following_id", id);
+
+      if (!countError && count !== null) {
+        setFollowerCount(count);
+      }
+
+      // Check if current user is following
+      if (user) {
+        const { data: followData, error: followError } = await supabase
+            .from("follows")
+            .select("id")
+            .eq("follower_id", user.id)
+            .eq("following_id", id)
+            .maybeSingle();
+
+        if (!followError && followData) {
+            setIsFollowing(true);
+        }
+      }
+
       setLoading(false);
     };
 
     fetchProducerData();
-  }, [id]);
+  }, [id, user]);
 
   const getNicheLabel = (niche: string | null) => {
     switch (niche) {
@@ -88,6 +121,53 @@ const ProducerProfile = () => {
       default:
         return "Theater Group";
     }
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+        toast.error("Please login to follow this group");
+        return;
+    }
+    if (!producer) return;
+
+    setFollowLoading(true);
+
+    if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+            .from("follows")
+            .delete()
+            .eq("follower_id", user.id)
+            .eq("following_id", producer.id);
+
+        if (error) {
+            console.error("Error unfollowing:", error);
+            toast.error("Failed to unfollow");
+        } else {
+            setIsFollowing(false);
+            setFollowerCount(prev => Math.max(0, prev - 1));
+            toast.success("Unfollowed group");
+        }
+    } else {
+        // Follow
+        const { error } = await supabase
+            .from("follows")
+            .insert({
+                follower_id: user.id,
+                following_id: producer.id
+            });
+
+        if (error) {
+            console.error("Error following:", error);
+            toast.error("Failed to follow group");
+        } else {
+            setIsFollowing(true);
+            setFollowerCount(prev => prev + 1);
+            toast.success("Following group");
+        }
+    }
+
+    setFollowLoading(false);
   };
 
   if (loading) {
@@ -165,13 +245,39 @@ const ProducerProfile = () => {
                 </div>
                 
                 {/* Info */}
-                <div className="flex-1">
-                  <span className="text-secondary text-xs uppercase tracking-wider mb-2 block">
-                    {getNicheLabel(producer.niche)}
-                  </span>
-                  <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">
-                    {producer.group_name || "Unnamed Group"}
-                  </h1>
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                      <div>
+                          <span className="text-secondary text-xs uppercase tracking-wider mb-2 block">
+                            {getNicheLabel(producer.niche)}
+                          </span>
+                          <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
+                            {producer.group_name || "Unnamed Group"}
+                          </h1>
+                      </div>
+
+                      {/* Follow Button */}
+                      <Button
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        variant={isFollowing ? "outline" : "default"}
+                        className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
+                      >
+                        {followLoading ? (
+                            "Processing..."
+                        ) : isFollowing ? (
+                            <>
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Following
+                            </>
+                        ) : (
+                            <>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Follow
+                            </>
+                        )}
+                      </Button>
+                  </div>
                   
                   {producer.description && (
                     <p className="text-muted-foreground mb-6 max-w-2xl">
@@ -188,7 +294,7 @@ const ProducerProfile = () => {
                     )}
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4 text-secondary" />
-                      <span>{shows.length} {shows.length === 1 ? "Production" : "Productions"}</span>
+                      <span>{followerCount} {followerCount === 1 ? "Follower" : "Followers"}</span>
                     </div>
                   </div>
                   
