@@ -425,7 +425,7 @@ END:VCALENDAR`;
                   )}
                 </div>
 
-                {/* CTA Button */}
+                {/* CTA Button - Ticketing (No Streaming) */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   {show.price && show.price > 0 ? (
                     <Button

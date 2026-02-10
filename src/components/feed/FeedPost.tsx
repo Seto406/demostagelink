@@ -69,7 +69,7 @@ export function FeedPost({ show }: FeedPostProps) {
 
   useEffect(() => {
     fetchLikeCount();
-    fetchCommentCount();
+    // fetchCommentCount(); // Comments disabled
 
     // Subscriptions for real-time counts
     const likeChannel = supabase.channel(`likes-${show.id}`)
@@ -78,15 +78,15 @@ export function FeedPost({ show }: FeedPostProps) {
       })
       .subscribe();
 
-    const commentChannel = supabase.channel(`comments-count-${show.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `show_id=eq.${show.id}` }, () => {
-         fetchCommentCount();
-      })
-      .subscribe();
+    // const commentChannel = supabase.channel(`comments-count-${show.id}`)
+    //   .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `show_id=eq.${show.id}` }, () => {
+    //      fetchCommentCount();
+    //   })
+    //   .subscribe();
 
     return () => {
       supabase.removeChannel(likeChannel);
-      supabase.removeChannel(commentChannel);
+      // supabase.removeChannel(commentChannel);
     };
   }, [show.id, fetchLikeCount, fetchCommentCount]);
 
@@ -197,7 +197,8 @@ export function FeedPost({ show }: FeedPostProps) {
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
 
-                    <Tooltip>
+                    {/* Comments Disabled for Social-First Pivot */}
+                    {/* <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
@@ -213,7 +214,7 @@ export function FeedPost({ show }: FeedPostProps) {
                       <TooltipContent>
                         <p>View comments</p>
                       </TooltipContent>
-                    </Tooltip>
+                    </Tooltip> */}
 
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -243,8 +244,8 @@ export function FeedPost({ show }: FeedPostProps) {
                 </div>
             </div>
 
-            {/* Comments Section */}
-            <AnimatePresence>
+            {/* Comments Section Disabled */}
+            {/* <AnimatePresence>
                 {showComments && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
@@ -255,7 +256,7 @@ export function FeedPost({ show }: FeedPostProps) {
                         <CommentSection showId={show.id} />
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence> */}
         </CardFooter>
       </Card>
     </motion.div>
