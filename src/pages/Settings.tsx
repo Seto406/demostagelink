@@ -64,7 +64,7 @@ import { CreditCard, Zap, Check } from "lucide-react";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, profile, signOut, loading, refreshProfile } = useAuth();
+  const { user, profile, signOut, loading, refreshProfile, isAdmin } = useAuth();
   const { isPro, initiateCheckout, isCheckingOut, isLoading: subLoading } = useSubscription();
   
   // Profile form state
@@ -958,8 +958,8 @@ const Settings = () => {
               </motion.section>
             )}
 
-            {/* Producer Request (Audience only) */}
-            {isAudience && (
+            {/* Producer Request (Audience only, hidden for Admins) */}
+            {isAudience && !isAdmin && (
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
