@@ -82,12 +82,12 @@ test.describe('Sanity Checks', () => {
       // Expect the heading "404"
       await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
 
-      // Expect the text "Page not found"
-      await expect(page.getByText('Page not found', { exact: true })).toBeVisible();
-      await expect(page.getByText(/Oops!/)).toBeVisible();
+      // Expect the text "The Stage Is Dark"
+      await expect(page.getByText('The Stage Is Dark', { exact: true })).toBeVisible();
+      await expect(page.getByText(/We couldn't find the scene/)).toBeVisible();
 
-      // Check for "Go Home" button
-      await expect(page.getByRole('link', { name: 'Go Home' })).toBeVisible();
+      // Check for "Return to Lobby" button
+      await expect(page.getByRole('link', { name: 'Return to Lobby' })).toBeVisible();
     });
   });
 
