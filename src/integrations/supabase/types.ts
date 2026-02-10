@@ -376,6 +376,8 @@ export type Database = {
           poster_url: string | null
           price: number | null
           producer_id: string
+          production_status: string
+          seo_metadata: Json | null
           show_time: string | null
           status: Database["public"]["Enums"]["show_status"]
           tags: string[] | null
@@ -400,6 +402,8 @@ export type Database = {
           poster_url?: string | null
           price?: number | null
           producer_id: string
+          production_status?: string
+          seo_metadata?: Json | null
           show_time?: string | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
@@ -424,6 +428,8 @@ export type Database = {
           poster_url?: string | null
           price?: number | null
           producer_id?: string
+          production_status?: string
+          seo_metadata?: Json | null
           show_time?: string | null
           status?: Database["public"]["Enums"]["show_status"]
           tags?: string[] | null
