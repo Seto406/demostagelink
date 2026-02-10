@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare Email Content (once)
     const subject = `New Arrival: ${record.title}`;
-    const showLink = `https://stagelink.show/watch/${record.id}`;
+    const showLink = `https://stagelink.show/shows/${record.id}`;
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         ${record.poster_url ? `<img src="${record.poster_url}" alt="${record.title}" style="display: block; width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin-bottom: 20px;" />` : ''}
@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
           ${record.description || 'No description available.'}
         </p>
         <div style="margin-top: 30px;">
-          <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Watch Now</a>
+          <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Get Tickets</a>
         </div>
         <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
           You are receiving this because you are a registered audience member on StageLink.
