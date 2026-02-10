@@ -399,7 +399,7 @@ const UserFeed = () => {
                    {suggestedProducers.length > 0 ? (
                       suggestedProducers.map(producer => (
                          <div key={producer.id} className="flex items-center justify-between">
-                            <Link to={`/group/${producer.id}`} className="flex items-center gap-3 group">
+                            <Link to={`/producer/${producer.id}`} className="flex items-center gap-3 group">
                                <Avatar className="h-9 w-9 border border-secondary/20">
                                   <AvatarImage src={producer.avatar_url || undefined} />
                                   <AvatarFallback className="text-xs">{producer.group_name?.[0]}</AvatarFallback>
@@ -409,7 +409,7 @@ const UserFeed = () => {
                                   <span className="text-xs text-muted-foreground capitalize">{producer.niche || "Theater Group"}</span>
                                </div>
                             </Link>
-                            <Link to={`/group/${producer.id}`}>
+                            <Link to={`/producer/${producer.id}`}>
                                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-secondary">
                                   <ExternalLink className="w-4 h-4" />
                                </Button>
