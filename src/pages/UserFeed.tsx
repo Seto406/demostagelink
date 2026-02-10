@@ -33,8 +33,6 @@ import { toast } from "@/hooks/use-toast";
 import { FeedPost } from "@/components/feed/FeedPost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TourGuide } from "@/components/onboarding/TourGuide";
-
 // Interface for Shows
 export interface Show {
   id: string;
@@ -110,7 +108,6 @@ const UserFeed = () => {
   const [portfolioLink, setPortfolioLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<{ status: string } | null>(null);
-  const [runTour, setRunTour] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -262,18 +259,24 @@ const UserFeed = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <TourGuide run={runTour} setRun={setRunTour} />
       <Navbar />
       <div className="pt-20 container mx-auto px-4 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-6 xl:gap-8">
 
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)]">
-            <nav className="space-y-1">
+            <nav className="space-y-1" aria-label="Main Navigation">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = item.path.includes('?')
+                  ? (location.pathname + location.search) === item.path
+                  : location.pathname === item.path;
+
                 return (
-                  <Link to={item.path} key={item.label}>
+                  <Link
+                    to={item.path}
+                    key={item.label}
+                    aria-current={isActive ? "page" : undefined}
+                  >
                     <Button
                       variant="ghost"
                       className={`w-full justify-start text-lg px-4 py-6 rounded-xl transition-all duration-300 ${
