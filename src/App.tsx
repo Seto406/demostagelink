@@ -75,6 +75,8 @@ const AppRoutes = () => {
           <Route path="/admin/dashboard" element={<AdminPanel />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />
+          {/* Legacy/Alias for show details (plural) */}
+          <Route path="/shows/:id" element={<ShowDetailsPage />} />
           <Route path="/producer/:id" element={<ProducerProfile />} />
           <Route path="/group/:id" element={<GroupProfile />} />
           <Route path="/profile" element={<Profile />} />

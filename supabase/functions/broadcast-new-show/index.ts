@@ -130,6 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Construct email objects
     const emailObjects = validEmails.map((email: string) => {
       const subject = `New Show Alert: ${show.title}`;
+      const showLink = `https://stagelink.show/shows/${showId}`;
       const htmlContent = `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #3b82f6; margin-bottom: 20px;">New Show Alert! 🎭</h1>
@@ -145,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
             Check it out now on the StageLink feed!
           </p>
           <div style="margin-top: 30px; text-align: center;">
-            <a href="https://stagelink.show/" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Show</a>
+            <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Get Tickets</a>
           </div>
           <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
             You are receiving this because you are a registered audience member on StageLink.
