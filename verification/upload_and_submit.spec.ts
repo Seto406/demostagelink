@@ -88,16 +88,16 @@ test.describe('Upload and Submit Verification', () => {
         });
 
         // Mock Storage Upload (Posters) - Using glob ** for recursive match
-        await page.route('**/storage/v1/object/posters/**', async (route) => {
+        await page.route('**/storage/v1/object/show-posters/**', async (route) => {
             const method = route.request().method();
             console.log(`[Mock] Hit Poster Storage Route: ${method} ${route.request().url()}`);
 
             if (method === 'POST') {
-                console.log('[Mock] Storage Upload (Posters) Intercepted');
+                console.log('[Mock] Storage Upload (show-posters) Intercepted');
                 await route.fulfill({
                     status: 200,
                     contentType: 'application/json',
-                    body: JSON.stringify({ Key: 'posters/producer-user-id/mock-poster.jpg' })
+                    body: JSON.stringify({ Key: 'show-posters/producer-user-id/mock-poster.jpg' })
                 });
             } else {
                  await route.continue();

@@ -429,7 +429,7 @@ const Dashboard = () => {
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
-          .from("posters")
+          .from("show-posters")
           .upload(fileName, posterFile);
 
         if (uploadError) {
@@ -437,7 +437,7 @@ const Dashboard = () => {
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from("posters")
+          .from("show-posters")
           .getPublicUrl(fileName);
         
         posterUrl = publicUrl;
@@ -499,7 +499,7 @@ const Dashboard = () => {
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
-          .from("posters")
+          .from("show-posters")
           .upload(fileName, posterFile);
 
         if (uploadError) {
@@ -507,7 +507,7 @@ const Dashboard = () => {
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from("posters")
+          .from("show-posters")
           .getPublicUrl(fileName);
         
         posterUrl = publicUrl;
@@ -594,13 +594,13 @@ const Dashboard = () => {
         const fileName = `${profile.id}/map_${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("posters") // Using posters bucket for now as it's general purpose public
+          .from("show-posters") // Using show-posters bucket for now as it's general purpose public
           .upload(fileName, mapFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from("posters")
+          .from("show-posters")
           .getPublicUrl(fileName);
 
         mapUrl = publicUrl;
