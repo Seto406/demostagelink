@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Fetch Audience User IDs
     const { data: audienceProfiles, error: audienceError } = await supabaseAdmin
       .from("profiles")
-      .select("user_id")
+      .select("user_id, email")
       .eq("role", "audience");
 
     if (audienceError) {
@@ -72,27 +72,11 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const userIds = audienceProfiles.map(p => p.user_id);
-    console.log(`Found ${userIds.length} audience members to notify about show: ${record.title}`);
+    console.log(`Found ${audienceProfiles.length} audience members to notify about show: ${record.title}`);
 
-    // Fetch Emails using RPC
-    const { data: userEmails, error: emailsError } = await supabaseAdmin
-      .rpc('get_user_emails', { user_ids: userIds });
-
-    if (emailsError) {
-        console.error("Error fetching emails via RPC:", emailsError);
-        throw new Error("Failed to fetch user emails");
-    }
-
-    if (!userEmails || userEmails.length === 0) {
-        return new Response(JSON.stringify({ success: true, message: "No emails found for audience members", count: 0 }), {
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
-    }
-
-    const validEmails = (userEmails as { email: string | null }[])
-      .filter((u) => u.email)
-      .map((u) => u.email);
+    const validEmails = audienceProfiles
+      .map((p: any) => p.email)
+      .filter((email: any) => email && typeof email === 'string' && email.length > 0);
 
     if (validEmails.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No valid emails found", count: 0 }), {
