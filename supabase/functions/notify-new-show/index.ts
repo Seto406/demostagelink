@@ -86,41 +86,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending to ${validEmails.length} valid email addresses.`);
 
+    // Prepare Email Content (once)
+    const subject = `New Arrival: ${record.title}`;
+    const showLink = `https://stagelink.show/shows/${record.id}`;
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        ${record.poster_url ? `<img src="${record.poster_url}" alt="${record.title}" style="display: block; width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin-bottom: 20px;" />` : ''}
+        <h1 style="color: #111; font-size: 24px; margin: 0 0 10px 0;">${record.title}</h1>
+        <p style="font-size: 16px; line-height: 1.6; color: #555; margin: 0 0 20px 0;">
+          ${record.description || 'No description available.'}
+        </p>
+        <div style="margin-top: 30px;">
+          <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Get Tickets</a>
+        </div>
+        <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
+          You are receiving this because you are a registered audience member on StageLink.
+        </p>
+      </div>
+    `;
+
     // Send Emails via Resend Batch API
     const BATCH_SIZE = 100;
     const batches = [];
 
     // Construct email objects
-    const emailObjects = validEmails.map((email: string) => {
-      const subject = `New Show Alert: ${record.title}`;
-      const showLink = `https://stagelink.show/shows/${record.id}`;
-      const htmlContent = `
-        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #3b82f6; margin-bottom: 20px;">New Show Alert! 🎭</h1>
-          <p style="font-size: 16px; line-height: 1.6; color: #333;">
-            A new show '${record.title}' is now live!
-          </p>
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f9fafb;">
-            <h2 style="margin-top: 0; color: #111;">${record.title}</h2>
-            ${record.poster_url ? `<img src="${record.poster_url}" alt="${record.title}" style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 15px;" />` : ''}
-            <p style="color: #555; font-style: italic;">${record.description || 'No description available.'}</p>
-          </div>
-          <div style="margin-top: 30px; text-align: center;">
-            <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Book Your Tickets Here</a>
-          </div>
-          <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
-            You are receiving this because you are a registered audience member on StageLink.
-          </p>
-        </div>
-      `;
-
-      return {
-        from: "StageLink <hello@stagelink.show>",
-        to: [email],
-        subject: subject,
-        html: htmlContent,
-      };
-    });
+    const emailObjects = validEmails.map((email: string) => ({
+      from: "StageLink <hello@stagelink.show>",
+      to: [email],
+      subject: subject,
+      html: htmlContent,
+    }));
 
     // Chunk into batches
     for (let i = 0; i < emailObjects.length; i += BATCH_SIZE) {
