@@ -55,6 +55,7 @@ test.describe('User Registration Failure Path', () => {
     await page.getByRole('button', { name: "I'm an Audience Member" }).click();
 
     // Fill form
+    await page.getByLabel('First Name').fill('Test User');
     await page.getByLabel('Email').fill('existinguser@example.com');
     await page.locator('#password').fill('Password123!');
     await page.locator('#confirmPassword').fill('Password123!');

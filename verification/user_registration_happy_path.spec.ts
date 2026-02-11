@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('User Registration Happy Path', () => {
   test.beforeEach(async ({ page }) => {
     // 1. Mock Supabase Auth Signup
-    await page.route('**/auth/v1/signup', async (route) => {
+    await page.route('**/auth/v1/signup*', async (route) => {
       // Return a success response simulating email confirmation required
       await route.fulfill({
         status: 200,
@@ -21,12 +21,12 @@ test.describe('User Registration Happy Path', () => {
     });
 
     // 2. Mock Supabase Auth Session (start as logged out)
-    await page.route('**/auth/v1/session', async (route) => {
+    await page.route('**/auth/v1/session*', async (route) => {
        await route.fulfill({ status: 200, json: null });
     });
 
     // 3. Mock Supabase Auth User (start as logged out)
-    await page.route('**/auth/v1/user', async (route) => {
+    await page.route('**/auth/v1/user*', async (route) => {
        await route.fulfill({ status: 401, json: { error: "unauthorized" } });
     });
 
@@ -58,6 +58,7 @@ test.describe('User Registration Happy Path', () => {
     await expect(page.getByRole('heading', { name: 'Audience Sign Up' })).toBeVisible();
 
     // Fill form
+    await page.getByLabel('First Name').fill('Test User');
     await page.getByLabel('Email').fill('newuser@example.com');
     await page.locator('#password').fill('Password123!');
     await page.locator('#confirmPassword').fill('Password123!');
