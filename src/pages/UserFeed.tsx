@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -409,11 +414,18 @@ const UserFeed = () => {
                                   <span className="text-xs text-muted-foreground capitalize">{producer.niche || "Theater Group"}</span>
                                </div>
                             </Link>
-                            <Link to={`/group/${producer.id}`}>
-                               <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-secondary">
-                                  <ExternalLink className="w-4 h-4" />
-                               </Button>
-                            </Link>
+                            <Tooltip>
+                               <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-secondary" asChild>
+                                     <Link to={`/group/${producer.id}`} aria-label={`View ${producer.group_name || 'group'} profile`}>
+                                        <ExternalLink className="w-4 h-4" />
+                                     </Link>
+                                  </Button>
+                               </TooltipTrigger>
+                               <TooltipContent>
+                                  <p>View Profile</p>
+                               </TooltipContent>
+                            </Tooltip>
                          </div>
                       ))
                    ) : (
