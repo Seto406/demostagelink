@@ -36,7 +36,8 @@ import {
   Trash2,
   RotateCcw,
   ArrowLeft,
-  Megaphone
+  Megaphone,
+  CheckCircle
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -355,8 +356,16 @@ const AdminPanel = () => {
         title: "Production Approved",
         description: "The production is now visible on the public feed.",
       });
+
+      // Update local state immediately
+      setShows(prev => {
+        if (filterStatus === "pending") {
+          return prev.filter(s => s.id !== showId);
+        }
+        return prev.map(s => s.id === showId ? { ...s, status: "approved" } : s);
+      });
+
       sendNotification(showId, showTitle, "approved", producerId);
-      fetchShows();
       fetchStats();
     }
   };
@@ -378,8 +387,16 @@ const AdminPanel = () => {
         title: "Production Rejected",
         description: "The producer will be notified.",
       });
+
+      // Update local state immediately
+      setShows(prev => {
+        if (filterStatus === "pending") {
+          return prev.filter(s => s.id !== showId);
+        }
+        return prev.map(s => s.id === showId ? { ...s, status: "rejected" } : s);
+      });
+
       sendNotification(showId, showTitle, "rejected", producerId);
-      fetchShows();
       fetchStats();
     }
   };
@@ -492,7 +509,10 @@ const AdminPanel = () => {
       title: "Request Approved",
       description: `${request.group_name} is now a Producer.`,
     });
-    fetchProducerRequests();
+
+    // Update local state immediately
+    setProducerRequests(prev => prev.filter(r => r.id !== request.id));
+
     fetchUsers();
     fetchStats();
   };
@@ -523,7 +543,10 @@ const AdminPanel = () => {
         title: "Request Rejected",
         description: "The user has been notified.",
       });
-      fetchProducerRequests();
+
+      // Update local state immediately
+      setProducerRequests(prev => prev.filter(r => r.id !== request.id));
+
       fetchStats();
     }
   };
@@ -879,16 +902,32 @@ const AdminPanel = () => {
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
-          <h1 className="font-serif text-xl text-foreground">
-            {activeTab === "shows" ? "Show Approvals" : "User Management"}
-          </h1>
+          <div className="flex items-center gap-4">
+            <h1 className="font-serif text-xl text-foreground">
+              {activeTab === "shows" ? "Show Approvals" : "User Management"}
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                fetchStats();
+                if (activeTab === "shows") fetchShows();
+                else fetchUsers();
+                fetchProducerRequests();
+              }}
+              className="h-8 px-2 text-muted-foreground hover:text-foreground border-secondary/20"
+              title="Refresh Data"
+            >
+              <RotateCcw className={`w-4 h-4 ${loadingShows || loadingUsers ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           <div className="w-10" />
         </header>
 
         <div className="p-6">
           {/* Stats Widget */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-blue-500" />
@@ -899,7 +938,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                   <Theater className="w-5 h-5 text-primary" />
@@ -910,7 +949,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                   <UserCheck className="w-5 h-5 text-green-500" />
@@ -921,7 +960,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-secondary/20 rounded-xl p-4">
+            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-yellow-500" />
@@ -994,17 +1033,20 @@ const AdminPanel = () => {
               {loadingShows ? (
                 <div className="text-muted-foreground text-center py-8">Loading productions...</div>
               ) : shows.length === 0 ? (
-                <div className="bg-card border border-secondary/20 p-12 text-center rounded-xl">
-                  <p className="text-muted-foreground">
+                <div className="bg-card/50 border border-secondary/20 p-12 text-center rounded-xl flex flex-col items-center justify-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  </div>
+                  <p className="text-muted-foreground font-medium">
                     {filterStatus === "pending" 
-                      ? "No pending productions to review." 
+                      ? "All caught up! No pending productions found."
                       : `No ${filterStatus === "all" ? "" : filterStatus} productions found.`}
                   </p>
                 </div>
               ) : (
                 <>
                 <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
-                  <table className="w-full min-w-[800px]">
+                  <table className="w-full min-w-[800px] caption-bottom text-sm">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Poster</th>
@@ -1018,7 +1060,7 @@ const AdminPanel = () => {
                     </thead>
                     <tbody>
                       {shows.map((show) => (
-                        <tr key={show.id} className="border-t border-secondary/10">
+                        <tr key={show.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                           <td className="p-4">
                             {show.poster_url ? (
                               <img 
@@ -1275,7 +1317,7 @@ const AdminPanel = () => {
               ) : (
                 <>
                   <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
-                  <table className="w-full min-w-[600px]">
+                  <table className="w-full min-w-[600px] caption-bottom text-sm">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
@@ -1287,7 +1329,7 @@ const AdminPanel = () => {
                     </thead>
                     <tbody>
                       {users.map((userProfile) => (
-                        <tr key={userProfile.id} className="border-t border-secondary/10">
+                        <tr key={userProfile.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                           <td className="p-4 text-muted-foreground text-sm font-mono">
                             {userProfile.user_id.slice(0, 8)}...
                           </td>
