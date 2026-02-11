@@ -151,6 +151,7 @@ const Dashboard = () => {
   const [description, setDescription] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
   const [niche, setNiche] = useState<"local" | "university" | "">("");
+  const [university, setUniversity] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [mapFile, setMapFile] = useState<File | null>(null);
@@ -183,6 +184,7 @@ const Dashboard = () => {
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
       setNiche(profile.niche || "");
+      setUniversity(profile.university || "");
       setAvatarPreview(profile.avatar_url || null);
       if (profile.map_screenshot_url && profile.map_screenshot_url.startsWith("<iframe")) {
         setMapEmbedUrl(profile.map_screenshot_url);
@@ -616,6 +618,7 @@ const Dashboard = () => {
           description: description || null,
           founded_year: foundedYear ? parseInt(foundedYear) : null,
           niche: niche || null,
+          university: niche === "university" ? university : null,
           avatar_url: avatarUrl,
           map_screenshot_url: mapUrl
         })
@@ -946,6 +949,25 @@ const Dashboard = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {niche === "university" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="university" className="text-sm font-medium text-muted-foreground">University Affiliation</Label>
+                      <Select value={university} onValueChange={setUniversity}>
+                        <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
+                          <SelectValue placeholder="Select University" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-secondary/30 rounded-xl">
+                          <SelectItem value="UP">University of the Philippines (UP)</SelectItem>
+                          <SelectItem value="Ateneo">Ateneo de Manila University</SelectItem>
+                          <SelectItem value="DLSU">De La Salle University (DLSU)</SelectItem>
+                          <SelectItem value="UST">University of Santo Tomas (UST)</SelectItem>
+                          <SelectItem value="UMAK">University of Makati (UMAK)</SelectItem>
+                          <SelectItem value="FEU">Far Eastern University (FEU)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <RippleButton
                     onClick={handleUpdateProfile}
