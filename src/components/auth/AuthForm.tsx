@@ -76,6 +76,7 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const [userType, setUserType] = useState<UserType>(null);
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -139,6 +140,17 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
           return;
         }
 
+        if (!firstName.trim()) {
+          toast({
+            title: "Error",
+            description: "Please enter your first name",
+            variant: "destructive",
+          });
+          triggerShake();
+          setIsSubmitting(false);
+          return;
+        }
+
         // Validate password meets requirements
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.isValid) {
@@ -174,7 +186,7 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
           return;
         }
 
-        const { error } = await signUp(email, password, userType);
+        const { error } = await signUp(email, password, userType, firstName);
         if (error) {
           triggerShake();
           toast({
@@ -352,6 +364,17 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {authMode === "signup" && (
+                <FloatingInput
+                  id="firstName"
+                  type="text"
+                  label="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              )}
+
               <FloatingInput
                 id="email"
                 type="email"
