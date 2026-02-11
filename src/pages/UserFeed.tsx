@@ -98,7 +98,7 @@ const dummyShows: Show[] = [
 const UserFeed = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin } = useAuth();
   const { isPro } = useSubscription();
   const [shows, setShows] = useState<Show[]>([]);
   const [suggestedProducers, setSuggestedProducers] = useState<Producer[]>([]);
@@ -301,7 +301,7 @@ const UserFeed = () => {
                        Manage Shows
                     </Button>
                   </Link>
-               ) : (
+               ) : !isAdmin && (
                   <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10 text-center">
                      <p className="text-sm text-muted-foreground mb-3">Are you a theater group?</p>
                      <Button
