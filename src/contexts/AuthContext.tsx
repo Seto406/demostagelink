@@ -30,7 +30,8 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, role: "audience" | "producer") => Promise<{ error: Error | null }>;
+  // UPDATED: Added firstName to the signature
+  signUp: (email: string, password: string, role: "audience" | "producer", firstName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -52,12 +53,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     profileRef.current = profile;
   }, [profile]);
 
-  // TESTING BACKDOOR: Force loading false if window.PlaywrightTest is set
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
         console.log("Playwright Test detected: Force disabling auth loader");
-        // Inject mock user if provided
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mockUser = (window as any).PlaywrightUser;
 
@@ -72,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 user: mockUser,
                 expires_at: 9999999999
             } as Session);
-            // We also need to trigger profile load or set profile
             ensureProfile(mockUser.id, mockUser.user_metadata);
         }
         setLoading(false);
@@ -84,12 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userMetadata?: Record<string, unknown> & { avatar_url?: string },
     force = false
   ) => {
-    // Skip if profile is already loaded for this user and we are not forcing a refresh
     if (!force && profileRef.current?.user_id === userId) {
       return;
     }
 
-    // Check if there is an in-flight request for this user
     if (fetchingProfileRef.current[userId]) {
       return fetchingProfileRef.current[userId]!;
     }
@@ -105,12 +101,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!error && data) {
           setProfile(data as Profile);
         } else {
-          // Profile doesn't exist, create it
-          // Get role from localStorage or default to audience
           const pendingRoleRaw = localStorage.getItem("pendingUserRole");
           let role: "audience" | "producer" = "audience";
 
-          // Validate role
           if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
             role = pendingRoleRaw;
           }
@@ -130,14 +123,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (createdProfile) {
             setProfile(createdProfile as Profile);
 
-            // Trigger welcome email for new user
             try {
               const { data: { user } } = await supabase.auth.getUser();
               if (user?.email) {
                 await supabase.functions.invoke("send-welcome-email", {
                   body: {
                     email: user.email,
-                    name: (createdProfile as Profile).group_name || user.user_metadata?.full_name,
+                    name: (createdProfile as Profile).group_name || user.user_metadata?.full_name || user.user_metadata?.first_name,
                     role: role,
                   },
                 });
@@ -148,10 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             localStorage.removeItem("pendingUserRole");
           } else {
-            // If insert failed, it might be a race condition (profile created elsewhere)
-            // Try fetching one last time
             console.warn("Error creating profile, retrying fetch:", createError);
-
             const { data: retryData } = await supabase
               .from("profiles")
               .select("*")
@@ -169,10 +158,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Unexpected error in ensureProfile:", error);
-        // Hard Logout
         await signOut();
       } finally {
-        // Clean up the in-flight promise
         delete fetchingProfileRef.current[userId];
       }
     })();
@@ -183,20 +170,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshProfile = async () => {
     if (user) {
-      // Force refresh
       await ensureProfile(user.id, user.user_metadata, true);
     }
   };
 
   useEffect(() => {
-    // SKIP Supabase Auth listeners if in Playwright Test mode to prevent race conditions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
         console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
         return;
     }
 
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         try {
@@ -216,7 +200,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error("Error retrieving session:", error);
@@ -254,7 +237,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  // Failsafe: Stop loading after 10 seconds
   useEffect(() => {
     if (!loading) return;
 
@@ -268,7 +250,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => clearTimeout(timeoutId);
   }, [loading, navigate]);
 
-  const signUp = async (email: string, password: string, role: "audience" | "producer") => {
+  // CORRECTED: Added firstName parameter and removed extra closing brace
+  const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
     
     const { error } = await supabase.auth.signUp({
@@ -276,11 +259,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { role }
+        data: { 
+          role,
+          // Matches {{ .Data.first_name }} in your Supabase email template
+          first_name: firstName 
+        }
       }
     });
 
     if (error) {
+      // Enhanced logging as recommended by Jules
       console.error("SignUp detailed error:", error);
     }
 
@@ -311,7 +299,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Create a timeout promise to prevent hanging
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Sign out timed out')), 5000)
       );
@@ -326,7 +313,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile(null);
       setSession(null);
       setUser(null);
-      // Optional: Clear any local storage items if needed, though supabase client handles this
     }
   };
 
