@@ -37,7 +37,8 @@ import {
   RotateCcw,
   ArrowLeft,
   Megaphone,
-  CheckCircle
+  CheckCircle,
+  Mail
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +47,7 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { InvitationHub } from "@/components/admin/InvitationHub";
 import {
   Pagination,
   PaginationContent,
@@ -853,6 +855,17 @@ const AdminPanel = () => {
               <Users className="w-5 h-5" />
               {sidebarOpen && <span>User Management</span>}
             </button>
+            <button
+              onClick={() => setActiveTab("invitations")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "invitations"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <Mail className="w-5 h-5" />
+              {sidebarOpen && <span>Invitations</span>}
+            </button>
           </nav>
 
           {/* Admin badge */}
@@ -904,7 +917,7 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl text-foreground">
-              {activeTab === "shows" ? "Show Approvals" : "User Management"}
+              {activeTab === "shows" ? "Show Approvals" : activeTab === "users" ? "User Management" : "Invitations"}
             </h1>
             <Button
               variant="outline"
@@ -912,7 +925,7 @@ const AdminPanel = () => {
               onClick={() => {
                 fetchStats();
                 if (activeTab === "shows") fetchShows();
-                else fetchUsers();
+                else if (activeTab === "users") fetchUsers();
                 fetchProducerRequests();
               }}
               className="h-8 px-2 text-muted-foreground hover:text-foreground border-secondary/20"
@@ -973,7 +986,9 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {activeTab === "shows" ? (
+          {activeTab === "invitations" ? (
+            <InvitationHub />
+          ) : activeTab === "shows" ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
