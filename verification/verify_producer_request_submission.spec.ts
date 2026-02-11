@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Producer Request Submission', () => {
+  // Use a valid UUID to simulate real behavior strictly
+  const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
+
   const mockUser = {
-    id: 'test-user-id',
+    id: MOCK_USER_ID,
     email: 'audience@example.com',
     user_metadata: { full_name: 'Test Audience' },
     app_metadata: { provider: 'email' },
@@ -46,8 +49,8 @@ test.describe('Producer Request Submission', () => {
         await route.fulfill({
           status: 200,
           json: [{
-            id: 'profile-123',
-            user_id: 'test-user-id',
+            id: '987fcdeb-51a2-43d7-9012-345678901234', // Different UUID for profile ID
+            user_id: MOCK_USER_ID,
             role: 'audience',
             username: 'audience_user',
             avatar_url: null,
@@ -76,7 +79,7 @@ test.describe('Producer Request Submission', () => {
     });
   });
 
-  test('Audience member can submit a producer request', async ({ page }) => {
+  test('Audience member can submit a producer request with valid UUID', async ({ page }) => {
     // Intercept the POST request to verify payload and simulate success
     let interceptedRequestPayload: any = null;
     await page.route('**/rest/v1/producer_requests', async (route) => {
@@ -117,10 +120,15 @@ test.describe('Producer Request Submission', () => {
     // Verify Request Payload
     expect(interceptedRequestPayload).toBeTruthy();
     expect(interceptedRequestPayload).toMatchObject({
-      user_id: 'test-user-id',
+      user_id: MOCK_USER_ID, // Should match Auth ID
       group_name: 'My Awesome Theater',
       portfolio_link: 'https://facebook.com/awesome-theater'
     });
+
+    // Strict check on UUID format to ensure no type coercion issues
+    expect(interceptedRequestPayload.user_id).toBe(MOCK_USER_ID);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    expect(interceptedRequestPayload.user_id).toMatch(uuidRegex);
 
     // Verify UI updates (Pending status)
     await expect(page.getByText('Request Status: Pending')).toBeVisible();
