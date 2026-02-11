@@ -279,6 +279,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: { role }
       }
     });
+
+    if (error) {
+      console.error("SignUp detailed error:", error);
+    }
+
     return { error };
   };
 

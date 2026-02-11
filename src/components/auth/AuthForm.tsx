@@ -179,7 +179,7 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
           triggerShake();
           toast({
             title: "Sign up failed",
-            description: error.message,
+            description: error.message + (error.status ? ` (Status: ${error.status})` : ""),
             variant: "destructive",
           });
         } else {
