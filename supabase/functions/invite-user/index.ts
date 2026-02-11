@@ -41,7 +41,7 @@ serve(async (req) => {
       throw new Error("Only admins can invite users");
     }
 
-    const { email, first_name } = await req.json();
+    const { email, first_name, redirect_to } = await req.json();
 
     if (!email || !first_name) {
       return new Response(
@@ -87,7 +87,7 @@ serve(async (req) => {
           inviter_name: "StageLink Admin",
           role: "audience", // Default role
         },
-        // Rely on Supabase Site URL configuration for redirect
+        redirectTo: redirect_to,
       }
     );
 

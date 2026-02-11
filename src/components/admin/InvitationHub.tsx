@@ -121,6 +121,7 @@ export function InvitationHub() {
         body: {
           email: formData.email,
           first_name: formData.firstName,
+          redirect_to: `${window.location.origin}/reset-password?type=recovery`,
         },
       });
 
