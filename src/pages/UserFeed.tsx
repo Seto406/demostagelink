@@ -33,6 +33,8 @@ import { toast } from "@/hooks/use-toast";
 import { FeedPost } from "@/components/feed/FeedPost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { dummyShows as importedDummyShows } from "@/data/dummyShows";
+
 // Interface for Shows
 export interface Show {
   id: string;
@@ -57,43 +59,6 @@ interface Producer {
   avatar_url: string | null;
   niche: string | null;
 }
-
-// Dummy placeholder shows for empty state
-const dummyShows: Show[] = [
-  {
-    id: "dummy-1",
-    title: "Hamlet - University Edition",
-    description: "A classic tale of revenge and tragedy, reimagined for the modern stage. Experience the intensity of Shakespeare's masterpiece in an intimate setting.",
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    venue: "University Theater",
-    city: "Manila",
-    poster_url: null,
-    created_at: new Date().toISOString(),
-    profiles: { group_name: "Sample Theater Group", id: "dummy", avatar_url: null }
-  },
-  {
-    id: "dummy-2",
-    title: "The Phantom of Manila",
-    description: "A local adaptation of the beloved musical classic. Featuring original compositions and a cast of talented local performers.",
-    date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    venue: "Cultural Center",
-    city: "Makati",
-    poster_url: null,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    profiles: { group_name: "Metro Arts Collective", id: "dummy", avatar_url: null }
-  },
-  {
-    id: "dummy-3",
-    title: "Rizal: The Musical",
-    description: "The life and legacy of our national hero brought to life on stage. A powerful tribute to the man who sparked a revolution.",
-    date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    venue: "National Theater",
-    city: "Quezon City",
-    poster_url: null,
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    profiles: { group_name: "Heritage Players", id: "dummy", avatar_url: null }
-  }
-];
 
 const UserFeed = () => {
   const navigate = useNavigate();
@@ -247,7 +212,8 @@ const UserFeed = () => {
   }
 
   // Determine which shows to display
-  const displayShows = shows.length === 0 ? dummyShows : shows;
+  // Use a type assertion to treat importedDummyShows as compatible Show[] objects
+  const displayShows = [...shows, ...(importedDummyShows as unknown as Show[])];
 
   const navItems = [
     { icon: Home, label: "Home", path: "/feed" },
