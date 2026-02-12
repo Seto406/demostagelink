@@ -22,6 +22,7 @@ interface Profile {
   facebook_url: string | null;
   instagram_url: string | null;
   address: string | null;
+  university: string | null;
 }
 
 interface AuthContextType {
@@ -71,9 +72,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 user: mockUser,
                 expires_at: 9999999999
             } as Session);
-            ensureProfile(mockUser.id, mockUser.user_metadata);
+            ensureProfile(mockUser.id, mockUser.user_metadata).then(() => {
+                setLoading(false);
+            });
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }
   }, []);
 

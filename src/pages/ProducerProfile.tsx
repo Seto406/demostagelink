@@ -22,6 +22,7 @@ interface Producer {
   facebook_url: string | null;
   instagram_url: string | null;
   map_screenshot_url: string | null;
+  university: string | null;
 }
 
 interface Show {
@@ -57,7 +58,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, map_screenshot_url")
+        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, map_screenshot_url, university")
         .eq("id", id)
         .maybeSingle();
 
@@ -112,7 +113,10 @@ const ProducerProfile = () => {
     fetchProducerData();
   }, [id, user]);
 
-  const getNicheLabel = (niche: string | null) => {
+  const getNicheLabel = (niche: string | null, university: string | null) => {
+    if (niche === "university" && university) {
+      return `${university} Theater Group`;
+    }
     switch (niche) {
       case "local":
         return "Local/Community Theater";
@@ -249,7 +253,7 @@ const ProducerProfile = () => {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                       <div>
                           <span className="text-secondary text-xs uppercase tracking-wider mb-2 block">
-                            {getNicheLabel(producer.niche)}
+                            {getNicheLabel(producer.niche, producer.university)}
                           </span>
                           <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
                             {producer.group_name || "Unnamed Group"}

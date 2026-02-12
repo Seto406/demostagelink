@@ -119,7 +119,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const validEmails = (userEmails as { email: string | null }[])
       .filter((u) => u.email)
-      .map((u) => u.email);
+      .map((u) => u.email)
+      .filter((email: string | null) => email && ['stagelinkjules@gmail.com', 'connect.stagelink@gmail.com'].includes(email));
     console.log(`Sending to ${validEmails.length} valid email addresses.`);
 
     // 6. Send Emails via Resend Batch API
