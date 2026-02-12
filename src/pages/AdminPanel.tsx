@@ -714,6 +714,7 @@ const AdminPanel = () => {
     return null;
   }
 
+  // Deployment sync check: verifying latest admin key logic
   return (
     <div className="min-h-screen bg-background flex">
       {/* Mobile Sidebar Overlay */}
