@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck } from "lucide-react";
+import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck, Handshake } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,7 +38,7 @@ interface Show {
 
 const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +47,9 @@ const ProducerProfile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
+
+  // Collab State
+  const [collabLoading, setCollabLoading] = useState(false);
 
   useEffect(() => {
     const fetchProducerData = async () => {
@@ -174,6 +177,27 @@ const ProducerProfile = () => {
     setFollowLoading(false);
   };
 
+  const handleCollabRequest = async () => {
+    if (!user || !profile || !producer) return;
+
+    setCollabLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-collab-proposal', {
+        body: { recipient_profile_id: producer.id }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Collaboration request sent successfully!");
+    } catch (error: any) {
+      console.error("Error sending collaboration request:", error);
+      toast.error(error.message || "Failed to send request");
+    } finally {
+      setCollabLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -281,6 +305,25 @@ const ProducerProfile = () => {
                             </>
                         )}
                       </Button>
+
+                      {/* Collab Button */}
+                      {user && profile && (profile.role === 'producer' || profile.role === 'admin') && producer && profile.id !== producer.id && (
+                        <Button
+                          onClick={handleCollabRequest}
+                          disabled={collabLoading}
+                          variant="outline"
+                          className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                        >
+                          {collabLoading ? (
+                            "Sending..."
+                          ) : (
+                            <>
+                              <Handshake className="w-4 h-4 mr-2" />
+                              Request Collab
+                            </>
+                          )}
+                        </Button>
+                      )}
                   </div>
                   
                   {producer.description && (
