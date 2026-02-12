@@ -646,7 +646,7 @@ const AdminPanel = () => {
   const handleForceDeleteUser = async () => {
     const validKey = import.meta.env.VITE_ADMIN_ACTION_KEY;
 
-    if (adminSecurityKey !== validKey) {
+    if (!validKey || adminSecurityKey.trim() !== validKey.trim()) {
       toast({
         title: "Invalid Security Key",
         description: "The provided security key is incorrect.",
@@ -1571,11 +1571,11 @@ const AdminPanel = () => {
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">
-                  Admin Security Key:
+                  StageLink Admin Security Key
                 </label>
                 <Input
                   type="password"
-                  placeholder="Enter Admin Security Key..."
+                  placeholder="Enter StageLink Admin Security Key"
                   value={adminSecurityKey}
                   onChange={(e) => setAdminSecurityKey(e.target.value)}
                   className="bg-background border-border"
