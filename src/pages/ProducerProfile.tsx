@@ -189,7 +189,7 @@ const ProducerProfile = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success("Collaboration request sent successfully!");
+      toast.success(`Handshake Sent! Your professional profile has been shared with ${producer.group_name}. Check your email for the confirmation log.`);
     } catch (error: any) {
       console.error("Error sending collaboration request:", error);
       toast.error(error.message || "Failed to send request");
@@ -307,10 +307,10 @@ const ProducerProfile = () => {
                       </Button>
 
                       {/* Collab Button */}
-                      {user && profile && (profile.role === 'producer' || profile.role === 'admin') && producer && profile.id !== producer.id && (
+                      {user && profile && (profile.role === 'producer' || profile.role === 'admin') && producer && (
                         <Button
                           onClick={handleCollabRequest}
-                          disabled={collabLoading}
+                          disabled={collabLoading || profile.id === producer.id}
                           variant="outline"
                           className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
                         >

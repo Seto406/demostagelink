@@ -119,8 +119,12 @@ serve(async (req) => {
     const recipientEmail = recipientUser.user.email;
     const senderEmail = user.email; // Sender's contact email
 
-    if (!recipientEmail || !senderEmail) {
-        throw new Error("Email address missing for sender or recipient");
+    if (!recipientEmail) {
+        throw new Error("This theater group has missing contact info.");
+    }
+
+    if (!senderEmail) {
+        throw new Error("Your account has missing contact info.");
     }
 
     // 6. Insert Log
