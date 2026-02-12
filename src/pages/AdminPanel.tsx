@@ -643,6 +643,7 @@ const AdminPanel = () => {
   };
 
   // Force delete user function
+  // Force redeploy: Clean build cache trigger
   const handleForceDeleteUser = async () => {
     const validKey = import.meta.env.VITE_ADMIN_ACTION_KEY;
 
