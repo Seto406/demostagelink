@@ -242,6 +242,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`public:profiles:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          console.log('Profile updated via Realtime, refreshing context...');
+          refreshProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  useEffect(() => {
     if (!loading) return;
 
     const timeoutId = setTimeout(() => {

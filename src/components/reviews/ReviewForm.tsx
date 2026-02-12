@@ -14,7 +14,7 @@ interface ReviewFormProps {
 }
 
 export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { addXp } = useGamification();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -23,7 +23,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
+    if (!user || !profile) {
       toast.error("Authentication required", {
         description: "Please log in to leave a review.",
       });
@@ -44,7 +44,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
         .from("reviews")
         .insert({
           show_id: showId,
-          user_id: user.id,
+          user_id: profile.id,
           rating,
           comment: comment.trim() || null,
         });
