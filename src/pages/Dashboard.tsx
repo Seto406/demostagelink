@@ -39,6 +39,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface CastMember {
   name: string;
@@ -64,6 +65,7 @@ interface Show {
   tags: string[] | null;
   cast_members: CastMember[] | null;
   price: number | null;
+  is_featured?: boolean;
 }
 
 const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
@@ -114,6 +116,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
+  const { isPro } = useSubscription();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
   const [showModal, setShowModal] = useState(false);
@@ -560,6 +563,36 @@ const Dashboard = () => {
     }
   };
 
+  const handlePromoteShow = async (showId: string, showTitle: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
+        body: {
+          amount: 50000, // 500 PHP
+          description: `Feature Show: ${showTitle}`,
+          metadata: {
+            type: "featured_show",
+            show_id: showId
+          },
+          redirect_url: window.location.origin + "/payment/success",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (error) {
+      console.error("Promotion error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate promotion payment.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleUpdateProfile = async () => {
     if (!profile) return;
     setUploadingProfile(true);
@@ -759,7 +792,7 @@ const Dashboard = () => {
               {profile && (
                 <div className="space-y-4">
                   <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
-                  <AnalyticsDashboard profileId={profile.id} />
+                  <AnalyticsDashboard profileId={profile.id} isPro={isPro} />
                 </div>
               )}
 
@@ -852,7 +885,7 @@ const Dashboard = () => {
                               {show.production_status || "ongoing"}
                             </span>
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -863,6 +896,22 @@ const Dashboard = () => {
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
+
+                            {!show.is_featured && (
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => handlePromoteShow(show.id, show.title)}
+                                 className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
+                               >
+                                 Promote (₱500)
+                               </Button>
+                             )}
+                             {show.is_featured && (
+                               <span className="text-xs text-yellow-500 font-medium px-2 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+                                 Featured
+                               </span>
+                             )}
                           </td>
                         </tr>
                       ))}
@@ -1077,8 +1126,8 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="max-w-4xl space-y-6"
             >
-              <GroupMembers profileId={profile.id} />
-              <AudienceLinking />
+              <GroupMembers profileId={profile.id} isPro={isPro} />
+              <AudienceLinking isPro={isPro} />
             </motion.div>
           )}
         </div>

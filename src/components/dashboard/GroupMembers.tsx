@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, Users, Upload, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Upload, X, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface GroupMember {
   id: string;
@@ -34,9 +35,11 @@ interface GroupMember {
 
 interface GroupMembersProps {
   profileId: string;
+  isPro?: boolean;
 }
 
-export const GroupMembers = ({ profileId }: GroupMembersProps) => {
+export const GroupMembers = ({ profileId, isPro = false }: GroupMembersProps) => {
+  const navigate = useNavigate();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -51,6 +54,10 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
   const [saving, setSaving] = useState(false);
 
   const fetchMembers = useCallback(async () => {
+    if (!isPro) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase
       .from("group_members")
@@ -64,7 +71,7 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
       setMembers(data as GroupMember[]);
     }
     setLoading(false);
-  }, [profileId]);
+  }, [profileId, isPro]);
 
   useEffect(() => {
     if (profileId) {
@@ -228,6 +235,43 @@ export const GroupMembers = ({ profileId }: GroupMembersProps) => {
     }
     setDeleteConfirm(null);
   };
+
+  if (!isPro) {
+    return (
+      <div className="bg-card border border-secondary/20 p-6 ios-rounded relative overflow-hidden">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-secondary/10 p-4 rounded-full mb-4">
+            <Lock className="w-8 h-8 text-secondary" />
+          </div>
+          <h3 className="font-serif text-2xl font-bold mb-2">Cast & Crew Management Locked</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Showcase your talented team! Upgrade to Pro to add cast and crew members to your group profile.
+          </p>
+          <Button onClick={() => navigate("/settings")} variant="default" size="lg">
+            Upgrade to Pro
+          </Button>
+        </div>
+
+        {/* Placeholder Content */}
+        <div className="flex items-center justify-between mb-6 opacity-20 filter blur-sm select-none pointer-events-none">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-primary" />
+            <h2 className="font-serif text-xl text-foreground">Group Members</h2>
+          </div>
+          <RippleButton variant="ios" size="sm" disabled>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Member
+          </RippleButton>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 opacity-20 filter blur-sm select-none pointer-events-none">
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card border border-secondary/20 p-6 ios-rounded">

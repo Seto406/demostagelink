@@ -128,5 +128,33 @@ export const dummyShows: ShowDetails[] = [
       niche: "local",
       avatar_url: "https://ui-avatars.com/api/?name=Black+Box&background=random"
     }
+  },
+  {
+    id: "demo-test-ticket",
+    title: "Test Production (20 PHP)",
+    description: "A test production for verifying low-cost ticket transactions.",
+    date: "2026-12-30T19:00:00Z",
+    venue: "Test Venue",
+    city: "Test City",
+    ticket_link: null,
+    poster_url: null,
+    niche: "local",
+    status: "approved",
+    created_at: new Date().toISOString(),
+    genre: "Test",
+    director: "QA Tester",
+    duration: "1 hour",
+    tags: ["Test", "QA"],
+    cast_members: [],
+    price: 20, // 20 PHP
+    profiles: {
+      id: "demo-producer-test",
+      group_name: "Test Group",
+      username: "testgroup",
+      description: "Group for testing",
+      founded_year: 2026,
+      niche: "local",
+      avatar_url: null
+    }
   }
 ];
