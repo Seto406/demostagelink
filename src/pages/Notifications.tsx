@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 const ITEMS_PER_PAGE = 20;
 
 const Notifications = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ const Notifications = () => {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchNotifications = useCallback(async (pageIndex: number, isInitial = false) => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     try {
       if (isInitial) setLoading(true);
@@ -33,7 +33,7 @@ const Notifications = () => {
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", profile.id)
         .order("created_at", { ascending: false })
         .range(from, to);
 
@@ -55,19 +55,19 @@ const Notifications = () => {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
+    if (user && profile) {
       fetchNotifications(0, true);
 
       // Subscribe to real-time notifications
       const channel = supabase
-        .channel(`notifications-${user.id}`)
+        .channel(`notifications-${profile.id}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
-            filter: `user_id=eq.${user.id}`
+            filter: `user_id=eq.${profile.id}`
           },
           (payload) => {
             setNotifications(prev => [payload.new as Notification, ...prev]);
@@ -82,7 +82,7 @@ const Notifications = () => {
     } else if (!authLoading) {
         setLoading(false);
     }
-  }, [user, authLoading, fetchNotifications, refreshUnreadCount]);
+  }, [user, profile, authLoading, fetchNotifications, refreshUnreadCount]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -108,13 +108,15 @@ const Notifications = () => {
     // Optimistic update
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", user!.id)
-      .eq("read", false);
+    if (profile) {
+      await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", profile.id)
+        .eq("read", false);
 
-    refreshUnreadCount();
+      refreshUnreadCount();
+    }
   };
 
   if (authLoading || (loading && user)) {

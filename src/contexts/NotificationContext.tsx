@@ -11,11 +11,11 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
-    if (!user) {
+    if (!user || !profile) {
       setUnreadCount(0);
       return;
     }
@@ -24,7 +24,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+        .eq('user_id', profile.id)
         .eq('read', false);
 
       setUnreadCount(count || 0);
@@ -36,13 +36,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     fetchUnreadCount();
 
-    if (!user) return;
+    if (!user || !profile) return;
 
     const channel = supabase
-      .channel(`unread-notifications-global-${user.id}`)
+      .channel(`unread-notifications-global-${profile.id}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${profile.id}` },
         () => fetchUnreadCount()
       )
       .subscribe();
@@ -50,7 +50,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchUnreadCount]);
+  }, [user, profile, fetchUnreadCount]);
 
   return (
     <NotificationContext.Provider value={{ unreadCount, refreshUnreadCount: fetchUnreadCount }}>
