@@ -940,7 +940,7 @@ const Dashboard = () => {
                   <div className="space-y-2">
                     <Label htmlFor="niche" className="text-sm font-medium text-muted-foreground">Niche</Label>
                     <Select value={niche} onValueChange={(val) => setNiche(val as "local" | "university")}>
-                      <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
+                      <SelectTrigger id="niche" className="bg-background border-secondary/30 h-12 rounded-xl">
                         <SelectValue placeholder="Select your group type" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-secondary/30 rounded-xl">
@@ -954,7 +954,7 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <Label htmlFor="university" className="text-sm font-medium text-muted-foreground">University Affiliation</Label>
                       <Select value={university} onValueChange={setUniversity}>
-                        <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
+                        <SelectTrigger id="university" className="bg-background border-secondary/30 h-12 rounded-xl">
                           <SelectValue placeholder="Select University" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-secondary/30 rounded-xl">
@@ -1002,6 +1002,7 @@ const Dashboard = () => {
                             setMapPreview(null);
                           }}
                           className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                          aria-label="Remove map image"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1151,7 +1152,7 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <Label htmlFor="showCity">City</Label>
                   <Select value={newShowCity} onValueChange={setNewShowCity}>
-                    <SelectTrigger className="bg-background border-secondary/30">
+                    <SelectTrigger id="showCity" className="bg-background border-secondary/30">
                       <SelectValue placeholder="Select city" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-secondary/30">
@@ -1180,7 +1181,7 @@ const Dashboard = () => {
               <div className="space-y-2">
                 <Label htmlFor="showNiche">Type</Label>
                 <Select value={newShowNiche} onValueChange={(val) => setNewShowNiche(val as "local" | "university")}>
-                  <SelectTrigger className="bg-background border-secondary/30">
+                  <SelectTrigger id="showNiche" className="bg-background border-secondary/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-secondary/30">
@@ -1203,7 +1204,7 @@ const Dashboard = () => {
                   </Tooltip>
                 </div>
                 <Select value={newShowProductionStatus} onValueChange={(val) => setNewShowProductionStatus(val as "ongoing" | "completed" | "draft")}>
-                  <SelectTrigger className="bg-background border-secondary/30">
+                  <SelectTrigger id="showProductionStatus" className="bg-background border-secondary/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-secondary/30">
@@ -1309,6 +1310,7 @@ const Dashboard = () => {
                       size="icon"
                       onClick={() => handleRemoveCastMember(index)}
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      aria-label={`Remove ${member.name}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1357,6 +1359,7 @@ const Dashboard = () => {
                     className="h-9 w-9 p-0"
                     disabled={!tempCastName.trim() || !tempCastRole.trim()}
                     title="Add Cast Member"
+                    aria-label="Add Cast Member"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
