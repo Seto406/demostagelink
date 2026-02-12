@@ -36,9 +36,10 @@ interface GroupMember {
 interface GroupMembersProps {
   profileId: string;
   isPro?: boolean;
+  onUpsell?: () => void;
 }
 
-export const GroupMembers = ({ profileId, isPro = false }: GroupMembersProps) => {
+export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMembersProps) => {
   const navigate = useNavigate();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,7 +248,7 @@ export const GroupMembers = ({ profileId, isPro = false }: GroupMembersProps) =>
           <p className="text-muted-foreground max-w-md mb-6">
             Showcase your talented team! Upgrade to Pro to add cast and crew members to your group profile.
           </p>
-          <Button onClick={() => navigate("/settings")} variant="default" size="lg">
+          <Button onClick={() => onUpsell ? onUpsell() : navigate("/settings")} variant="default" size="lg">
             Upgrade to Pro
           </Button>
         </div>

@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 interface AnalyticsDashboardProps {
   profileId: string;
   isPro?: boolean;
+  onUpsell?: () => void;
 }
 
 interface ChartDataPoint {
@@ -30,7 +31,7 @@ interface AnalyticsSummary {
   chartData: { date: string; clicks: number }[];
 }
 
-export const AnalyticsDashboard = ({ profileId, isPro = false }: AnalyticsDashboardProps) => {
+export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: AnalyticsDashboardProps) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ views: 0, clicks: 0, ctr: 0 });
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
@@ -112,7 +113,7 @@ export const AnalyticsDashboard = ({ profileId, isPro = false }: AnalyticsDashbo
           <p className="text-muted-foreground max-w-md mb-6">
             Upgrade to Pro to see detailed profile views, ticket clicks, and click-through rates. Track your production's performance in real-time.
           </p>
-          <Button onClick={() => navigate("/settings")} variant="default" size="lg">
+          <Button onClick={() => onUpsell ? onUpsell() : navigate("/settings")} variant="default" size="lg">
             Upgrade to Pro
           </Button>
         </div>

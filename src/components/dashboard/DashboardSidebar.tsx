@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Film, User, Users, LogOut, X } from "lucide-react";
+import { LayoutDashboard, Film, User, Users, LogOut, X, Lock } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
 export type DashboardTab = "dashboard" | "shows" | "profile" | "members";
@@ -10,6 +10,8 @@ interface DashboardSidebarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   handleLogout: () => void;
+  isPro?: boolean;
+  onUpsell?: () => void;
 }
 
 export const DashboardSidebar = ({
@@ -18,6 +20,8 @@ export const DashboardSidebar = ({
   sidebarOpen,
   setSidebarOpen,
   handleLogout,
+  isPro = false,
+  onUpsell,
 }: DashboardSidebarProps) => {
   return (
     <aside
@@ -88,7 +92,13 @@ export const DashboardSidebar = ({
           </button>
 
           <button
-            onClick={() => setActiveTab("members")}
+            onClick={() => {
+              if (!isPro) {
+                onUpsell?.();
+                return;
+              }
+              setActiveTab("members");
+            }}
             aria-label="Members"
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "members"
@@ -97,7 +107,12 @@ export const DashboardSidebar = ({
             }`}
           >
             <Users className="w-5 h-5" />
-            {sidebarOpen && <span>Members</span>}
+            {sidebarOpen && (
+              <>
+                <span>Members</span>
+                {!isPro && <Lock className="w-4 h-4 ml-auto" />}
+              </>
+            )}
           </button>
         </nav>
 
