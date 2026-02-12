@@ -40,6 +40,7 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { useSubscription } from "@/hooks/useSubscription";
+import { ProModal } from "@/components/ui/pro-modal";
 
 interface CastMember {
   name: string;
@@ -125,6 +126,7 @@ const Dashboard = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [runTour, setRunTour] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -229,6 +231,31 @@ const Dashboard = () => {
   useEffect(() => {
     fetchShows();
   }, [fetchShows]);
+
+  // Realtime subscription for shows to ensure "Pending Approval" state updates immediately
+  useEffect(() => {
+    if (!profile) return;
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shows',
+          filter: `producer_id=eq.${profile.id}`,
+        },
+        () => {
+          fetchShows();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile, fetchShows]);
 
   // Handle tour
   useEffect(() => {
@@ -791,7 +818,10 @@ const Dashboard = () => {
 
               {profile && (
                 <div className="space-y-4">
-                  <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
+                  <h2 className="font-serif text-xl text-foreground flex items-center gap-2">
+                    Analytics Overview
+                    {!isPro && <Lock className="w-4 h-4 text-secondary" />}
+                  </h2>
                   <AnalyticsDashboard profileId={profile.id} isPro={isPro} />
                 </div>
               )}
@@ -901,9 +931,16 @@ const Dashboard = () => {
                                <Button
                                  variant="outline"
                                  size="sm"
-                                 onClick={() => handlePromoteShow(show.id, show.title)}
-                                 className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
+                                 onClick={() => {
+                                   if (isPro) {
+                                     handlePromoteShow(show.id, show.title);
+                                   } else {
+                                     setShowProModal(true);
+                                   }
+                                 }}
+                                 className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400 gap-1"
                                >
+                                 {!isPro && <Lock className="w-3 h-3" />}
                                  Promote (₱500)
                                </Button>
                              )}
@@ -1489,6 +1526,8 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ProModal open={showProModal} onOpenChange={setShowProModal} />
     </div>
   );
 };
