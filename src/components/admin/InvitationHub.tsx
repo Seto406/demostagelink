@@ -226,6 +226,9 @@ export function InvitationHub() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Tip: You can use 'email+1@gmail.com' to test multiple roles with one inbox.
+                </p>
               </div>
             </CardContent>
             <CardFooter>
