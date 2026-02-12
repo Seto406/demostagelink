@@ -675,17 +675,16 @@ const AdminPanel = () => {
 
       if (requestsError) console.error("Error deleting user requests:", requestsError);
 
-      // Delete user profile (note: full auth.users deletion requires admin API)
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("user_id", userToDelete.user_id);
+      // Call Edge Function to delete user from Auth (which cascades to profile)
+      const { error: deleteUserError } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userToDelete.user_id },
+      });
 
-      if (profileError) throw profileError;
+      if (deleteUserError) throw deleteUserError;
 
       toast({
         title: "User Deleted",
-        description: "User profile and associated data have been removed.",
+        description: "User has been removed from Auth and all associated data deleted.",
       });
       
       setDeleteUserModal(false);
