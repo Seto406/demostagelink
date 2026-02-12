@@ -14,39 +14,7 @@ import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewList } from "@/components/reviews/ReviewList";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
-
-interface CastMember {
-  name: string;
-  role: string;
-}
-
-interface ShowDetails {
-  id: string;
-  title: string;
-  description: string | null;
-  date: string | null;
-  venue: string | null;
-  city: string | null;
-  ticket_link: string | null;
-  poster_url: string | null;
-  niche: "local" | "university" | null;
-  status: "pending" | "approved" | "rejected";
-  created_at: string;
-  genre: string | null;
-  director: string | null;
-  duration: string | null;
-  tags: string[] | null;
-  cast_members: CastMember[] | null;
-  price: number | null;
-  profiles: {
-    id: string;
-    group_name: string | null;
-    username: string | null;
-    description: string | null;
-    founded_year: number | null;
-    niche: "local" | "university" | null;
-  } | null;
-}
+import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 
 const ShowDetailsPage = () => {
   const { profile } = useAuth();
@@ -62,6 +30,15 @@ const ShowDetailsPage = () => {
     const fetchShow = async () => {
       if (!id) {
         setError("Production not found");
+        setLoading(false);
+        return;
+      }
+
+      // Check for dummy show first
+      const dummyShow = dummyShows.find(s => s.id === id);
+      if (dummyShow) {
+        setShow(dummyShow);
+        document.title = `${dummyShow.title} | StageLink`;
         setLoading(false);
         return;
       }
