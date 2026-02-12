@@ -112,7 +112,37 @@ CREATE POLICY "User badges are viewable by everyone"
 
 
 -- ============================================================================
--- 4. Create Activities Table
+-- 4. Create Reviews Table
+-- Source: 20260216000000_social_features.sql
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  show_id UUID NOT NULL REFERENCES public.shows(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+-- Enable RLS for reviews
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+-- Reviews policies
+DROP POLICY IF EXISTS "Reviews are viewable by everyone" ON public.reviews;
+CREATE POLICY "Reviews are viewable by everyone"
+  ON public.reviews FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "Users can insert their own reviews" ON public.reviews;
+CREATE POLICY "Users can insert their own reviews"
+  ON public.reviews FOR INSERT
+  WITH CHECK (auth.uid() IN (SELECT user_id FROM public.profiles WHERE id = reviews.user_id));
+
+
+-- ============================================================================
+-- 5. Create Activities Table
 -- Source: 20260218000000_social_profile_features.sql
 -- ============================================================================
 
@@ -141,7 +171,7 @@ CREATE POLICY "Users can insert their own activities"
 
 
 -- ============================================================================
--- 5. Create Favorites Table
+-- 6. Create Favorites Table
 -- Source: 20260225000000_fix_favorites_schema.sql
 -- ============================================================================
 
@@ -194,7 +224,7 @@ CREATE INDEX IF NOT EXISTS favorites_show_id_idx ON public.favorites(show_id);
 
 
 -- ============================================================================
--- 6. Create Producer Requests Table (Dependency for Admin Stats)
+-- 7. Create Producer Requests Table (Dependency for Admin Stats)
 -- Source: 20260306000000_create_producer_requests_table.sql
 -- ============================================================================
 
@@ -266,7 +296,7 @@ COMMENT ON COLUMN public.producer_requests.status IS 'Status of the request: pen
 
 
 -- ============================================================================
--- 7. Create get_admin_dashboard_stats RPC Function
+-- 8. Create get_admin_dashboard_stats RPC Function
 -- Source: 20260301000000_get_admin_stats.sql
 -- ============================================================================
 
@@ -322,7 +352,7 @@ GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats() TO authenticated;
 
 
 -- ============================================================================
--- 8. Finalize Schema Cache Reload
+-- 9. Finalize Schema Cache Reload
 -- ============================================================================
 
 NOTIFY pgrst, 'reload config';
