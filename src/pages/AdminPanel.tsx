@@ -142,16 +142,10 @@ const AdminPanel = () => {
   const [currentShowsPage, setCurrentShowsPage] = useState(1);
   const [totalShowsCount, setTotalShowsCount] = useState(0);
 
-  // Dev tools state
-  const [devModalOpen, setDevModalOpen] = useState(false);
-  const [devPassword, setDevPassword] = useState("");
-  const [resetting, setResetting] = useState(false);
-  const [resetType, setResetType] = useState<"shows" | "factory">("shows");
-  
   // Delete user state
   const [deleteUserModal, setDeleteUserModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
-  const [deleteUserPassword, setDeleteUserPassword] = useState("");
+  const [adminSecurityKey, setAdminSecurityKey] = useState("");
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -648,89 +642,14 @@ const AdminPanel = () => {
     }
   };
 
-  // Dev reset function
-  const handleDevReset = async () => {
-    if (devPassword !== "dev123") {
-      toast({
-        title: "Invalid Password",
-        description: "The dev password is incorrect.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setResetting(true);
-    try {
-      if (resetType === "factory") {
-        // Factory reset: Delete all shows, producer requests, and non-admin profiles
-        // First delete shows
-        const { error: showsError } = await supabase
-          .from("shows")
-          .delete()
-          .neq("id", "00000000-0000-0000-0000-000000000000");
-        
-        if (showsError) throw showsError;
-
-        // Delete producer requests
-        const { error: requestsError } = await supabase
-          .from("producer_requests")
-          .delete()
-          .neq("id", "00000000-0000-0000-0000-000000000000");
-        
-        if (requestsError) throw requestsError;
-
-        // Delete non-admin profiles (this cascades from auth.users but we need edge function for that)
-        // For now, just reset roles of non-admin users
-        const { error: profilesError } = await supabase
-          .from("profiles")
-          .update({ role: "audience", group_name: null })
-          .neq("role", "admin");
-        
-        if (profilesError) throw profilesError;
-
-        toast({
-          title: "Factory Reset Complete",
-          description: "All productions, requests cleared. Non-admin users reset to audience.",
-        });
-      } else {
-        // Delete all shows only
-        const { error } = await supabase
-          .from("shows")
-          .delete()
-          .neq("id", "00000000-0000-0000-0000-000000000000");
-
-        if (error) throw error;
-
-        toast({
-          title: "Reset Complete",
-          description: "All productions have been cleared from the database.",
-        });
-      }
-      
-      setDevModalOpen(false);
-      setDevPassword("");
-      fetchShows();
-      fetchUsers();
-      fetchProducerRequests();
-      fetchStats();
-    } catch (error) {
-      console.error("Error resetting:", error);
-      toast({
-        title: "Reset Failed",
-        description: "Failed to reset. Check console for details.",
-        variant: "destructive",
-      });
-    } finally {
-      setResetting(false);
-    }
-  };
-
   // Force delete user function
   const handleForceDeleteUser = async () => {
-    if (deleteUserPassword !== "dev123") {
+    const validKey = import.meta.env.VITE_ADMIN_ACTION_KEY;
+
+    if (adminSecurityKey !== validKey) {
       toast({
-        title: "Invalid Password",
-        description: "The dev password is incorrect.",
+        title: "Invalid Security Key",
+        description: "The provided security key is incorrect.",
         variant: "destructive",
       });
       return;
@@ -770,7 +689,7 @@ const AdminPanel = () => {
       
       setDeleteUserModal(false);
       setUserToDelete(null);
-      setDeleteUserPassword("");
+      setAdminSecurityKey("");
       fetchUsers();
       fetchStats();
     } catch (error) {
@@ -879,13 +798,6 @@ const AdminPanel = () => {
 
           {/* Logout */}
           <div className="p-4 border-t border-sidebar-border space-y-2">
-            <button
-              onClick={() => setDevModalOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-orange-500/10 hover:text-orange-500 transition-colors rounded-lg"
-            >
-              <Trash2 className="w-5 h-5" />
-              {sidebarOpen && <span>Dev Reset</span>}
-            </button>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors rounded-lg"
@@ -1394,7 +1306,7 @@ const AdminPanel = () => {
                                     setDeleteUserModal(true);
                                   }}
                                   className="text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
-                                  title="Force Delete User"
+                                  title="Delete User"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -1638,95 +1550,16 @@ const AdminPanel = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dev Reset Modal */}
-      <Dialog open={devModalOpen} onOpenChange={setDevModalOpen}>
-        <DialogContent className="bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-destructive flex items-center gap-2">
-              <Trash2 className="w-5 h-5" />
-              ⚠️ Dev Tools - Database Reset
-            </DialogTitle>
-            <DialogDescription>
-              Choose reset type and enter the dev password to confirm.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            {/* Reset Type Selection */}
-            <div className="space-y-3">
-              <label className="text-sm text-muted-foreground">Reset Type:</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setResetType("shows")}
-                  className={`p-4 rounded-lg border text-left transition-all ${
-                    resetType === "shows"
-                      ? "border-orange-500 bg-orange-500/10"
-                      : "border-secondary/30 hover:border-secondary/50"
-                  }`}
-                >
-                  <p className="font-medium text-foreground">Clear Productions</p>
-                  <p className="text-xs text-muted-foreground mt-1">Delete all productions only</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setResetType("factory")}
-                  className={`p-4 rounded-lg border text-left transition-all ${
-                    resetType === "factory"
-                      ? "border-red-500 bg-red-500/10"
-                      : "border-secondary/30 hover:border-secondary/50"
-                  }`}
-                >
-                  <p className="font-medium text-destructive">⚠️ FACTORY RESET</p>
-                  <p className="text-xs text-muted-foreground mt-1">Delete ALL data except admins</p>
-                </button>
-              </div>
-            </div>
-            
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Enter dev password to confirm:
-              </label>
-              <Input
-                type="password"
-                placeholder="Enter password..."
-                value={devPassword}
-                onChange={(e) => setDevPassword(e.target.value)}
-                className="bg-background border-border"
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDevModalOpen(false);
-                  setDevPassword("");
-                  setResetType("shows");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDevReset}
-                disabled={resetting || !devPassword}
-              >
-                {resetting ? "Resetting..." : resetType === "factory" ? "⚠️ FACTORY RESET" : "Clear Shows"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete User Modal */}
       <Dialog open={deleteUserModal} onOpenChange={setDeleteUserModal}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-orange-500 flex items-center gap-2">
+            <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Force Delete User
+              Delete User
             </DialogTitle>
             <DialogDescription>
-              This will delete the user's profile and all associated data (shows, requests).
+              This action cannot be undone. Please enter the StageLink Admin Security Key to confirm this action.
             </DialogDescription>
           </DialogHeader>
           {userToDelete && (
@@ -1738,13 +1571,13 @@ const AdminPanel = () => {
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">
-                  Enter dev password to confirm:
+                  Admin Security Key:
                 </label>
                 <Input
                   type="password"
-                  placeholder="Enter password..."
-                  value={deleteUserPassword}
-                  onChange={(e) => setDeleteUserPassword(e.target.value)}
+                  placeholder="Enter Admin Security Key..."
+                  value={adminSecurityKey}
+                  onChange={(e) => setAdminSecurityKey(e.target.value)}
                   className="bg-background border-border"
                 />
               </div>
@@ -1754,7 +1587,7 @@ const AdminPanel = () => {
                   onClick={() => {
                     setDeleteUserModal(false);
                     setUserToDelete(null);
-                    setDeleteUserPassword("");
+                    setAdminSecurityKey("");
                   }}
                 >
                   Cancel
@@ -1762,9 +1595,9 @@ const AdminPanel = () => {
                 <Button
                   variant="destructive"
                   onClick={handleForceDeleteUser}
-                  disabled={!deleteUserPassword}
+                  disabled={!adminSecurityKey}
                 >
-                  Delete User
+                  Confirm Delete
                 </Button>
               </div>
             </div>
