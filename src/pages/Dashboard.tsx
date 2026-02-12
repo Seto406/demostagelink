@@ -40,6 +40,7 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { useSubscription } from "@/hooks/useSubscription";
+import { UpsellModal } from "@/components/dashboard/UpsellModal";
 
 interface CastMember {
   name: string;
@@ -125,6 +126,7 @@ const Dashboard = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [runTour, setRunTour] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -728,6 +730,8 @@ const Dashboard = () => {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         handleLogout={handleLogout}
+        isPro={isPro}
+        onUpsell={() => setShowUpsellModal(true)}
       />
 
       {/* Main Content */}
@@ -791,8 +795,11 @@ const Dashboard = () => {
 
               {profile && (
                 <div className="space-y-4">
-                  <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
-                  <AnalyticsDashboard profileId={profile.id} isPro={isPro} />
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
+                    {!isPro && <Lock className="w-5 h-5 text-muted-foreground" />}
+                  </div>
+                  <AnalyticsDashboard profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
                 </div>
               )}
 
@@ -901,9 +908,10 @@ const Dashboard = () => {
                                <Button
                                  variant="outline"
                                  size="sm"
-                                 onClick={() => handlePromoteShow(show.id, show.title)}
+                                 onClick={() => !isPro ? setShowUpsellModal(true) : handlePromoteShow(show.id, show.title)}
                                  className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
                                >
+                                 {!isPro && <Lock className="w-3 h-3 mr-1" />}
                                  Promote (₱500)
                                </Button>
                              )}
@@ -1126,7 +1134,7 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="max-w-4xl space-y-6"
             >
-              <GroupMembers profileId={profile.id} isPro={isPro} />
+              <GroupMembers profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
               <AudienceLinking isPro={isPro} />
             </motion.div>
           )}
@@ -1489,6 +1497,8 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UpsellModal open={showUpsellModal} onOpenChange={setShowUpsellModal} />
     </div>
   );
 };
