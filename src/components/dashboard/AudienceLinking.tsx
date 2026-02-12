@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Mail, Check, X, Trash2 } from "lucide-react";
+import { Users, UserPlus, Mail, Check, X, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface AudienceLink {
   id: string;
@@ -17,7 +18,12 @@ interface AudienceLink {
   audience_email?: string;
 }
 
-export function AudienceLinking() {
+interface AudienceLinkingProps {
+  isPro?: boolean;
+}
+
+export function AudienceLinking({ isPro = false }: AudienceLinkingProps) {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const [links, setLinks] = useState<AudienceLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +33,10 @@ export function AudienceLinking() {
   useEffect(() => {
     const fetchLinks = async () => {
       if (!profile?.id) return;
+      if (!isPro) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const { data, error } = await supabase
@@ -47,7 +57,7 @@ export function AudienceLinking() {
     if (profile?.id) {
       fetchLinks();
     }
-  }, [profile?.id]);
+  }, [profile?.id, isPro]);
 
   const inviteAudience = async () => {
     if (!inviteEmail.trim() || !profile?.id) return;
@@ -101,6 +111,43 @@ export function AudienceLinking() {
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  if (!isPro) {
+    return (
+      <Card className="bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-secondary/10 p-4 rounded-full mb-4">
+            <Lock className="w-8 h-8 text-secondary" />
+          </div>
+          <h3 className="font-serif text-2xl font-bold mb-2">Audience Linking Locked</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Directly connect with your most loyal fans! Upgrade to Pro to invite audience members and verify their attendance.
+          </p>
+          <Button onClick={() => navigate("/settings")} variant="default" size="lg">
+            Upgrade to Pro
+          </Button>
+        </div>
+
+        {/* Placeholder Content */}
+        <CardHeader className="opacity-20 filter blur-sm">
+           <CardTitle className="flex items-center gap-2 text-lg">
+             <Users className="h-5 w-5 text-primary" />
+             Linked Audience Members
+           </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 opacity-20 filter blur-sm">
+           <div className="flex gap-2">
+             <Input placeholder="Enter audience email to invite..." disabled />
+             <Button disabled size="sm">
+               <UserPlus className="h-4 w-4 mr-1" />
+               Invite
+             </Button>
+           </div>
+           <div className="h-20 bg-muted/20 rounded"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (

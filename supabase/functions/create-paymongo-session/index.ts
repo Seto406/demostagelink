@@ -54,6 +54,13 @@ serve(async (req) => {
       throw new Error("Server configuration error");
     }
 
+    // Verify key type for logging
+    if (secretKey.startsWith("sk_test_")) {
+      console.log("Using PayMongo Test Key - Safe for QA");
+    } else {
+      console.warn("Using PayMongo LIVE Key - Real money transaction!");
+    }
+
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
     const successUrl = redirect_url || "https://www.stagelink.show/payment/success";
     const cancelUrl = "https://www.stagelink.show/payment/cancel"; // or receive from client

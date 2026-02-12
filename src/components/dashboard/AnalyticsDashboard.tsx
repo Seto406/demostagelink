@@ -4,15 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { motion } from "framer-motion";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Lock } from "lucide-react";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface AnalyticsDashboardProps {
   profileId: string;
+  isPro?: boolean;
 }
 
 interface ChartDataPoint {
@@ -27,12 +30,18 @@ interface AnalyticsSummary {
   chartData: { date: string; clicks: number }[];
 }
 
-export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
+export const AnalyticsDashboard = ({ profileId, isPro = false }: AnalyticsDashboardProps) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ views: 0, clicks: 0, ctr: 0 });
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
+    if (!isPro) {
+      setLoading(false);
+      return;
+    }
+
     try {
       // Use RPC function for server-side aggregation
       // This is much faster than fetching thousands of rows to the client
@@ -63,10 +72,12 @@ export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
     } finally {
       setLoading(false);
     }
-  }, [profileId]);
+  }, [profileId, isPro]);
 
   useEffect(() => {
     fetchData();
+
+    if (!isPro) return;
 
     // Realtime subscription
     const channel = supabase
@@ -88,7 +99,36 @@ export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profileId, fetchData]);
+  }, [profileId, fetchData, isPro]);
+
+  if (!isPro) {
+    return (
+      <Card className="bg-card border-secondary/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-secondary/10 p-4 rounded-full mb-4">
+            <Lock className="w-8 h-8 text-secondary" />
+          </div>
+          <h3 className="font-serif text-2xl font-bold mb-2">Detailed Analytics Locked</h3>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Upgrade to Pro to see detailed profile views, ticket clicks, and click-through rates. Track your production's performance in real-time.
+          </p>
+          <Button onClick={() => navigate("/settings")} variant="default" size="lg">
+            Upgrade to Pro
+          </Button>
+        </div>
+
+        {/* Placeholder Content behind blur */}
+        <div className="p-6 opacity-20 filter blur-sm select-none pointer-events-none">
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl"></div>
+          </div>
+          <div className="h-64 bg-secondary/20 rounded-xl"></div>
+        </div>
+      </Card>
+    );
+  }
 
   if (loading) {
     return <div className="h-96 flex items-center justify-center"><BrandedLoader /></div>;
