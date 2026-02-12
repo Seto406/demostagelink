@@ -100,18 +100,20 @@ export const DashboardSidebar = ({
               setActiveTab("members");
             }}
             aria-label="Members"
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+            className={`w-full relative flex items-center gap-3 px-4 py-3 transition-colors ${
               activeTab === "members"
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-foreground hover:bg-sidebar-accent/10"
             }`}
           >
             <Users className="w-5 h-5" />
-            {sidebarOpen && (
+            {sidebarOpen ? (
               <>
                 <span>Members</span>
                 {!isPro && <Lock className="w-4 h-4 ml-auto" />}
               </>
+            ) : (
+              !isPro && <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground/70" />
             )}
           </button>
         </nav>
