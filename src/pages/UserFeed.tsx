@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import Navbar from "@/components/layout/Navbar";
@@ -65,9 +66,6 @@ const UserFeed = () => {
   const location = useLocation();
   const { user, profile, loading, isAdmin } = useAuth();
   const { isPro } = useSubscription();
-  const [shows, setShows] = useState<Show[]>([]);
-  const [suggestedProducers, setSuggestedProducers] = useState<Producer[]>([]);
-  const [loadingShows, setLoadingShows] = useState(true);
   const [producerRequestModal, setProducerRequestModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
@@ -82,8 +80,9 @@ const UserFeed = () => {
   }, [user, loading, navigate]);
 
   // Fetch approved shows
-  useEffect(() => {
-    const fetchShows = async () => {
+  const { data: shows = [], isLoading: loadingShows } = useQuery({
+    queryKey: ['approved-shows'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("shows")
         .select(`
@@ -105,33 +104,25 @@ const UserFeed = () => {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      if (!error && data) {
-        setShows(data as Show[]);
-      }
-      setLoadingShows(false);
-    };
-
-    fetchShows();
-  }, []);
+      if (error) throw error;
+      return data as Show[];
+    },
+  });
 
   // Fetch suggested producers
-  useEffect(() => {
-    const fetchProducers = async () => {
-      // Fetch random producers (simulated by fetching first 5)
-      // Ideally we'd use a random function in SQL, but this is simple enough for now
+  const { data: suggestedProducers = [] } = useQuery({
+    queryKey: ['suggested-producers'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, group_name, avatar_url, niche")
         .eq("role", "producer")
         .limit(5);
 
-      if (!error && data) {
-        setSuggestedProducers(data);
-      }
-    };
-
-    fetchProducers();
-  }, []);
+      if (error) throw error;
+      return data as Producer[];
+    },
+  });
 
   // Check for existing producer request
   useEffect(() => {

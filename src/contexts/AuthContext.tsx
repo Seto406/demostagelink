@@ -130,12 +130,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             try {
               const { data: { user } } = await supabase.auth.getUser();
               if (user?.email) {
-                await supabase.functions.invoke("send-welcome-email", {
+                // Non-blocking call to send welcome email
+                supabase.functions.invoke("send-welcome-email", {
                   body: {
                     email: user.email,
                     name: (createdProfile as Profile).group_name || user.user_metadata?.full_name || user.user_metadata?.first_name,
                     role: role,
                   },
+                }).then(({ error }) => {
+                  if (error) console.error("Failed to trigger welcome email:", error);
                 });
               }
             } catch (emailError) {

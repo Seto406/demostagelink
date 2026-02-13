@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { Input } from "@/components/ui/input";
@@ -123,10 +124,29 @@ const Dashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [editingShow, setEditingShow] = useState<Show | null>(null);
-  const [shows, setShows] = useState<Show[]>([]);
-  const [loadingShows, setLoadingShows] = useState(true);
   const [runTour, setRunTour] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
+
+  // Use React Query for fetching shows
+  const { data: shows = [], isLoading: loadingShows, refetch: fetchShows } = useQuery({
+    queryKey: ['producer-shows', profile?.id],
+    queryFn: async () => {
+      if (!profile) return [];
+      const { data, error } = await supabase
+        .from("shows")
+        .select("*")
+        .eq("producer_id", profile.id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching shows:", error);
+        throw error;
+      }
+      return data as Show[];
+    },
+    enabled: !!profile,
+  });
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -207,30 +227,6 @@ const Dashboard = () => {
     const created = new Date(profile.created_at).getTime();
     return Date.now() - created > trialDuration;
   }, [profile]);
-
-  // Fetch shows (excluding soft-deleted)
-  const fetchShows = useCallback(async () => {
-    if (!profile) return;
-    
-    setLoadingShows(true);
-    const { data, error } = await supabase
-      .from("shows")
-      .select("*")
-      .eq("producer_id", profile.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching shows:", error);
-    } else {
-      setShows(data as Show[]);
-    }
-    setLoadingShows(false);
-  }, [profile]);
-
-  useEffect(() => {
-    fetchShows();
-  }, [fetchShows]);
 
   // Handle tour
   useEffect(() => {
