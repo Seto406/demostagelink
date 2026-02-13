@@ -15,12 +15,14 @@ DECLARE
   v_total_count BIGINT;
   v_users JSON;
 BEGIN
-  -- Check if user is admin
-  IF NOT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE user_id = auth.uid() AND role = 'admin'
-  ) THEN
-    RAISE EXCEPTION 'Access denied';
+  -- Check if user is admin (Restrict access only for API calls)
+  IF session_user = 'authenticator' THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+      RAISE EXCEPTION 'Access denied';
+    END IF;
   END IF;
 
   v_offset := (page_number - 1) * page_size;
