@@ -154,6 +154,7 @@ const Profile = () => {
            </motion.div>
 
            {/* Stats Grid */}
+           {/* Gamification "Prestige Path" Entry Point: RankCard handles null XP/Rank gracefully */}
            <div className="grid md:grid-cols-2 gap-6 mb-6">
              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                 <RankCard rank={profile.rank || "Newbie"} xp={profile.xp || 0} />

@@ -17,10 +17,10 @@ const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect logged-in users to the feed
+  // Redirect logged-in users to the dashboard
   useEffect(() => {
     if (!loading && user) {
-      navigate("/feed");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
