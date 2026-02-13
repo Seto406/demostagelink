@@ -200,7 +200,14 @@ CREATE INDEX IF NOT EXISTS shows_producer_id_idx ON public.shows(producer_id);
 
 
 -- ============================================================================
--- 6. Reload Schema Cache (Fixes Persistence of Errors)
+-- 6. Fix Username Column (Fixes "column does not exist" Error)
+-- ============================================================================
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+
+
+-- ============================================================================
+-- 7. Reload Schema Cache (Fixes Persistence of Errors)
 -- ============================================================================
 
 NOTIFY pgrst, 'reload config';
