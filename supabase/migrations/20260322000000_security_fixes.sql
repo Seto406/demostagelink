@@ -55,3 +55,6 @@ ON public.subscriptions
 FOR ALL
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
+
+-- Reload schema cache to ensure changes take effect immediately
+NOTIFY pgrst, 'reload schema';
