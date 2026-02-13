@@ -77,8 +77,9 @@ interface Show {
 }
 
 interface UserProfile {
-  id: string;
+  id: string | null;
   user_id: string;
+  email?: string;
   role: "audience" | "producer" | "admin";
   group_name: string | null;
   created_at: string;
@@ -270,22 +271,35 @@ const AdminPanel = () => {
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
 
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE - 1;
+    try {
+      const { data, error } = await supabase.rpc('get_admin_user_list', {
+        page_number: currentPage,
+        page_size: ITEMS_PER_PAGE
+      });
 
-    const { data, count, error } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(start, end);
+      if (error) throw error;
 
-    if (error) {
+      // Parse the response from RPC (JSON)
+      // The RPC returns { users: [...], total_count: number }
+      const result = data as { users: UserProfile[], total_count: number };
+
+      if (result && result.users) {
+        setUsers(result.users);
+        setTotalUserCount(Number(result.total_count));
+      } else {
+        setUsers([]);
+        setTotalUserCount(0);
+      }
+    } catch (error) {
       console.error("Error fetching users:", error);
-    } else {
-      setUsers(data as UserProfile[]);
-      if (count !== null) setTotalUserCount(count);
+      toast({
+        title: "Error",
+        description: "Failed to load users.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingUsers(false);
     }
-    setLoadingUsers(false);
   }, [currentPage]);
 
   // Fetch producer requests
@@ -660,12 +674,14 @@ const AdminPanel = () => {
 
     try {
       // Delete user's shows first
-      const { error: showsError } = await supabase
-        .from("shows")
-        .delete()
-        .eq("producer_id", userToDelete.id);
+      if (userToDelete.id) {
+        const { error: showsError } = await supabase
+          .from("shows")
+          .delete()
+          .eq("producer_id", userToDelete.id);
 
-      if (showsError) console.error("Error deleting user shows:", showsError);
+        if (showsError) console.error("Error deleting user shows:", showsError);
+      }
 
       // Delete user's producer requests
       const { error: requestsError } = await supabase
@@ -1249,6 +1265,7 @@ const AdminPanel = () => {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Email</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Group Name</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Role</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Joined</th>
@@ -1257,9 +1274,12 @@ const AdminPanel = () => {
                     </thead>
                     <tbody>
                       {users.map((userProfile) => (
-                        <tr key={userProfile.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
+                        <tr key={userProfile.user_id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                           <td className="p-4 text-muted-foreground text-sm font-mono">
                             {userProfile.user_id.slice(0, 8)}...
+                          </td>
+                          <td className="p-4 text-foreground text-sm">
+                            {userProfile.email || "—"}
                           </td>
                           <td className="p-4 text-foreground">
                             {userProfile.group_name || "—"}
