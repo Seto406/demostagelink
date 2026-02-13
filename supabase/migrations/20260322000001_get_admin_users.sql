@@ -1,6 +1,8 @@
 -- Migration: Create get_admin_user_list RPC
 -- Description: Allows admins to fetch a paginated list of users including email and group name via left join on profiles.
 
+DROP FUNCTION IF EXISTS public.get_admin_user_list(INTEGER, INTEGER);
+
 CREATE OR REPLACE FUNCTION public.get_admin_user_list(
   page_number INTEGER DEFAULT 1,
   page_size INTEGER DEFAULT 10
@@ -54,3 +56,6 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_admin_user_list(INTEGER, INTEGER) TO authenticated;
+
+-- Reload Schema Cache
+NOTIFY pgrst, 'reload schema';
