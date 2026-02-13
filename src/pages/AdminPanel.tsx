@@ -27,6 +27,7 @@ import {
   Check, 
   XCircle, 
   Eye, 
+  EyeOff,
   Users, 
   Theater, 
   UserCheck,
@@ -146,6 +147,7 @@ const AdminPanel = () => {
   const [deleteUserModal, setDeleteUserModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [adminSecurityKey, setAdminSecurityKey] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -1574,13 +1576,22 @@ const AdminPanel = () => {
                 <label className="text-sm text-muted-foreground mb-2 block">
                   StageLink Admin Security Key
                 </label>
-                <Input
-                  type="password"
-                  placeholder="Enter StageLink Admin Security Key"
-                  value={adminSecurityKey}
-                  onChange={(e) => setAdminSecurityKey(e.target.value)}
-                  className="bg-background border-border"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter StageLink Admin Security Key"
+                    value={adminSecurityKey}
+                    onChange={(e) => setAdminSecurityKey(e.target.value)}
+                    className="bg-background border-border pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
