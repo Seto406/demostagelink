@@ -21,3 +21,7 @@
 ## 2025-05-15 - Tooltips on Icon Buttons
 **Learning:** Icon-only buttons (Settings, Notifications, Favorites) in the Navbar were inaccessible and ambiguous. Adding Tooltips resolved this, but verifying authenticated states via Playwright proved difficult due to Supabase Auth mocking complexities.
 **Action:** Consistently apply Tooltips to all icon-only buttons. For verification, if auth mocking is flaky, rely on unauthenticated state checks and code review/build validation.
+
+## 2025-02-13 - Conditional Tooltips & Playwright Timing
+**Learning:** Testing Radix UI tooltips with Playwright requires explicit waits for animation delays (default 300ms) or they fail `toBeVisible` checks. Also, wrapping conditional tooltips in a helper component keeps JSX clean.
+**Action:** Use `await page.waitForTimeout(500)` after hover when testing animated tooltips, and extract conditional tooltip logic into reusable components.
