@@ -39,7 +39,8 @@ import {
   ArrowLeft,
   Megaphone,
   CheckCircle,
-  Mail
+  Mail,
+  ExternalLink
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,6 +94,10 @@ interface ProducerRequest {
   portfolio_link: string;
   status: string;
   created_at: string;
+  profiles?: {
+    avatar_url: string | null;
+    map_screenshot_url: string | null;
+  } | null;
 }
 
 interface Stats {
@@ -308,14 +313,20 @@ const AdminPanel = () => {
   const fetchProducerRequests = useCallback(async () => {
     const { data, error } = await supabase
       .from("producer_requests")
-      .select("*")
+      .select(`
+        *,
+        profiles:user_id (
+          avatar_url,
+          map_screenshot_url
+        )
+      `)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching producer requests:", error);
     } else {
-      setProducerRequests(data as ProducerRequest[]);
+      setProducerRequests(data as unknown as ProducerRequest[]);
     }
   }, []);
 
@@ -1217,18 +1228,62 @@ const AdminPanel = () => {
                   </h3>
                   <div className="space-y-4">
                     {producerRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-secondary/20">
-                        <div>
+                      <div key={request.id} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg border border-secondary/20">
+                        <div className="flex-1 space-y-2">
                           <p className="text-foreground font-medium">{request.group_name}</p>
-                          <a 
-                            href={request.portfolio_link} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-sm text-secondary hover:underline"
-                          >
-                            View Portfolio
-                          </a>
-                          <p className="text-xs text-muted-foreground mt-1">
+
+                          {/* Portfolio Link / Image */}
+                          <div className="mb-2">
+                             {request.portfolio_link.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                                <a href={request.portfolio_link} target="_blank" rel="noopener noreferrer">
+                                   <img
+                                     src={request.portfolio_link}
+                                     alt="Portfolio"
+                                     className="h-32 object-contain rounded border border-secondary/30 bg-black/20"
+                                   />
+                                </a>
+                             ) : (
+                                <a
+                                  href={request.portfolio_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-secondary hover:underline flex items-center gap-1"
+                                >
+                                  View Portfolio <ExternalLink className="w-3 h-3" />
+                                </a>
+                             )}
+                          </div>
+
+                          {/* Verification Images from Profile */}
+                          {(request.profiles?.avatar_url || request.profiles?.map_screenshot_url) && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-secondary/10">
+                               <p className="text-xs text-muted-foreground mb-2 font-medium">Verification Images (Profile):</p>
+                               <div className="flex gap-3">
+                                  {request.profiles?.avatar_url && (
+                                     <div className="space-y-1">
+                                        <p className="text-[10px] text-muted-foreground">Avatar</p>
+                                        <a href={request.profiles.avatar_url} target="_blank" rel="noopener noreferrer">
+                                          <img src={request.profiles.avatar_url} alt="Avatar" className="w-16 h-16 rounded-full object-cover border border-secondary/20" />
+                                        </a>
+                                     </div>
+                                  )}
+                                  {request.profiles?.map_screenshot_url && (
+                                     <div className="space-y-1">
+                                        <p className="text-[10px] text-muted-foreground">Map/Location</p>
+                                        {request.profiles.map_screenshot_url.startsWith('<iframe') ? (
+                                           <div className="text-xs text-muted-foreground italic">Embedded Map</div>
+                                        ) : (
+                                            <a href={request.profiles.map_screenshot_url} target="_blank" rel="noopener noreferrer">
+                                              <img src={request.profiles.map_screenshot_url} alt="Map" className="h-16 w-auto rounded object-cover border border-secondary/20" />
+                                            </a>
+                                        )}
+                                     </div>
+                                  )}
+                               </div>
+                            </div>
+                          )}
+
+                          <p className="text-xs text-muted-foreground">
                             Submitted: {new Date(request.created_at).toLocaleDateString()}
                           </p>
                         </div>
