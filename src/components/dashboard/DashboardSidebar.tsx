@@ -1,8 +1,34 @@
 import { Link } from "react-router-dom";
 import { LayoutDashboard, Film, User, Users, LogOut, X, Lock } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type DashboardTab = "dashboard" | "shows" | "profile" | "members";
+
+const SidebarTooltip = ({
+  children,
+  content,
+  visible,
+}: {
+  children: React.ReactNode;
+  content: string;
+  visible: boolean;
+}) => {
+  if (!visible) return <>{children}</>;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right">
+        <p>{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 interface DashboardSidebarProps {
   activeTab: string;
@@ -51,85 +77,98 @@ export const DashboardSidebar = ({
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            aria-label="Dashboard"
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "dashboard"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            {sidebarOpen && <span>Dashboard</span>}
-          </button>
+          <SidebarTooltip content="Dashboard" visible={!sidebarOpen}>
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              aria-label="Dashboard"
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "dashboard"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              {sidebarOpen && <span>Dashboard</span>}
+            </button>
+          </SidebarTooltip>
 
-          <button
-            onClick={() => setActiveTab("shows")}
-            aria-label="My Productions"
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "shows"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <Film className="w-5 h-5" />
-            {sidebarOpen && <span>My Productions</span>}
-          </button>
+          <SidebarTooltip content="My Productions" visible={!sidebarOpen}>
+            <button
+              onClick={() => setActiveTab("shows")}
+              aria-label="My Productions"
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "shows"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <Film className="w-5 h-5" />
+              {sidebarOpen && <span>My Productions</span>}
+            </button>
+          </SidebarTooltip>
 
-          <button
-            id="profile-tab"
-            onClick={() => setActiveTab("profile")}
-            aria-label="Profile"
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "profile"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <User className="w-5 h-5" />
-            {sidebarOpen && <span>Profile</span>}
-          </button>
+          <SidebarTooltip content="Profile" visible={!sidebarOpen}>
+            <button
+              id="profile-tab"
+              onClick={() => setActiveTab("profile")}
+              aria-label="Profile"
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "profile"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <User className="w-5 h-5" />
+              {sidebarOpen && <span>Profile</span>}
+            </button>
+          </SidebarTooltip>
 
-          <button
-            onClick={() => {
-              if (!isPro) {
-                onUpsell?.();
-                return;
-              }
-              setActiveTab("members");
-            }}
-            aria-label="Members"
-            className={`w-full relative flex items-center gap-3 px-4 py-3 transition-colors ${
-              activeTab === "members"
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/10"
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            {sidebarOpen ? (
-              <>
-                <span>Members</span>
-                {!isPro && <Lock className="w-4 h-4 ml-auto" />}
-              </>
-            ) : (
-              !isPro && <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground/70" />
-            )}
-          </button>
+          <SidebarTooltip content="Members" visible={!sidebarOpen}>
+            <button
+              onClick={() => {
+                if (!isPro) {
+                  onUpsell?.();
+                  return;
+                }
+                setActiveTab("members");
+              }}
+              aria-label="Members"
+              className={`w-full relative flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "members"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              {sidebarOpen ? (
+                <>
+                  <span>Members</span>
+                  {!isPro && <Lock className="w-4 h-4 ml-auto" />}
+                </>
+              ) : (
+                !isPro && (
+                  <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground/70" />
+                )
+              )}
+            </button>
+          </SidebarTooltip>
         </nav>
 
         {/* Logout */}
         <div className="p-4 border-t border-sidebar-border">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              handleLogout();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
+          <SidebarTooltip content="Logout" visible={!sidebarOpen}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                handleLogout();
+              }}
+              aria-label="Logout"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              {sidebarOpen && <span>Logout</span>}
+            </button>
+          </SidebarTooltip>
         </div>
       </div>
     </aside>
