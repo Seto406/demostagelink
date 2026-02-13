@@ -210,6 +210,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 -- 7. Create get_admin_user_list RPC (Fixes 404 Missing Logic)
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS public.get_admin_user_list(INTEGER, INTEGER);
+
 CREATE OR REPLACE FUNCTION public.get_admin_user_list(
   page_number INTEGER DEFAULT 1,
   page_size INTEGER DEFAULT 10
@@ -269,4 +271,4 @@ GRANT EXECUTE ON FUNCTION public.get_admin_user_list(INTEGER, INTEGER) TO authen
 -- 8. Reload Schema Cache (Fixes Persistence of Errors)
 -- ============================================================================
 
-NOTIFY pgrst, 'reload config';
+NOTIFY pgrst, 'reload schema';
