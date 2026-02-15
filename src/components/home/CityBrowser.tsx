@@ -17,23 +17,21 @@ const CityBrowser = () => {
 
   useEffect(() => {
     const fetchCityCounts = async () => {
-      // Get counts of approved shows grouped by city
-      const { data, error } = await supabase
-        .from("shows")
-        .select("city")
-        .eq("status", "approved")
-        .is("deleted_at", null);
+      // Get counts of approved shows grouped by city via server-side aggregation
+      const { data, error } = await supabase.rpc("get_city_show_counts");
 
       if (error) {
         console.error("Error fetching city counts:", error);
         return;
       }
 
-      // Count groups per city
+      // Transform array to Record<city, count>
       const counts: Record<string, number> = {};
-      data?.forEach((show) => {
-        if (show.city) {
-          counts[show.city] = (counts[show.city] || 0) + 1;
+
+      // Type assertion needed as RPC return type might be inferred as any or generic
+      (data as unknown as Array<{ city: string; count: number }>)?.forEach((row) => {
+        if (row.city) {
+          counts[row.city] = row.count;
         }
       });
 

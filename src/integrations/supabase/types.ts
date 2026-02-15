@@ -499,6 +499,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_city_show_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          city: string
+          count: number
+        }[]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
