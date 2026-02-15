@@ -32,25 +32,11 @@ export const ShimmerSkeleton = ({ className }: SkeletonProps) => {
 // Show card skeleton
 export const ShowCardSkeleton = () => {
   return (
-    <div className="group relative overflow-hidden border border-secondary/20 bg-card">
-      {/* Poster skeleton */}
-      <div className="relative aspect-[2/3] overflow-hidden">
-        <ShimmerSkeleton className="absolute inset-0" />
-      </div>
-      
-      {/* Content skeleton */}
-      <div className="p-4 space-y-3">
-        {/* Title */}
-        <ShimmerSkeleton className="h-5 w-3/4" />
-        
-        {/* Date & venue */}
-        <div className="space-y-2">
-          <ShimmerSkeleton className="h-4 w-1/2" />
-          <ShimmerSkeleton className="h-4 w-2/3" />
-        </div>
-        
-        {/* Badge */}
-        <ShimmerSkeleton className="h-6 w-20 rounded-full" />
+    <div className="animate-pulse bg-gray-200 dark:bg-gray-800 rounded-xl aspect-[2/3] w-full relative overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3 bg-gradient-to-t from-gray-200 via-gray-200/50 to-transparent dark:from-gray-800 dark:via-gray-800/50 pt-10">
+        <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-3/4" />
+        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2" />
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-full mt-2" />
       </div>
     </div>
   );
