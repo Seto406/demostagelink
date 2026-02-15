@@ -29,13 +29,14 @@ export interface FeedPostProps {
       id: string;
       avatar_url: string | null;
     };
+    favorites?: { count: number }[];
   };
 }
 
 export function FeedPost({ show }: FeedPostProps) {
   const { toggleFavorite, isFavorited } = useFavorites();
   const [showComments, setShowComments] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
 
   const producerName = show.profiles?.group_name || "Unknown Group";
@@ -68,7 +69,8 @@ export function FeedPost({ show }: FeedPostProps) {
   }, [show.id]);
 
   useEffect(() => {
-    fetchLikeCount();
+    // Initial fetch removed to prevent N+1 queries - data is now passed from parent
+    // fetchLikeCount();
     // fetchCommentCount(); // Comments disabled
 
     // Subscriptions for real-time counts

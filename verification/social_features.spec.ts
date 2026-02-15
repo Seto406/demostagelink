@@ -73,6 +73,15 @@ test.describe('Social Features (Social-First Pivot)', () => {
             });
         });
 
+        // Mock Service Health Check
+        await page.route('**/rpc/get_service_health', async (route) => {
+             await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([{ status: 'active' }])
+            });
+        });
+
         // Mock Producer Profile Fetch
         await page.route(`**/rest/v1/profiles?select=*&id=eq.${producerId}*`, async (route) => {
              await route.fulfill({
