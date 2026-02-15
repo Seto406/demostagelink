@@ -644,7 +644,7 @@ const Shows = () => {
           {/* Shows Grid */}
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {[...Array(8)].map((_, i) => (
+              {[...Array(6)].map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
             </div>
