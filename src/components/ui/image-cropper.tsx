@@ -130,6 +130,7 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
                     step={0.1}
                     onValueChange={(val) => setZoom(val[0])}
                     className="flex-1"
+                    aria-label="Zoom"
                 />
              </div>
              <div className="flex items-center gap-4">
@@ -141,6 +142,7 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
                     step={1}
                     onValueChange={(val) => setRotation(val[0])}
                      className="flex-1"
+                     aria-label="Rotate"
                 />
              </div>
         </div>

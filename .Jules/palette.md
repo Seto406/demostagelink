@@ -25,3 +25,7 @@
 ## 2025-02-13 - Conditional Tooltips & Playwright Timing
 **Learning:** Testing Radix UI tooltips with Playwright requires explicit waits for animation delays (default 300ms) or they fail `toBeVisible` checks. Also, wrapping conditional tooltips in a helper component keeps JSX clean.
 **Action:** Use `await page.waitForTimeout(500)` after hover when testing animated tooltips, and extract conditional tooltip logic into reusable components.
+
+## 2026-02-15 - Radix Slider Accessibility Wrapper
+**Learning:** The custom `Slider` component wraps `Radix.Slider` but didn't forward `aria-label` to the `Thumb` primitive. Radix documentation clarifies that the Thumb needs the accessible name for screen readers.
+**Action:** When using or creating wrappers for Radix primitives, explicitly check if accessibility props (like `aria-label`) need to be manually passed to the interactive child element (like `Thumb` or `Trigger`).
