@@ -4,9 +4,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
@@ -68,6 +69,17 @@ interface Show {
 const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ show, index }, ref) => {
   const posterUrl = posterMap[show.title] || show.poster_url;
   const { toggleFavorite, isFavorited } = useFavorites();
+  const { toast } = useToast();
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(`${window.location.origin}/show/${show.id}`);
+    toast({
+      title: "Link Copied to Clipboard!",
+      description: "You can now share this show with your friends.",
+    });
+  };
 
   return (
     <motion.div
@@ -80,7 +92,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
     >
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
         <div
-          className="block bg-card border border-secondary/20 overflow-hidden group relative flex flex-col h-full"
+          className="block bg-card overflow-hidden group relative flex flex-col h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
           <Link to={`/show/${show.id}`} className="absolute inset-0 z-10">
@@ -103,6 +115,18 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+
+            {/* Social Proof Badge - DEMO ONLY */}
+            {/* TODO: Replace with actual real-time count */}
+            <div className="absolute top-12 left-3 z-20 pointer-events-none">
+               <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center gap-1.5 shadow-lg">
+                  <span className="text-xs">🔥</span>
+                  <span className="text-[10px] font-medium text-white/90 font-sans tracking-wide">
+                    {/* DEMO_ONLY */}
+                    12 People Reserved Recently
+                  </span>
+               </div>
+            </div>
 
             {/* Niche badge */}
             {(show.niche || show.genre) && (
@@ -133,6 +157,22 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 }}
                 size="sm"
               />
+            </div>
+
+            {/* Share Button */}
+            <div
+              className="absolute top-3 left-12 z-20"
+              style={{ transform: "translateZ(30px)" }}
+            >
+               <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border-secondary/30 text-muted-foreground hover:bg-background/90 hover:text-primary hover:border-primary/50 p-0"
+                  onClick={handleShare}
+                  aria-label="Share this show"
+               >
+                  <Share2 className="w-3.5 h-3.5" />
+               </Button>
             </div>
 
             {/* Content */}
