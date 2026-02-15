@@ -51,6 +51,7 @@ export interface Show {
     id: string;
     avatar_url: string | null;
   };
+  favorites?: { count: number }[];
 }
 
 // Interface for Suggested Producers
@@ -98,7 +99,8 @@ const UserFeed = () => {
             group_name,
             id,
             avatar_url
-          )
+          ),
+          favorites(count)
         `)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
