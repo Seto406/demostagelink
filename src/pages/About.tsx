@@ -49,35 +49,6 @@ const About = () => {
               </div>
 
               <div className="border-l-2 border-secondary/50 pl-6">
-                <h2 className="text-2xl font-serif text-foreground mb-4">What's Available Now</h2>
-                <p className="leading-relaxed mb-4">
-                  StageLink is currently in <span className="text-secondary font-semibold">Phase 1</span> — our foundation release. Here's what you can do today:
-                </p>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Browse and discover local & university theater productions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Explore the Theater Directory with group profiles
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Search shows by city, genre, and theater group
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Save your favorite shows to a personal watchlist
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    Theater groups can submit and manage their show listings
-                  </li>
-                </ul>
-              </div>
-
-              <div className="border-l-2 border-secondary/50 pl-6">
                 <h2 className="text-2xl font-serif text-foreground mb-4">For Theater Groups</h2>
                 <p className="leading-relaxed">
                   Are you part of a theater group? StageLink offers you a platform to showcase your 
