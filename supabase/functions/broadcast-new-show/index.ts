@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import pLimit from "https://esm.sh/p-limit@3.1.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -170,15 +171,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending ${batches.length} batches via Resend.`);
 
+    // Limit concurrency to 5 parallel requests
+    const limit = pLimit(5);
+
     const batchPromises = batches.map(batch =>
-        fetch("https://api.resend.com/emails/batch", {
+        limit(() => fetch("https://api.resend.com/emails/batch", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify(batch),
-        }).then(res => res.json()).catch(err => ({ error: err.message }))
+        }).then(res => res.json()).catch(err => ({ error: err.message })))
     );
 
     const results = await Promise.all(batchPromises);
