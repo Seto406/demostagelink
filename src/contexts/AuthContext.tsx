@@ -31,7 +31,6 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
-  // UPDATED: Added firstName to the signature
   signUp: (email: string, password: string, role: "audience" | "producer", firstName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -49,10 +48,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
   const profileRef = useRef(profile);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     profileRef.current = profile;
   }, [profile]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,10 +80,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 expires_at: 9999999999
             } as Session);
             ensureProfile(mockUser.id, mockUser.user_metadata).then(() => {
-                setLoading(false);
+                if (mountedRef.current) setLoading(false);
             });
         } else {
-            setLoading(false);
+            if (mountedRef.current) setLoading(false);
         }
     }
   }, []);
@@ -95,84 +102,116 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const fetchPromise = (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
+      const maxRetries = 3;
+      let attempt = 0;
+      let lastError: any = null;
 
-        if (!error && data) {
-          setProfile(data as Profile);
-        } else {
-          const pendingRoleRaw = localStorage.getItem("pendingUserRole");
-          let role: "audience" | "producer" = "audience";
-
-          if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
-            role = pendingRoleRaw;
+      while (attempt <= maxRetries) {
+        try {
+          // Add a small delay for retries
+          if (attempt > 0) {
+             const delay = 1000 * Math.pow(2, attempt - 1);
+             console.log(`Retrying profile fetch (attempt ${attempt}/${maxRetries}) in ${delay}ms...`);
+             await new Promise(resolve => setTimeout(resolve, delay));
           }
 
-          const newProfile = {
-            user_id: userId,
-            role: role,
-            avatar_url: userMetadata?.avatar_url || null,
-          };
+          if (!mountedRef.current) return;
 
-          const { data: createdProfile, error: createError } = await supabase
+          const { data, error } = await supabase
             .from("profiles")
-            .insert([newProfile])
-            .select()
-            .single();
+            .select("*")
+            .eq("user_id", userId)
+            .maybeSingle();
 
-          if (createdProfile) {
-            setProfile(createdProfile as Profile);
+          if (error) throw error;
 
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user?.email) {
-                // Non-blocking call to send welcome email
-                supabase.functions.invoke("send-welcome-email", {
-                  body: {
-                    email: user.email,
-                    name: (createdProfile as Profile).group_name || user.user_metadata?.full_name || user.user_metadata?.first_name,
-                    role: role,
-                  },
-                }).then(({ error }) => {
-                  if (error) console.error("Failed to trigger welcome email:", error);
-                });
-              }
-            } catch (emailError) {
-              console.error("Failed to trigger welcome email:", emailError);
+          if (data) {
+            if (mountedRef.current) setProfile(data as Profile);
+            return; // Success!
+          } else {
+            // Profile not found, create one
+            const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+            let role: "audience" | "producer" = "audience";
+
+            if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
+              role = pendingRoleRaw;
             }
 
-            localStorage.removeItem("pendingUserRole");
-          } else {
-            console.warn("Error creating profile, retrying fetch:", createError);
-            const { data: retryData } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("user_id", userId)
-              .maybeSingle();
+            const newProfile = {
+              user_id: userId,
+              role: role,
+              avatar_url: userMetadata?.avatar_url || null,
+            };
 
-            if (retryData) {
-              setProfile(retryData as Profile);
+            const { data: createdProfile, error: createError } = await supabase
+              .from("profiles")
+              .insert([newProfile])
+              .select()
+              .single();
+
+            if (createError) throw createError;
+
+            if (createdProfile) {
+              if (mountedRef.current) setProfile(createdProfile as Profile);
+
+              // Welcome email
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user?.email) {
+                  supabase.functions.invoke("send-welcome-email", {
+                    body: {
+                      email: user.email,
+                      name: (createdProfile as Profile).group_name || user.user_metadata?.full_name || user.user_metadata?.first_name,
+                      role: role,
+                    },
+                  }).then(({ error }) => {
+                    if (error) console.error("Failed to trigger welcome email:", error);
+                  });
+                }
+              } catch (emailError) {
+                console.error("Failed to trigger welcome email:", emailError);
+              }
+
               localStorage.removeItem("pendingUserRole");
-            } else {
-              console.error("Failed to ensure profile:", createError);
-              await signOut();
+              return; // Success!
             }
           }
+        } catch (error: any) {
+          lastError = error;
+          console.error(`Error in ensureProfile (attempt ${attempt}):`, error);
+
+          // Check for "Session issued in the future" or network errors
+          const isTransient = error.message?.includes("future") ||
+                              error.message?.includes("network") ||
+                              error.message?.includes("fetch");
+
+          if (!isTransient && attempt === 0) {
+              // If it's a hard error (e.g. permission denied not related to time), maybe fail fast?
+              // But permission denied usually means session issue too.
+          }
+
+          attempt++;
         }
-      } catch (error) {
-        console.error("Unexpected error in ensureProfile:", error);
-        await signOut();
-      } finally {
-        delete fetchingProfileRef.current[userId];
       }
+
+      // If we exhausted retries
+      console.error("Failed to ensure profile after retries:", lastError);
+
+      // Only sign out if we are sure it's unrecoverable and we can't function
+      // If we don't sign out, the user might see a broken state, but maybe better than loop?
+      // However, if we can't get profile, we can't do much.
+      await signOut();
+
     })();
 
     fetchingProfileRef.current[userId] = fetchPromise;
-    return fetchPromise;
+    try {
+        await fetchPromise;
+    } finally {
+        if (fetchingProfileRef.current[userId] === fetchPromise) {
+            delete fetchingProfileRef.current[userId];
+        }
+    }
   };
 
   const refreshProfile = async () => {
@@ -190,6 +229,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mountedRef.current) return;
+
+        console.log(`Auth state change: ${event}`);
+
         try {
           setSession(session);
           setUser(session?.user ?? null);
@@ -202,42 +245,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
           console.error("Error handling auth state change:", error);
         } finally {
-          setLoading(false);
+          if (mountedRef.current) setLoading(false);
         }
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) {
-        console.error("Error retrieving session:", error);
-        localStorage.clear();
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await ensureProfile(session.user.id, session.user.user_metadata);
-        }
-      } catch (error) {
-        console.error("Error processing session:", error);
-        localStorage.clear();
-        setSession(null);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }).catch((err) => {
-      console.error("Unexpected error checking session:", err);
-      localStorage.clear();
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-    });
+    // We rely on onAuthStateChange for initialization now.
+    // It fires immediately with current session (INITIAL_SESSION).
+    // This avoids race conditions with getSession().
 
     return () => {
       subscription.unsubscribe();
@@ -248,16 +263,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!loading) return;
 
     const timeoutId = setTimeout(() => {
-      console.warn("Auth loading timed out (10s). executing fail-safe...");
-      localStorage.clear();
-      setLoading(false);
-      navigate("/login");
-    }, 10000);
+      console.warn("Auth loading timed out (15s). executing fail-safe...");
+      if (mountedRef.current) {
+          localStorage.clear();
+          setLoading(false);
+          navigate("/login");
+      }
+    }, 15000); // Increased to 15s to allow for retries
 
     return () => clearTimeout(timeoutId);
   }, [loading, navigate]);
 
-  // CORRECTED: Added firstName parameter and removed extra closing brace
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
     
@@ -268,14 +284,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: { 
           role,
-          // Matches {{ .Data.first_name }} in your Supabase email template
           first_name: firstName 
         }
       }
     });
 
     if (error) {
-      // Enhanced logging as recommended by Jules
       console.error("SignUp detailed error:", error);
     }
 
@@ -317,9 +331,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
-      setProfile(null);
-      setSession(null);
-      setUser(null);
+      if (mountedRef.current) {
+        setProfile(null);
+        setSession(null);
+        setUser(null);
+      }
     }
   };
 
