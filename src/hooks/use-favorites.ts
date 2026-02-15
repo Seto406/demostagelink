@@ -1,41 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 export const useFavorites = () => {
   const { user, profile, loading: authLoading } = useAuth();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Fetch user's favorites
-  const fetchFavorites = useCallback(async () => {
-    // Wait for auth initialization
-    if (authLoading) return;
+  const queryKey = ['favorites', profile?.id];
 
-    if (!user || !profile) {
-      setFavorites([]);
-      setLoading(false);
-      return;
-    }
+  const { data: favorites = [], isLoading, refetch } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!profile?.id) return [];
 
-    try {
       const { data, error } = await supabase
         .from('favorites')
         .select('show_id')
         .eq('user_id', profile.id);
 
-      if (error) throw error;
-      setFavorites(data?.map(f => f.show_id) || []);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-    }
-    setLoading(false);
-  }, [user, profile, authLoading]);
+      if (error) {
+        console.error('Error fetching favorites:', error);
+        throw error;
+      }
+      return data?.map(f => f.show_id) || [];
+    },
+    enabled: !!profile?.id && !authLoading,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
-  useEffect(() => {
-    fetchFavorites();
-  }, [fetchFavorites]);
+  // Determine loading state exposed to consumers
+  const loading = authLoading || (isLoading && !!profile?.id);
 
   const toggleFavorite = async (showId: string) => {
     if (!user) {
@@ -56,17 +51,19 @@ export const useFavorites = () => {
       return;
     }
 
-    const isFavorited = favorites.includes(showId);
+    const previousFavorites = queryClient.getQueryData<string[]>(queryKey) || [];
+    const isCurrentlyFavorited = previousFavorites.includes(showId);
 
     // Optimistic update
-    setFavorites(prev => 
-      isFavorited 
+    queryClient.setQueryData<string[]>(queryKey, (old) => {
+      const prev = old || [];
+      return isCurrentlyFavorited
         ? prev.filter(id => id !== showId)
-        : [...prev, showId]
-    );
+        : [...prev, showId];
+    });
 
     try {
-      if (isFavorited) {
+      if (isCurrentlyFavorited) {
         const { error } = await supabase
           .from('favorites')
           .delete()
@@ -88,11 +85,7 @@ export const useFavorites = () => {
       }
     } catch (error) {
       // Revert optimistic update
-      setFavorites(prev => 
-        isFavorited 
-          ? [...prev, showId]
-          : prev.filter(id => id !== showId)
-      );
+      queryClient.setQueryData(queryKey, previousFavorites);
       toast({
         title: "Error",
         description: "Failed to update favorites.",
@@ -104,5 +97,5 @@ export const useFavorites = () => {
 
   const isFavorited = (showId: string) => favorites.includes(showId);
 
-  return { favorites, loading, toggleFavorite, isFavorited, refetch: fetchFavorites };
+  return { favorites, loading, toggleFavorite, isFavorited, refetch };
 };
