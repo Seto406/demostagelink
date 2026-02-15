@@ -6,7 +6,7 @@ test('Verify Dashboard and UserFeed Refactor', async ({ page }) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ status: 'active', version: 'v1' }),
+      body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }),
     });
   });
 

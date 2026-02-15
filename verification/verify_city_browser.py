@@ -8,10 +8,11 @@ def run(playwright):
 
     # Mock health check
     def handle_health(route):
+        import datetime
         route.fulfill(
             status=200,
             content_type="application/json",
-            body=json.dumps({"status": "active"})
+            body=json.dumps({"status": "ok", "timestamp": datetime.datetime.now().isoformat()})
         )
 
     page.route("**/rest/v1/rpc/get_service_health", handle_health)

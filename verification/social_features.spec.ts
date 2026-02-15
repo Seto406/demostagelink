@@ -78,7 +78,7 @@ test.describe('Social Features (Social-First Pivot)', () => {
              await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify([{ status: 'active' }])
+                body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() })
             });
         });
 
