@@ -31,6 +31,7 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const initializedRef = useRef(false);
+  const lastActivityRef = useRef<number>(0);
   
   const [showWarning, setShowWarning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(5 * 60); // 5 minutes in seconds
@@ -203,6 +204,13 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
     const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
 
     const handleActivity = () => {
+      const now = Date.now();
+      // Throttle activity updates to run at most once per second
+      if (now - lastActivityRef.current < 1000) {
+        return;
+      }
+      lastActivityRef.current = now;
+
       // Only reset if warning is not showing
       if (!showWarning) {
         resetTimer(true);
@@ -223,9 +231,13 @@ export const IdleTimerProvider: React.FC<IdleTimerProviderProps> = ({ children }
   }, [user, initializeFromStorage, resetTimer, clearAllTimers, showWarning]);
 
   // Update stored activity on route changes
+  const prevPathRef = useRef(location.pathname);
   useEffect(() => {
-    if (user && !showWarning) {
-      resetTimer(true);
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      if (user && !showWarning) {
+        resetTimer(true);
+      }
     }
   }, [location.pathname, user, resetTimer, showWarning]);
 
