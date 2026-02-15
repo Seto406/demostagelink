@@ -26,8 +26,6 @@ test.describe('Health Check Verification', () => {
         status: 200,
         body: JSON.stringify({
           status: 'ok',
-          health: 'active',
-          version: 'v1',
           timestamp: new Date().toISOString()
         })
       });

@@ -20,7 +20,7 @@ test.describe('Favorites Performance Baseline', () => {
 
     // Mock Health Check (RPC)
     await page.route('**/rest/v1/rpc/get_service_health', async route => {
-      await route.fulfill({ json: { status: 'active' } });
+      await route.fulfill({ json: { status: 'ok', timestamp: new Date().toISOString() } });
     });
 
     // Mock profile fetch (needed for AuthContext)
