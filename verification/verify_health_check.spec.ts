@@ -24,7 +24,12 @@ test.describe('Health Check Verification', () => {
     await page.route('**/rpc/get_service_health', async route => {
       await route.fulfill({
         status: 200,
-        body: JSON.stringify({ status: 'active', version: 'v1', timestamp: new Date().toISOString() })
+        body: JSON.stringify({
+          status: 'ok',
+          health: 'active',
+          version: 'v1',
+          timestamp: new Date().toISOString()
+        })
       });
     });
 
