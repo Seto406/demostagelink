@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ import { toast } from "@/hooks/use-toast";
 import { FeedPost } from "@/components/feed/FeedPost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
 
 // Interface for Shows
@@ -73,6 +75,8 @@ const UserFeed = () => {
   const [submitting, setSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<{ status: string } | null>(null);
 
+  const observerTarget = useRef(null);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
@@ -80,10 +84,19 @@ const UserFeed = () => {
     }
   }, [user, loading, navigate]);
 
-  // Fetch approved shows
-  const { data: shows = [], isLoading: loadingShows } = useQuery({
+  // Fetch approved shows with infinite scroll
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingShows
+  } = useInfiniteQuery({
     queryKey: ['approved-shows'],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * 20;
+      const to = from + 19;
+
       const { data, error } = await supabase
         .from("shows")
         .select(`
@@ -104,12 +117,40 @@ const UserFeed = () => {
         `)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .range(from, to);
 
       if (error) throw error;
       return data as Show[];
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage && lastPage.length === 20 ? allPages.length : undefined;
+    },
   });
+
+  const shows = data?.pages.flat() || [];
+
+  // Implement intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Fetch suggested producers
   const { data: suggestedProducers = [] } = useQuery({
@@ -205,88 +246,17 @@ const UserFeed = () => {
   }
 
   // Determine which shows to display
-  // Use a type assertion to treat importedDummyShows as compatible Show[] objects
+  // Using importedDummyShows as fallback/append for demo purposes if needed, but primarily relying on real data
   const displayShows = [...shows, ...(importedDummyShows as unknown as Show[])];
 
-  const navItems = [
-    { icon: Home, label: "Home", path: "/feed" },
-    { icon: Calendar, label: "Upcoming Shows", path: `/shows?date=${new Date().toLocaleDateString('en-CA')}` },
-    { icon: Search, label: "Directory", path: "/directory" },
-    { icon: Heart, label: "Favorites", path: "/favorites" },
-    { icon: User, label: "Profile", path: "/profile" },
-  ];
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
-      <div className="pt-20 container mx-auto px-4 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] gap-6 xl:gap-8">
-
-          {/* Left Sidebar - Navigation */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)]">
-            <nav className="space-y-1" aria-label="Main Navigation">
-              {navItems.map((item) => {
-                const isActive = item.path.includes('?')
-                  ? (location.pathname + location.search) === item.path
-                  : location.pathname === item.path;
-
-                return (
-                  <Link
-                    to={item.path}
-                    key={item.label}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start text-lg px-4 py-6 rounded-xl transition-all duration-300 ${
-                        isActive
-                          ? "bg-secondary/10 text-secondary font-semibold"
-                          : "text-muted-foreground hover:bg-secondary/5 hover:text-foreground hover:pl-6"
-                      }`}
-                    >
-                      <item.icon className={`w-6 h-6 mr-4 ${isActive ? "text-secondary" : "text-muted-foreground"}`} />
-                      {item.label}
-                    </Button>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-8 px-4">
-               {profile?.role === "producer" ? (
-                  <Link to="/dashboard">
-                    <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold shadow-[0_0_20px_hsl(43_72%_52%/0.3)]">
-                       <PlusSquare className="w-5 h-5 mr-2" />
-                       Manage Shows
-                    </Button>
-                  </Link>
-               ) : !isAdmin && (
-                  <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10 text-center">
-                     <p className="text-sm text-muted-foreground mb-3">Are you a theater group?</p>
-                     <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setProducerRequestModal(true)}
-                        className="w-full border-secondary/50 text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                     >
-                        Producer Access
-                     </Button>
-                  </div>
-               )}
-            </div>
-
-            <div className="mt-auto absolute bottom-0 w-full px-4 text-xs text-muted-foreground">
-               <p>© 2026 StageLink</p>
-               <div className="flex gap-2 mt-1">
-                  <Link to="/privacy" className="hover:underline">Privacy</Link>
-                  <span>•</span>
-                  <Link to="/terms" className="hover:underline">Terms</Link>
-               </div>
-            </div>
-          </aside>
+      <div className="pt-20 container mx-auto px-4 max-w-7xl flex-1">
+        <div className="flex justify-center gap-8">
 
           {/* Center Column - Feed */}
-          <main className="min-h-screen pb-20">
+          <main className="w-full max-w-2xl pb-24">
              {/* Mobile Welcome */}
              <div className="lg:hidden mb-6">
                 <h1 className="text-2xl font-serif font-bold">Home</h1>
@@ -317,7 +287,7 @@ const UserFeed = () => {
              ) : (
                 <div className="space-y-6">
                    {displayShows.map((show, index) => (
-                      <div key={show.id}>
+                      <div key={show.id || index}>
                         <FeedPost show={show} />
                         {index === 1 && !isPro && (
                            <AdBanner
@@ -330,22 +300,24 @@ const UserFeed = () => {
                       </div>
                    ))}
 
-                   <div className="text-center py-8 text-muted-foreground">
-                      <p>You've reached the end of the feed.</p>
-                      <Link to="/shows">
-                         <Button variant="link" className="text-secondary">Explore all shows</Button>
-                      </Link>
+                   {/* Infinite Scroll Trigger & Loader */}
+                   <div ref={observerTarget} className="py-8 text-center text-muted-foreground">
+                      {isFetchingNextPage ? (
+                         <div className="flex justify-center">
+                            <BrandedLoader size="sm" text="Loading more shows..." />
+                         </div>
+                      ) : hasNextPage ? (
+                         <p>Scroll for more</p>
+                      ) : (
+                         <p>You've reached the end of the feed.</p>
+                      )}
                    </div>
                 </div>
              )}
           </main>
 
           {/* Right Sidebar - Widgets */}
-          <aside className="hidden lg:block sticky top-24 h-[calc(100vh-6rem)] space-y-6">
-             {!isPro && (
-                <AdBanner format="box" />
-             )}
-
+          <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit">
              {/* Suggested Producers Widget */}
              <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
                 <CardHeader className="pb-3">
@@ -356,25 +328,23 @@ const UserFeed = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                    {suggestedProducers.length > 0 ? (
-                      suggestedProducers.map(producer => (
-                         <div key={producer.id} className="flex items-center justify-between">
-                            <Link to={`/group/${producer.id}`} className="flex items-center gap-3 group">
-                               <Avatar className="h-9 w-9 border border-secondary/20">
-                                  <AvatarImage src={producer.avatar_url || undefined} />
-                                  <AvatarFallback className="text-xs">{producer.group_name?.[0]}</AvatarFallback>
-                               </Avatar>
-                               <div className="flex flex-col">
-                                  <span className="text-sm font-medium group-hover:text-secondary transition-colors line-clamp-1">{producer.group_name}</span>
-                                  <span className="text-xs text-muted-foreground capitalize">{producer.niche || "Theater Group"}</span>
-                               </div>
-                            </Link>
-                            <Link to={`/group/${producer.id}`}>
-                               <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-secondary">
-                                  <ExternalLink className="w-4 h-4" />
-                               </Button>
-                            </Link>
-                         </div>
-                      ))
+                      <div className="flex flex-wrap gap-4 justify-center">
+                        {suggestedProducers.map(producer => (
+                           <Tooltip key={producer.id}>
+                              <TooltipTrigger asChild>
+                                <Link to={`/group/${producer.id}`} className="group relative">
+                                   <Avatar className="h-12 w-12 border-2 border-transparent group-hover:border-secondary transition-all">
+                                      <AvatarImage src={producer.avatar_url || undefined} />
+                                      <AvatarFallback>{producer.group_name?.[0]}</AvatarFallback>
+                                   </Avatar>
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{producer.group_name}</p>
+                              </TooltipContent>
+                           </Tooltip>
+                        ))}
+                      </div>
                    ) : (
                       <div className="text-sm text-muted-foreground text-center py-4">
                          No suggestions available.
@@ -404,6 +374,8 @@ const UserFeed = () => {
 
         </div>
       </div>
+
+       <Footer />
 
        {/* Producer Request Modal */}
        <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
