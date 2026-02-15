@@ -361,12 +361,17 @@ const UserFeed = () => {
              {/* Upcoming Widget (Static for now or reusing shows) */}
              <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
                 <CardContent className="p-6">
-                   <h3 className="font-serif font-bold text-lg mb-2">Promote your show</h3>
+                   {/* ID: MARKETING_DEMO_PLACEHOLDER */}
+                   <h3 className="font-serif font-bold text-lg mb-2">Join {/* DEMO_ONLY */}20+ Local Arts Groups already on StageLink.</h3>
                    <p className="text-sm text-muted-foreground mb-4">
                       Get your production featured on the main stage and reach thousands of theater enthusiasts.
                    </p>
-                   <Button variant="outline" className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
-                      Contact Us
+                   <Button
+                      variant="outline"
+                      className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                      onClick={() => setProducerRequestModal(true)}
+                   >
+                      Start Your Group
                    </Button>
                 </CardContent>
              </Card>
