@@ -129,32 +129,32 @@ const handler = async (req: Request): Promise<Response> => {
     const batches = [];
 
     // Construct email objects
-    const emailObjects = validEmails.map((email: string) => {
-      const subject = `New Show Alert: ${show.title}`;
-      const showLink = `https://stagelink.show/shows/${showId}`;
-      const htmlContent = `
-        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #3b82f6; margin-bottom: 20px;">New Show Alert! 🎭</h1>
-          <p style="font-size: 16px; line-height: 1.6; color: #333;">
-            A new show has just been added to StageLink:
-          </p>
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f9fafb;">
-            <h2 style="margin-top: 0; color: #111;">${show.title}</h2>
-            ${show.poster_url ? `<img src="${show.poster_url}" alt="${show.title}" style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 15px;" />` : ''}
-            <p style="color: #555; font-style: italic;">${show.description || 'No description available.'}</p>
-          </div>
-          <p style="font-size: 16px; line-height: 1.6; color: #333;">
-            Check it out now on the StageLink feed!
-          </p>
-          <div style="margin-top: 30px; text-align: center;">
-            <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Get Tickets</a>
-          </div>
-          <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
-            You are receiving this because you are a registered audience member on StageLink.
-          </p>
+    const subject = `New Show Alert: ${show.title}`;
+    const showLink = `https://stagelink.show/shows/${showId}`;
+    const htmlContent = `
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #3b82f6; margin-bottom: 20px;">New Show Alert! 🎭</h1>
+        <p style="font-size: 16px; line-height: 1.6; color: #333;">
+          A new show has just been added to StageLink:
+        </p>
+        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #f9fafb;">
+          <h2 style="margin-top: 0; color: #111;">${show.title}</h2>
+          ${show.poster_url ? `<img src="${show.poster_url}" alt="${show.title}" style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 15px;" />` : ''}
+          <p style="color: #555; font-style: italic;">${show.description || 'No description available.'}</p>
         </div>
-      `;
+        <p style="font-size: 16px; line-height: 1.6; color: #333;">
+          Check it out now on the StageLink feed!
+        </p>
+        <div style="margin-top: 30px; text-align: center;">
+          <a href="${showLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Get Tickets</a>
+        </div>
+        <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
+          You are receiving this because you are a registered audience member on StageLink.
+        </p>
+      </div>
+    `;
 
+    const emailObjects = validEmails.map((email: string) => {
       return {
         from: "StageLink <hello@stagelink.show>",
         to: [email],
