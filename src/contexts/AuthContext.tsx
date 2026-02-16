@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
@@ -43,6 +43,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -251,11 +252,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.warn("Auth loading timed out (10s). executing fail-safe...");
       localStorage.clear();
       setLoading(false);
-      navigate("/login");
+
+      // Allow public viewing for shows, producers, etc. without redirecting to login
+      const publicPaths = ["/show", "/producer", "/group", "/directory", "/about"];
+      const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === "/";
+
+      if (!isPublicPath) {
+        navigate("/login");
+      }
     }, 10000);
 
     return () => clearTimeout(timeoutId);
-  }, [loading, navigate]);
+  }, [loading, navigate, location.pathname]);
 
   // CORRECTED: Added firstName parameter and removed extra closing brace
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {

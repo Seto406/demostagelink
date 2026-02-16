@@ -15,6 +15,7 @@ import { ReviewList } from "@/components/reviews/ReviewList";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
+import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
 
 const ShowDetailsPage = () => {
   const { profile } = useAuth();
@@ -25,6 +26,7 @@ const ShowDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -205,7 +207,11 @@ END:VCALENDAR`;
     document.body.removeChild(link);
   };
 
-  const handleBuyTicket = async () => {
+  const handleBuyTicket = () => {
+    setShowPaymentModal(true);
+  };
+
+  const proceedToPayment = async () => {
     if (!show || !show.price) return;
     setBuyingTicket(true);
     try {
@@ -230,8 +236,8 @@ END:VCALENDAR`;
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error("Failed to initiate purchase. Please try again.");
-    } finally {
       setBuyingTicket(false);
+      setShowPaymentModal(false);
     }
   };
 
@@ -412,14 +418,8 @@ END:VCALENDAR`;
                       onClick={handleBuyTicket}
                       disabled={buyingTicket}
                     >
-                      {buyingTicket ? (
-                        "Processing..."
-                      ) : (
-                        <>
-                          <Ticket className="w-5 h-5 mr-2" />
-                          Get Tickets (₱{show.price})
-                        </>
-                      )}
+                      <Ticket className="w-5 h-5 mr-2" />
+                      Get Tickets (₱{show.price})
                     </Button>
                   ) : null}
 
@@ -645,6 +645,21 @@ END:VCALENDAR`;
         </section>
       </main>
       <Footer />
+
+      {show && (
+        <PaymentSummaryModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onConfirm={proceedToPayment}
+          show={{
+            title: show.title,
+            price: show.price || 0,
+            date: show.date,
+            venue: show.venue || (show.city ? `${show.city}` : null)
+          }}
+          isProcessing={buyingTicket}
+        />
+      )}
     </div>
   );
 };
