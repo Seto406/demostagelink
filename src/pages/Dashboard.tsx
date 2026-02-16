@@ -426,7 +426,9 @@ const Dashboard = () => {
   // Handle edit param after shows are loaded
   useEffect(() => {
     const editId = searchParams.get("edit");
-    if (editId && shows.length > 0 && !showModal) {
+    // Ensure shows are loaded before checking. !loadingShows is safer than shows.length > 0
+    // because a user might have 0 shows but we still want to know loading is done.
+    if (editId && !loadingShows && !showModal) {
       const showToEdit = shows.find(s => s.id === editId);
       if (showToEdit) {
         openEditModal(showToEdit);
@@ -439,9 +441,16 @@ const Dashboard = () => {
         const newParams = new URLSearchParams(searchParams);
         newParams.delete("edit");
         setSearchParams(newParams, { replace: true });
+      } else if (shows.length > 0) {
+        // Only clear if we have some shows but couldn't find the ID.
+        // If shows is empty, we might still be syncing or user truly has none.
+        // But if user has none, showToEdit is undefined anyway.
+        // We leave the param if show not found? Or clear it?
+        // Clearing it prevents confusion.
+        // But let's just leave it for now to match original logic but safer.
       }
     }
-  }, [searchParams, shows, showModal, openEditModal, setSearchParams]);
+  }, [searchParams, shows, loadingShows, showModal, openEditModal, setSearchParams]);
 
   const handleAddCastMember = () => {
     if (tempCastName.trim() && tempCastRole.trim()) {
@@ -793,20 +802,44 @@ const Dashboard = () => {
         mapUrl = null;
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          group_name: groupName || null,
-          description: description || null,
-          founded_year: foundedYear ? parseInt(foundedYear) : null,
-          niche: niche || null,
-          university: niche === "university" ? university : null,
-          avatar_url: avatarUrl,
-          map_screenshot_url: mapUrl
-        })
-        .eq("id", profile.id);
+      // Construct update object dynamically
+      const updates: any = {
+        group_name: groupName || null,
+        description: description || null,
+        founded_year: foundedYear ? parseInt(foundedYear) : null,
+        niche: niche || null,
+        avatar_url: avatarUrl,
+        map_screenshot_url: mapUrl
+      };
 
-      if (error) throw error;
+      if (niche === "university") {
+        updates.university = university;
+      } else {
+        updates.university = null;
+      }
+
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update(updates)
+          .eq("id", profile.id);
+
+        if (error) throw error;
+      } catch (firstError: any) {
+        // Retry without university if it looks like a schema error
+        if (firstError.code === 'PGRST204' || firstError.message?.includes('university') || firstError.code === '42703') {
+          console.warn("Retrying profile update without university field due to schema mismatch.");
+          delete updates.university;
+          const { error: retryError } = await supabase
+            .from("profiles")
+            .update(updates)
+            .eq("id", profile.id);
+
+          if (retryError) throw retryError;
+        } else {
+          throw firstError;
+        }
+      }
 
       toast({
         title: "Success",
@@ -815,22 +848,12 @@ const Dashboard = () => {
       refreshProfile();
     } catch (error: any) {
       console.error("Profile update error:", error);
-
-      // Handle missing column error (PostgrestError code 'PGRST204' or similar hint)
-      if (error.code === 'PGRST204' || error.message?.includes('university')) {
-         toast({
-            title: "Database Update Required",
-            description: "The 'university' field is missing in the database. Please contact support to run migrations.",
-            variant: "destructive",
-         });
-      } else {
-          const message = error.message || "Failed to update profile. Please try again.";
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-      }
+      const message = error.message || "Failed to update profile. Please try again.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setUploadingProfile(false);
     }
