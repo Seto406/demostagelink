@@ -279,6 +279,10 @@ test.describe('Comprehensive Feature Tests', () => {
                 await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
             }
         });
+
+        // Mock Service Health
+        await page.route('**/rpc/get_service_health', async r => r.fulfill({ body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }) }));
+        await page.route('**/rpc/get_analytics_summary', async r => r.fulfill({ body: JSON.stringify({ views: 0, clicks: 0, ctr: 0, chartData: [] }) }));
     };
 
     test('Shows: Filtering and Search', async ({ page }) => {
@@ -354,7 +358,10 @@ test.describe('Comprehensive Feature Tests', () => {
         await page.fill('#showTitle', 'New Test Show');
         await page.fill('#showDescription', 'A generated test show.');
         await page.fill('#showDate', '2026-10-31');
-        await page.fill('#showVenue', 'Test Theater');
+
+        // Select Venue
+        await page.click('button:has-text("Select venue")', { force: true });
+        await page.click('div[role="option"]:has-text("Samsung Performing Arts Theater")', { force: true });
 
         // Select City
         const cityTrigger = page.locator('button').filter({ hasText: 'Select city' });
