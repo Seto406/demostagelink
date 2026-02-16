@@ -210,6 +210,7 @@ const Dashboard = () => {
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapEmbedUrl, setMapEmbedUrl] = useState("");
   const [uploadingProfile, setUploadingProfile] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
 
   // Redirect if not logged in or not a producer
   useEffect(() => {
@@ -231,7 +232,7 @@ const Dashboard = () => {
 
   // Load profile data
   useEffect(() => {
-    if (profile) {
+    if (profile && !isProfileLoaded) {
       setGroupName(profile.group_name || "");
       setDescription(profile.description || "");
       setFoundedYear(profile.founded_year?.toString() || "");
@@ -245,8 +246,9 @@ const Dashboard = () => {
         setMapPreview(profile.map_screenshot_url || null);
         setMapEmbedUrl("");
       }
+      setIsProfileLoaded(true);
     }
-  }, [profile]);
+  }, [profile, isProfileLoaded]);
 
   const isTrialExpired = false; // FORCE TRIAL NOT EXPIRED FOR TESTING
 
