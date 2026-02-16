@@ -206,6 +206,10 @@ const Dashboard = () => {
   const [university, setUniversity] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [groupLogoFile, setGroupLogoFile] = useState<File | null>(null);
+  const [groupLogoPreview, setGroupLogoPreview] = useState<string | null>(null);
+  const [groupBannerFile, setGroupBannerFile] = useState<File | null>(null);
+  const [groupBannerPreview, setGroupBannerPreview] = useState<string | null>(null);
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapEmbedUrl, setMapEmbedUrl] = useState("");
@@ -239,6 +243,8 @@ const Dashboard = () => {
       setNiche(profile.niche || "");
       setUniversity(profile.university || "");
       setAvatarPreview(profile.avatar_url || null);
+      setGroupLogoPreview(profile.group_logo_url || profile.avatar_url || null);
+      setGroupBannerPreview(profile.group_banner_url || null);
       if (profile.map_screenshot_url && profile.map_screenshot_url.startsWith("<iframe")) {
         setMapEmbedUrl(profile.map_screenshot_url);
         setMapPreview(null);
@@ -296,6 +302,40 @@ const Dashboard = () => {
 
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleGroupLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a group logo smaller than 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGroupLogoFile(file);
+    setGroupLogoPreview(URL.createObjectURL(file));
+  };
+
+  const handleGroupBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a banner image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGroupBannerFile(file);
+    setGroupBannerPreview(URL.createObjectURL(file));
   };
 
   const handleMapSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -756,17 +796,18 @@ const Dashboard = () => {
     setUploadingProfile(true);
 
     try {
-      let avatarUrl = profile.avatar_url;
+      let groupLogoUrl = profile.group_logo_url;
+      let groupBannerUrl = profile.group_banner_url;
       let mapUrl = profile.map_screenshot_url;
 
-      // Upload avatar if changed
-      if (avatarFile) {
-        const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `${profile.id}/avatar_${Date.now()}.${fileExt}`;
+      // Upload group logo if changed
+      if (groupLogoFile) {
+        const fileExt = groupLogoFile.name.split(".").pop();
+        const fileName = `${profile.id}/group_logo_${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(fileName, avatarFile, { upsert: true });
+          .upload(fileName, groupLogoFile, { upsert: true });
 
         if (uploadError) throw uploadError;
 
@@ -774,7 +815,25 @@ const Dashboard = () => {
           .from("avatars")
           .getPublicUrl(fileName);
 
-        avatarUrl = publicUrl;
+        groupLogoUrl = publicUrl;
+      }
+
+      // Upload group banner if changed
+      if (groupBannerFile) {
+        const fileExt = groupBannerFile.name.split(".").pop();
+        const fileName = `${profile.id}/group_banner_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("show-posters") // Using show-posters as it's public
+          .upload(fileName, groupBannerFile, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("show-posters")
+          .getPublicUrl(fileName);
+
+        groupBannerUrl = publicUrl;
       }
 
       // Handle Map Update logic
@@ -808,7 +867,8 @@ const Dashboard = () => {
         description: description || null,
         founded_year: foundedYear ? parseInt(foundedYear) : null,
         niche: niche || null,
-        avatar_url: avatarUrl,
+        group_logo_url: groupLogoUrl,
+        group_banner_url: groupBannerUrl,
         map_screenshot_url: mapUrl
       };
 
@@ -1181,7 +1241,7 @@ const Dashboard = () => {
               <div className="bg-card border border-secondary/20 p-6 ios-rounded space-y-6">
                 <h2 className="font-serif text-xl text-foreground mb-4">Group Information</h2>
 
-                {/* Avatar Upload */}
+                {/* Group Logo Upload */}
                 <div className="flex flex-col items-center mb-6">
                   <div className="relative w-32 h-32 mb-4 group cursor-pointer">
                     <label className="cursor-pointer block w-full h-full rounded-full overflow-hidden border-2 border-dashed border-secondary/30 hover:border-secondary transition-colors relative">
@@ -1189,12 +1249,12 @@ const Dashboard = () => {
                         type="file"
                         className="hidden"
                         accept="image/jpeg,image/png,image/webp"
-                        onChange={handleAvatarSelect}
+                        onChange={handleGroupLogoSelect}
                       />
-                      {avatarPreview ? (
+                      {groupLogoPreview ? (
                         <img
-                          src={avatarPreview}
-                          alt="Avatar preview"
+                          src={groupLogoPreview}
+                          alt="Group Logo preview"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1209,6 +1269,43 @@ const Dashboard = () => {
                     </label>
                   </div>
                   <p className="text-sm text-muted-foreground">Tap to change group logo</p>
+                </div>
+
+                {/* Group Banner Upload */}
+                <div className="space-y-4 mb-6">
+                  <Label className="text-sm font-medium text-muted-foreground">Group Banner (Optional)</Label>
+                  {groupBannerPreview ? (
+                    <div className="relative rounded-xl overflow-hidden border border-secondary/30 aspect-[3/1]">
+                      <img
+                        src={groupBannerPreview}
+                        alt="Group Banner"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroupBannerFile(null);
+                          setGroupBannerPreview(null);
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press block aspect-[3/1] flex flex-col items-center justify-center">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleGroupBannerSelect}
+                      />
+                      <Image className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-muted-foreground text-sm">
+                        Click to upload a banner image
+                      </p>
+                    </label>
+                  )}
                 </div>
 
                 <div className="space-y-6">

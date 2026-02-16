@@ -284,6 +284,9 @@ export type Database = {
           user_id: string
           username: string | null
           xp: number | null
+          university: string | null
+          group_logo_url: string | null
+          group_banner_url: string | null
         }
         Insert: {
           address?: string | null
@@ -304,6 +307,9 @@ export type Database = {
           user_id: string
           username?: string | null
           xp?: number | null
+          university?: string | null
+          group_logo_url?: string | null
+          group_banner_url?: string | null
         }
         Update: {
           address?: string | null
@@ -324,6 +330,9 @@ export type Database = {
           user_id?: string
           username?: string | null
           xp?: number | null
+          university?: string | null
+          group_logo_url?: string | null
+          group_banner_url?: string | null
         }
         Relationships: []
       }
