@@ -19,6 +19,8 @@ interface Producer {
   founded_year: number | null;
   niche: "local" | "university" | null;
   avatar_url: string | null;
+  group_logo_url: string | null;
+  group_banner_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
   map_screenshot_url: string | null;
@@ -61,7 +63,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, map_screenshot_url, university")
+        .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university")
         .eq("id", id)
         .maybeSingle();
 
@@ -245,6 +247,16 @@ const ProducerProfile = () => {
       </Helmet>
       <Navbar />
       <main className="pt-24 pb-16">
+        {producer.group_banner_url && (
+          <div className="w-full h-48 md:h-64 lg:h-80 relative mb-8">
+            <img
+              src={producer.group_banner_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          </div>
+        )}
         <div className="container mx-auto px-6">
           {/* Producer Header */}
           <motion.div
@@ -261,9 +273,9 @@ const ProducerProfile = () => {
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Avatar */}
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center text-5xl md:text-6xl shrink-0 border-2 border-secondary/30">
-                  {producer.avatar_url ? (
+                  {producer.group_logo_url || producer.avatar_url ? (
                     <img 
-                      src={producer.avatar_url} 
+                      src={producer.group_logo_url || producer.avatar_url || ""}
                       alt={producer.group_name || "Producer"} 
                       className="w-full h-full object-cover"
                     />
