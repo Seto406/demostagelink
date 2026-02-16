@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,18 +8,7 @@ import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Users,
-  Home,
-  Calendar,
-  Search,
-  Heart,
-  User,
-  Settings,
-  PlusSquare,
-  TrendingUp,
-  ExternalLink
-} from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,9 +25,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
+import { ProductionModal } from "@/components/dashboard/ProductionModal";
 
-// Interface for Shows
-export interface Show {
+// Interface for Feed Shows (includes joined data)
+export interface FeedShow {
   id: string;
   title: string;
   description: string | null;
@@ -48,6 +37,7 @@ export interface Show {
   city: string | null;
   poster_url: string | null;
   created_at?: string;
+  ticket_link?: string | null;
   profiles?: {
     group_name: string | null;
     id: string;
@@ -70,6 +60,7 @@ const UserFeed = () => {
   const { user, profile, loading, isAdmin } = useAuth();
   const { isPro } = useSubscription();
   const [producerRequestModal, setProducerRequestModal] = useState(false);
+  const [showProductionModal, setShowProductionModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -120,7 +111,7 @@ const UserFeed = () => {
         .range(from, to);
 
       if (error) throw error;
-      return data as Show[];
+      return data as FeedShow[];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -247,7 +238,7 @@ const UserFeed = () => {
 
   // Determine which shows to display
   // Using importedDummyShows as fallback/append for demo purposes if needed, but primarily relying on real data
-  const displayShows = [...shows, ...(importedDummyShows as unknown as Show[])];
+  const displayShows = [...shows, ...(importedDummyShows as unknown as FeedShow[])];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -270,11 +261,11 @@ const UserFeed = () => {
                          <AvatarImage src={profile.avatar_url || undefined} />
                          <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
                       </Avatar>
-                      <Link to="/dashboard" className="flex-1">
+                      <div className="flex-1" onClick={() => setShowProductionModal(true)}>
                          <div className="bg-muted/50 hover:bg-muted text-muted-foreground rounded-full px-4 py-3 cursor-pointer transition-colors text-sm">
-                            Post a new show...
+                            Post a new production...
                          </div>
-                      </Link>
+                      </div>
                    </CardContent>
                 </Card>
              )}
@@ -435,6 +426,8 @@ const UserFeed = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} />
     </div>
   );
 };
