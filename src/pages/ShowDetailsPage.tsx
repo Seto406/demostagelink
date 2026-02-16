@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,38 +169,37 @@ const ShowDetailsPage = () => {
   const googleCalendarLink = (() => {
     if (!show || !show.date) return "";
     const title = encodeURIComponent(show.title);
-    const details = encodeURIComponent(show.description || "");
-    const location = encodeURIComponent(show.venue || "");
+    const details = encodeURIComponent(`${show.description || ""}\n\nLink: ${window.location.href}`);
+    const location = encodeURIComponent(`${show.venue || ""}${show.city ? `, ${show.city}` : ""}`);
 
-    // Format date as YYYYMMDD
-    const dateObj = new Date(show.date);
-    const dateStr = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
-    const dates = `${dateStr}/${dateStr}`; // All day event
+    const startDate = new Date(show.date);
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default to 2 hours
+
+    const startStr = startDate.toISOString().replace(/-|:|\.\d{3}/g, "");
+    const endStr = endDate.toISOString().replace(/-|:|\.\d{3}/g, "");
+    const dates = `${startStr}/${endStr}`;
 
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
   })();
 
-  const downloadICS = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const downloadICS = () => {
     if (!show || !show.date) return;
 
-    // Format date as YYYYMMDD
-    const dateObj = new Date(show.date);
-    const dateStr = dateObj.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
-    // Create next day string for end date (all day event requires end date to be next day)
-    const nextDay = new Date(dateObj);
-    nextDay.setDate(nextDay.getDate() + 1);
-    const nextDayStr = nextDay.toISOString().replace(/-|:|\.\d\d\d/g, "").split("T")[0];
+    const startDate = new Date(show.date);
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default to 2 hours
+
+    const startStr = startDate.toISOString().replace(/-|:|\.\d{3}/g, "");
+    const endStr = endDate.toISOString().replace(/-|:|\.\d{3}/g, "");
 
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
 URL:${window.location.href}
-DTSTART;VALUE=DATE:${dateStr.replace(/-/g, '')}
-DTEND;VALUE=DATE:${nextDayStr.replace(/-/g, '')}
+DTSTART:${startStr}
+DTEND:${endStr}
 SUMMARY:${show.title}
-DESCRIPTION:${show.description || ""}
-LOCATION:${show.venue || ""}
+DESCRIPTION:${show.description || ""} \\n\\nLink: ${window.location.href}
+LOCATION:${show.venue || ""}${show.city ? `, ${show.city}` : ""}
 END:VEVENT
 END:VCALENDAR`;
 
@@ -430,10 +435,24 @@ END:VCALENDAR`;
                                             Share
                                         </CopyButton>
 
-                                        <Button variant="outline" className="flex-1" onClick={downloadICS}>
-                                            <Calendar className="w-4 h-4 mr-2" />
-                                            Save Date
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" className="flex-1">
+                                                    <Calendar className="w-4 h-4 mr-2" />
+                                                    Save Date
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem asChild>
+                                                    <a href={googleCalendarLink} target="_blank" rel="noopener noreferrer">
+                                                        Google Calendar
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={downloadICS}>
+                                                    Outlook / iCal (.ics)
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             </div>
