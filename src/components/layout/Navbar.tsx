@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Shield, Menu, X, Settings, Heart, Bell, LogOut, User, Ticket } from "lucide-react";
+import { Shield, Menu, X, Settings, Heart, Bell, LogOut, User, Ticket, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import {
@@ -55,7 +55,9 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 h-[72px] bg-background/95 backdrop-blur-md border-b border-secondary/20">
+      <nav className={`fixed top-0 left-0 right-0 z-50 h-[72px] bg-background/95 backdrop-blur-md border-b ${
+        profile?.role === "producer" ? "border-amber-500/50" : "border-secondary/20"
+      }`}>
         <div className="container mx-auto px-4 sm:px-6 h-full relative z-10">
           <div className="flex items-center justify-between h-full">
             {/* Logo - Routes to feed if logged in, landing if not */}
@@ -165,6 +167,17 @@ const Navbar = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
+                      {profile?.role === "producer" && (
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link to="/dashboard" className="w-full cursor-pointer font-medium text-amber-500 focus:text-amber-500">
+                              <LayoutDashboard className="mr-2 h-4 w-4" />
+                              <span>Dashboard</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">{profile?.username || "User"}</p>

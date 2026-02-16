@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket } from "lucide-react";
+import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { CommentSection } from "@/components/feed/CommentSection";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface FeedPostProps {
   show: {
@@ -34,11 +35,13 @@ export interface FeedPostProps {
 }
 
 export function FeedPost({ show }: FeedPostProps) {
+  const { user, profile } = useAuth();
   const { toggleFavorite, isFavorited } = useFavorites();
   const [showComments, setShowComments] = useState(false);
   const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
 
+  const isProducerOrAdmin = user && (user.id === show.profiles?.id || profile?.role === 'admin');
   const producerName = show.profiles?.group_name || "Unknown Group";
   const producerAvatar = show.profiles?.avatar_url;
   const initials = producerName
@@ -126,16 +129,32 @@ export function FeedPost({ show }: FeedPostProps) {
               <span className="text-xs text-muted-foreground">{timeAgo}</span>
             </div>
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>More options</p>
-            </TooltipContent>
-          </Tooltip>
+          <div className="flex items-center gap-1">
+            {isProducerOrAdmin && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Edit Production">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit Production</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>More options</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </CardHeader>
 
         {/* Content */}

@@ -69,7 +69,9 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
         setChartData(formattedChartData);
       }
     } catch (error) {
-      console.error("Error fetching analytics:", error);
+      // Safe Mode: Default to 0 on error (including 404/No Data) and suppress console error
+      setStats({ views: 0, clicks: 0, ctr: 0 });
+      setChartData([]);
     } finally {
       setLoading(false);
     }

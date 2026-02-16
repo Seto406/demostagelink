@@ -19,6 +19,39 @@ const PRODUCER_USER = {
 
 test.describe('Content Seeding & Flow Validation', () => {
 
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/rpc/get_service_health', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() })
+        });
+    });
+
+    // Mock Analytics Summary
+    await page.route('**/rpc/get_analytics_summary', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                views: 100,
+                clicks: 10,
+                ctr: 10.0,
+                chartData: []
+            })
+        });
+    });
+
+    // Mock Subscription Check
+    await page.route('**/functions/v1/check-subscription', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ isPro: false })
+        });
+    });
+  });
+
   test('1. Admin Invite', async ({ page }) => {
     // Mock Admin Login
     await page.addInitScript(({ user }) => {
@@ -250,7 +283,11 @@ test.describe('Content Seeding & Flow Validation', () => {
         await page.getByRole('button', { name: 'Add Show' }).first().click(); // Or Add New Show
         await page.fill('#showTitle', title);
         await page.fill('#showDate', '2026-05-01');
-        await page.fill('#showVenue', 'Theater Venue');
+
+        // Select Venue
+        await page.click('button:has-text("Select venue")', { force: true });
+        await page.click('div[role="option"]:has-text("Samsung Performing Arts Theater")', { force: true });
+
         // Select City (default is empty, required)
         await page.click('text=Select city');
         await page.getByRole('option', { name: 'Manila' }).click();

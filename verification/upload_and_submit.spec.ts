@@ -148,6 +148,8 @@ test.describe('Upload and Submit Verification', () => {
         await page.route('**/rest/v1/notifications*', async r => r.fulfill({ body: '[]' }));
         await page.route('**/rest/v1/producer_requests*', async r => r.fulfill({ body: '[]' }));
         await page.route('**/functions/v1/check-subscription*', async r => r.fulfill({ body: JSON.stringify({ isPro: false }) }));
+        await page.route('**/rpc/get_service_health', async r => r.fulfill({ body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }) }));
+        await page.route('**/rpc/get_analytics_summary', async r => r.fulfill({ body: JSON.stringify({ views: 0, clicks: 0, ctr: 0, chartData: [] }) }));
     };
 
     test('Producer can upload poster and submit show', async ({ page }) => {
@@ -161,7 +163,10 @@ test.describe('Upload and Submit Verification', () => {
         // Fill Basic Info
         await page.fill('#showTitle', 'Poster Upload Test');
         await page.fill('#showDate', '2026-11-01');
-        await page.fill('#showVenue', 'Grand Theater');
+
+        // Select Venue
+        await page.click('button:has-text("Select venue")', { force: true });
+        await page.click('div[role="option"]:has-text("Samsung Performing Arts Theater")', { force: true });
 
         // Select City
         await page.locator('button').filter({ hasText: 'Select city' }).click();

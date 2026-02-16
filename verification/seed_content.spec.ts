@@ -2,6 +2,39 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('End-to-End Content Seeding Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/rpc/get_service_health', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() })
+        });
+    });
+
+    // Mock Analytics Summary
+    await page.route('**/rpc/get_analytics_summary', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                views: 100,
+                clicks: 10,
+                ctr: 10.0,
+                chartData: []
+            })
+        });
+    });
+
+    // Mock Subscription Check
+    await page.route('**/functions/v1/check-subscription', async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ isPro: false })
+        });
+    });
+  });
+
   // Mock Data Store
   let shows = [];
   let invitations = [];
@@ -170,7 +203,10 @@ test.describe('End-to-End Content Seeding Flow', () => {
     await page.fill('#showTitle', 'New Test Musical');
     await page.fill('#showDescription', 'A test musical description.');
     await page.fill('#showDate', '2025-12-01');
-    await page.fill('#showVenue', 'Test Venue');
+
+    // Select Venue
+    await page.click('button:has-text("Select venue")', { force: true });
+    await page.click('div[role="option"]:has-text("Samsung Performing Arts Theater")', { force: true });
 
     // Select City (Select trigger)
     await page.click('button:has-text("Select city")', { force: true });
