@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/layout/Navbar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Eye, EyeOff, Check, X } from "lucide-react";
@@ -14,6 +14,7 @@ type ResetMode = "request" | "update";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<ResetMode>("request");
   const [email, setEmail] = useState("");
@@ -24,18 +25,14 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Check if we have a recovery token in the URL
+  // Check if we have a recovery token in the URL or if user is logged in via recovery
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      // If there's a session with a recovery type, show password update form
-      if (session?.user) {
-        const event = searchParams.get("type");
-        if (event === "recovery") {
-          setMode("update");
-        }
+    if (user) {
+      const event = searchParams.get("type");
+      if (event === "recovery") {
+        setMode("update");
       }
-    };
+    }
 
     // Listen for password recovery event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -44,10 +41,8 @@ const ResetPassword = () => {
       }
     });
 
-    checkSession();
-
     return () => subscription.unsubscribe();
-  }, [searchParams]);
+  }, [user, searchParams]);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,12 +159,7 @@ const ResetPassword = () => {
       <Navbar />
       <main className="pt-24 pb-16 min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-md mx-auto"
-          >
+          <div className="max-w-md mx-auto">
             <div className="bg-card border border-secondary/20 p-8">
               <img 
                 src={stageLinkLogo} 
@@ -287,7 +277,7 @@ const ResetPassword = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
@@ -343,7 +333,7 @@ const ResetPassword = () => {
                 </button>
               </p>
             </div>
-          </motion.div>
+          </div>
         </div>
       </main>
     </div>
