@@ -7,9 +7,10 @@ interface TourGuideProps {
   isTrialExpired?: boolean;
   run: boolean;
   setRun: (run: boolean) => void;
+  onFinish?: () => void;
 }
 
-export const TourGuide = ({ isTrialExpired = false, run, setRun }: TourGuideProps) => {
+export const TourGuide = ({ isTrialExpired = false, run, setRun, onFinish }: TourGuideProps) => {
   const { user } = useAuth();
   const helpersRef = useRef<StoreHelpers | null>(null);
 
@@ -25,8 +26,8 @@ export const TourGuide = ({ isTrialExpired = false, run, setRun }: TourGuideProp
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
-      if (user) {
-        localStorage.setItem(`stagelink_tour_seen_${user.id}`, "true");
+      if (onFinish) {
+        onFinish();
       }
     }
   };

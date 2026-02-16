@@ -221,30 +221,34 @@ const Dashboard = () => {
     }
   }, [profile]);
 
-  const isTrialExpired = useMemo(() => {
-    if (!profile?.created_at) return false;
-    const trialDuration = 30 * 24 * 60 * 60 * 1000; // 30 days
-    const created = new Date(profile.created_at).getTime();
-    return Date.now() - created > trialDuration;
-  }, [profile]);
+  const isTrialExpired = false; // FORCE TRIAL NOT EXPIRED FOR TESTING
 
   // Handle tour
   useEffect(() => {
-    if (user) {
-      const hasSeenTour = localStorage.getItem(`stagelink_tour_seen_${user.id}`);
-      if (!hasSeenTour) {
-        // Delay tour start to ensure Dashboard DOM is fully rendered (stats, buttons, sidebar)
-        // 500ms accounts for loading state + motion animations (0.3s) + paint
-        const timer = setTimeout(() => setRunTour(true), 500);
-        return () => clearTimeout(timer);
-      }
+    if (profile && !profile.has_completed_tour) {
+      // Delay tour start to ensure Dashboard DOM is fully rendered
+      const timer = setTimeout(() => setRunTour(true), 500);
+      return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [profile]);
 
   const handleRestartTour = () => {
-    if (user) {
-      localStorage.removeItem(`stagelink_tour_seen_${user.id}`);
-      setRunTour(true);
+    setRunTour(true);
+  };
+
+  const handleTourFinish = async () => {
+    if (!profile) return;
+
+    // Update profile to mark tour as completed
+    const { error } = await supabase
+      .from("profiles")
+      .update({ has_completed_tour: true })
+      .eq("id", profile.id);
+
+    if (error) {
+      console.error("Error updating tour status:", error);
+    } else {
+      refreshProfile();
     }
   };
 
@@ -711,7 +715,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <TourGuide isTrialExpired={isTrialExpired} run={runTour} setRun={setRunTour} />
+      <TourGuide
+        isTrialExpired={isTrialExpired}
+        run={runTour}
+        setRun={setRunTour}
+        onFinish={handleTourFinish}
+      />
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
