@@ -296,10 +296,10 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       ) : members.length === 0 ? (
         <div className="border border-dashed border-secondary/30 p-8 text-center ios-rounded">
           <Users className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-          <p className="text-muted-foreground mb-4">No members added yet.</p>
-          <RippleButton onClick={openAddModal} variant="ios-secondary" size="sm">
-            Add Your First Member
-          </RippleButton>
+          <p className="text-muted-foreground mb-4">Collaborators will appear here once invited.</p>
+          <Button variant="ghost" onClick={openAddModal}>
+            Add Member
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
