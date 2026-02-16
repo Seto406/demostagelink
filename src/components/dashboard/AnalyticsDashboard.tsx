@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { motion } from "framer-motion";
-import { HelpCircle, Lock } from "lucide-react";
+import { HelpCircle, Lock, BarChart3 } from "lucide-react";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
@@ -135,6 +135,46 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
 
   if (loading) {
     return <div className="h-96 flex items-center justify-center"><BrandedLoader /></div>;
+  }
+
+  const hasData = stats.views > 0 || stats.clicks > 0 || stats.ctr > 0;
+
+  if (!hasData) {
+    return (
+      <Card className="bg-card border-secondary/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-secondary/10 p-4 rounded-full mb-4">
+            <BarChart3 className="w-8 h-8 text-secondary opacity-50" />
+          </div>
+          <p className="text-muted-foreground max-w-sm">
+            Your stats will appear once your first show goes live.
+          </p>
+        </div>
+
+        {/* Ghost Content */}
+        <div className="p-6 opacity-10 filter blur-sm select-none pointer-events-none grayscale">
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
+                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
+                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
+             </div>
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
+                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
+                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
+             </div>
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
+                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
+                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
+             </div>
+          </div>
+          <div className="h-64 bg-secondary/20 rounded-xl border border-secondary/30 flex items-end justify-between p-8 gap-4">
+             {[40, 60, 30, 80, 50, 70, 45].map((h, i) => (
+               <div key={i} className="w-full bg-secondary/40 rounded-t-sm" style={{ height: `${h}%` }}></div>
+             ))}
+          </div>
+        </div>
+      </Card>
+    );
   }
 
   return (
