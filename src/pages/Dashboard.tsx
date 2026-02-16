@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { Input } from "@/components/ui/input";
@@ -129,6 +129,8 @@ const Dashboard = () => {
   const [editingShow, setEditingShow] = useState<Show | null>(null);
   const [runTour, setRunTour] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const [showFilter, setShowFilter] = useState<'ongoing' | 'archived'>('ongoing');
+  const queryClient = useQueryClient();
 
   // Use React Query for fetching shows
   const { data: shows = [], isLoading: loadingShows, refetch: fetchShows } = useQuery({
@@ -139,7 +141,7 @@ const Dashboard = () => {
         .from("shows")
         .select("*")
         .eq("producer_id", profile.id)
-        .is("deleted_at", null)
+        // Fetches all shows, including archived ones, to enable the "Archived" tab
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -571,6 +573,17 @@ const Dashboard = () => {
   const handleDeleteShow = async (showId: string) => {
     if (!confirm("Are you sure you want to delete this show? This action will archive the show.")) return;
 
+    // Optimistic Update: Immediately remove from UI (move to archive)
+    const previousShows = queryClient.getQueryData<Show[]>(['producer-shows', profile?.id]);
+    queryClient.setQueryData(['producer-shows', profile?.id], (old: Show[] | undefined) => {
+      if (!old) return [];
+      return old.map(s =>
+        s.id === showId
+          ? { ...s, status: 'archived' as const, deleted_at: new Date().toISOString() }
+          : s
+      );
+    });
+
     try {
       const { error } = await supabase
         .from("shows")
@@ -578,13 +591,20 @@ const Dashboard = () => {
         .update({ status: 'archived', deleted_at: new Date().toISOString() })
         .eq("id", showId);
 
-      if (error) throw error;
+      if (error) {
+        // Rollback on error
+        if (previousShows) {
+            queryClient.setQueryData(['producer-shows', profile?.id], previousShows);
+        }
+        throw error;
+      }
 
       toast({
         title: "Show Deleted",
         description: "The show has been moved to archive.",
       });
-      fetchShows();
+      // No need to fetchShows() if optimistic update worked, but we can do it to be safe
+      // fetchShows();
     } catch (error) {
       console.error("Delete error:", error);
       toast({
@@ -870,15 +890,40 @@ const Dashboard = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <div className="flex justify-between items-center">
-                <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      onClick={() => setShowFilter('ongoing')}
+                      className={`text-sm px-3 py-1 rounded-full transition-colors ${
+                        showFilter === 'ongoing'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary/10 text-muted-foreground hover:bg-secondary/20'
+                      }`}
+                    >
+                      Ongoing
+                    </button>
+                    <button
+                      onClick={() => setShowFilter('archived')}
+                      className={`text-sm px-3 py-1 rounded-full transition-colors ${
+                        showFilter === 'archived'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary/10 text-muted-foreground hover:bg-secondary/20'
+                      }`}
+                    >
+                      Archived
+                    </button>
+                  </div>
+                </div>
+
                 {isTrialExpired ? (
                   <Button variant="outline" disabled className="opacity-50 cursor-not-allowed">
                     <Lock className="w-4 h-4 mr-2" />
                     Add Show (Expired)
                   </Button>
                 ) : (
-                  profile?.role === "producer" && (
+                  profile?.role === "producer" && showFilter === 'ongoing' && (
                     <RippleButton onClick={openAddModal} variant="ios">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Show
@@ -889,10 +934,12 @@ const Dashboard = () => {
 
               {loadingShows ? (
                 <div className="text-muted-foreground text-center py-8">Loading shows...</div>
-              ) : shows.length === 0 ? (
+              ) : shows.filter(s => showFilter === 'ongoing' ? s.status !== 'archived' : s.status === 'archived').length === 0 ? (
                 <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
-                  <p className="text-muted-foreground mb-4">You haven't submitted any shows yet.</p>
-                  {!isTrialExpired && profile?.role === "producer" && (
+                  <p className="text-muted-foreground mb-4">
+                    {showFilter === 'ongoing' ? "You haven't submitted any shows yet." : "No archived shows."}
+                  </p>
+                  {!isTrialExpired && profile?.role === "producer" && showFilter === 'ongoing' && (
                     <RippleButton id="add-show-button" onClick={openAddModal} variant="ios-secondary">
                       Submit Your First Show
                     </RippleButton>
@@ -911,7 +958,9 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {shows.map((show) => (
+                      {shows
+                        .filter(s => showFilter === 'ongoing' ? s.status !== 'archived' : s.status === 'archived')
+                        .map((show) => (
                         <tr key={show.id} className="border-t border-secondary/10">
                           <td className="p-4 text-foreground">{show.title}</td>
                           <td className="p-4 text-muted-foreground">
@@ -928,44 +977,50 @@ const Dashboard = () => {
                             </span>
                           </td>
                           <td className="p-4 flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditModal(show)}
-                              className="h-8 w-8 p-0"
-                              title="Edit Show"
-                              aria-label={`Edit ${show.title}`}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
+                            {showFilter === 'ongoing' ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditModal(show)}
+                                  className="h-8 w-8 p-0"
+                                  title="Edit Show"
+                                  aria-label={`Edit ${show.title}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
 
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteShow(show.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              title="Delete Show"
-                              aria-label={`Delete ${show.title}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteShow(show.id)}
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  title="Archive Show"
+                                  aria-label={`Archive ${show.title}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
 
-                            {!show.is_featured && (
-                               <Button
-                                 variant="outline"
-                                 size="sm"
-                                 onClick={() => !isPro ? setShowUpsellModal(true) : handlePromoteShow(show.id, show.title)}
-                                 className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
-                               >
-                                 {!isPro && <Lock className="w-3 h-3 mr-1" />}
-                                 Promote (₱500)
-                               </Button>
-                             )}
-                             {show.is_featured && (
-                               <span className="text-xs text-yellow-500 font-medium px-2 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
-                                 Featured
-                               </span>
-                             )}
+                                {!show.is_featured && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => !isPro ? setShowUpsellModal(true) : handlePromoteShow(show.id, show.title)}
+                                    className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
+                                  >
+                                    {!isPro && <Lock className="w-3 h-3 mr-1" />}
+                                    Promote (₱500)
+                                  </Button>
+                                )}
+                                {show.is_featured && (
+                                  <span className="text-xs text-yellow-500 font-medium px-2 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
+                                    Featured
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                                <span className="text-xs text-muted-foreground italic">Archived</span>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -278,6 +278,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!loading) return;
 
     const timeoutId = setTimeout(() => {
+      // Check if there is a session token in localStorage before clearing
+      const hasSessionToken = Object.keys(localStorage).some(key =>
+        key.startsWith("sb-") && key.endsWith("-auth-token")
+      );
+
+      if (hasSessionToken) {
+        console.warn("Auth loading timed out (10s) but session token found. Holding on current URL.");
+        // Do NOT clear localStorage and do NOT redirect.
+        return;
+      }
+
       console.warn("Auth loading timed out (10s). executing fail-safe...");
       localStorage.clear();
       setLoading(false);
