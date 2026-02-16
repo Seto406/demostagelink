@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -19,6 +18,7 @@ import { toast } from "sonner";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { ReviewList } from "@/components/reviews/ReviewList";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
@@ -27,6 +27,7 @@ const ShowDetailsPage = () => {
   const { profile } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toggleFavorite, isFavorited } = useFavorites();
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,11 +176,18 @@ const ShowDetailsPage = () => {
     const startDate = new Date(show.date);
     const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default to 2 hours
 
-    const startStr = startDate.toISOString().replace(/-|:|\.\d{3}/g, "");
-    const endStr = endDate.toISOString().replace(/-|:|\.\d{3}/g, "");
-    const dates = `${startStr}/${endStr}`;
+    const formatToManila = (date: Date) => {
+      const str = date.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' });
+      return str.replace(/\D/g, ''); // YYYYMMDDHHmmss
+    };
 
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    const formatGoogle = (s: string) => `${s.slice(0, 8)}T${s.slice(8)}`;
+
+    const startStr = formatToManila(startDate);
+    const endStr = formatToManila(endDate);
+    const dates = `${formatGoogle(startStr)}/${formatGoogle(endStr)}`;
+
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}&ctz=Asia/Manila`;
   })();
 
   const downloadICS = () => {
@@ -269,10 +277,7 @@ END:VCALENDAR`;
                 <div className="lg:col-span-8 space-y-10">
 
                    {/* Large Poster */}
-                   <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
+                   <div
                         className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card"
                    >
                         {show.poster_url ? (
@@ -289,7 +294,7 @@ END:VCALENDAR`;
                                 <Ticket className="w-16 h-16 text-muted-foreground/30" />
                             </div>
                         )}
-                   </motion.div>
+                   </div>
 
                    {/* Title & Metadata */}
                    <div className="space-y-4">
@@ -425,7 +430,16 @@ END:VCALENDAR`;
                                         </Button>
                                     )}
 
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            onClick={() => show && toggleFavorite(show.id)}
+                                        >
+                                            <Heart className={`w-4 h-4 mr-2 ${show && isFavorited(show.id) ? "fill-current text-red-500" : ""}`} />
+                                            {show && isFavorited(show.id) ? "Saved" : "Save"}
+                                        </Button>
+
                                         <CopyButton
                                             variant="outline"
                                             className="flex-1"
