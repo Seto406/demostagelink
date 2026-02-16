@@ -362,12 +362,18 @@ const Profile = () => {
                         ))}
                     </div>
                  ) : (
-                    <div className="text-center py-12 bg-card/50 border border-secondary/10 rounded-2xl">
-                        <TicketIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No Passes Yet</h3>
-                        <p className="text-muted-foreground mb-6">You haven't purchased any tickets yet.</p>
+                    <div className="text-center py-16 bg-gradient-to-br from-card/80 to-card/40 border border-secondary/20 rounded-2xl shadow-sm">
+                        <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <TicketIcon className="w-8 h-8 text-secondary" />
+                        </div>
+                        <h3 className="text-xl font-serif font-bold text-foreground mb-3">Your Ticket Wallet is Empty</h3>
+                        <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
+                            Discover your next theater experience and keep your passes here.
+                        </p>
                         <Link to="/shows">
-                            <Button>Browse Shows</Button>
+                            <Button size="lg" className="font-medium px-8 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
+                                Browse Shows
+                            </Button>
                         </Link>
                     </div>
                  )}

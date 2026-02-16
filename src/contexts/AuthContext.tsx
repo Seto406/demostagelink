@@ -273,7 +273,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
 
       // Allow public viewing for shows, producers, etc. without redirecting to login
-      const publicPaths = ["/show", "/producer", "/group", "/directory", "/about"];
+      const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
       const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === "/";
 
       if (!isPublicPath) {
@@ -352,7 +352,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = profile?.role === "admin";
 
-  if (loading) {
+  const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
+  const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === "/";
+
+  // If loading but on a public path, allow rendering (read-only mode)
+  if (loading && !isPublicPath) {
     return <FullPageLoader text="Loading StageLink..." />;
   }
 

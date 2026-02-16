@@ -30,12 +30,14 @@ const ShowDetailsPage = () => {
   const { toggleFavorite, isFavorited } = useFavorites();
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
+    setImageLoading(true);
     const fetchShow = async () => {
       if (!id) {
         setError("Production not found");
@@ -278,19 +280,25 @@ END:VCALENDAR`;
 
                    {/* Large Poster */}
                    <div
-                        className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card"
+                        className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card aspect-[2/3]"
                    >
                         {show.poster_url ? (
-                            <div className="relative w-full flex justify-center bg-black/40 backdrop-blur-sm">
+                            <div className="relative w-full h-full flex justify-center bg-black/40 backdrop-blur-sm">
+                                {imageLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse z-10">
+                                        <Ticket className="w-16 h-16 text-muted-foreground/30" />
+                                    </div>
+                                )}
                                 <img
                                   src={show.poster_url}
                                   alt={show.title}
-                                  className="w-full max-h-[70vh] object-contain"
+                                  className={`w-full h-full object-contain transition-opacity duration-500 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                                  onLoad={() => setImageLoading(false)}
                                 />
                                 {/* Blurred background filler if needed, but handled by parent bg */}
                             </div>
                         ) : (
-                            <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
                                 <Ticket className="w-16 h-16 text-muted-foreground/30" />
                             </div>
                         )}
