@@ -11,7 +11,6 @@ import { Settings, MapPin, Calendar, Building2, Pencil, Mail } from "lucide-reac
 import { RankCard } from "@/components/profile/RankCard";
 import { BadgeGrid } from "@/components/profile/BadgeGrid";
 import { ActivityFeed } from "@/components/profile/ActivityFeed";
-import { motion } from "framer-motion";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 
 interface ProfileData {
@@ -92,9 +91,7 @@ const Profile = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
            {/* Header */}
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
+           <div
              className="bg-card border border-secondary/20 rounded-2xl p-6 md:p-8 mb-6 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden shadow-xl"
            >
              {/* Background decoration */}
@@ -172,7 +169,7 @@ const Profile = () => {
                  )}
                </div>
              </div>
-           </motion.div>
+           </div>
 
            {/* Stats Grid - Hidden for now as per directive */}
            {/*

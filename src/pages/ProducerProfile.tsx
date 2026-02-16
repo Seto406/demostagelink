@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -247,10 +246,7 @@ const ProducerProfile = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Producer Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+          <div
             className="mb-12"
           >
             <Link to="/directory" className="text-secondary hover:text-secondary/80 text-sm mb-4 inline-block">
@@ -375,14 +371,11 @@ const ProducerProfile = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Location Section */}
           {producer.map_screenshot_url && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+            <div
               className="mb-12"
             >
               <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
@@ -408,15 +401,11 @@ const ProducerProfile = () => {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Shows Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          <div>
             {shows.length === 0 ? (
               <div className="bg-card border border-secondary/20 p-12 text-center">
                 <p className="text-muted-foreground">No approved productions yet.</p>
@@ -433,11 +422,8 @@ const ProducerProfile = () => {
                       {shows
                         .filter(s => s.production_status !== "completed")
                         .map((show, index) => (
-                          <motion.div
+                          <div
                             key={show.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: index * 0.1 }}
                           >
                             <Link
                               to={`/show/${show.id}`}
@@ -480,7 +466,7 @@ const ProducerProfile = () => {
                                 </div>
                               </div>
                             </Link>
-                          </motion.div>
+                          </div>
                         ))}
                     </div>
                   </div>
@@ -496,11 +482,8 @@ const ProducerProfile = () => {
                       {shows
                         .filter(s => s.production_status === "completed")
                         .map((show, index) => (
-                          <motion.div
+                          <div
                             key={show.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: index * 0.1 }}
                           >
                             <Link
                               to={`/show/${show.id}`}
@@ -543,14 +526,14 @@ const ProducerProfile = () => {
                                 </div>
                               </div>
                             </Link>
-                          </motion.div>
+                          </div>
                         ))}
                     </div>
                   </div>
                 )}
               </>
             )}
-          </motion.div>
+          </div>
         </div>
       </main>
       <Footer />

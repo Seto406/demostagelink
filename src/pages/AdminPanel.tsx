@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -931,10 +930,7 @@ const AdminPanel = () => {
           {activeTab === "invitations" ? (
             <InvitationHub />
           ) : activeTab === "shows" ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="space-y-6"
             >
               {/* Show Filter Stats */}
@@ -1211,12 +1207,9 @@ const AdminPanel = () => {
                 )}
                 </>
               )}
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="space-y-6"
             >
               {/* Producer Requests */}
@@ -1473,7 +1466,7 @@ const AdminPanel = () => {
                 )}
                 </>
               )}
-            </motion.div>
+            </div>
           )}
         </div>
       </main>

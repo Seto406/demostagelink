@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Users, Calendar, ExternalLink } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -153,11 +152,7 @@ const GroupProfile = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div>
             <Link 
               to="/directory"
               className="inline-flex items-center text-muted-foreground hover:text-secondary transition-colors mb-8"
@@ -165,13 +160,10 @@ const GroupProfile = () => {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Directory
             </Link>
-          </motion.div>
+          </div>
 
           {/* Profile Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+          <div
             className="bg-card border border-secondary/20 p-8 md:p-12 mb-8"
           >
             <div className="flex flex-col md:flex-row items-start gap-8">
@@ -219,14 +211,11 @@ const GroupProfile = () => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Additional Info */}
           <div className="grid md:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+            <div
               className="bg-card border border-secondary/20 p-6"
             >
               <div className="flex items-center gap-3 mb-4">
@@ -239,12 +228,9 @@ const GroupProfile = () => {
                   : `${group.group_name} is a community-based theater production company committed to bringing quality theatrical experiences to local audiences.`
                 }
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+            <div
               className="bg-card border border-secondary/20 p-6"
             >
               <div className="flex items-center gap-3 mb-4">
@@ -257,14 +243,11 @@ const GroupProfile = () => {
               <p className="text-muted-foreground/60 text-xs italic">
                 Social links coming soon
               </p>
-            </motion.div>
+            </div>
           </div>
 
           {/* Shows Section Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+          <div
             className="mt-8 bg-card border border-secondary/20 p-8 text-center"
           >
             <h2 className="font-serif text-2xl text-foreground mb-4">Upcoming Shows</h2>
@@ -276,7 +259,7 @@ const GroupProfile = () => {
                 Browse All Shows
               </Button>
             </Link>
-          </motion.div>
+          </div>
         </div>
       </main>
       <Footer />

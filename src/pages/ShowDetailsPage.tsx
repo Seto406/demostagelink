@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -264,10 +263,7 @@ END:VCALENDAR`;
                 <div className="lg:col-span-8 space-y-10">
 
                    {/* Large Poster */}
-                   <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
+                   <div
                         className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card"
                    >
                         {show.poster_url ? (
@@ -284,7 +280,7 @@ END:VCALENDAR`;
                                 <Ticket className="w-16 h-16 text-muted-foreground/30" />
                             </div>
                         )}
-                   </motion.div>
+                   </div>
 
                    {/* Title & Metadata */}
                    <div className="space-y-4">

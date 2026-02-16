@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -764,10 +763,7 @@ const Dashboard = () => {
         <div className="p-6">
           {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="space-y-6"
             >
               <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
@@ -820,15 +816,12 @@ const Dashboard = () => {
                   )
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Shows Tab */}
           {activeTab === "shows" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="space-y-6"
             >
               <div className="flex justify-between items-center">
@@ -923,15 +916,12 @@ const Dashboard = () => {
                   </table>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Profile Tab */}
           {activeTab === "profile" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
             >
               {/* Left Column: Basic Info */}
@@ -1119,20 +1109,17 @@ const Dashboard = () => {
                 </div>
               </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Members Tab */}
           {activeTab === "members" && profile && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+            <div
               className="max-w-4xl space-y-6"
             >
               <GroupMembers profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
               <AudienceLinking isPro={isPro} />
-            </motion.div>
+            </div>
           )}
         </div>
       </main>

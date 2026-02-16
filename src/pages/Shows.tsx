@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, forwardRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -82,14 +81,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
   };
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0 }}
-      layout
-    >
+    <div ref={ref}>
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
         <div
           className="block bg-card overflow-hidden group relative flex flex-col h-full"
@@ -102,7 +94,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
           {/* Poster */}
           <div className="aspect-[2/3] relative overflow-hidden">
             {posterUrl ? (
-              <motion.img
+              <img
                 src={posterUrl}
                 alt={show.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -130,17 +122,14 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
             {/* Niche badge */}
             {(show.niche || show.genre) && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
+              <div
                 className="absolute top-3 right-3"
                 style={{ transform: "translateZ(30px)" }}
               >
                 <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
                   {show.genre || (show.niche === "university" ? "University" : "Local")}
                 </span>
-              </motion.div>
+              </div>
             )}
 
             {/* Favorite Button */}
@@ -246,7 +235,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
           </div>
         </div>
       </TiltCard>
-    </motion.div>
+    </div>
   );
 });
 ShowCard.displayName = "ShowCard";
@@ -434,16 +423,10 @@ const Shows = () => {
         <main className="pt-20 sm:pt-24 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+          <div
             className="text-center mb-8 sm:mb-12"
           >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
+            <div
               className="flex items-center justify-center gap-2 mb-4"
             >
               <Sparkles className="w-4 h-4 text-secondary" />
@@ -451,20 +434,17 @@ const Shows = () => {
                 Now Showing
               </span>
               <Sparkles className="w-4 h-4 text-secondary" />
-            </motion.div>
+            </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-foreground mb-4">
               All Productions
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
               Discover theatrical productions across Metro Manila
             </p>
-          </motion.div>
+          </div>
 
           {/* Filters Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+          <div
             className="mb-8 sm:mb-12 space-y-4 sm:space-y-6"
           >
             {/* Search */}
@@ -496,10 +476,8 @@ const Shows = () => {
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {availableCities.map((city) => (
-                    <motion.button
+                    <button
                       key={city}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                       onClick={() => setSelectedCity(city)}
                       className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
                         selectedCity === city
@@ -508,7 +486,7 @@ const Shows = () => {
                       }`}
                     >
                       {city}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -520,10 +498,8 @@ const Shows = () => {
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {availableGenres.map((genre) => (
-                    <motion.button
+                    <button
                       key={genre}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
                       onClick={() => setSelectedGenre(genre)}
                       className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
                         selectedGenre === genre
@@ -532,7 +508,7 @@ const Shows = () => {
                       }`}
                     >
                       {genre}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -644,25 +620,20 @@ const Shows = () => {
             </div>
 
             {/* Active Filters & Clear */}
-            <AnimatePresence>
-              {hasActiveFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-center"
+            {hasActiveFilters && (
+              <div
+                className="text-center"
+              >
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 text-sm transition-colors"
                 >
-                  <button
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 text-sm transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  <X className="w-4 h-4" />
+                  Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
+                </button>
+              </div>
+            )}
+          </div>
 
           {(!profile || profile.role !== "producer") && (
             <div className="mb-8">
@@ -671,15 +642,13 @@ const Shows = () => {
           )}
 
           {/* Results Count */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <div
             className="mb-6 text-center text-sm text-muted-foreground"
           >
             {loading
               ? "Loading..."
               : `${filteredShows.length} ${filteredShows.length === 1 ? "production" : "productions"} found`}
-          </motion.div>
+          </div>
 
           {/* Shows Grid */}
           {loading ? (
@@ -707,16 +676,13 @@ const Shows = () => {
             </div>
           ) : (
             <>
-              <motion.div
-                layout
+              <div
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
               >
-                <AnimatePresence mode="popLayout">
-                  {filteredShows.map((show, index) => (
-                    <ShowCard key={show.id} show={show} index={index} />
-                  ))}
-                </AnimatePresence>
-              </motion.div>
+                {filteredShows.map((show, index) => (
+                  <ShowCard key={show.id} show={show} index={index} />
+                ))}
+              </div>
 
               {/* Load More Button */}
               {hasMore && (
