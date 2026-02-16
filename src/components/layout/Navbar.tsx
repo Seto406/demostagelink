@@ -206,18 +206,27 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden p-2 text-foreground touch-target"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
+            {/* Mobile Menu Toggle & Ticket Icon */}
+            <div className="flex items-center gap-4 md:hidden">
+              {user && (
+                <Link to="/profile">
+                  <Button variant="ghost" size="icon" aria-label="My Passes" className="rounded-full">
+                    <Ticket className="w-5 h-5" />
+                  </Button>
+                </Link>
               )}
-            </button>
+              <button
+                className="p-2 text-foreground touch-target"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
