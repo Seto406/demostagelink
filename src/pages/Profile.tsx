@@ -218,7 +218,7 @@ const Profile = () => {
   }
 
   const isProducer = profile.role === "producer";
-  const displayName = profile.group_name || profile.username || (isOwnProfile && user?.email?.split('@')[0]) || "Anonymous User";
+  const displayName = profile.username || (isOwnProfile && user?.email?.split('@')[0]) || "Anonymous User";
 
   return (
     <div className="min-h-screen bg-background">

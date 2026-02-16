@@ -280,7 +280,7 @@ const Dashboard = () => {
       setNiche(profile.niche || "");
       setUniversity(profile.university || "");
       setAvatarPreview(profile.avatar_url || null);
-      setGroupLogoPreview(profile.group_logo_url || profile.avatar_url || null);
+      setGroupLogoPreview(profile.group_logo_url || null);
       setGroupBannerPreview(profile.group_banner_url || null);
       if (profile.map_screenshot_url && profile.map_screenshot_url.startsWith("<iframe")) {
         setMapEmbedUrl(profile.map_screenshot_url);
