@@ -8,7 +8,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useFavorites } from "@/hooks/use-favorites";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { CommentSection } from "@/components/feed/CommentSection";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,11 +100,7 @@ export function FeedPost({ show }: FeedPostProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
+    <>
       <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm overflow-hidden hover:border-secondary/40 transition-colors">
         {/* Header */}
         <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
@@ -261,6 +256,6 @@ export function FeedPost({ show }: FeedPostProps) {
             </AnimatePresence> */}
         </CardFooter>
       </Card>
-    </motion.div>
+    </>
   );
 }
