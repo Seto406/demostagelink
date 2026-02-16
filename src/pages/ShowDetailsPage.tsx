@@ -468,11 +468,26 @@ END:VCALENDAR`;
                                     )}
 
                                     {/* Map Placeholder */}
-                                    <div className="aspect-video bg-muted rounded-xl flex items-center justify-center relative overflow-hidden group cursor-help mt-2">
-                                        <div className="absolute inset-0 bg-secondary/5 group-hover:bg-secondary/10 transition-colors" />
-                                        <div className="flex flex-col items-center gap-2 text-center p-4">
-                                            <MapPin className="w-8 h-8 text-secondary/50 group-hover:scale-110 transition-transform" />
-                                            <span className="text-xs text-muted-foreground">Map data currently unavailable</span>
+                                    <div className="aspect-video bg-muted rounded-xl relative overflow-hidden mt-2 group">
+                                        <div className="absolute inset-0">
+                                          <img
+                                            src="https://images.unsplash.com/photo-1515634928627-2a4e0dae3ddf?q=80&w=1000&auto=format&fit=crop"
+                                            alt="Theater Map Placeholder"
+                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-50 transition-opacity grayscale hover:grayscale-0"
+                                          />
+                                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                                        </div>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <Button variant="secondary" className="shadow-lg hover:scale-105 transition-transform" asChild>
+                                              <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((show.venue || "") + ", " + (show.city || ""))}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                              >
+                                                <MapPin className="w-4 h-4 mr-2" />
+                                                View on Google Maps
+                                              </a>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
