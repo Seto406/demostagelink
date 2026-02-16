@@ -11,8 +11,13 @@ interface TourGuideProps {
 }
 
 export const TourGuide = ({ isTrialExpired = false, run, setRun, onFinish }: TourGuideProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const helpersRef = useRef<StoreHelpers | null>(null);
+
+  // Kill switch: If the user has already completed the tour, never render it again.
+  if (profile?.has_completed_tour) {
+    return null;
+  }
 
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status, type } = data;
