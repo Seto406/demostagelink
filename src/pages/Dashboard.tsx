@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { TourGuide } from "@/components/onboarding/TourGuide";
@@ -612,6 +612,50 @@ const Dashboard = () => {
     }
   };
 
+  const handleRestoreShow = async (showId: string) => {
+    // Optimistic Update: Immediately restore in UI
+    const previousShows = queryClient.getQueryData<Show[]>(['producer-shows', profile?.id]);
+    queryClient.setQueryData(['producer-shows', profile?.id], (old: Show[] | undefined) => {
+      if (!old) return [];
+      return old.map(s =>
+        s.id === showId
+          // @ts-ignore
+          ? { ...s, status: 'approved', deleted_at: null }
+          : s
+      );
+    });
+
+    try {
+      const { error } = await supabase
+        .from("shows")
+        // @ts-ignore
+        .update({ status: 'approved', deleted_at: null })
+        .eq("id", showId);
+
+      if (error) {
+        // Rollback on error
+        if (previousShows) {
+            queryClient.setQueryData(['producer-shows', profile?.id], previousShows);
+        }
+        throw error;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['producer-shows', profile?.id] });
+
+      toast({
+        title: "Show Restored",
+        description: "The show has been restored from archive.",
+      });
+    } catch (error) {
+      console.error("Restore error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore show.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteShow = (showId: string) => {
     setShowIdToDelete(showId);
     setDeleteAlertOpen(true);
@@ -1070,7 +1114,15 @@ const Dashboard = () => {
                                 )}
                               </>
                             ) : (
-                                <span className="text-xs text-muted-foreground italic">Archived</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRestoreShow(show.id)}
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                  title="Restore Show"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
                             )}
                           </td>
                         </tr>

@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { CommentSection } from "@/components/feed/CommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatCurrency } from "@/lib/utils";
 
 export interface FeedPostProps {
   show: {
@@ -24,6 +25,7 @@ export interface FeedPostProps {
     city: string | null;
     poster_url: string | null;
     created_at?: string;
+    price?: number | null;
     ticket_link?: string | null;
     profiles?: {
       group_name: string | null;
@@ -40,6 +42,7 @@ export function FeedPost({ show }: FeedPostProps) {
   const [showComments, setShowComments] = useState(false);
   const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
+  const [reservationCount, setReservationCount] = useState(0);
 
   const isProducerOrAdmin = !loading && user && (user.id === show.profiles?.id || profile?.role === 'admin');
   const producerName = show.profiles?.group_name || "Unknown Group";
@@ -94,6 +97,20 @@ export function FeedPost({ show }: FeedPostProps) {
       // supabase.removeChannel(commentChannel);
     };
   }, [show.id, fetchLikeCount, fetchCommentCount]);
+
+  useEffect(() => {
+    if (isProducerOrAdmin) {
+      supabase
+        .from('tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('show_id', show.id)
+        .then(({ count }) => {
+          if (count !== null) setReservationCount(count);
+        });
+    }
+  }, [isProducerOrAdmin, show.id]);
+
+  const estimatedRevenue = reservationCount * (show.price || 0);
 
   const handleShare = () => {
     navigator.clipboard.writeText(`${window.location.origin}/show/${show.id}`);
@@ -172,6 +189,12 @@ export function FeedPost({ show }: FeedPostProps) {
 
           {/* Image */}
           <Link to={`/show/${show.id}`} className="block relative aspect-[4/3] sm:aspect-[16/9] overflow-hidden bg-muted">
+             {isProducerOrAdmin && (
+                <div className="absolute top-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white p-2 text-xs flex justify-between z-10 font-mono">
+                   <span>Reservations: {reservationCount}</span>
+                   <span>Est. Rev: {formatCurrency(estimatedRevenue)}</span>
+                </div>
+             )}
              {show.poster_url ? (
                 <img
                   src={show.poster_url}
