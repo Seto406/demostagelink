@@ -140,6 +140,7 @@ const Dashboard = () => {
         .select("*")
         .eq("producer_id", profile.id)
         .is("deleted_at", null)
+        .neq("status", "archived")
         .order("created_at", { ascending: false });
 
       if (error) {
