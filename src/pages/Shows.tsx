@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2 } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -67,9 +67,12 @@ interface Show {
 
 // Enhanced Show Card component with 3D tilt
 const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ show, index }, ref) => {
+  const { user, profile } = useAuth();
   const posterUrl = posterMap[show.title] || show.poster_url;
   const { toggleFavorite, isFavorited } = useFavorites();
   const { toast } = useToast();
+
+  const isProducerOrAdmin = user && (user.id === show.profiles?.id || profile?.role === 'admin');
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -174,6 +177,25 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   <Share2 className="w-3.5 h-3.5" />
                </Button>
             </div>
+
+            {/* Edit Button */}
+            {isProducerOrAdmin && (
+              <div
+                className="absolute top-3 left-[84px] z-20"
+                style={{ transform: "translateZ(30px)" }}
+              >
+                <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
+                  <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border-secondary/30 text-muted-foreground hover:bg-background/90 hover:text-primary hover:border-primary/50 p-0"
+                      aria-label="Edit Production"
+                  >
+                      <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* Content */}
             <div 

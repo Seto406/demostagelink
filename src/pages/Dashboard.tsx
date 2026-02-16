@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RippleButton } from "@/components/ui/ripple-button";
@@ -130,6 +130,7 @@ const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, signOut, loading, refreshProfile } = useAuth();
   const { isPro } = useSubscription();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
@@ -143,6 +144,14 @@ const Dashboard = () => {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [showIdToDelete, setShowIdToDelete] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Handle URL query parameters for deep linking
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["dashboard", "shows", "profile", "members"].includes(tabParam)) {
+      setActiveTab(tabParam as "dashboard" | "shows" | "profile" | "members");
+    }
+  }, [searchParams]);
 
   // Use React Query for fetching shows
   const { data: shows = [], isLoading: loadingShows, refetch: fetchShows } = useQuery({
@@ -384,7 +393,7 @@ const Dashboard = () => {
     setShowModal(true);
   };
 
-  const openEditModal = (show: Show) => {
+  const openEditModal = useCallback((show: Show) => {
     setEditingShow(show);
     setNewShowTitle(show.title);
     setNewShowDescription(show.description || "");
@@ -409,7 +418,25 @@ const Dashboard = () => {
     setPosterPreview(show.poster_url);
     setPosterFile(null);
     setShowModal(true);
-  };
+  }, []);
+
+  // Handle edit param after shows are loaded
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId && shows.length > 0 && !showModal) {
+      const showToEdit = shows.find(s => s.id === editId);
+      if (showToEdit) {
+        openEditModal(showToEdit);
+        // Ensure we switch to the shows tab if not already there
+        setActiveTab("shows");
+
+        // Remove edit param to prevent loop when closing modal
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("edit");
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [searchParams, shows, showModal, openEditModal, setSearchParams]);
 
   const handleAddCastMember = () => {
     if (tempCastName.trim() && tempCastRole.trim()) {

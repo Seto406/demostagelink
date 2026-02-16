@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -24,7 +24,7 @@ import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
 
 const ShowDetailsPage = () => {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toggleFavorite, isFavorited } = useFavorites();
@@ -306,9 +306,19 @@ END:VCALENDAR`;
 
                    {/* Title & Metadata */}
                    <div className="space-y-4">
-                        <span className="text-secondary uppercase tracking-[0.2em] text-sm font-medium">
-                          {getNicheLabel(show.niche)}
-                        </span>
+                        <div className="flex justify-between items-start gap-4">
+                           <span className="text-secondary uppercase tracking-[0.2em] text-sm font-medium">
+                             {getNicheLabel(show.niche)}
+                           </span>
+                           {user && (user.id === show.profiles?.id || profile?.role === 'admin') && (
+                             <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
+                               <Button variant="outline" size="sm" className="gap-2 border-secondary/30 hover:border-secondary hover:text-secondary">
+                                 <Pencil className="w-4 h-4" />
+                                 <span className="hidden sm:inline">Edit Production</span>
+                               </Button>
+                             </Link>
+                           )}
+                        </div>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight">
                           {show.title}
                         </h1>
