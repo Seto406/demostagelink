@@ -202,7 +202,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-secondary/30 sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Edit Profile</DialogTitle>
+          <DialogTitle className="font-serif text-xl">Personal Settings</DialogTitle>
           <DialogDescription>
             Update your profile information.
           </DialogDescription>
