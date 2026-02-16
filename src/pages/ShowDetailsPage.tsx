@@ -492,9 +492,6 @@ END:VCALENDAR`;
                                                 <Calendar className="w-5 h-5 text-secondary mt-0.5" />
                                                 <div>
                                                     <p className="text-foreground font-medium">{dateInfo.full}</p>
-                                                    <a href={googleCalendarLink} target="_blank" rel="noopener noreferrer" className="text-xs text-secondary hover:underline inline-flex items-center gap-1 mt-1">
-                                                        Add to Google Calendar <ExternalLink className="w-3 h-3" />
-                                                    </a>
                                                 </div>
                                             </div>
                                         </div>
