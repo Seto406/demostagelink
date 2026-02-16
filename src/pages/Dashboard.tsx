@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw, Check } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { TourGuide } from "@/components/onboarding/TourGuide";
@@ -219,6 +219,39 @@ const Dashboard = () => {
   const [mapEmbedUrl, setMapEmbedUrl] = useState("");
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const isDirty = useMemo(() => {
+    if (!profile) return false;
+
+    // Check for new file uploads
+    if (groupLogoFile || groupBannerFile || mapFile) return true;
+
+    // Check text fields
+    if (groupName !== (profile.group_name || "")) return true;
+    if (description !== (profile.description || "")) return true;
+    if (foundedYear !== (profile.founded_year?.toString() || "")) return true;
+    if (niche !== (profile.niche || "")) return true;
+    if (niche === "university" && university !== (profile.university || "")) return true;
+
+    // Check Map changes
+    const initialMapUrl = profile.map_screenshot_url;
+
+    // If embed URL changed
+    if (mapEmbedUrl !== (initialMapUrl?.startsWith("<iframe") ? initialMapUrl : "")) return true;
+
+    // If map was removed (and not replaced by embed or file)
+    if (!mapEmbedUrl && !mapPreview && initialMapUrl && !initialMapUrl.startsWith("<iframe")) return true;
+
+    return false;
+  }, [profile, groupName, description, foundedYear, niche, university, groupLogoFile, groupBannerFile, mapFile, mapEmbedUrl, mapPreview]);
+
+  // Reset success state when changes are made
+  useEffect(() => {
+    if (isDirty) {
+      setSaveSuccess(false);
+    }
+  }, [isDirty]);
 
   // Redirect if not logged in or not a producer
   useEffect(() => {
@@ -905,9 +938,11 @@ const Dashboard = () => {
         }
       }
 
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
       toast({
         title: "Success",
-        description: "Profile updated successfully!",
+        description: "Theater Group Profile Updated Successfully",
       });
       refreshProfile();
     } catch (error: any) {
@@ -1375,10 +1410,25 @@ const Dashboard = () => {
                     onClick={handleUpdateProfile}
                     variant="ios"
                     size="lg"
-                    className="w-full"
-                    disabled={uploadingProfile}
+                    className={`w-full transition-all duration-300 ${
+                      saveSuccess
+                        ? "!bg-green-500 hover:!bg-green-600 text-white border-green-600 shadow-md"
+                        : ""
+                    }`}
+                    disabled={(!isDirty && !saveSuccess) || uploadingProfile}
                   >
-                    {uploadingProfile ? "Saving..." : "Save Profile"}
+                    {saveSuccess ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Check className="w-5 h-5" />
+                        <span>Saved!</span>
+                      </div>
+                    ) : uploadingProfile ? (
+                      "Saving..."
+                    ) : isDirty ? (
+                      "Save Profile"
+                    ) : (
+                      "Update Profile"
+                    )}
                   </RippleButton>
                 </div>
               </div>
