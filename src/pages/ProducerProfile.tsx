@@ -19,6 +19,8 @@ interface Producer {
   founded_year: number | null;
   niche: "local" | "university" | null;
   avatar_url: string | null;
+  group_logo_url: string | null;
+  group_banner_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
   map_screenshot_url: string | null;
@@ -61,7 +63,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, facebook_url, instagram_url, map_screenshot_url, university")
+        .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university")
         .eq("id", id)
         .maybeSingle();
 
@@ -257,23 +259,37 @@ const ProducerProfile = () => {
               ← Back to Directory
             </Link>
             
-            <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl">
-              <div className="flex flex-col md:flex-row gap-8 items-start">
-                {/* Avatar */}
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center text-5xl md:text-6xl shrink-0 border-2 border-secondary/30">
-                  {producer.avatar_url ? (
-                    <img 
-                      src={producer.avatar_url} 
-                      alt={producer.group_name || "Producer"} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span>🎭</span>
-                  )}
-                </div>
-                
-                {/* Info */}
-                <div className="flex-1 w-full">
+            <div className="bg-card border border-secondary/20 rounded-2xl overflow-hidden">
+              {/* Group Banner */}
+              <div className="h-32 md:h-48 bg-secondary/10 relative">
+                {producer.group_banner_url ? (
+                  <img
+                    src={producer.group_banner_url}
+                    alt="Group Banner"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-r from-secondary/5 to-secondary/20" />
+                )}
+              </div>
+
+              <div className="p-8 md:p-12 pt-0 md:pt-0 relative">
+                <div className="flex flex-col md:flex-row gap-8 items-start -mt-12 md:-mt-16">
+                  {/* Avatar */}
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-background flex items-center justify-center text-5xl md:text-6xl shrink-0 border-4 border-card shadow-sm z-10">
+                    {(producer.group_logo_url || producer.avatar_url) ? (
+                      <img
+                        src={producer.group_logo_url || producer.avatar_url || ""}
+                        alt={producer.group_name || "Producer"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="bg-primary/20 w-full h-full flex items-center justify-center">🎭</span>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 w-full mt-4 md:mt-16">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                       <div>
                           <span className="text-secondary text-xs uppercase tracking-wider mb-2 block">
@@ -373,6 +389,7 @@ const ProducerProfile = () => {
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             </div>
           </motion.div>

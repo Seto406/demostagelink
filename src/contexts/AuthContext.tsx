@@ -19,6 +19,8 @@ interface Profile {
   rank: string | null;
   xp: number | null;
   avatar_url: string | null;
+  group_logo_url: string | null;
+  group_banner_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
   address: string | null;
