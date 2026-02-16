@@ -55,6 +55,8 @@ import { UpsellModal } from "@/components/dashboard/UpsellModal";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { schools } from "@/data/schools";
 import { venues } from "@/data/venues";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
 
 interface CastMember {
   name: string;
@@ -174,6 +176,8 @@ const Dashboard = () => {
     },
     enabled: !!profile,
   });
+
+  const showIds = useMemo(() => shows.map(s => s.id), [shows]);
 
   // Form states for new show
   const [newShowTitle, setNewShowTitle] = useState("");
@@ -1017,57 +1021,68 @@ const Dashboard = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="space-y-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start"
             >
-              <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
-                <div className="bg-card border border-secondary/20 p-6">
-                  <p className="text-muted-foreground text-sm mb-2">Total Productions</p>
-                  <p className="text-3xl font-serif text-foreground">{shows.length}</p>
+              {/* Main Column */}
+              <div className="lg:col-span-2 space-y-6">
+                <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
+                  <div className="bg-card border border-secondary/20 p-6">
+                    <p className="text-muted-foreground text-sm mb-2">Total Productions</p>
+                    <p className="text-3xl font-serif text-foreground">{shows.length}</p>
+                  </div>
+                  <div className="bg-card border border-secondary/20 p-6">
+                    <p className="text-muted-foreground text-sm mb-2">Approved</p>
+                    <p className="text-3xl font-serif text-green-500">
+                      {shows.filter((s) => s.status === "approved").length}
+                    </p>
+                  </div>
+                  <div className="bg-card border border-secondary/20 p-6">
+                    <p className="text-muted-foreground text-sm mb-2">Under Review</p>
+                    <p className="text-3xl font-serif text-yellow-500">
+                      {shows.filter((s) => s.status === "pending").length}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-card border border-secondary/20 p-6">
-                  <p className="text-muted-foreground text-sm mb-2">Approved</p>
-                  <p className="text-3xl font-serif text-green-500">
-                    {shows.filter((s) => s.status === "approved").length}
-                  </p>
-                </div>
-                <div className="bg-card border border-secondary/20 p-6">
-                  <p className="text-muted-foreground text-sm mb-2">Under Review</p>
-                  <p className="text-3xl font-serif text-yellow-500">
-                    {shows.filter((s) => s.status === "pending").length}
-                  </p>
+
+                {profile && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
+                      {!isPro && <Lock className="w-5 h-5 text-muted-foreground" />}
+                    </div>
+                    <AnalyticsDashboard profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
+                  </div>
+                )}
+
+                <div id="quick-actions-container" className="bg-card border border-secondary/20 p-6">
+                  <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
+                  {isTrialExpired ? (
+                    <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-4">
+                      <AlertTriangle className="w-6 h-6 text-destructive" />
+                      <div>
+                        <h3 className="font-medium text-destructive">Trial Expired</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Your 1-month free trial has ended. Please upgrade to continue creating shows.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    profile?.role === "producer" && (
+                      <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add New Show
+                      </RippleButton>
+                    )
+                  )}
                 </div>
               </div>
 
-              {profile && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
-                    {!isPro && <Lock className="w-5 h-5 text-muted-foreground" />}
-                  </div>
-                  <AnalyticsDashboard profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
-                </div>
-              )}
-
-              <div id="quick-actions-container" className="bg-card border border-secondary/20 p-6">
-                <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
-                {isTrialExpired ? (
-                  <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-4">
-                    <AlertTriangle className="w-6 h-6 text-destructive" />
-                    <div>
-                      <h3 className="font-medium text-destructive">Trial Expired</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Your 1-month free trial has ended. Please upgrade to continue creating shows.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  profile?.role === "producer" && (
-                    <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add New Show
-                    </RippleButton>
-                  )
+              {/* Sidebar Column */}
+              <div className="space-y-6">
+                {profile && (
+                  <OnboardingChecklist profile={profile} hasShows={shows.length > 0} />
                 )}
+                <RecentActivity showIds={showIds} />
               </div>
             </motion.div>
           )}
