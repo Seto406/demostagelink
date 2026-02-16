@@ -108,6 +108,7 @@ const UserFeed = () => {
           city,
           poster_url,
           created_at,
+          price,
           profiles:producer_id (
             group_name,
             id,
@@ -130,20 +131,20 @@ const UserFeed = () => {
 
   const shows = data?.pages.flat() || [];
 
-  // Fetch total reservations (Producer POV Sidebar Stat)
-  const { data: reservationCount, isError: isStatsError, isLoading: loadingStats } = useQuery({
-    queryKey: ['producer-reservations', user?.id],
+  // Fetch producer's recent shows
+  const { data: recentShows } = useQuery({
+    queryKey: ['producer-recent-shows', user?.id],
     queryFn: async () => {
-      if (!user) return 0;
-      const { count, error } = await supabase
-        .from("tickets")
-        .select("*, shows!inner(producer_id)", { count: 'exact', head: true })
-        .eq("shows.producer_id", user.id);
-      if (error) throw error;
-      return count || 0;
+       if (!user) return [];
+       const { data } = await supabase
+         .from('shows')
+         .select('id, title, status')
+         .eq('producer_id', user.id)
+         .order('created_at', { ascending: false })
+         .limit(3);
+       return data || [];
     },
-    enabled: !!user && profile?.role === 'producer',
-    retry: false,
+    enabled: !!user && profile?.role === 'producer'
   });
 
   // Fetch suggested producers
@@ -267,22 +268,29 @@ const UserFeed = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-serif flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-secondary" />
-                  Performance
+                  My Productions
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <p className="text-xs text-muted-foreground">Total Reservations</p>
-                  {isStatsError ? (
-                    <p className="text-sm font-medium text-destructive mt-1">Stats temporarily unavailable</p>
-                  ) : loadingStats ? (
-                    <p className="text-sm text-muted-foreground mt-1">Loading...</p>
-                  ) : (
-                    <p className="text-2xl font-serif font-bold">{reservationCount ?? 0}</p>
+                <div className="space-y-3">
+                  {recentShows?.map(show => (
+                    <div key={show.id} className="flex justify-between items-center text-sm">
+                      <span className="truncate max-w-[120px]" title={show.title}>{show.title}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase border ${
+                        show.status === 'approved' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                        show.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                        'bg-muted/50 text-muted-foreground border-muted'
+                      }`}>
+                        {show.status === 'approved' ? 'Live' : show.status}
+                      </span>
+                    </div>
+                  ))}
+                  {(!recentShows || recentShows.length === 0) && (
+                    <p className="text-muted-foreground text-xs">No shows yet.</p>
                   )}
                 </div>
                 <Link to="/dashboard">
-                  <Button className="w-full bg-secondary text-white hover:bg-secondary/90">
+                  <Button className="w-full mt-4 bg-secondary text-white hover:bg-secondary/90" size="sm">
                     <LayoutDashboard className="w-4 h-4 mr-2" />
                     Dashboard
                   </Button>
