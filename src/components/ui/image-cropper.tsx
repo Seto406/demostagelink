@@ -4,7 +4,7 @@ import Cropper from 'react-easy-crop'
 import { Area } from 'react-easy-crop/types'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 
 interface ImageCropperProps {
   imageSrc: string
@@ -106,6 +106,9 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
       <DialogContent className="max-w-xl p-0 overflow-hidden bg-card border-secondary/20">
         <DialogHeader className="p-4 border-b border-secondary/20">
             <DialogTitle>Adjust Image</DialogTitle>
+            <DialogDescription>
+              Adjust the zoom and rotation of your image before saving.
+            </DialogDescription>
         </DialogHeader>
         <div className="relative h-[400px] w-full bg-black/90">
           <Cropper
@@ -122,7 +125,7 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
         </div>
         <div className="space-y-4 p-6 bg-card">
              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium w-16">Zoom</span>
+                <span id="cropper-zoom-label" className="text-sm font-medium w-16">Zoom</span>
                 <Slider
                     value={[zoom]}
                     min={1}
@@ -130,10 +133,11 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
                     step={0.1}
                     onValueChange={(val) => setZoom(val[0])}
                     className="flex-1"
+                    aria-labelledby="cropper-zoom-label"
                 />
              </div>
              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium w-16">Rotate</span>
+                <span id="cropper-rotate-label" className="text-sm font-medium w-16">Rotate</span>
                 <Slider
                     value={[rotation]}
                     min={0}
@@ -141,12 +145,13 @@ export const ImageCropper = ({ imageSrc, onCropComplete, onCancel, open, aspect 
                     step={1}
                     onValueChange={(val) => setRotation(val[0])}
                      className="flex-1"
+                     aria-labelledby="cropper-rotate-label"
                 />
              </div>
         </div>
         <DialogFooter className="p-4 border-t border-secondary/20 bg-muted/10">
-            <Button variant="outline" onClick={onCancel}>Cancel</Button>
-            <Button onClick={handleSave}>Save Crop</Button>
+            <Button variant="outline" onClick={onCancel} aria-label="Cancel crop">Cancel</Button>
+            <Button onClick={handleSave} aria-label="Save cropped image">Save Crop</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
