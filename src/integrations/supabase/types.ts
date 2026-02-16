@@ -398,6 +398,13 @@ export type Database = {
           updated_at: string
           venue: string | null
           video_url: string | null
+          total_capacity: number | null
+          remaining_seats: number | null
+          ticket_price: number | null
+          currency: string | null
+          duration_minutes: number | null
+          venue_address: string | null
+          map_link: string | null
         }
         Insert: {
           cast_members?: Json | null
@@ -424,8 +431,22 @@ export type Database = {
           updated_at?: string
           venue?: string | null
           video_url?: string | null
+          total_capacity?: number | null
+          remaining_seats?: number | null
+          ticket_price?: number | null
+          currency?: string | null
+          duration_minutes?: number | null
+          venue_address?: string | null
+          map_link?: string | null
         }
         Update: {
+          total_capacity?: number | null
+          remaining_seats?: number | null
+          ticket_price?: number | null
+          currency?: string | null
+          duration_minutes?: number | null
+          venue_address?: string | null
+          map_link?: string | null
           cast_members?: Json | null
           city?: string | null
           created_at?: string
