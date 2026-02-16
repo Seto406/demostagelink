@@ -42,6 +42,8 @@ import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "@/components/dashboard/UpsellModal";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { schools } from "@/data/schools";
 
 interface CastMember {
   name: string;
@@ -58,9 +60,10 @@ interface Show {
   niche: "local" | "university" | null;
   ticket_link: string | null;
   poster_url: string | null;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "archived";
   production_status: "ongoing" | "completed" | "draft";
   created_at: string;
+  deleted_at?: string | null;
   genre: string | null;
   director: string | null;
   duration: string | null;
@@ -565,6 +568,33 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteShow = async (showId: string) => {
+    if (!confirm("Are you sure you want to delete this show? This action will archive the show.")) return;
+
+    try {
+      const { error } = await supabase
+        .from("shows")
+        // @ts-ignore: 'archived' is not yet in the generated types
+        .update({ status: 'archived', deleted_at: new Date().toISOString() })
+        .eq("id", showId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Show Deleted",
+        description: "The show has been moved to archive.",
+      });
+      fetchShows();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete show.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePromoteShow = async (showId: string, showTitle: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
@@ -909,6 +939,17 @@ const Dashboard = () => {
                               <Pencil className="w-4 h-4" />
                             </Button>
 
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteShow(show.id)}
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete Show"
+                              aria-label={`Delete ${show.title}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+
                             {!show.is_featured && (
                                <Button
                                  variant="outline"
@@ -1015,19 +1056,13 @@ const Dashboard = () => {
                   {niche === "university" && (
                     <div className="space-y-2">
                       <Label htmlFor="university" className="text-sm font-medium text-muted-foreground">University Affiliation</Label>
-                      <Select value={university} onValueChange={setUniversity}>
-                        <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
-                          <SelectValue placeholder="Select University" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-secondary/30 rounded-xl">
-                          <SelectItem value="UP">University of the Philippines (UP)</SelectItem>
-                          <SelectItem value="Ateneo">Ateneo de Manila University</SelectItem>
-                          <SelectItem value="DLSU">De La Salle University (DLSU)</SelectItem>
-                          <SelectItem value="UST">University of Santo Tomas (UST)</SelectItem>
-                          <SelectItem value="UMAK">University of Makati (UMAK)</SelectItem>
-                          <SelectItem value="FEU">Far Eastern University (FEU)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        options={schools}
+                        value={university}
+                        onChange={setUniversity}
+                        placeholder="Select University"
+                        className="h-12 rounded-xl"
+                      />
                     </div>
                   )}
 
