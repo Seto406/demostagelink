@@ -73,9 +73,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 user: mockUser,
                 expires_at: 9999999999
             } as Session);
-            ensureProfile(mockUser.id, mockUser.user_metadata).then(() => {
-                setLoading(false);
-            });
+            // Bypass Supabase and set mock profile directly for testing
+            const mockProfile = {
+                id: "profile-" + mockUser.id,
+                user_id: mockUser.id,
+                role: localStorage.getItem("pendingUserRole") || "audience",
+                username: "Mock User",
+                created_at: new Date().toISOString(),
+                avatar_url: mockUser.user_metadata?.avatar_url,
+                group_name: null,
+                description: null,
+                founded_year: null,
+                niche: null,
+                map_screenshot_url: null,
+                rank: null,
+                xp: null,
+                facebook_url: null,
+                instagram_url: null,
+                address: null,
+                university: null
+            };
+            setProfile(mockProfile as unknown as Profile);
+            setLoading(false);
         } else {
             setLoading(false);
         }

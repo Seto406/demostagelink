@@ -7,11 +7,12 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, MapPin, Calendar, Building2 } from "lucide-react";
+import { Settings, MapPin, Calendar, Building2, Pencil, Mail } from "lucide-react";
 import { RankCard } from "@/components/profile/RankCard";
 import { BadgeGrid } from "@/components/profile/BadgeGrid";
 import { ActivityFeed } from "@/components/profile/ActivityFeed";
 import { motion } from "framer-motion";
+import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 
 interface ProfileData {
   id: string;
@@ -31,6 +32,7 @@ const Profile = () => {
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Check if viewing own profile
   const isOwnProfile = !id || (currentUserProfile && id === currentUserProfile.id);
@@ -119,27 +121,46 @@ const Profile = () => {
                  </span>
                </div>
 
-               <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-muted-foreground mb-6">
-                 <div className="flex items-center gap-1">
-                   <Calendar className="w-4 h-4" />
-                   Joined {new Date(profile.created_at).getFullYear()}
-                 </div>
-                 {profile.niche && (
-                   <div className="flex items-center gap-1 capitalize">
-                     <MapPin className="w-4 h-4" />
-                     {profile.niche}
-                   </div>
+               <div className="flex flex-col gap-2 justify-center md:justify-start text-sm text-muted-foreground mb-6">
+                 {isOwnProfile && user?.email && (
+                    <div className="flex items-center gap-1.5 justify-center md:justify-start">
+                      <Mail className="w-4 h-4" />
+                      {user.email}
+                    </div>
                  )}
+                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4" />
+                      Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </div>
+                    {profile.niche && (
+                      <div className="flex items-center gap-1.5 capitalize">
+                        <MapPin className="w-4 h-4" />
+                        {profile.niche}
+                      </div>
+                    )}
+                 </div>
                </div>
 
                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                  {isOwnProfile && (
-                   <Link to="/settings">
-                     <Button variant="outline" size="sm" className="border-secondary/30 hover:bg-secondary/10 hover:text-secondary">
-                       <Settings className="w-4 h-4 mr-2" />
-                       Settings
+                   <>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="border-secondary/30 hover:bg-secondary/10 hover:text-secondary"
+                       onClick={() => setEditOpen(true)}
+                     >
+                       <Pencil className="w-4 h-4 mr-2" />
+                       Edit Profile
                      </Button>
-                   </Link>
+                     <Link to="/settings">
+                       <Button variant="ghost" size="sm" className="hover:bg-secondary/10 hover:text-secondary">
+                         <Settings className="w-4 h-4 mr-2" />
+                         Settings
+                       </Button>
+                     </Link>
+                   </>
                  )}
                  {isProducer && (
                    <Link to={`/producer/${profile.id}`}>
@@ -153,8 +174,8 @@ const Profile = () => {
              </div>
            </motion.div>
 
-           {/* Stats Grid */}
-           {/* Gamification "Prestige Path" Entry Point: RankCard handles null XP/Rank gracefully */}
+           {/* Stats Grid - Hidden for now as per directive */}
+           {/*
            <div className="grid md:grid-cols-2 gap-6 mb-6">
              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                 <RankCard rank={profile.rank || "Newbie"} xp={profile.xp || 0} />
@@ -163,11 +184,18 @@ const Profile = () => {
                 <ActivityFeed userId={profile.id} />
              </motion.div>
            </div>
+           */}
 
-           {/* Badges */}
+           {/* Badges - Hidden for now as per directive */}
+           {/*
            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
              <BadgeGrid userId={profile.id} />
            </motion.div>
+           */}
+
+           {isOwnProfile && (
+             <EditProfileDialog open={editOpen} onOpenChange={setEditOpen} />
+           )}
 
         </div>
       </main>
