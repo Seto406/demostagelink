@@ -244,405 +244,281 @@ END:VCALENDAR`;
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-20">
-        {/* Hero Section with Poster */}
-        <section className="relative">
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
-          
-          <div className="container mx-auto px-6 py-12 relative z-10">
-            {/* Back Button & Share */}
-            <div className="flex justify-between items-center mb-8">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <Button
+      <main className="pt-24 pb-16">
+        <div className="container mx-auto px-6">
+
+            {/* Back Button */}
+            <div className="mb-8">
+              <Button
                   variant="ghost"
                   onClick={() => navigate(-1)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
+                  className="text-muted-foreground hover:text-foreground pl-0"
+              >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
-                </Button>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <CopyButton
-                  variant="outline"
-                  size="sm"
-                  value={window.location.href}
-                  successMessage="Link copied to clipboard!"
-                  className="gap-2"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </CopyButton>
-              </motion.div>
+              </Button>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-12">
-              {/* Poster */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="lg:col-span-1"
-              >
-                <div className="aspect-[2/3] bg-gradient-to-br from-card to-muted border border-secondary/30 overflow-hidden relative group rounded-sm shadow-2xl">
-                  {show.poster_url ? (
-                    <img 
-                      src={show.poster_url} 
-                      alt={show.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10 p-6 text-center">
-                      <Ticket className="w-24 h-24 text-secondary/20 mb-4" />
-                      <div className="space-y-2">
-                        <span className="text-xl font-serif text-secondary/40">No Poster Available</span>
-                      </div>
-                      <div
-                        className="absolute inset-0 opacity-10"
-                        style={{
-                          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.2) 1px, transparent 0)`,
-                          backgroundSize: "24px 24px"
-                        }}
-                      />
-                    </div>
-                  )}
-                  {/* Corner accents */}
-                  <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-secondary/50" />
-                  <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-secondary/50" />
-                  <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-secondary/50" />
-                  <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-secondary/50" />
-                </div>
-              </motion.div>
+            <div className="grid lg:grid-cols-12 gap-12">
+                {/* Left Column - Main Content (65% approx) */}
+                <div className="lg:col-span-8 space-y-10">
 
-              {/* Details */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="lg:col-span-2 space-y-6"
-              >
-                {/* Category Badge */}
-                <span className="text-secondary uppercase tracking-[0.2em] text-sm font-medium">
-                  {getNicheLabel(show.niche)}
-                </span>
-
-                {/* Title */}
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight">
-                  {show.title}
-                </h1>
-
-                {/* Theater Group */}
-                {show.profiles && (show.profiles.group_name || show.profiles.username) && (
-                  <Link 
-                    to={`/producer/${show.profiles.id}`}
-                    className="flex items-center gap-3 group w-fit"
-                  >
-                    <div className="w-10 h-10 bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                      <Users className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-foreground font-medium group-hover:text-secondary transition-colors">
-                        {show.profiles.group_name || show.profiles.username}
-                      </p>
-                      {show.profiles.founded_year && (
-                        <p className="text-muted-foreground text-sm">Est. {show.profiles.founded_year}</p>
-                      )}
-                    </div>
-                  </Link>
-                )}
-
-                {/* Quick Info Grid */}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {dateInfo && (
-                    <div className="flex items-start gap-3 p-4 bg-card border border-secondary/20">
-                      <Calendar className="w-5 h-5 text-secondary mt-0.5" />
-                      <div>
-                        <p className="text-muted-foreground text-sm">Date</p>
-                        <p className="text-foreground font-medium">{dateInfo.full}</p>
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1.5">
-                          <a
-                            href={googleCalendarLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 transition-colors"
-                          >
-                            <Calendar className="w-3 h-3" />
-                            Google Calendar
-                          </a>
-                          <a
-                            href="#"
-                            onClick={downloadICS}
-                            className="inline-flex items-center gap-1 text-xs text-secondary hover:text-secondary/80 transition-colors"
-                          >
-                            <Download className="w-3 h-3" />
-                            Outlook / Apple
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(show.venue || show.city) && (
-                    <div className="flex items-start gap-3 p-4 bg-card border border-secondary/20">
-                      <MapPin className="w-5 h-5 text-secondary mt-0.5" />
-                      <div>
-                        <p className="text-muted-foreground text-sm">Venue</p>
-                        <p className="text-foreground font-medium">
-                          {show.venue || "Venue TBA"}
-                        </p>
-                        {show.city && (
-                          <p className="text-muted-foreground text-sm">{show.city}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* CTA Button - Ticketing (No Streaming) */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {show.price && show.price > 0 ? (
-                    <Button
-                      variant="hero"
-                      size="xl"
-                      className="w-full sm:w-auto"
-                      onClick={handleBuyTicket}
-                      disabled={buyingTicket}
-                    >
-                      <Ticket className="w-5 h-5 mr-2" />
-                      Get Tickets (₱{show.price})
-                    </Button>
-                  ) : null}
-
-                  {show.ticket_link && (
-                    <a
-                      href={show.ticket_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        if (show.profiles?.id) {
-                          trackEvent("ticket_click", show.profiles.id, show.id);
-                        }
-                      }}
-                    >
-                      <Button
-                        variant={show.price && show.price > 0 ? "outline" : "hero"}
-                        size="xl"
-                        className="w-full sm:w-auto"
-                      >
-                        {show.price && show.price > 0 ? (
-                          <>
-                            External Site <ExternalLink className="w-4 h-4 ml-2" />
-                          </>
+                   {/* Large Poster */}
+                   <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card"
+                   >
+                        {show.poster_url ? (
+                            <div className="relative w-full flex justify-center bg-black/40 backdrop-blur-sm">
+                                <img
+                                  src={show.poster_url}
+                                  alt={show.title}
+                                  className="w-full max-h-[70vh] object-contain"
+                                />
+                                {/* Blurred background filler if needed, but handled by parent bg */}
+                            </div>
                         ) : (
-                          <>
-                            <Ticket className="w-5 h-5 mr-2" />
-                            Get Tickets
-                            <ExternalLink className="w-4 h-4 ml-2" />
-                          </>
+                            <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                                <Ticket className="w-16 h-16 text-muted-foreground/30" />
+                            </div>
                         )}
-                      </Button>
-                    </a>
-                  )}
+                   </motion.div>
 
-                  {!show.ticket_link && (!show.price || show.price === 0) && (
-                    <Button variant="hero" size="xl" className="w-full sm:w-auto" disabled>
-                      <Clock className="w-5 h-5 mr-2" />
-                      Tickets Coming Soon
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {(!profile || profile.role !== "producer") && (
-          <div className="container mx-auto px-6 py-6">
-            <AdBanner format="horizontal" variant="placeholder" />
-          </div>
-        )}
-
-        {/* Description Section */}
-        <section className="py-16">
-          <div className="container mx-auto px-6">
-            <div className="max-w-3xl">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
-                  About This Production
-                </h2>
-                <div className="prose prose-lg prose-invert max-w-none">
-                  <p className="text-muted-foreground leading-relaxed tracking-wide">
-                    {show.description || 
-                      "Details about this production will be announced soon. Stay tuned for more information about the synopsis, cast, and creative team."}
-                  </p>
-                </div>
-
-                {/* Production Details */}
-                {(show.genre || show.director || show.duration) && (
-                  <div className="mt-8 grid sm:grid-cols-3 gap-4">
-                    {show.genre && (
-                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
-                        <p className="text-muted-foreground text-sm mb-1">Genre</p>
-                        <p className="text-foreground font-medium">{show.genre}</p>
-                      </div>
-                    )}
-                    {show.director && (
-                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
-                        <p className="text-muted-foreground text-sm mb-1">Director</p>
-                        <p className="text-foreground font-medium">{show.director}</p>
-                      </div>
-                    )}
-                    {show.duration && (
-                      <div className="bg-card border border-secondary/20 p-4 rounded-xl">
-                        <p className="text-muted-foreground text-sm mb-1">Duration</p>
-                        <p className="text-foreground font-medium">{show.duration}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Cast */}
-                {show.cast_members && show.cast_members.length > 0 && (
-                  <div className="mt-8">
-                    <h3 className="text-lg font-serif font-semibold text-foreground mb-4">Cast</h3>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {show.cast_members.map((member, index) => (
-                        <div
-                          key={index}
-                          className="flex flex-col p-3 bg-card border border-secondary/20 rounded-lg"
-                        >
-                          <span className="font-medium text-foreground">{member.name}</span>
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide mt-1">{member.role}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tags */}
-                {show.tags && show.tags.length > 0 && (
-                  <div className="mt-6">
-                    <div className="flex flex-wrap gap-2">
-                      {show.tags.map((tag, index) => (
-                        <span 
-                          key={index}
-                          className="px-2 py-1 bg-secondary/10 text-secondary text-xs rounded"
-                        >
-                          #{tag}
+                   {/* Title & Metadata */}
+                   <div className="space-y-4">
+                        <span className="text-secondary uppercase tracking-[0.2em] text-sm font-medium">
+                          {getNicheLabel(show.niche)}
                         </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          </div>
-        </section>
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-foreground leading-tight">
+                          {show.title}
+                        </h1>
+                         {/* Quick Stats Row */}
+                        <div className="flex flex-wrap gap-4 md:gap-8 text-muted-foreground text-sm md:text-base">
+                            {show.profiles && (show.profiles.group_name || show.profiles.username) && (
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-secondary" />
+                                    <span>{show.profiles.group_name || show.profiles.username}</span>
+                                </div>
+                            )}
+                            {show.duration && (
+                                <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-secondary" />
+                                    <span>{show.duration}</span>
+                                </div>
+                            )}
+                            {show.genre && (
+                                <div className="flex items-center gap-2">
+                                    <Ticket className="w-4 h-4 text-secondary" />
+                                    <span>{show.genre}</span>
+                                </div>
+                            )}
+                        </div>
+                   </div>
 
-        {/* Theater Group Section */}
-        {show.profiles && (
-          <section className="py-16 bg-gradient-to-b from-muted/10 to-background">
-            <div className="container mx-auto px-6">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="max-w-3xl"
-              >
-                <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
-                  About the Theater Group
-                </h2>
-                <div className="bg-card border border-secondary/20 p-8">
-                  <Link 
-                    to={`/producer/${show.profiles.id}`}
-                    className="flex items-start gap-4 mb-4 group w-fit"
-                  >
-                    <div className="w-16 h-16 bg-primary/20 flex items-center justify-center text-3xl group-hover:bg-primary/30 transition-colors">
-                      🎭
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-serif text-foreground group-hover:text-secondary transition-colors">
-                        {show.profiles.group_name || show.profiles.username || "Theater Group"}
-                      </h3>
-                      <p className="text-secondary text-sm">
-                        {getNicheLabel(show.profiles.niche)}
-                        {show.profiles.founded_year && ` • Est. ${show.profiles.founded_year}`}
-                      </p>
-                    </div>
-                  </Link>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {show.profiles.description || 
-                      "This theater group is part of Metro Manila's vibrant theatrical community, dedicated to bringing compelling stories to life on stage."}
-                  </p>
-                  <Link 
-                    to={`/producer/${show.profiles.id}`}
-                    className="text-secondary hover:underline text-sm mt-4 inline-block"
-                  >
-                    View all productions by this group →
-                  </Link>
+                   {/* About */}
+                   <section className="bg-card/50 rounded-2xl p-6 border border-secondary/10">
+                        <h2 className="text-2xl font-serif font-bold text-foreground mb-6">About the Show</h2>
+                        <div className="prose prose-lg prose-invert max-w-none text-muted-foreground">
+                            <p className="leading-relaxed whitespace-pre-line">{show.description || "No description available."}</p>
+                        </div>
+
+                        {/* Tags */}
+                        {show.tags && show.tags.length > 0 && (
+                          <div className="mt-6 flex flex-wrap gap-2">
+                            {show.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-3 py-1 bg-secondary/10 text-secondary text-sm rounded-full"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                   </section>
+
+                   {/* Cast */}
+                    {show.cast_members && show.cast_members.length > 0 && (
+                        <section>
+                            <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Cast & Creative</h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {show.cast_members.map((member, index) => (
+                                    <div key={index} className="p-4 bg-card border border-secondary/10 rounded-xl flex items-center gap-3 hover:border-secondary/30 transition-colors">
+                                        <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center text-secondary font-serif font-bold">
+                                            {member.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-foreground text-sm">{member.name}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{member.role}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                   {/* Reviews */}
+                   <section className="pt-8 border-t border-secondary/10">
+                        <h2 className="text-2xl font-serif font-bold text-foreground mb-8">Audience Reviews</h2>
+                        <ReviewForm
+                          showId={show.id}
+                          onReviewSubmitted={() => setRefreshReviews(prev => prev + 1)}
+                        />
+                        <div className="mt-8">
+                            <ReviewList
+                              showId={show.id}
+                              refreshTrigger={refreshReviews}
+                            />
+                        </div>
+                   </section>
+
                 </div>
-              </motion.div>
-            </div>
-          </section>
-        )}
 
-        {/* Reviews Section */}
-        <section className="py-16 border-t border-secondary/10">
-          <div className="container mx-auto px-6">
-            <div className="max-w-3xl">
-              <h2 className="text-2xl font-serif font-bold text-foreground mb-8">
-                Audience Reviews
-              </h2>
-              <div className="space-y-12">
-                <ReviewForm
-                  showId={show.id}
-                  onReviewSubmitted={() => setRefreshReviews(prev => prev + 1)}
-                />
-                <ReviewList
-                  showId={show.id}
-                  refreshTrigger={refreshReviews}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+                {/* Right Column - Sidebar (35% approx) */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="sticky top-24 space-y-6">
 
-        {/* Share Section */}
-        <section className="py-12 border-t border-secondary/10">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-muted-foreground text-sm">
-                Share this production with fellow theater lovers
-              </p>
-              <div className="flex items-center gap-3">
-                <CopyButton
-                  variant="outline"
-                  size="sm"
-                  value={window.location.href}
-                  successMessage="Link copied to clipboard!"
-                >
-                  Copy Link
-                </CopyButton>
-              </div>
+                        {/* Reserve / Ticket Card */}
+                        <div className="bg-card border border-secondary/20 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                            {/* Texture/Gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+
+                            <div className="space-y-6 relative z-10">
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2 font-medium">Tickets Starting At</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-4xl font-serif font-bold text-secondary">
+                                            {show.price && show.price > 0 ? `₱${show.price}` : "Free"}
+                                        </span>
+                                        {show.price && show.price > 0 && <span className="text-muted-foreground text-sm">/ person</span>}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {show.price && show.price > 0 ? (
+                                        <Button
+                                            size="xl"
+                                            className="w-full text-lg font-serif shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
+                                            onClick={handleBuyTicket}
+                                            disabled={buyingTicket}
+                                        >
+                                            <Ticket className="w-5 h-5 mr-2" />
+                                            Reserve Now
+                                        </Button>
+                                    ) : show.ticket_link ? (
+                                        <a href={show.ticket_link} target="_blank" rel="noopener noreferrer" className="block w-full">
+                                            <Button size="xl" className="w-full text-lg font-serif shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+                                                <ExternalLink className="w-5 h-5 mr-2" />
+                                                Get Tickets
+                                            </Button>
+                                        </a>
+                                    ) : (
+                                        <Button size="xl" variant="secondary" className="w-full" disabled>
+                                            Tickets Unavailable
+                                        </Button>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <CopyButton
+                                            variant="outline"
+                                            className="flex-1"
+                                            value={window.location.href}
+                                        >
+                                            <Share2 className="w-4 h-4 mr-2" />
+                                            Share
+                                        </CopyButton>
+
+                                        <Button variant="outline" className="flex-1" onClick={downloadICS}>
+                                            <Calendar className="w-4 h-4 mr-2" />
+                                            Save Date
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Venue Info */}
+                        {(show.venue || show.city) && (
+                            <div className="bg-card border border-secondary/10 rounded-2xl p-6">
+                                <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
+                                    <MapPin className="w-5 h-5 text-secondary" />
+                                    Venue Information
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="font-medium text-foreground text-lg">{show.venue || "Venue To Be Announced"}</p>
+                                        {show.city && <p className="text-muted-foreground text-sm mt-1">{show.city}</p>}
+                                    </div>
+
+                                    {/* Date & Time */}
+                                    {dateInfo && (
+                                        <div className="pt-4 border-t border-secondary/10">
+                                            <div className="flex items-start gap-3">
+                                                <Calendar className="w-5 h-5 text-secondary mt-0.5" />
+                                                <div>
+                                                    <p className="text-foreground font-medium">{dateInfo.full}</p>
+                                                    <a href={googleCalendarLink} target="_blank" rel="noopener noreferrer" className="text-xs text-secondary hover:underline inline-flex items-center gap-1 mt-1">
+                                                        Add to Google Calendar <ExternalLink className="w-3 h-3" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Map Placeholder */}
+                                    <div className="aspect-video bg-muted rounded-xl flex items-center justify-center relative overflow-hidden group cursor-help mt-2">
+                                        <div className="absolute inset-0 bg-secondary/5 group-hover:bg-secondary/10 transition-colors" />
+                                        <div className="flex flex-col items-center gap-2 text-center p-4">
+                                            <MapPin className="w-8 h-8 text-secondary/50 group-hover:scale-110 transition-transform" />
+                                            <span className="text-xs text-muted-foreground">Map data currently unavailable</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Producer Info */}
+                        {show.profiles && (
+                            <div className="bg-card border border-secondary/10 rounded-2xl p-6">
+                                <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-secondary" />
+                                    Produced By
+                                </h3>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-xl shrink-0">
+                                        🎭
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-foreground line-clamp-1">
+                                            {show.profiles.group_name || show.profiles.username}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                                            {getNicheLabel(show.profiles.niche)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link to={`/producer/${show.profiles.id}`}>
+                                    <Button variant="outline" className="w-full group">
+                                        View Profile
+                                        <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+
+                        {/* Ad Banner for Non-Producers */}
+                        {(!profile || profile.role !== "producer") && (
+                             <AdBanner format="square" variant="placeholder" />
+                        )}
+
+                    </div>
+                </div>
+
             </div>
-          </div>
-        </section>
+
+        </div>
       </main>
       <Footer />
 
