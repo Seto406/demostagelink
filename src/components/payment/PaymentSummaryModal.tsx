@@ -77,19 +77,20 @@ export function PaymentSummaryModal({
           </div>
 
           <div className="flex justify-between items-center px-2">
-            <span className="text-muted-foreground">Ticket Price</span>
-            <span className="font-bold text-foreground">{formatCurrency(show.price)}</span>
+            <span className="text-muted-foreground">Seat Commitment</span>
+            <span className="font-bold text-foreground">{formatCurrency(25)}</span>
           </div>
 
           <div className="flex justify-between items-center px-2">
-            <span className="text-muted-foreground">Quantity</span>
-            <span className="font-bold text-foreground">1</span>
+            <span className="text-muted-foreground">Remaining Balance</span>
+            <span className="font-bold text-foreground">{formatCurrency(Math.max(0, show.price - 25))}</span>
           </div>
+          <p className="text-xs text-muted-foreground px-2 text-right -mt-2">(To be paid at the door)</p>
 
           <div className="h-px bg-border my-2" />
 
           <div className="flex justify-between items-center px-2 text-lg">
-            <span className="font-bold text-foreground">Total</span>
+            <span className="font-bold text-foreground">Total Ticket Price</span>
             <span className="font-bold text-secondary">{formatCurrency(show.price)}</span>
           </div>
         </div>

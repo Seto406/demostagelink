@@ -79,6 +79,7 @@ const Settings = () => {
   const [mapScreenshotUrl, setMapScreenshotUrl] = useState<string | null>(null);
   const [uploadingMap, setUploadingMap] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
@@ -207,6 +208,9 @@ const Settings = () => {
 
       await refreshProfile();
       
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
@@ -645,10 +649,10 @@ const Settings = () => {
                     />
                     <Button
                       onClick={handleSaveProfile}
-                      disabled={saving}
+                      disabled={saving || (username === (profile?.username || ""))}
                       size="sm"
                     >
-                      {saving ? "Saving..." : "Save"}
+                      {saving ? "Saving..." : saved ? "Saved!" : "Save"}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
