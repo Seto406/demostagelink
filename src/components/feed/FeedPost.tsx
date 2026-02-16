@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket, Pencil } from "lucide-react";
+import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket, Pencil, Users, Archive, Undo } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,6 +14,13 @@ import { CommentSection } from "@/components/feed/CommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatCurrency } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface FeedPostProps {
   show: {
@@ -27,6 +34,7 @@ export interface FeedPostProps {
     created_at?: string;
     price?: number | null;
     ticket_link?: string | null;
+    status?: string;
     profiles?: {
       group_name: string | null;
       id: string;
@@ -43,6 +51,7 @@ export function FeedPost({ show }: FeedPostProps) {
   const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
   const [reservationCount, setReservationCount] = useState(0);
+  const queryClient = useQueryClient();
 
   const isProducerOrAdmin = !loading && user && (user.id === show.profiles?.id || profile?.role === 'admin');
   const producerName = show.profiles?.group_name || "Unknown Group";
@@ -120,6 +129,58 @@ export function FeedPost({ show }: FeedPostProps) {
     });
   };
 
+  const handleArchive = async () => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update({ status: 'archived', deleted_at: new Date().toISOString() })
+        .eq('id', show.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Show Archived",
+        description: "This show has been moved to your archive.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['approved-shows'] });
+      queryClient.invalidateQueries({ queryKey: ['producer-shows'] });
+      queryClient.invalidateQueries({ queryKey: ['producer-recent-shows'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to archive show.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      const { error } = await supabase
+        .from('shows')
+        .update({ status: 'approved', deleted_at: null })
+        .eq('id', show.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Show Restored",
+        description: "This show is now visible on the feed.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['approved-shows'] });
+      queryClient.invalidateQueries({ queryKey: ['producer-shows'] });
+      queryClient.invalidateQueries({ queryKey: ['producer-recent-shows'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to restore show.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -161,16 +222,42 @@ export function FeedPost({ show }: FeedPostProps) {
                 </TooltipContent>
               </Tooltip>
             )}
-            <Tooltip>
-              <TooltipTrigger asChild>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>More options</p>
-              </TooltipContent>
-            </Tooltip>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {isProducerOrAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link to={`/dashboard/guests/${show.id}`} className="cursor-pointer">
+                        <Users className="mr-2 h-4 w-4" />
+                        <span>View Guest List</span>
+                      </Link>
+                    </DropdownMenuItem>
+
+                    {show.status === 'archived' ? (
+                      <DropdownMenuItem onClick={handleRestore} className="cursor-pointer">
+                        <Undo className="mr-2 h-4 w-4" />
+                        <span>Restore Show</span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={handleArchive} className="cursor-pointer text-destructive focus:text-destructive">
+                        <Archive className="mr-2 h-4 w-4" />
+                        <span>Archive Show</span>
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+                <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
+                  <Share2 className="mr-2 h-4 w-4" />
+                  <span>Copy Link</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
 
@@ -241,25 +328,6 @@ export function FeedPost({ show }: FeedPostProps) {
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
 
-                    {/* Comments Disabled for Social-First Pivot */}
-                    {/* <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowComments(!showComments)}
-                            className={`text-muted-foreground hover:text-foreground hover:bg-background/50 gap-1 ${showComments ? 'text-secondary bg-secondary/10' : ''}`}
-                            aria-label="View comments"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-xs font-medium">{commentCount}</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View comments</p>
-                      </TooltipContent>
-                    </Tooltip> */}
-
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -287,20 +355,6 @@ export function FeedPost({ show }: FeedPostProps) {
                     </Link>
                 </div>
             </div>
-
-            {/* Comments Section Disabled */}
-            {/* <AnimatePresence>
-                {showComments && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="w-full px-3 pb-3 bg-secondary/5 border-t border-secondary/5"
-                    >
-                        <CommentSection showId={show.id} />
-                    </motion.div>
-                )}
-            </AnimatePresence> */}
         </CardFooter>
       </Card>
     </motion.div>

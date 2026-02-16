@@ -48,6 +48,7 @@ export interface FeedShow {
   venue: string | null;
   city: string | null;
   poster_url: string | null;
+  status?: string;
   created_at?: string;
   ticket_link?: string | null;
   profiles?: {
@@ -107,6 +108,7 @@ const UserFeed = () => {
           venue,
           city,
           poster_url,
+          status,
           created_at,
           price,
           profiles:producer_id (
