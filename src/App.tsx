@@ -25,6 +25,7 @@ const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const GuestList = lazy(() => import("./pages/GuestList"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const ShowDetailsPage = lazy(() => import("./pages/ShowDetailsPage"));
 const ProducerProfile = lazy(() => import("./pages/ProducerProfile"));
@@ -72,6 +73,7 @@ const AppRoutes = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/guests/:showId" element={<GuestList />} />
           <Route path="/dashboard/analytics" element={<Dashboard />} />
           <Route path="/admin/dashboard" element={<AdminPanel />} />
           <Route path="/admin" element={<AdminPanel />} />

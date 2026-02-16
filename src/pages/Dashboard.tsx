@@ -811,14 +811,24 @@ const Dashboard = () => {
         description: "Profile updated successfully!",
       });
       refreshProfile();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile update error:", error);
-      const message = (error as { message?: string })?.message || "Failed to update profile. Please try again.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
+
+      // Handle missing column error (PostgrestError code 'PGRST204' or similar hint)
+      if (error.code === 'PGRST204' || error.message?.includes('university')) {
+         toast({
+            title: "Database Update Required",
+            description: "The 'university' field is missing in the database. Please contact support to run migrations.",
+            variant: "destructive",
+         });
+      } else {
+          const message = error.message || "Failed to update profile. Please try again.";
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
+      }
     } finally {
       setUploadingProfile(false);
     }
