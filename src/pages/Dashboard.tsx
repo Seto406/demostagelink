@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -431,7 +431,9 @@ const Dashboard = () => {
         // Ensure we switch to the shows tab if not already there
         setActiveTab("shows");
 
-        // Remove edit param to prevent loop when closing modal
+        // Remove edit param to prevent loop when closing modal.
+        // Critical: If this remains, closing the modal would re-trigger this effect
+        // (since showModal becomes false) and re-open it indefinitely.
         const newParams = new URLSearchParams(searchParams);
         newParams.delete("edit");
         setSearchParams(newParams, { replace: true });
