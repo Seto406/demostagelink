@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import Navbar from "@/components/layout/Navbar";
@@ -76,6 +76,7 @@ const UserFeed = () => {
   const [submitting, setSubmitting] = useState(false);
   
   const observerTarget = useRef(null);
+  const queryClient = useQueryClient();
 
   // Redirect if not logged in
   useEffect(() => {
@@ -299,7 +300,11 @@ const UserFeed = () => {
       <Footer />
 
       {/* Modals */}
-      <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} />
+      <ProductionModal
+        open={showProductionModal}
+        onOpenChange={setShowProductionModal}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['approved-shows'] })}
+      />
 
       <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
         <DialogContent className="bg-card border-secondary/30 sm:max-w-md">
