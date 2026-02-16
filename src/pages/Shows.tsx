@@ -261,6 +261,7 @@ const Shows = () => {
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get("genre") || "All");
   const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
+  const [timelineView, setTimelineView] = useState<'upcoming' | 'past'>((searchParams.get("view") as 'upcoming' | 'past') || "upcoming");
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -288,8 +289,9 @@ const Shows = () => {
     if (selectedCity !== "All") params.set("city", selectedCity);
     if (selectedGenre !== "All") params.set("genre", selectedGenre);
     if (dateFilter) params.set("date", dateFilter);
+    if (timelineView !== "upcoming") params.set("view", timelineView);
     setSearchParams(params, { replace: true });
-  }, [selectedCity, selectedGenre, dateFilter, setSearchParams]);
+  }, [selectedCity, selectedGenre, dateFilter, timelineView, setSearchParams]);
 
   // Fetch metadata for filters
   useEffect(() => {
@@ -337,6 +339,7 @@ const Shows = () => {
 
     const from = targetPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
+    const today = new Date().toLocaleDateString('en-CA');
 
     let query = supabase
       .from("shows")
@@ -360,6 +363,12 @@ const Shows = () => {
       .eq("status", "approved")
       .range(from, to);
 
+    if (timelineView === 'upcoming') {
+      query = query.gte('date', today);
+    } else {
+      query = query.lt('date', today);
+    }
+
     if (selectedCity !== "All") {
       query = query.eq("city", selectedCity);
     }
@@ -377,7 +386,7 @@ const Shows = () => {
       query = query.or(`title.ilike.%${debouncedSearchQuery}%,description.ilike.%${debouncedSearchQuery}%`);
     }
 
-    const { data, error } = await query.order("date", { ascending: true });
+    const { data, error } = await query.order("date", { ascending: timelineView === 'upcoming' });
 
     if (error) {
       console.error("Error fetching shows:", error);
@@ -395,7 +404,7 @@ const Shows = () => {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery]);
+  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery, timelineView]);
 
   // Fetch approved shows (reset when filters change)
   useEffect(() => {
@@ -415,16 +424,18 @@ const Shows = () => {
     setSelectedGenre("All");
     setDateFilter("");
     setSearchQuery("");
+    setTimelineView("upcoming");
   };
 
   const hasActiveFilters =
-    selectedCity !== "All" || selectedGenre !== "All" || dateFilter || searchQuery;
+    selectedCity !== "All" || selectedGenre !== "All" || dateFilter || searchQuery || timelineView !== "upcoming";
 
   const activeFilterCount = [
     selectedCity !== "All",
     selectedGenre !== "All",
     !!dateFilter,
     !!searchQuery,
+    timelineView !== "upcoming",
   ].filter(Boolean).length;
 
   return (
@@ -459,6 +470,32 @@ const Shows = () => {
               Discover theatrical productions across Metro Manila
             </p>
           </motion.div>
+
+          {/* Timeline Filter Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-secondary/10 p-1 rounded-full inline-flex">
+              <button
+                onClick={() => setTimelineView('upcoming')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                  timelineView === 'upcoming'
+                    ? 'bg-secondary text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => setTimelineView('past')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                  timelineView === 'past'
+                    ? 'bg-secondary text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Past
+              </button>
+            </div>
+          </div>
 
           {/* Filters Section */}
           <motion.div
