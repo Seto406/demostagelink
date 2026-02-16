@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, QrCode } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface DigitalPassProps {
   id: string; // show id
@@ -11,7 +9,7 @@ interface DigitalPassProps {
   date?: string | null;
   venue?: string | null;
   city?: string | null;
-  status?: string; // e.g., "approved", "pending"
+  status?: string; // e.g., "confirmed", "pending"
   ticketId: string;
 }
 
@@ -23,14 +21,10 @@ export const DigitalPass = ({
   date,
   venue,
   city,
-  ticketId,
+  status,
 }: DigitalPassProps) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="group relative w-full max-w-md mx-auto"
-    >
+    <div className="group relative w-full max-w-md mx-auto">
       <div className="relative bg-card border border-secondary/30 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:border-secondary/50">
 
         {/* Ticket Header / Main Info */}
@@ -59,9 +53,15 @@ export const DigitalPass = ({
 
                 <div>
                     <div className="flex justify-between items-start gap-2 mb-2">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
+                        {status === 'confirmed' || status === 'paid' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
                             ₱25 Commitment Paid
-                        </span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                            Payment Pending
+                          </span>
+                        )}
                     </div>
 
                     <Link to={`/show/${id}`} className="block group-hover:text-secondary transition-colors">
@@ -112,6 +112,6 @@ export const DigitalPass = ({
         <div className="hidden sm:block absolute bottom-0 left-[33.33%] -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-background rounded-full border border-secondary/30 z-20" />
 
       </div>
-    </motion.div>
+    </div>
   );
 };

@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon } from "lucide-react";
-import { motion } from "framer-motion";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
@@ -227,9 +226,7 @@ const Profile = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
            {/* Header */}
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
+           <div
              className="bg-card border border-secondary/20 rounded-2xl p-6 md:p-8 mb-6 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden shadow-xl"
            >
              {/* Background decoration */}
@@ -325,14 +322,10 @@ const Profile = () => {
                  )}
                </div>
              </div>
-           </motion.div>
+           </div>
 
            {/* Tabs Section */}
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ delay: 0.1 }}
-           >
+           <div>
              <Tabs defaultValue="passes" className="w-full">
                <TabsList className="grid w-full grid-cols-3 mb-6 bg-card border border-secondary/20 h-auto p-1">
                  <TabsTrigger value="passes" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
@@ -457,7 +450,7 @@ const Profile = () => {
                  )}
                </TabsContent>
              </Tabs>
-           </motion.div>
+           </div>
 
            {isOwnProfile && (
              <EditProfileDialog open={editOpen} onOpenChange={setEditOpen} />
