@@ -19,7 +19,8 @@ import {
   Settings,
   PlusSquare,
   TrendingUp,
-  ExternalLink
+  ExternalLink,
+  LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -165,6 +166,25 @@ const UserFeed = () => {
       if (error) throw error;
       return data as Producer[];
     },
+  });
+
+  // Fetch total reservations for producer
+  const { data: reservationCount = 0 } = useQuery({
+    queryKey: ['producer-reservations', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("tickets")
+        .select("*, shows!inner(producer_id)", { count: 'exact', head: true })
+        .eq("shows.producer_id", user.id);
+
+      if (error) {
+        console.error("Error fetching reservation count:", error);
+        return 0;
+      }
+      return count || 0;
+    },
+    enabled: !!user && profile?.role === 'producer',
   });
 
   // Check for existing producer request
@@ -358,23 +378,48 @@ const UserFeed = () => {
                 </CardContent>
              </Card>
 
-             {/* Upcoming Widget (Static for now or reusing shows) */}
-             <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
-                <CardContent className="p-6">
-                   {/* ID: MARKETING_DEMO_PLACEHOLDER */}
-                   <h3 className="font-serif font-bold text-lg mb-2">Join {/* DEMO_ONLY */}20+ Local Arts Groups already on StageLink.</h3>
-                   <p className="text-sm text-muted-foreground mb-4">
-                      Get your production featured on the main stage and reach thousands of theater enthusiasts.
-                   </p>
-                   <Button
-                      variant="outline"
-                      className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                      onClick={() => setProducerRequestModal(true)}
-                   >
-                      Start Your Group
-                   </Button>
-                </CardContent>
-             </Card>
+             {/* Upcoming Widget / Stats Widget */}
+             {profile?.role === "producer" ? (
+                <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-serif flex items-center gap-2">
+                       <TrendingUp className="w-4 h-4 text-secondary" />
+                       Your Performance Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0">
+                     <div className="mb-4">
+                        <p className="text-sm text-muted-foreground mb-1">Total Reservations</p>
+                        <p className="text-3xl font-serif font-bold text-foreground">{reservationCount}</p>
+                     </div>
+                     <Link to="/dashboard">
+                        <Button
+                           className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                        >
+                           <LayoutDashboard className="w-4 h-4 mr-2" />
+                           Go to Dashboard
+                        </Button>
+                     </Link>
+                  </CardContent>
+                </Card>
+             ) : (
+                <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
+                   <CardContent className="p-6">
+                      {/* ID: MARKETING_DEMO_PLACEHOLDER */}
+                      <h3 className="font-serif font-bold text-lg mb-2">Join {/* DEMO_ONLY */}20+ Local Arts Groups already on StageLink.</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                         Get your production featured on the main stage and reach thousands of theater enthusiasts.
+                      </p>
+                      <Button
+                         variant="outline"
+                         className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
+                         onClick={() => setProducerRequestModal(true)}
+                      >
+                         Start Your Group
+                      </Button>
+                   </CardContent>
+                </Card>
+             )}
           </aside>
 
         </div>
