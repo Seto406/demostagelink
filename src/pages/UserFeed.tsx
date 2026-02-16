@@ -131,7 +131,7 @@ const UserFeed = () => {
   const shows = data?.pages.flat() || [];
 
   // Fetch total reservations (Producer POV Sidebar Stat)
-  const { data: reservationCount = 0 } = useQuery({
+  const { data: reservationCount, isError: isStatsError, isLoading: loadingStats } = useQuery({
     queryKey: ['producer-reservations', user?.id],
     queryFn: async () => {
       if (!user) return 0;
@@ -139,10 +139,11 @@ const UserFeed = () => {
         .from("tickets")
         .select("*, shows!inner(producer_id)", { count: 'exact', head: true })
         .eq("shows.producer_id", user.id);
-      if (error) return 0;
+      if (error) throw error;
       return count || 0;
     },
     enabled: !!user && profile?.role === 'producer',
+    retry: false,
   });
 
   // Fetch suggested producers
@@ -272,7 +273,13 @@ const UserFeed = () => {
               <CardContent>
                 <div className="mb-4">
                   <p className="text-xs text-muted-foreground">Total Reservations</p>
-                  <p className="text-2xl font-serif font-bold">{reservationCount}</p>
+                  {isStatsError ? (
+                    <p className="text-sm font-medium text-destructive mt-1">Stats temporarily unavailable</p>
+                  ) : loadingStats ? (
+                    <p className="text-sm text-muted-foreground mt-1">Loading...</p>
+                  ) : (
+                    <p className="text-2xl font-serif font-bold">{reservationCount ?? 0}</p>
+                  )}
                 </div>
                 <Link to="/dashboard">
                   <Button className="w-full bg-secondary text-white hover:bg-secondary/90">

@@ -35,13 +35,13 @@ export interface FeedPostProps {
 }
 
 export function FeedPost({ show }: FeedPostProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { toggleFavorite, isFavorited } = useFavorites();
   const [showComments, setShowComments] = useState(false);
   const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
 
-  const isProducerOrAdmin = user && (user.id === show.profiles?.id || profile?.role === 'admin');
+  const isProducerOrAdmin = !loading && user && (user.id === show.profiles?.id || profile?.role === 'admin');
   const producerName = show.profiles?.group_name || "Unknown Group";
   const producerAvatar = show.profiles?.avatar_url;
   const initials = producerName
