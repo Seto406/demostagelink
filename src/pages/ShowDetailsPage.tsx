@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import Navbar from "@/components/layout/Navbar";
@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
+import { useFavorites } from "@/hooks/use-favorites";
 
 const ShowDetailsPage = () => {
   const { profile } = useAuth();
@@ -27,6 +28,7 @@ const ShowDetailsPage = () => {
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const { toggleFavorite, isFavorited } = useFavorites();
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -420,19 +422,28 @@ END:VCALENDAR`;
                                         </Button>
                                     )}
 
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 flex-wrap">
                                         <CopyButton
                                             variant="outline"
-                                            className="flex-1"
+                                            className="flex-1 min-w-[100px]"
                                             value={window.location.href}
                                         >
                                             <Share2 className="w-4 h-4 mr-2" />
                                             Share
                                         </CopyButton>
 
-                                        <Button variant="outline" className="flex-1" onClick={downloadICS}>
+                                        <Button variant="outline" className="flex-1 min-w-[100px]" onClick={downloadICS}>
                                             <Calendar className="w-4 h-4 mr-2" />
                                             Save Date
+                                        </Button>
+
+                                        <Button
+                                            variant={isFavorited(show.id) ? "secondary" : "outline"}
+                                            className="flex-1 min-w-[100px]"
+                                            onClick={() => toggleFavorite(show.id)}
+                                        >
+                                            <Heart className={`w-4 h-4 mr-2 ${isFavorited(show.id) ? "fill-primary text-primary" : ""}`} />
+                                            {isFavorited(show.id) ? "Saved" : "Favorite"}
                                         </Button>
                                     </div>
                                 </div>
