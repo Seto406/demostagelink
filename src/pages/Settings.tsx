@@ -51,11 +51,14 @@ const Settings = () => {
   
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
   
   // Producer request state
   const [producerRequestModal, setProducerRequestModal] = useState(false);
@@ -106,6 +109,16 @@ const Settings = () => {
     checkExistingRequest();
   }, [user]);
 
+  // Calculate password strength
+  useEffect(() => {
+    let score = 0;
+    if (newPassword.length >= 8) score += 1;
+    if (/[A-Z]/.test(newPassword)) score += 1;
+    if (/[0-9]/.test(newPassword)) score += 1;
+    if (/[^A-Za-z0-9]/.test(newPassword)) score += 1;
+    setPasswordStrength(score);
+  }, [newPassword]);
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -129,6 +142,18 @@ const Settings = () => {
 
     setChangingPassword(true);
     try {
+      if (user?.email) {
+        // Verify current password first
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: currentPassword,
+        });
+
+        if (signInError) {
+            throw new Error("Incorrect current password.");
+        }
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -142,6 +167,7 @@ const Settings = () => {
       setPasswordModal(false);
       setNewPassword("");
       setConfirmPassword("");
+      setCurrentPassword("");
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -488,6 +514,29 @@ const Settings = () => {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleChangePassword} className="space-y-4 mt-4">
+            {/* Current Password */}
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                  className="bg-background border-secondary/30 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
               <div className="relative">
@@ -509,7 +558,28 @@ const Settings = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Password Strength Meter */}
+              {newPassword && (
+                <div className="space-y-1 pt-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                        <span>Strength</span>
+                        <span>{['Weak', 'Fair', 'Good', 'Strong', 'Excellent'][passwordStrength]}</span>
+                    </div>
+                    <div className="h-1 w-full bg-secondary/10 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full transition-all duration-300 ${
+                                passwordStrength <= 1 ? 'bg-red-500' :
+                                passwordStrength === 2 ? 'bg-orange-500' :
+                                passwordStrength === 3 ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{ width: `${(passwordStrength + 1) * 20}%` }}
+                        />
+                    </div>
+                </div>
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <div className="relative">
@@ -542,7 +612,7 @@ const Settings = () => {
               </Button>
               <Button
                 type="submit"
-                disabled={changingPassword || !newPassword || !confirmPassword}
+                disabled={changingPassword || !newPassword || !confirmPassword || !currentPassword}
               >
                 {changingPassword ? "Changing..." : "Change Password"}
               </Button>
