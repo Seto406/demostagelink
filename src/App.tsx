@@ -14,6 +14,7 @@ import PageTransition from "@/components/ui/page-transition";
 import IdleTimerProvider from "@/providers/IdleTimerProvider";
 import { FullPageLoader } from "@/components/ui/branded-loader";
 import { HealthCheckGate } from "@/components/health-check-gate";
+import { SystemStability } from "@/components/SystemStability";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -105,6 +106,7 @@ const App = () => (
       <TooltipProvider delayDuration={300} skipDelayDuration={0}>
         <EnhancedToastProvider>
           <CinematicBackground>
+            <SystemStability />
             <ToastHandlerInit />
             <Toaster />
             <Sonner />

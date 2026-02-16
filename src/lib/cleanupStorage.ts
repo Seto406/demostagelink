@@ -1,0 +1,46 @@
+export const cleanupStorage = () => {
+  const LAST_CLEANUP_KEY = 'last_cleanup';
+  const MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+  try {
+    const lastCleanup = localStorage.getItem(LAST_CLEANUP_KEY);
+    const now = Date.now();
+
+    if (lastCleanup && now - parseInt(lastCleanup, 10) < MAX_AGE) {
+      return;
+    }
+
+    // Allowlist: Specific keys that should be preserved
+    const allowlist = [
+      'app_version',
+      LAST_CLEANUP_KEY,
+      'vite-ui-theme',
+      'pendingUserRole',
+    ];
+
+    // Prefix allowlist: Keys starting with these prefixes should be preserved
+    const prefixAllowlist = ['sb-', 'stagelink_'];
+
+    const keysToRemove: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+
+      const isAllowed = allowlist.includes(key) || prefixAllowlist.some(prefix => key.startsWith(prefix));
+
+      if (!isAllowed) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(LAST_CLEANUP_KEY, now.toString());
+
+    if (keysToRemove.length > 0) {
+      console.log(`[Storage Cleanup] Removed ${keysToRemove.length} stale keys:`, keysToRemove);
+    }
+  } catch (error) {
+    console.error('[Storage Cleanup] Error during cleanup:', error);
+  }
+};

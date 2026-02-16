@@ -214,9 +214,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         try {
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('Auth token refreshed');
+          }
+
           // Explicitly handle password recovery event to prevent redirect loops
           if (event === "PASSWORD_RECOVERY") {
-            if (location.pathname !== "/reset-password") {
+            if (window.location.pathname !== "/reset-password") {
               navigate("/reset-password?type=recovery");
             }
           }
@@ -272,24 +276,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!loading) return;
 
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       // Check if there is a session token in localStorage before clearing
       const hasSessionToken = Object.keys(localStorage).some(key =>
         key.startsWith("sb-") && key.endsWith("-auth-token")
       );
 
       if (hasSessionToken) {
-        console.warn("Auth loading timed out (10s) but session token found. Holding on current URL.");
-        // Do NOT clear localStorage and do NOT redirect.
-        return;
+        console.warn("Auth loading timed out (10s) but session token found. Attempting session refresh...");
+
+        try {
+          const { data, error } = await supabase.auth.refreshSession();
+
+          if (!error && data.session) {
+            console.log("Session refreshed successfully via fail-safe");
+            setSession(data.session);
+            setUser(data.session.user);
+            await ensureProfile(data.session.user.id, data.session.user.user_metadata);
+            setLoading(false);
+            return;
+          } else {
+            console.warn("Session refresh failed:", error);
+          }
+        } catch (refreshError) {
+          console.error("Unexpected error during session refresh:", refreshError);
+        }
       }
 
-      console.warn("Auth loading timed out (10s). executing fail-safe...");
+      console.warn("Auth loading timed out (10s). executing fail-safe cleanup...");
       localStorage.clear();
       setLoading(false);
 
@@ -303,6 +323,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, 10000);
 
     return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, navigate, location.pathname]);
 
   // CORRECTED: Added firstName parameter and removed extra closing brace
