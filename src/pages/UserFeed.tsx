@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,18 +8,18 @@ import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Users,
-  Home,
-  Calendar,
-  Search,
-  Heart,
-  User,
-  Settings,
-  PlusSquare,
-  TrendingUp,
-  ExternalLink,
-  LayoutDashboard
+import { 
+  Users, 
+  Home, 
+  Calendar, 
+  Search, 
+  Heart, 
+  User, 
+  Settings, 
+  PlusSquare, 
+  TrendingUp, 
+  ExternalLink, 
+  LayoutDashboard 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,9 +37,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
+import { ProductionModal } from "@/components/dashboard/ProductionModal";
 
-// Interface for Shows
-export interface Show {
+// Interface for Feed Shows (includes joined data)
+export interface FeedShow {
   id: string;
   title: string;
   description: string | null;
@@ -49,6 +49,7 @@ export interface Show {
   city: string | null;
   poster_url: string | null;
   created_at?: string;
+  ticket_link?: string | null;
   profiles?: {
     group_name: string | null;
     id: string;
@@ -57,7 +58,6 @@ export interface Show {
   favorites?: { count: number }[];
 }
 
-// Interface for Suggested Producers
 interface Producer {
   id: string;
   group_name: string | null;
@@ -67,15 +67,14 @@ interface Producer {
 
 const UserFeed = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, profile, loading, isAdmin } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { isPro } = useSubscription();
   const [producerRequestModal, setProducerRequestModal] = useState(false);
+  const [showProductionModal, setShowProductionModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [existingRequest, setExistingRequest] = useState<{ status: string } | null>(null);
-
+  
   const observerTarget = useRef(null);
 
   // Redirect if not logged in
@@ -121,7 +120,7 @@ const UserFeed = () => {
         .range(from, to);
 
       if (error) throw error;
-      return data as Show[];
+      return data as FeedShow[];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -131,27 +130,20 @@ const UserFeed = () => {
 
   const shows = data?.pages.flat() || [];
 
-  // Implement intersection observer for infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  // Fetch total reservations (Producer POV Sidebar Stat)
+  const { data: reservationCount = 0 } = useQuery({
+    queryKey: ['producer-reservations', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("tickets")
+        .select("*, shows!inner(producer_id)", { count: 'exact', head: true })
+        .eq("shows.producer_id", user.id);
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!user && profile?.role === 'producer',
+  });
 
   // Fetch suggested producers
   const { data: suggestedProducers = [] } = useQuery({
@@ -162,321 +154,169 @@ const UserFeed = () => {
         .select("id, group_name, avatar_url, niche")
         .eq("role", "producer")
         .limit(5);
-
       if (error) throw error;
       return data as Producer[];
     },
   });
 
-  // Fetch total reservations for producer
-  const { data: reservationCount = 0 } = useQuery({
-    queryKey: ['producer-reservations', user?.id],
-    queryFn: async () => {
-      if (!user) return 0;
-      const { count, error } = await supabase
-        .from("tickets")
-        .select("*, shows!inner(producer_id)", { count: 'exact', head: true })
-        .eq("shows.producer_id", user.id);
-
-      if (error) {
-        console.error("Error fetching reservation count:", error);
-        return 0;
-      }
-      return count || 0;
-    },
-    enabled: !!user && profile?.role === 'producer',
-  });
-
-  // Check for existing producer request
+  // Infinite scroll intersection observer
   useEffect(() => {
-    const checkExistingRequest = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from("producer_requests")
-        .select("status")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (data) {
-        setExistingRequest(data);
-      }
-    };
-
-    checkExistingRequest();
-  }, [user]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleProducerRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
     setSubmitting(true);
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    try {
-      // Create a timeout promise (15 seconds)
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error("Request timed out")), 15000);
-      });
-
-      // Create the insert promise
-      const insertPromise = supabase
-        .from("producer_requests")
-        .insert({
-          user_id: user.id,
-          group_name: groupName,
-          portfolio_link: portfolioLink,
-        });
-
-      // Race the request against the timeout
-      type InsertResponse = Awaited<ReturnType<typeof insertPromise>>;
-      const result = await Promise.race([insertPromise, timeoutPromise]) as InsertResponse;
-      const { error } = result;
-
-      if (error) throw error;
-
-      toast({
-        title: "Request Submitted",
-        description: "Your request to become a producer has been submitted for review.",
-      });
+    const { error } = await supabase.from("producer_requests").insert({
+      user_id: user?.id,
+      group_name: groupName,
+      portfolio_link: portfolioLink,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Submitted", description: "Admin will review your request." });
       setProducerRequestModal(false);
-      setExistingRequest({ status: "pending" });
-    } catch (error: unknown) {
-      console.error("Producer request error:", error);
-      const errorMessage = (error as { message?: string })?.message || "Unknown error";
-      toast({
-        title: "Error",
-        description: errorMessage === "Request timed out"
-          ? "The request is taking longer than expected. Please check your internet connection."
-          : errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-      setSubmitting(false);
     }
+    setSubmitting(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <BrandedLoader size="lg" text="Loading..." />
-      </div>
-    );
-  }
-
-  // Determine which shows to display
-  // Using importedDummyShows as fallback/append for demo purposes if needed, but primarily relying on real data
-  const displayShows = [...shows, ...(importedDummyShows as unknown as Show[])];
+  if (loading) return <div className="h-screen flex items-center justify-center"><BrandedLoader /></div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
-      <div className="pt-20 container mx-auto px-4 max-w-7xl flex-1">
-        <div className="flex justify-center gap-8">
+      
+      <div className="pt-24 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
+        
+        {/* Feed (Center) */}
+        <main className="w-full max-w-2xl pb-24">
+          {/* Post Production Bar - Visible only to Producers */}
+          {profile?.role === "producer" && (
+            <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm cursor-pointer hover:border-secondary/40 transition-all" onClick={() => setShowProductionModal(true)}>
+              <CardContent className="p-4 flex gap-4 items-center">
+                <Avatar>
+                  <AvatarImage src={profile.avatar_url || undefined} />
+                  <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 bg-muted/50 rounded-full px-4 py-2.5 text-muted-foreground text-sm">
+                  Post a new production...
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Center Column - Feed */}
-          <main className="w-full max-w-2xl pb-24">
-             {/* Mobile Welcome */}
-             <div className="lg:hidden mb-6">
-                <h1 className="text-2xl font-serif font-bold">Home</h1>
-             </div>
+          {/* Show List */}
+          {loadingShows && shows.length === 0 ? (
+            <div className="flex justify-center py-12"><BrandedLoader size="md" /></div>
+          ) : (
+            <div className="space-y-6">
+              {shows.map((show, index) => (
+                <div key={show.id}>
+                  <FeedPost show={show} />
+                  {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
+                </div>
+              ))}
+              <div ref={observerTarget} className="py-8 text-center text-muted-foreground text-sm">
+                {isFetchingNextPage ? <BrandedLoader size="sm" /> : hasNextPage ? "Scroll for more" : "End of the stage."}
+              </div>
+            </div>
+          )}
+        </main>
 
-             {/* Create Post Placeholder (Producer Only) */}
-             {profile?.role === "producer" && (
-                <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm">
-                   <CardContent className="p-4 flex gap-4 items-center">
-                      <Avatar>
-                         <AvatarImage src={profile.avatar_url || undefined} />
-                         <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
+        {/* Sidebar (Right) */}
+        <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit">
+          {/* Group Suggestions */}
+          <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-serif flex items-center justify-between">
+                <span>Suggested Groups</span>
+                <TrendingUp className="w-4 h-4 text-secondary" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              {suggestedProducers.map(producer => (
+                <Tooltip key={producer.id}>
+                  <TooltipTrigger asChild>
+                    <Link to={`/group/${producer.id}`}>
+                      <Avatar className="h-10 w-10 border-2 border-transparent hover:border-secondary transition-all">
+                        <AvatarImage src={producer.avatar_url || undefined} />
+                        <AvatarFallback>{producer.group_name?.[0]}</AvatarFallback>
                       </Avatar>
-                      <Link to="/dashboard" className="flex-1">
-                         <div className="bg-muted/50 hover:bg-muted text-muted-foreground rounded-full px-4 py-3 cursor-pointer transition-colors text-sm">
-                            Post a new show...
-                         </div>
-                      </Link>
-                   </CardContent>
-                </Card>
-             )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent><p>{producer.group_name}</p></TooltipContent>
+                </Tooltip>
+              ))}
+            </CardContent>
+          </Card>
 
-             {/* Feed List */}
-             {loadingShows ? (
-                <div className="flex justify-center py-12">
-                   <BrandedLoader size="md" />
+          {/* Role-Based CTA Card */}
+          {profile?.role === "producer" ? (
+            <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-serif flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-secondary" />
+                  Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <p className="text-xs text-muted-foreground">Total Reservations</p>
+                  <p className="text-2xl font-serif font-bold">{reservationCount}</p>
                 </div>
-             ) : (
-                <div className="space-y-6">
-                   {displayShows.map((show, index) => (
-                      <div key={show.id || index}>
-                        <FeedPost show={show} />
-                        {index === 1 && !isPro && (
-                           <AdBanner
-                             format="horizontal"
-                             variant="adsense"
-                             adClient="ca-pub-4021944125309456"
-                             adSlot="5015577702"
-                           />
-                        )}
-                      </div>
-                   ))}
-
-                   {/* Infinite Scroll Trigger & Loader */}
-                   <div ref={observerTarget} className="py-8 text-center text-muted-foreground">
-                      {isFetchingNextPage ? (
-                         <div className="flex justify-center">
-                            <BrandedLoader size="sm" text="Loading more shows..." />
-                         </div>
-                      ) : hasNextPage ? (
-                         <p>Scroll for more</p>
-                      ) : (
-                         <p>You've reached the end of the feed.</p>
-                      )}
-                   </div>
-                </div>
-             )}
-          </main>
-
-          {/* Right Sidebar - Widgets */}
-          <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit">
-             {/* Suggested Producers Widget */}
-             <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
-                <CardHeader className="pb-3">
-                   <CardTitle className="text-lg font-serif flex items-center justify-between">
-                      <span>Suggested Groups</span>
-                      <TrendingUp className="w-4 h-4 text-secondary" />
-                   </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   {suggestedProducers.length > 0 ? (
-                      <div className="flex flex-wrap gap-4 justify-center">
-                        {suggestedProducers.map(producer => (
-                           <Tooltip key={producer.id}>
-                              <TooltipTrigger asChild>
-                                <Link to={`/group/${producer.id}`} className="group relative">
-                                   <Avatar className="h-12 w-12 border-2 border-transparent group-hover:border-secondary transition-all">
-                                      <AvatarImage src={producer.avatar_url || undefined} />
-                                      <AvatarFallback>{producer.group_name?.[0]}</AvatarFallback>
-                                   </Avatar>
-                                </Link>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{producer.group_name}</p>
-                              </TooltipContent>
-                           </Tooltip>
-                        ))}
-                      </div>
-                   ) : (
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                         No suggestions available.
-                      </div>
-                   )}
-                   <Link to="/directory">
-                      <Button variant="ghost" className="w-full text-secondary text-sm mt-2">
-                         View All Groups
-                      </Button>
-                   </Link>
-                </CardContent>
-             </Card>
-
-             {/* Upcoming Widget / Stats Widget */}
-             {profile?.role === "producer" ? (
-                <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-serif flex items-center gap-2">
-                       <TrendingUp className="w-4 h-4 text-secondary" />
-                       Your Performance Stats
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 pt-0">
-                     <div className="mb-4">
-                        <p className="text-sm text-muted-foreground mb-1">Total Reservations</p>
-                        <p className="text-3xl font-serif font-bold text-foreground">{reservationCount}</p>
-                     </div>
-                     <Link to="/dashboard">
-                        <Button
-                           className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                        >
-                           <LayoutDashboard className="w-4 h-4 mr-2" />
-                           Go to Dashboard
-                        </Button>
-                     </Link>
-                  </CardContent>
-                </Card>
-             ) : (
-                <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
-                   <CardContent className="p-6">
-                      {/* ID: MARKETING_DEMO_PLACEHOLDER */}
-                      <h3 className="font-serif font-bold text-lg mb-2">Join {/* DEMO_ONLY */}20+ Local Arts Groups already on StageLink.</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                         Get your production featured on the main stage and reach thousands of theater enthusiasts.
-                      </p>
-                      <Button
-                         variant="outline"
-                         className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground"
-                         onClick={() => setProducerRequestModal(true)}
-                      >
-                         Start Your Group
-                      </Button>
-                   </CardContent>
-                </Card>
-             )}
-          </aside>
-
-        </div>
+                <Link to="/dashboard">
+                  <Button className="w-full bg-secondary text-white hover:bg-secondary/90">
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-secondary/20 bg-gradient-to-br from-secondary/10 to-transparent">
+              <CardContent className="p-6">
+                <h3 className="font-serif font-bold text-lg mb-2">Join 20+ Groups</h3>
+                <p className="text-sm text-muted-foreground mb-4">Start posting your own productions on StageLink today.</p>
+                <Button variant="outline" className="w-full border-secondary text-secondary" onClick={() => setProducerRequestModal(true)}>
+                  Start Your Group
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </aside>
       </div>
 
-       <Footer />
+      <Footer />
 
-       {/* Producer Request Modal */}
-       <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
+      {/* Modals */}
+      <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} />
+
+      <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
         <DialogContent className="bg-card border-secondary/30 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Request Producer Access</DialogTitle>
-            <DialogDescription>
-              Submit your theater group information for admin review.
-            </DialogDescription>
+            <DialogTitle className="font-serif text-xl">Become a Producer</DialogTitle>
+            <DialogDescription>Apply to start posting theater shows.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleProducerRequest} className="space-y-4 mt-4">
+          <form onSubmit={handleProducerRequest} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="groupName">Theater Group Name *</Label>
-              <Input
-                id="groupName"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="Enter your theater group name"
-                required
-                className="bg-background border-secondary/30"
-              />
+              <Label>Group Name *</Label>
+              <Input value={groupName} onChange={e => setGroupName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="portfolioLink">Portfolio/Social Link *</Label>
-              <Input
-                id="portfolioLink"
-                type="url"
-                value={portfolioLink}
-                onChange={(e) => setPortfolioLink(e.target.value)}
-                placeholder="https://facebook.com/yourgroup"
-                required
-                className="bg-background border-secondary/30"
-              />
+              <Label>Portfolio/Link *</Label>
+              <Input type="url" value={portfolioLink} onChange={e => setPortfolioLink(e.target.value)} required />
             </div>
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setProducerRequestModal(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={submitting || !groupName || !portfolioLink}
-                className="flex-1 bg-primary"
-              >
-                {submitting ? "Submitting..." : "Submit Request"}
-              </Button>
-            </div>
+            <Button type="submit" disabled={submitting} className="w-full bg-primary">{submitting ? "Submitting..." : "Apply Now"}</Button>
           </form>
         </DialogContent>
       </Dialog>
