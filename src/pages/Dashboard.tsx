@@ -16,6 +16,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -130,6 +140,8 @@ const Dashboard = () => {
   const [runTour, setRunTour] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [showFilter, setShowFilter] = useState<'ongoing' | 'archived'>('ongoing');
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [showIdToDelete, setShowIdToDelete] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Use React Query for fetching shows
@@ -570,8 +582,14 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteShow = async (showId: string) => {
-    if (!confirm("Are you sure you want to delete this show? This action will archive the show.")) return;
+  const handleDeleteShow = (showId: string) => {
+    setShowIdToDelete(showId);
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmDeleteShow = async () => {
+    if (!showIdToDelete) return;
+    const showId = showIdToDelete;
 
     // Optimistic Update: Immediately remove from UI (move to archive)
     const previousShows = queryClient.getQueryData<Show[]>(['producer-shows', profile?.id]);
@@ -583,6 +601,8 @@ const Dashboard = () => {
           : s
       );
     });
+
+    setDeleteAlertOpen(false);
 
     try {
       const { error } = await supabase
@@ -599,12 +619,13 @@ const Dashboard = () => {
         throw error;
       }
 
+      // Force cache refresh as requested
+      await queryClient.invalidateQueries({ queryKey: ['producer-shows', profile?.id] });
+
       toast({
         title: "Show Deleted",
         description: "The show has been moved to archive.",
       });
-      // No need to fetchShows() if optimistic update worked, but we can do it to be safe
-      // fetchShows();
     } catch (error) {
       console.error("Delete error:", error);
       toast({
@@ -1592,6 +1613,27 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent className="bg-card border-secondary/30 rounded-[16px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Show?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this show? This action will archive the show.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteShow}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <UpsellModal open={showUpsellModal} onOpenChange={setShowUpsellModal} />
     </div>
