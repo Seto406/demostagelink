@@ -55,6 +55,7 @@ import { UpsellModal } from "@/components/dashboard/UpsellModal";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { schools } from "@/data/schools";
 import { venues } from "@/data/venues";
+import { ProducerTips } from "@/components/dashboard/ProducerTips";
 
 interface CastMember {
   name: string;
@@ -1009,6 +1010,8 @@ const Dashboard = () => {
                   )
                 )}
               </div>
+
+              <ProducerTips />
             </motion.div>
           )}
 
