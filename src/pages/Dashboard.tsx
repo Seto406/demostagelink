@@ -54,6 +54,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "@/components/dashboard/UpsellModal";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { schools } from "@/data/schools";
+import { venues } from "@/data/venues";
 
 interface CastMember {
   name: string;
@@ -1339,7 +1340,7 @@ const Dashboard = () => {
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Location & Schedule</p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="showDate">Show Date</Label>
+                  <Label htmlFor="showDate">Show Date <span className="text-destructive">*</span></Label>
                   <Input
                     id="showDate"
                     type="date"
@@ -1365,12 +1366,12 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="showVenue">Venue</Label>
-                <Input
-                  id="showVenue"
+                <Label htmlFor="showVenue">Venue <span className="text-destructive">*</span></Label>
+                <SearchableSelect
+                  options={venues}
                   value={newShowVenue}
-                  onChange={(e) => setNewShowVenue(e.target.value)}
-                  placeholder="Where will the show be held?"
+                  onChange={setNewShowVenue}
+                  placeholder="Select venue"
                   className="bg-background border-secondary/30"
                 />
               </div>
@@ -1581,11 +1582,11 @@ const Dashboard = () => {
             <div className="space-y-2">
               <Label>Show Poster</Label>
               {posterPreview ? (
-                <div className="relative">
+                <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden border border-secondary/30 bg-secondary/10">
                   <img
                     src={posterPreview}
                     alt="Poster preview"
-                    className="w-full max-h-64 object-contain border border-secondary/30 bg-background"
+                    className="w-full h-full object-cover"
                   />
                   <button
                     type="button"
