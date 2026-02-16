@@ -23,6 +23,7 @@ interface Profile {
   instagram_url: string | null;
   address: string | null;
   university: string | null;
+  has_completed_tour?: boolean | null;
 }
 
 interface AuthContextType {
@@ -74,7 +75,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 expires_at: 9999999999
             } as Session);
             // Bypass Supabase and set mock profile directly for testing
-            const mockProfile = {
+            const playwrightProfile = (window as any).PlaywrightProfile;
+            const mockProfile = playwrightProfile || {
                 id: "profile-" + mockUser.id,
                 user_id: mockUser.id,
                 role: localStorage.getItem("pendingUserRole") || "audience",
@@ -91,7 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 facebook_url: null,
                 instagram_url: null,
                 address: null,
-                university: null
+                university: null,
+                has_completed_tour: false
             };
             setProfile(mockProfile as unknown as Profile);
             setLoading(false);

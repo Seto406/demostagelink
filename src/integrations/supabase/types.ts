@@ -273,6 +273,7 @@ export type Database = {
           facebook_url: string | null
           founded_year: number | null
           group_name: string | null
+          has_completed_tour: boolean | null
           id: string
           instagram_url: string | null
           map_screenshot_url: string | null
@@ -292,6 +293,7 @@ export type Database = {
           facebook_url?: string | null
           founded_year?: number | null
           group_name?: string | null
+          has_completed_tour?: boolean | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null
@@ -311,6 +313,7 @@ export type Database = {
           facebook_url?: string | null
           founded_year?: number | null
           group_name?: string | null
+          has_completed_tour?: boolean | null
           id?: string
           instagram_url?: string | null
           map_screenshot_url?: string | null

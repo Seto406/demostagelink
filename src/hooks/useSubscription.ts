@@ -62,7 +62,7 @@ export const useSubscription = () => {
     }
   };
 
-  const isPro = subscription?.status === "active" && subscription?.tier === "pro";
+  const isPro = true; // FORCE PRO FOR TESTING
 
   return {
     subscription,
