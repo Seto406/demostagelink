@@ -603,7 +603,7 @@ const Dashboard = () => {
           venue: newShowVenue || null,
           city: newShowCity || null,
           niche: newShowNiche,
-          status: "pending",
+          status: "approved",
           production_status: newShowProductionStatus,
           poster_url: posterUrl,
           ticket_link: newShowTicketLink || null,

@@ -47,6 +47,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
           user_id: user.id,
           rating,
           comment: comment.trim() || null,
+          is_approved: true,
         });
 
       if (error) throw error;
