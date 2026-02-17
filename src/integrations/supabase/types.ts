@@ -403,6 +403,7 @@ export type Database = {
           video_url: string | null
           reservation_fee: number | null
           collect_balance_onsite: boolean | null
+          likes_count: number | null
         }
         Insert: {
           cast_members?: Json | null
@@ -431,6 +432,7 @@ export type Database = {
           video_url?: string | null
           reservation_fee?: number | null
           collect_balance_onsite?: boolean | null
+          likes_count?: number | null
         }
         Update: {
           cast_members?: Json | null
@@ -459,6 +461,7 @@ export type Database = {
           video_url?: string | null
           reservation_fee?: number | null
           collect_balance_onsite?: boolean | null
+          likes_count?: number | null
         }
         Relationships: [
           {
@@ -533,6 +536,12 @@ export type Database = {
           city: string
           count: number
         }[]
+      }
+      increment_likes: {
+        Args: {
+          show_id: string
+        }
+        Returns: void
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }

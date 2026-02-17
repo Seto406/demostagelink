@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket, Pencil, Users, Archive, Undo } from "lucide-react";
+import { MapPin, Calendar, Share2, MessageCircle, MoreHorizontal, Ticket, Pencil, Users, Archive, Undo, Bookmark, Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { FavoriteButton } from "@/components/ui/favorite-button";
 import { useFavorites } from "@/hooks/use-favorites";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
@@ -41,7 +40,7 @@ export interface FeedPostProps {
       avatar_url: string | null;
       group_logo_url: string | null;
     };
-    favorites?: { count: number }[];
+    likes_count: number | null;
   };
 }
 
@@ -49,7 +48,12 @@ export function FeedPost({ show }: FeedPostProps) {
   const { user, profile, loading } = useAuth();
   const { toggleFavorite, isFavorited } = useFavorites();
   const [showComments, setShowComments] = useState(false);
-  const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
+  const [likeCount, setLikeCount] = useState(show.likes_count || 0);
+  const [hasLiked, setHasLiked] = useState(() => {
+    // Check if user has liked this show in the current session
+    const likedShows = JSON.parse(localStorage.getItem("liked_shows") || "[]");
+    return likedShows.includes(show.id);
+  });
   const [commentCount, setCommentCount] = useState(0);
   const [reservationCount, setReservationCount] = useState(0);
   const queryClient = useQueryClient();
@@ -68,14 +72,6 @@ export function FeedPost({ show }: FeedPostProps) {
     ? formatDistanceToNow(new Date(show.created_at), { addSuffix: true })
     : "recently";
 
-  const fetchLikeCount = useCallback(async () => {
-    const { count } = await supabase
-      .from('favorites')
-      .select('*', { count: 'exact', head: true })
-      .eq('show_id', show.id);
-    if (count !== null) setLikeCount(count);
-  }, [show.id]);
-
   const fetchCommentCount = useCallback(async () => {
     const { count } = await supabase
       .from('comments')
@@ -86,16 +82,9 @@ export function FeedPost({ show }: FeedPostProps) {
 
   useEffect(() => {
     // Initial fetch removed to prevent N+1 queries - data is now passed from parent
-    // fetchLikeCount();
     // fetchCommentCount(); // Comments disabled
 
     // Subscriptions for real-time counts
-    const likeChannel = supabase.channel(`likes-${show.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites', filter: `show_id=eq.${show.id}` }, () => {
-         fetchLikeCount();
-      })
-      .subscribe();
-
     // const commentChannel = supabase.channel(`comments-count-${show.id}`)
     //   .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `show_id=eq.${show.id}` }, () => {
     //      fetchCommentCount();
@@ -103,10 +92,9 @@ export function FeedPost({ show }: FeedPostProps) {
     //   .subscribe();
 
     return () => {
-      supabase.removeChannel(likeChannel);
       // supabase.removeChannel(commentChannel);
     };
-  }, [show.id, fetchLikeCount, fetchCommentCount]);
+  }, [show.id, fetchCommentCount]);
 
   useEffect(() => {
     if (isProducerOrAdmin) {
@@ -182,6 +170,27 @@ export function FeedPost({ show }: FeedPostProps) {
     }
   };
 
+  const handleLike = async () => {
+    if (hasLiked) return;
+
+    // Optimistic update
+    setLikeCount((prev) => prev + 1);
+    setHasLiked(true);
+
+    // Save to local storage
+    const likedShows = JSON.parse(localStorage.getItem("liked_shows") || "[]");
+    localStorage.setItem("liked_shows", JSON.stringify([...likedShows, show.id]));
+
+    try {
+      const { error } = await supabase.rpc('increment_likes', { show_id: show.id });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error liking show:", error);
+      // Revert optimistic update? Or just ignore since it's "social proof only"
+      // If we revert, it feels laggy. Better to keep it for the user session.
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -223,6 +232,23 @@ export function FeedPost({ show }: FeedPostProps) {
                 </TooltipContent>
               </Tooltip>
             )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => toggleFavorite(show.id)}
+                  aria-label={isFavorited(show.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Bookmark className={`h-4 w-4 ${isFavorited(show.id) ? "fill-current" : ""}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isFavorited(show.id) ? "Remove from favorites" : "Save for later"}</p>
+              </TooltipContent>
+            </Tooltip>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -320,12 +346,16 @@ export function FeedPost({ show }: FeedPostProps) {
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
-                        <FavoriteButton
-                            isFavorited={isFavorited(show.id)}
-                            onClick={() => toggleFavorite(show.id)}
-                            size="sm"
-                            className="hover:bg-background/50"
-                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleLike}
+                          disabled={hasLiked}
+                          className={`h-8 w-8 ${hasLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}`}
+                          aria-label="Like this show"
+                        >
+                           <Heart className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
+                        </Button>
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
 
@@ -333,9 +363,9 @@ export function FeedPost({ show }: FeedPostProps) {
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={handleShare}
-                          className="text-muted-foreground hover:text-foreground hover:bg-background/50"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           aria-label="Share this show"
                         >
                             <Share2 className="w-4 h-4" />
