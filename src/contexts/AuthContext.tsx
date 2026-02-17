@@ -24,6 +24,7 @@ interface Profile {
   address: string | null;
   university: string | null;
   has_completed_tour?: boolean | null;
+  producer_role: string | null;
 }
 
 interface AuthContextType {
@@ -38,6 +39,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  updateProfileState: (updates: Partial<Profile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,7 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 instagram_url: null,
                 address: null,
                 university: null,
-                has_completed_tour: false
+                has_completed_tour: false,
+                producer_role: null
             };
             setProfile(mockProfile as unknown as Profile);
             setLoading(false);
@@ -202,6 +205,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       await ensureProfile(user.id, user.user_metadata, true);
     }
+  };
+
+  const updateProfileState = (updates: Partial<Profile>) => {
+    setProfile((prev) => (prev ? { ...prev, ...updates } : null));
   };
 
   useEffect(() => {
@@ -356,7 +363,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState }}>
       {children}
     </AuthContext.Provider>
   );

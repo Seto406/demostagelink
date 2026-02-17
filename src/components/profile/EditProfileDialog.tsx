@@ -21,10 +21,11 @@ interface EditProfileDialogProps {
 }
 
 export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, updateProfileState } = useAuth();
 
   // Profile form state
   const [username, setUsername] = useState("");
+  const [producerRole, setProducerRole] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -34,6 +35,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || "");
+      setProducerRole(profile.producer_role || "");
       setAvatarUrl(profile.avatar_url || null);
     }
   }, [profile, open]);
@@ -66,6 +68,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     try {
       const updateData: Record<string, unknown> = {
         username: username || null,
+        producer_role: producerRole || null,
       };
 
       const { error } = await supabase
@@ -150,7 +153,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       if (updateError) throw updateError;
 
       setAvatarUrl(urlData.publicUrl);
-      await refreshProfile();
+      updateProfileState({ avatar_url: urlData.publicUrl });
 
       toast({
         title: "Avatar Updated",
@@ -182,7 +185,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       if (error) throw error;
 
       setAvatarUrl(null);
-      await refreshProfile();
+      updateProfileState({ avatar_url: null });
 
       toast({
         title: "Avatar Removed",
@@ -213,24 +216,38 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
           <div>
             <Label className="text-muted-foreground text-sm mb-3 block">Profile Photo</Label>
             <div className="flex items-center gap-4">
-              <div className="relative">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-secondary/30"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-secondary/10 border-2 border-secondary/30 flex items-center justify-center">
-                    <Camera className="w-8 h-8 text-muted-foreground" />
+              <label className="cursor-pointer relative group">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  disabled={uploadingAvatar}
+                />
+                <div className="relative">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Profile"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-secondary/30"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-secondary/10 border-2 border-secondary/30 flex items-center justify-center">
+                      <Camera className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  {/* Camera overlay on hover */}
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-8 h-8 text-white/90" />
                   </div>
-                )}
-                {uploadingAvatar && (
-                  <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center z-10">
+                      <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+              </label>
+
               <div className="flex flex-col gap-2">
                 <label className="cursor-pointer">
                   <input
@@ -274,6 +291,22 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
                This is how you will appear in comments and reviews.
              </p>
           </div>
+
+          {profile?.role === 'producer' && (
+            <div>
+               <Label htmlFor="producerRole">Title / Role</Label>
+               <Input
+                 id="producerRole"
+                 value={producerRole}
+                 onChange={(e) => setProducerRole(e.target.value)}
+                 placeholder="e.g. Artistic Director, Founder"
+                 className="mt-1 bg-background border-secondary/30"
+               />
+               <p className="text-xs text-muted-foreground mt-1">
+                 Your role within the theater group.
+               </p>
+            </div>
+          )}
 
           {/* Account Email (Read-only) */}
           <div>

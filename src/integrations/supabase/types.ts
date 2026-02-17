@@ -287,6 +287,7 @@ export type Database = {
           university: string | null
           group_logo_url: string | null
           group_banner_url: string | null
+          producer_role: string | null
         }
         Insert: {
           address?: string | null
@@ -310,6 +311,7 @@ export type Database = {
           university?: string | null
           group_logo_url?: string | null
           group_banner_url?: string | null
+          producer_role?: string | null
         }
         Update: {
           address?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           university?: string | null
           group_logo_url?: string | null
           group_banner_url?: string | null
+          producer_role?: string | null
         }
         Relationships: []
       }
