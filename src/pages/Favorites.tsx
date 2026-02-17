@@ -11,6 +11,7 @@ import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Heart } from "lucide-react";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface Show {
   id: string;
@@ -142,6 +143,7 @@ const Favorites = () => {
                         {show.poster_url ? (
                           <img
                             src={show.poster_url}
+                            onError={(e) => e.currentTarget.src = placeholderImg}
                             alt={show.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
@@ -160,6 +162,7 @@ const Favorites = () => {
                           {show.profiles?.avatar_url ? (
                             <img
                               src={show.profiles.avatar_url}
+                              onError={(e) => e.currentTarget.src = placeholderImg}
                               alt={show.profiles.group_name || "Producer"}
                               className="w-5 h-5 rounded-full object-cover border border-secondary/30"
                             />

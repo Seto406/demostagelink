@@ -12,6 +12,7 @@ import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
 import { StarRating } from "@/components/ui/star-rating";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface ProfileData {
   id: string;
@@ -422,7 +423,7 @@ const Profile = () => {
                                 <div className="flex gap-4">
                                     <div className="shrink-0 w-16 h-20 bg-muted rounded-md overflow-hidden">
                                         {review.shows?.poster_url ? (
-                                            <img src={review.shows.poster_url} alt={review.shows.title} className="w-full h-full object-cover" />
+                                            <img src={review.shows.poster_url} onError={(e) => e.currentTarget.src = placeholderImg} alt={review.shows.title} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-secondary/10">
                                                 <span className="text-xs">Poster</span>

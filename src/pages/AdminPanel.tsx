@@ -47,6 +47,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { InvitationHub } from "@/components/admin/InvitationHub";
@@ -1022,6 +1023,7 @@ const AdminPanel = () => {
                             {show.poster_url ? (
                               <img 
                                 src={show.poster_url} 
+                                onError={(e) => e.currentTarget.src = placeholderImg}
                                 alt={show.title} 
                                 className="w-12 h-16 object-cover rounded border border-secondary/20"
                               />
@@ -1238,6 +1240,7 @@ const AdminPanel = () => {
                                 <a href={request.portfolio_link} target="_blank" rel="noopener noreferrer">
                                    <img
                                      src={request.portfolio_link}
+                                     onError={(e) => e.currentTarget.src = placeholderImg}
                                      alt="Portfolio"
                                      className="h-32 object-contain rounded border border-secondary/30 bg-black/20"
                                    />
@@ -1263,7 +1266,7 @@ const AdminPanel = () => {
                                      <div className="space-y-1">
                                         <p className="text-[10px] text-muted-foreground">Avatar</p>
                                         <a href={request.profiles.avatar_url} target="_blank" rel="noopener noreferrer">
-                                          <img src={request.profiles.avatar_url} alt="Avatar" className="w-16 h-16 rounded-full object-cover border border-secondary/20" />
+                                          <img src={request.profiles.avatar_url} onError={(e) => e.currentTarget.src = placeholderImg} alt="Avatar" className="w-16 h-16 rounded-full object-cover border border-secondary/20" />
                                         </a>
                                      </div>
                                   )}
@@ -1274,7 +1277,7 @@ const AdminPanel = () => {
                                            <div className="text-xs text-muted-foreground italic">Embedded Map</div>
                                         ) : (
                                             <a href={request.profiles.map_screenshot_url} target="_blank" rel="noopener noreferrer">
-                                              <img src={request.profiles.map_screenshot_url} alt="Map" className="h-16 w-auto rounded object-cover border border-secondary/20" />
+                                              <img src={request.profiles.map_screenshot_url} onError={(e) => e.currentTarget.src = placeholderImg} alt="Map" className="h-16 w-auto rounded object-cover border border-secondary/20" />
                                             </a>
                                         )}
                                      </div>
@@ -1494,6 +1497,7 @@ const AdminPanel = () => {
                 <div className="relative w-full aspect-[3/4] max-h-64 overflow-hidden rounded-lg border border-secondary/20">
                   <img 
                     src={selectedShow.poster_url} 
+                    onError={(e) => e.currentTarget.src = placeholderImg}
                     alt={selectedShow.title} 
                     className="w-full h-full object-contain bg-muted"
                   />

@@ -21,6 +21,7 @@ import { FavoriteButton } from "@/components/ui/favorite-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -107,6 +108,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
             {posterUrl ? (
               <motion.img
                 src={posterUrl}
+                onError={(e) => e.currentTarget.src = placeholderImg}
                 alt={show.title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
@@ -209,6 +211,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 {show.profiles?.avatar_url ? (
                   <img 
                     src={show.profiles.avatar_url} 
+                    onError={(e) => e.currentTarget.src = placeholderImg}
                     alt={show.profiles.group_name || "Producer"} 
                     className="w-5 h-5 rounded-full object-cover border border-secondary/40"
                   />

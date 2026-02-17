@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Clock } from "lucide-react";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface RecentActivityProps {
   showIds: string[];
@@ -99,7 +100,7 @@ export const RecentActivity = ({ showIds }: RecentActivityProps) => {
           <div key={item.id} className="flex items-start gap-3 text-sm border-b border-secondary/10 last:border-0 pb-3 last:pb-0">
             <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0 overflow-hidden mt-1">
                 {item.profiles?.avatar_url ? (
-                    <img src={item.profiles.avatar_url} alt="User" className="w-full h-full object-cover" />
+                    <img src={item.profiles.avatar_url} onError={(e) => e.currentTarget.src = placeholderImg} alt="User" className="w-full h-full object-cover" />
                 ) : (
                     <span className="text-xs font-bold text-secondary">
                         {(item.profiles?.username?.[0] || "G").toUpperCase()}

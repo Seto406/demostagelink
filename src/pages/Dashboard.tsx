@@ -57,6 +57,7 @@ import { schools } from "@/data/schools";
 import { venues } from "@/data/venues";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface CastMember {
   name: string;
@@ -1304,6 +1305,7 @@ const Dashboard = () => {
                       {groupLogoPreview ? (
                         <img
                           src={groupLogoPreview}
+                          onError={(e) => e.currentTarget.src = placeholderImg}
                           alt="Group Logo preview"
                           className="w-full h-full object-cover"
                         />
@@ -1328,6 +1330,7 @@ const Dashboard = () => {
                     <div className="relative rounded-xl overflow-hidden border border-secondary/30 aspect-[3/1]">
                       <img
                         src={groupBannerPreview}
+                        onError={(e) => e.currentTarget.src = placeholderImg}
                         alt="Group Banner"
                         className="w-full h-full object-cover"
                       />
@@ -1444,6 +1447,7 @@ const Dashboard = () => {
                       <div className="relative rounded-xl overflow-hidden border border-secondary/30">
                         <img
                           src={mapPreview}
+                          onError={(e) => e.currentTarget.src = placeholderImg}
                           alt="Venue Map"
                           className="w-full max-h-64 object-contain bg-black/20"
                         />
@@ -1851,6 +1855,7 @@ const Dashboard = () => {
                 <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden border border-secondary/30 bg-secondary/10">
                   <img
                     src={posterPreview}
+                    onError={(e) => e.currentTarget.src = placeholderImg}
                     alt="Poster preview"
                     className="w-full h-full object-cover"
                   />
