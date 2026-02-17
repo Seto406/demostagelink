@@ -35,7 +35,7 @@ export interface FeedPostProps {
     price?: number | null;
     ticket_link?: string | null;
     status?: string;
-    profiles?: {
+    producer_id?: {
       group_name: string | null;
       id: string;
       avatar_url: string | null;
@@ -54,9 +54,9 @@ export function FeedPost({ show }: FeedPostProps) {
   const [reservationCount, setReservationCount] = useState(0);
   const queryClient = useQueryClient();
 
-  const isProducerOrAdmin = !loading && user && (user.id === show.profiles?.id || profile?.role === 'admin');
-  const producerName = show.profiles?.group_name || "Unknown Group";
-  const producerAvatar = show.profiles?.group_logo_url || show.profiles?.avatar_url;
+  const isProducerOrAdmin = !loading && user && (user.id === show.producer_id?.id || profile?.role === 'admin');
+  const producerName = show.producer_id?.group_name || "Unknown Group";
+  const producerAvatar = show.producer_id?.group_logo_url || show.producer_id?.avatar_url;
   const initials = producerName
     .split(" ")
     .map((n) => n[0])
@@ -192,7 +192,7 @@ export function FeedPost({ show }: FeedPostProps) {
         {/* Header */}
         <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
           <div className="flex items-center gap-3">
-            <Link to={`/group/${show.profiles?.id}`} className="hover:opacity-80 transition-opacity">
+            <Link to={`/group/${show.producer_id?.id}`} className="hover:opacity-80 transition-opacity">
               <Avatar className="h-10 w-10 border border-secondary/30">
                 <AvatarImage src={producerAvatar || undefined} alt={producerName} />
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">{initials}</AvatarFallback>
@@ -200,7 +200,7 @@ export function FeedPost({ show }: FeedPostProps) {
             </Link>
             <div className="flex flex-col">
               <div className="flex items-center gap-1">
-                <Link to={`/group/${show.profiles?.id}`} className="font-semibold text-sm hover:underline">
+                <Link to={`/group/${show.producer_id?.id}`} className="font-semibold text-sm hover:underline">
                   {producerName}
                 </Link>
                 <span className="text-muted-foreground text-sm">posted a new show</span>

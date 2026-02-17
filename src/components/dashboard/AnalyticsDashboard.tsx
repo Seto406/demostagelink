@@ -53,17 +53,28 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
       if (data) {
         const result = data as unknown as AnalyticsSummary;
 
+        // Ensure safe access to properties with defaults to prevent crashes (e.g. undefined.toFixed)
         setStats({
-          views: result.views,
-          clicks: result.clicks,
-          ctr: result.ctr
+          views: result.views || 0,
+          clicks: result.clicks || 0,
+          ctr: result.ctr || 0
         });
 
-        const formattedChartData = (result.chartData || []).map((item) => ({
-          // Format date from YYYY-MM-DD to "Mon DD"
-          date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          clicks: item.clicks
-        }));
+        const formattedChartData = (result.chartData || []).map((item) => {
+          let dateStr = "Unknown";
+          try {
+            const date = new Date(item.date);
+            if (!isNaN(date.getTime())) {
+              dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            }
+          } catch (e) {
+            // Keep dateStr as "Unknown" on error
+          }
+          return {
+            date: dateStr,
+            clicks: item.clicks || 0
+          };
+        });
 
         setChartData(formattedChartData);
       }

@@ -59,7 +59,7 @@ const ShowDetailsPage = () => {
         .from("shows")
         .select(`
           *,
-          profiles:producer_id (
+          producer_id:profiles!producer_id (
             id,
             group_name,
             username,
@@ -311,7 +311,7 @@ END:VCALENDAR`;
                            <span className="text-secondary uppercase tracking-[0.2em] text-sm font-medium">
                              {getNicheLabel(show.niche)}
                            </span>
-                           {user && (user.id === show.profiles?.id || profile?.role === 'admin') && (
+                           {user && (user.id === show.producer_id?.id || profile?.role === 'admin') && (
                              <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
                                <Button variant="outline" size="sm" className="gap-2 border-secondary/30 hover:border-secondary hover:text-secondary">
                                  <Pencil className="w-4 h-4" />
@@ -325,10 +325,10 @@ END:VCALENDAR`;
                         </h1>
                          {/* Quick Stats Row */}
                         <div className="flex flex-wrap gap-4 md:gap-8 text-muted-foreground text-sm md:text-base">
-                            {show.profiles && (show.profiles.group_name || show.profiles.username) && (
+                            {show.producer_id && (show.producer_id.group_name || show.producer_id.username) && (
                                 <div className="flex items-center gap-2">
                                     <Users className="w-4 h-4 text-secondary" />
-                                    <span>{show.profiles.group_name || show.profiles.username}</span>
+                                    <span>{show.producer_id.group_name || show.producer_id.username}</span>
                                 </div>
                             )}
                             {show.duration && (
@@ -544,7 +544,7 @@ END:VCALENDAR`;
                         )}
 
                         {/* Producer Info */}
-                        {show.profiles && (
+                        {show.producer_id && (
                             <div className="bg-card border border-secondary/10 rounded-2xl p-6">
                                 <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-secondary" />
@@ -556,14 +556,14 @@ END:VCALENDAR`;
                                     </div>
                                     <div>
                                         <p className="font-bold text-foreground line-clamp-1">
-                                            {show.profiles.group_name || show.profiles.username}
+                                            {show.producer_id.group_name || show.producer_id.username}
                                         </p>
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                                            {getNicheLabel(show.profiles.niche)}
+                                            {getNicheLabel(show.producer_id.niche)}
                                         </p>
                                     </div>
                                 </div>
-                                <Link to={`/producer/${show.profiles.id}`}>
+                                <Link to={`/producer/${show.producer_id.id}`}>
                                     <Button variant="outline" className="w-full group">
                                         View Profile
                                         <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
@@ -598,7 +598,7 @@ END:VCALENDAR`;
             venue: show.venue || (show.city ? `${show.city}` : null)
           }}
           isProcessing={buyingTicket}
-          reservationFee={show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.profiles?.niche ?? null) : 25)}
+          reservationFee={show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.producer_id?.niche ?? null) : 25)}
         />
       )}
     </div>

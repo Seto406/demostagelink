@@ -51,7 +51,7 @@ export interface FeedShow {
   status?: string;
   created_at?: string;
   ticket_link?: string | null;
-  profiles?: {
+  producer_id?: {
     group_name: string | null;
     id: string;
     avatar_url: string | null;
@@ -122,7 +122,7 @@ const UserFeed = () => {
           status,
           created_at,
           price,
-          profiles:producer_id (
+          producer_id:profiles!producer_id (
             group_name,
             id,
             avatar_url,

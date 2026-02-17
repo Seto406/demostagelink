@@ -58,7 +58,7 @@ interface Show {
   poster_url: string | null;
   genre: string | null;
   ticket_link: string | null;
-  profiles: {
+  producer_id: {
     id: string;
     group_name: string | null;
     avatar_url: string | null;
@@ -72,7 +72,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
   const { toggleFavorite, isFavorited } = useFavorites();
   const { toast } = useToast();
 
-  const isProducerOrAdmin = user && (user.id === show.profiles?.id || profile?.role === 'admin');
+  const isProducerOrAdmin = user && (user.id === show.producer_id?.id || profile?.role === 'admin');
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -206,10 +206,10 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 {show.title}
               </h3>
               <div className="flex items-center gap-2 relative z-20">
-                {show.profiles?.avatar_url ? (
+                {show.producer_id?.avatar_url ? (
                   <img 
-                    src={show.profiles.avatar_url} 
-                    alt={show.profiles.group_name || "Producer"} 
+                    src={show.producer_id.avatar_url}
+                    alt={show.producer_id.group_name || "Producer"}
                     className="w-5 h-5 rounded-full object-cover border border-secondary/40"
                   />
                 ) : (
@@ -218,11 +218,11 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   </div>
                 )}
                 <Link
-                  to={`/producer/${show.profiles?.id}`}
+                  to={`/producer/${show.producer_id?.id}`}
                   onClick={(e) => e.stopPropagation()}
                   className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
                 >
-                  {show.profiles?.group_name || "Theater Group"}
+                  {show.producer_id?.group_name || "Theater Group"}
                 </Link>
               </div>
 
@@ -373,7 +373,7 @@ const Shows = () => {
         genre,
         ticket_link,
         poster_url,
-        profiles:producer_id (
+        producer_id:profiles!producer_id (
           id,
           group_name,
           avatar_url
