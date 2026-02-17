@@ -51,7 +51,6 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
       if (error) throw error;
 
       if (data) {
-        // Cast to unknown first to avoid type errors since the RPC type isn't generated yet
         const result = data as unknown as AnalyticsSummary;
 
         setStats({
