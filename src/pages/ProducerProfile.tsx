@@ -189,12 +189,16 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-collab-proposal', {
-        body: { recipient_profile_id: producer.id }
-      });
+      // Emergency Fix: Bypass Edge Function and write directly to table
+      const { error } = await supabase
+        .from('collaboration_requests' as any)
+        .insert([{
+          sender_id: user.id,
+          receiver_id: producer.id,
+          status: 'pending'
+        }]);
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
       toast.success("Collaboration request sent successfully!");
     } catch (error: any) {
