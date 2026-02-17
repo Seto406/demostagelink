@@ -25,6 +25,7 @@ interface Producer {
   instagram_url: string | null;
   map_screenshot_url: string | null;
   university: string | null;
+  producer_role: string | null;
 }
 
 interface Show {
@@ -63,7 +64,7 @@ const ProducerProfile = () => {
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university")
+        .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
         .eq("id", id)
         .maybeSingle();
 
@@ -296,6 +297,9 @@ const ProducerProfile = () => {
                           <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
                             {producer.group_name || "Unnamed Group"}
                           </h1>
+                          {producer.producer_role && (
+                            <p className="text-muted-foreground mt-1 text-lg font-medium">{producer.producer_role}</p>
+                          )}
                       </div>
 
                       {/* Follow Button */}
