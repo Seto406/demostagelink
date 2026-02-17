@@ -25,3 +25,7 @@
 ## 2025-02-13 - Conditional Tooltips & Playwright Timing
 **Learning:** Testing Radix UI tooltips with Playwright requires explicit waits for animation delays (default 300ms) or they fail `toBeVisible` checks. Also, wrapping conditional tooltips in a helper component keeps JSX clean.
 **Action:** Use `await page.waitForTimeout(500)` after hover when testing animated tooltips, and extract conditional tooltip logic into reusable components.
+
+## 2025-05-24 - Playwright Tooltip Verification
+**Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
+**Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.

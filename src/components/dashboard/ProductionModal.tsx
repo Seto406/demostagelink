@@ -434,15 +434,23 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                       <span className="font-medium">{member.name}</span>
                       <span className="text-muted-foreground ml-2">as {member.role}</span>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveCastMember(index)}
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveCastMember(index)}
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          aria-label={`Remove ${member.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Remove cast member</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 ))}
 
@@ -466,15 +474,23 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                       onKeyDown={(e) => e.key === 'Enter' && handleAddCastMember()}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-9 w-9 p-0"
-                    onClick={handleAddCastMember}
-                    disabled={!tempCastName || !tempCastRole}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        onClick={handleAddCastMember}
+                        disabled={!tempCastName || !tempCastRole}
+                        aria-label="Add cast member"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add cast member</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -495,13 +511,21 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
               {posterPreview ? (
                 <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden border border-secondary/30 bg-secondary/10">
                   <img src={posterPreview} alt="Poster" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={clearPoster}
-                    className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={clearPoster}
+                        className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                        aria-label="Remove poster"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Remove poster</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               ) : (
                 <label className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-primary/50 transition-colors block rounded-lg">
