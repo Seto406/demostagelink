@@ -41,7 +41,7 @@ interface Show {
 
 const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,9 @@ const ProducerProfile = () => {
   const [collabLoading, setCollabLoading] = useState(false);
 
   useEffect(() => {
+    // Guard against data race: Wait for auth to settle
+    if (authLoading) return;
+
     const fetchProducerData = async () => {
       if (!id) return;
 
@@ -117,7 +120,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user]);
+  }, [id, user, authLoading]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
