@@ -46,7 +46,7 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
     try {
       // Use RPC function for server-side aggregation
       // This is much faster than fetching thousands of rows to the client
-      const { data, error } = await supabase.rpc('get_analytics_summary', { group_id: profileId });
+      const { data, error } = await supabase.rpc('get_analytics_summary', { target_group_id: profileId });
 
       if (error) throw error;
 
