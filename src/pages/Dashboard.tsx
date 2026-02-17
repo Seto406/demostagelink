@@ -1755,15 +1755,23 @@ const Dashboard = () => {
                       <div className="font-medium text-foreground truncate" title={member.name}>{member.name}</div>
                       <div className="text-muted-foreground border-l border-secondary/20 pl-2 truncate" title={member.role}>{member.role}</div>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveCastMember(index)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveCastMember(index)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          aria-label={`Remove ${member.name}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Remove cast member</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 ))}
 
@@ -1801,17 +1809,24 @@ const Dashboard = () => {
                       }}
                     />
                   </div>
-                  <Button
-                    type="button"
-                    onClick={handleAddCastMember}
-                    variant="secondary"
-                    size="sm"
-                    className="h-9 w-9 p-0"
-                    disabled={!tempCastName.trim() || !tempCastRole.trim()}
-                    title="Add Cast Member"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        onClick={handleAddCastMember}
+                        variant="secondary"
+                        size="sm"
+                        className="h-9 w-9 p-0"
+                        disabled={!tempCastName.trim() || !tempCastRole.trim()}
+                        aria-label="Add cast member"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add cast member</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -1839,14 +1854,21 @@ const Dashboard = () => {
                     alt="Poster preview"
                     className="w-full h-full object-cover"
                   />
-                  <button
-                    type="button"
-                    onClick={clearPoster}
-                    className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                    aria-label="Remove poster"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={clearPoster}
+                        className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                        aria-label="Remove poster"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Remove poster</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               ) : (
                 <label className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-primary/50 transition-colors block">
