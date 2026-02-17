@@ -52,6 +52,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
   const [niche, setNiche] = useState<"local" | "university">("local");
   const [ticketLink, setTicketLink] = useState("");
   const [price, setPrice] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
   const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
   const [genre, setGenre] = useState<string[]>([]);
   const [director, setDirector] = useState("");
@@ -78,6 +79,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
     setNiche("local");
     setTicketLink("");
     setPrice("");
+    setPaymentInstructions("");
     setCollectBalanceOnsite(true);
     setGenre([]);
     setDirector("");
@@ -215,6 +217,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
           duration: duration || null,
           tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
           cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
+          seo_metadata: paymentInstructions ? { payment_instructions: paymentInstructions } : null,
         });
 
       if (error) throw new Error(`Failed to submit show: ${error.message}`);
@@ -321,6 +324,17 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                   className="bg-background border-secondary/30"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentInstructions">Payment Instructions</Label>
+              <Textarea
+                id="paymentInstructions"
+                value={paymentInstructions}
+                onChange={(e) => setPaymentInstructions(e.target.value)}
+                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'GCash QR at venue')"
+                className="bg-background border-secondary/30"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -85,6 +85,7 @@ interface Show {
   cast_members: CastMember[] | null;
   price: number | null;
   is_featured?: boolean;
+  seo_metadata: Json | null;
 }
 
 const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
@@ -192,6 +193,7 @@ const Dashboard = () => {
   const [uploadingPoster, setUploadingPoster] = useState(false);
   const [newShowTicketLink, setNewShowTicketLink] = useState("");
   const [newShowPrice, setNewShowPrice] = useState("");
+  const [newShowPaymentInstructions, setNewShowPaymentInstructions] = useState("");
   const [newShowGenre, setNewShowGenre] = useState<string[]>([]);
   const [newShowDirector, setNewShowDirector] = useState("");
   const [newShowDuration, setNewShowDuration] = useState("");
@@ -457,6 +459,7 @@ const Dashboard = () => {
     setNewShowNiche("local");
     setNewShowTicketLink("");
     setNewShowPrice("");
+    setNewShowPaymentInstructions("");
     setNewShowGenre([]);
     setNewShowDirector("");
     setNewShowDuration("");
@@ -496,6 +499,10 @@ const Dashboard = () => {
     setNewShowCast(castData);
 
     setNewShowProductionStatus(show.production_status || "ongoing");
+
+    const metadata = show.seo_metadata as { payment_instructions?: string } | null;
+    setNewShowPaymentInstructions(metadata?.payment_instructions || "");
+
     setPosterPreview(show.poster_url);
     setPosterFile(null);
     setShowModal(true);
@@ -606,6 +613,7 @@ const Dashboard = () => {
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
           cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
+          seo_metadata: newShowPaymentInstructions ? { payment_instructions: newShowPaymentInstructions } : null,
         });
 
       if (error) {
@@ -674,6 +682,7 @@ const Dashboard = () => {
           duration: newShowDuration || null,
           tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
           cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
+          seo_metadata: { ...(editingShow.seo_metadata as object), payment_instructions: newShowPaymentInstructions },
         })
         .eq("id", editingShow.id);
 
@@ -1688,6 +1697,17 @@ const Dashboard = () => {
                   Optional override
                 </p>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="showPaymentInstructions">Payment Instructions</Label>
+              <Textarea
+                id="showPaymentInstructions"
+                value={newShowPaymentInstructions}
+                onChange={(e) => setNewShowPaymentInstructions(e.target.value)}
+                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'GCash QR at venue')"
+                className="bg-background border-secondary/30"
+              />
             </div>
 
             {/* New Fields: Genre, Director, Duration */}
