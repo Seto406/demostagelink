@@ -339,6 +339,42 @@ export type Database = {
         }
         Relationships: []
       }
+      show_likes: {
+        Row: {
+          created_at: string
+          id: string
+          show_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          show_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          show_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "show_likes_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "show_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_badges: {
         Row: {
           awarded_at: string

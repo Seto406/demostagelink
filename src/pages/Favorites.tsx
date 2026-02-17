@@ -6,11 +6,11 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
-import { FavoriteButton } from "@/components/ui/favorite-button";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Heart } from "lucide-react";
+import { Calendar, MapPin, Bookmark } from "lucide-react";
 
 interface Show {
   id: string;
@@ -97,7 +97,7 @@ const Favorites = () => {
             className="mb-8"
           >
             <div className="flex items-center gap-3 mb-2">
-              <Heart className="w-6 h-6 text-primary fill-primary" />
+              <Bookmark className="w-6 h-6 text-primary fill-primary" />
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
                 My Favorites
               </h1>
@@ -115,8 +115,8 @@ const Favorites = () => {
             <div className="max-w-lg mx-auto py-12">
               <PremiumEmptyState
                 title="No Favorites Yet"
-                description="You haven't saved any shows to your favorites list. Explore our collection and click the heart icon to save shows for later."
-                icon={Heart}
+                description="You haven't saved any shows to your favorites list. Explore our collection and click the bookmark icon to save shows for later."
+                icon={Bookmark}
                 action={
                   <Link to="/shows">
                     <Button className="bg-secondary hover:bg-secondary/90 text-primary-foreground">
@@ -189,7 +189,7 @@ const Favorites = () => {
                       </div>
                     </div>
                   </Link>
-                  <FavoriteButton
+                  <BookmarkButton
                     isFavorited={isFavorited(show.id)}
                     onClick={(e) => {
                       e.preventDefault();

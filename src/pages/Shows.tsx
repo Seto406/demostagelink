@@ -17,7 +17,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useFavorites } from "@/hooks/use-favorites";
-import { FavoriteButton } from "@/components/ui/favorite-button";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -151,7 +151,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               className="absolute top-3 left-3 z-20"
               style={{ transform: "translateZ(30px)" }}
             >
-              <FavoriteButton
+              <BookmarkButton
                 isFavorited={isFavorited(show.id)}
                 onClick={(e) => {
                   e.preventDefault();

@@ -2,19 +2,19 @@ import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface FavoriteButtonProps {
-  isFavorited: boolean;
+interface LikeButtonProps {
+  isLiked: boolean;
   onClick: (e: React.MouseEvent) => void;
   className?: string;
   size?: "sm" | "md" | "lg";
 }
 
-export const FavoriteButton = ({ 
-  isFavorited, 
-  onClick, 
+export const LikeButton = ({
+  isLiked,
+  onClick,
   className,
-  size = "md" 
-}: FavoriteButtonProps) => {
+  size = "md"
+}: LikeButtonProps) => {
   const sizeClasses = {
     sm: "w-7 h-7",
     md: "w-9 h-9",
@@ -39,20 +39,20 @@ export const FavoriteButton = ({
         sizeClasses[size],
         className
       )}
-      aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+      aria-label={isLiked ? "Unlike" : "Like"}
     >
       <motion.div
         initial={false}
-        animate={isFavorited ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+        animate={isLiked ? { scale: [1, 1.3, 1] } : { scale: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <Heart 
+        <Heart
           className={cn(
             iconSizes[size],
             "transition-colors",
-            isFavorited 
-              ? "fill-primary text-primary" 
-              : "text-muted-foreground hover:text-primary"
+            isLiked
+              ? "fill-red-500 text-red-500"
+              : "text-muted-foreground hover:text-red-500"
           )}
         />
       </motion.div>

@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { FavoriteButton } from "@/components/ui/favorite-button";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
+import { LikeButton } from "@/components/ui/like-button";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useShowLikes } from "@/hooks/use-show-likes";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { CommentSection } from "@/components/feed/CommentSection";
@@ -41,15 +43,19 @@ export interface FeedPostProps {
       avatar_url: string | null;
       group_logo_url: string | null;
     };
-    favorites?: { count: number }[];
+    show_likes?: { count: number }[];
+    favorites?: { count: number }[]; // Keep for backward compatibility if needed, but we'll use show_likes for display
   };
 }
 
 export function FeedPost({ show }: FeedPostProps) {
   const { user, profile, loading } = useAuth();
   const { toggleFavorite, isFavorited } = useFavorites();
+  const { toggleLike, isLiked } = useShowLikes();
   const [showComments, setShowComments] = useState(false);
-  const [likeCount, setLikeCount] = useState(show.favorites?.[0]?.count || 0);
+
+  // Use show_likes for the count if available, otherwise 0
+  const [likeCount, setLikeCount] = useState(show.show_likes?.[0]?.count || 0);
   const [commentCount, setCommentCount] = useState(0);
   const [reservationCount, setReservationCount] = useState(0);
   const queryClient = useQueryClient();
@@ -69,8 +75,9 @@ export function FeedPost({ show }: FeedPostProps) {
     : "recently";
 
   const fetchLikeCount = useCallback(async () => {
+    // Count from show_likes table
     const { count } = await supabase
-      .from('favorites')
+      .from('show_likes')
       .select('*', { count: 'exact', head: true })
       .eq('show_id', show.id);
     if (count !== null) setLikeCount(count);
@@ -85,28 +92,17 @@ export function FeedPost({ show }: FeedPostProps) {
   }, [show.id]);
 
   useEffect(() => {
-    // Initial fetch removed to prevent N+1 queries - data is now passed from parent
-    // fetchLikeCount();
-    // fetchCommentCount(); // Comments disabled
-
     // Subscriptions for real-time counts
-    const likeChannel = supabase.channel(`likes-${show.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'favorites', filter: `show_id=eq.${show.id}` }, () => {
+    const likeChannel = supabase.channel(`show_likes-${show.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'show_likes', filter: `show_id=eq.${show.id}` }, () => {
          fetchLikeCount();
       })
       .subscribe();
 
-    // const commentChannel = supabase.channel(`comments-count-${show.id}`)
-    //   .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `show_id=eq.${show.id}` }, () => {
-    //      fetchCommentCount();
-    //   })
-    //   .subscribe();
-
     return () => {
       supabase.removeChannel(likeChannel);
-      // supabase.removeChannel(commentChannel);
     };
-  }, [show.id, fetchLikeCount, fetchCommentCount]);
+  }, [show.id, fetchLikeCount]);
 
   useEffect(() => {
     if (isProducerOrAdmin) {
@@ -320,14 +316,21 @@ export function FeedPost({ show }: FeedPostProps) {
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
-                        <FavoriteButton
-                            isFavorited={isFavorited(show.id)}
-                            onClick={() => toggleFavorite(show.id)}
+                        <LikeButton
+                            isLiked={isLiked(show.id)}
+                            onClick={() => toggleLike(show.id)}
                             size="sm"
                             className="hover:bg-background/50"
                         />
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
+
+                    <BookmarkButton
+                        isFavorited={isFavorited(show.id)}
+                        onClick={() => toggleFavorite(show.id)}
+                        size="sm"
+                        className="hover:bg-background/50"
+                    />
 
                     <Tooltip>
                       <TooltipTrigger asChild>

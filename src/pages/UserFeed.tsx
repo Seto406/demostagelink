@@ -57,7 +57,7 @@ export interface FeedShow {
     avatar_url: string | null;
     group_logo_url: string | null;
   };
-  favorites?: { count: number }[];
+  show_likes?: { count: number }[];
 }
 
 interface Producer {
@@ -128,7 +128,7 @@ const UserFeed = () => {
             avatar_url,
             group_logo_url
           ),
-          favorites(count)
+          show_likes(count)
         `)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
