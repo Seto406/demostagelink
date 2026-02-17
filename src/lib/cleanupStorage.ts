@@ -48,9 +48,25 @@ export const cleanupStorage = () => {
 export const performNuclearWipe = () => {
   console.warn("Executing Nuclear Refresh Protocol.");
 
-  // 1. Clear Storage
-  localStorage.clear();
-  sessionStorage.clear();
+  // 1. Selective Wipe: Clear Storage but preserve Supabase sessions
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    // Only remove if it doesn't start with 'sb-'
+    if (key && !key.startsWith('sb-')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+  const sessionKeysToRemove: string[] = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key && !key.startsWith('sb-')) {
+      sessionKeysToRemove.push(key);
+    }
+  }
+  sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key));
 
   // 2. Clear Cookies
   document.cookie.split(";").forEach((c) => {
