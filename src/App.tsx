@@ -106,7 +106,7 @@ const App = () => (
       <TooltipProvider delayDuration={300} skipDelayDuration={0}>
         <EnhancedToastProvider>
           <CinematicBackground>
-            <SystemStability />
+            {/* <SystemStability /> */}
             <ToastHandlerInit />
             <Toaster />
             <Sonner />

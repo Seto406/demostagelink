@@ -205,7 +205,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
           venue: venue || null,
           city: city || null,
           niche: niche,
-          status: "pending",
+          status: "approved",
           production_status: productionStatus,
           poster_url: posterUrl,
           ticket_link: ticketLink || null,
