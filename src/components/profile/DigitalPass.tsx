@@ -11,6 +11,8 @@ interface DigitalPassProps {
   city?: string | null;
   status?: string; // e.g., "confirmed", "pending"
   ticketId: string;
+  ticketPrice?: number | null;
+  reservationFee?: number | null;
 }
 
 export const DigitalPass = ({
@@ -22,7 +24,11 @@ export const DigitalPass = ({
   venue,
   city,
   status,
+  ticketPrice,
+  reservationFee,
 }: DigitalPassProps) => {
+  const paidAmount = reservationFee ?? 25;
+  const balance = (ticketPrice && ticketPrice > 0) ? Math.max(0, ticketPrice - paidAmount) : 0;
   return (
     <div className="group relative w-full max-w-md mx-auto">
       <div className="relative bg-card border border-secondary/30 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:border-secondary/50">
@@ -55,7 +61,7 @@ export const DigitalPass = ({
                     <div className="flex justify-between items-start gap-2 mb-2">
                         {status === 'confirmed' || status === 'paid' ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-                            ₱25 Commitment Paid
+                            PAID ONLINE: ₱{paidAmount.toFixed(2)}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
@@ -93,9 +99,12 @@ export const DigitalPass = ({
                 {/* Verification Section */}
                 <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex items-center justify-between gap-4">
                     <div className="flex-1">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Instruction</p>
-                        <p className="text-xs text-foreground font-medium leading-tight">
-                            Present this at the venue to pay your balance.
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT DOOR</p>
+                        <p className="text-lg text-foreground font-bold leading-tight">
+                            ₱{balance.toFixed(2)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                            Present at venue to pay balance.
                         </p>
                     </div>
 
