@@ -39,6 +39,7 @@ export interface FeedPostProps {
       group_name: string | null;
       id: string;
       avatar_url: string | null;
+      group_logo_url: string | null;
     };
     favorites?: { count: number }[];
   };
@@ -55,7 +56,7 @@ export function FeedPost({ show }: FeedPostProps) {
 
   const isProducerOrAdmin = !loading && user && (user.id === show.profiles?.id || profile?.role === 'admin');
   const producerName = show.profiles?.group_name || "Unknown Group";
-  const producerAvatar = show.profiles?.avatar_url;
+  const producerAvatar = show.profiles?.group_logo_url || show.profiles?.avatar_url;
   const initials = producerName
     .split(" ")
     .map((n) => n[0])

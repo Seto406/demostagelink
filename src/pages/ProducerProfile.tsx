@@ -272,15 +272,17 @@ const ProducerProfile = () => {
             <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Avatar */}
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center text-5xl md:text-6xl shrink-0 border-2 border-secondary/30">
-                  {producer.group_logo_url || producer.avatar_url ? (
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-secondary/30">
+                  {producer.group_logo_url ? (
                     <img 
-                      src={producer.group_logo_url || producer.avatar_url || ""}
+                      src={producer.group_logo_url}
                       alt={producer.group_name || "Producer"} 
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span>🎭</span>
+                    <div className="w-full h-full bg-green-600 flex items-center justify-center text-white text-5xl md:text-6xl font-serif">
+                      {(producer.group_name?.[0] || "P").toUpperCase()}
+                    </div>
                   )}
                 </div>
                 
