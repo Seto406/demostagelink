@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface Producer {
   id: string;
@@ -251,6 +252,7 @@ const ProducerProfile = () => {
           <div className="w-full h-48 md:h-64 lg:h-80 relative mb-8">
             <img
               src={producer.group_banner_url}
+              onError={(e) => e.currentTarget.src = placeholderImg}
               alt="Cover"
               className="w-full h-full object-cover"
             />
@@ -276,6 +278,7 @@ const ProducerProfile = () => {
                   {producer.group_logo_url || producer.avatar_url ? (
                     <img 
                       src={producer.group_logo_url || producer.avatar_url || ""}
+                      onError={(e) => e.currentTarget.src = placeholderImg}
                       alt={producer.group_name || "Producer"} 
                       className="w-full h-full object-cover"
                     />
@@ -410,6 +413,7 @@ const ProducerProfile = () => {
                   <div className="w-full h-64 md:h-80 bg-muted relative">
                     <img
                       src={producer.map_screenshot_url}
+                      onError={(e) => e.currentTarget.src = placeholderImg}
                       alt="Location Map"
                       className="w-full h-full object-cover"
                     />
@@ -460,6 +464,7 @@ const ProducerProfile = () => {
                                 {show.poster_url ? (
                                   <img
                                     src={show.poster_url}
+                                    onError={(e) => e.currentTarget.src = placeholderImg}
                                     alt={show.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                   />
@@ -523,6 +528,7 @@ const ProducerProfile = () => {
                                 {show.poster_url ? (
                                   <img
                                     src={show.poster_url}
+                                    onError={(e) => e.currentTarget.src = placeholderImg}
                                     alt={show.title}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                   />

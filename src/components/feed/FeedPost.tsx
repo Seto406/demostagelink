@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 export interface FeedPostProps {
   show: {
@@ -285,6 +286,7 @@ export function FeedPost({ show }: FeedPostProps) {
              {show.poster_url ? (
                 <img
                   src={show.poster_url}
+                  onError={(e) => e.currentTarget.src = placeholderImg}
                   alt={show.title}
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />

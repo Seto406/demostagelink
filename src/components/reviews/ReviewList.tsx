@@ -3,6 +3,7 @@ import { StarRating } from "@/components/ui/star-rating";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { User } from "lucide-react";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface Review {
   id: string;
@@ -42,14 +43,12 @@ export const ReviewList = ({ showId, refreshTrigger }: ReviewListProps) => {
         .eq("show_id", showId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching reviews:", error);
-      } else {
+      if (!error) {
         // Safe cast as we know the structure from the query
         setReviews(data as unknown as Review[]);
       }
     } catch (err) {
-      console.error(err);
+      // Fail gracefully
     } finally {
       setLoading(false);
     }
@@ -80,6 +79,7 @@ export const ReviewList = ({ showId, refreshTrigger }: ReviewListProps) => {
               {review.profiles?.avatar_url ? (
                 <img
                   src={review.profiles.avatar_url}
+                  onError={(e) => e.currentTarget.src = placeholderImg}
                   alt={review.profiles.group_name || "User"}
                   className="w-10 h-10 rounded-full object-cover border border-secondary/30"
                 />

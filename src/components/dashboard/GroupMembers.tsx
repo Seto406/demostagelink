@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import placeholderImg from "@/assets/stagelink-logo-mask.png";
 
 interface GroupMember {
   id: string;
@@ -67,7 +68,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Error fetching members:", error);
+      setMembers([]);
     } else {
       setMembers(data as GroupMember[]);
     }
@@ -309,6 +310,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
                 {member.avatar_url ? (
                   <img
                     src={member.avatar_url}
+                    onError={(e) => e.currentTarget.src = placeholderImg}
                     alt={member.member_name}
                     className="w-full h-full object-cover"
                   />
