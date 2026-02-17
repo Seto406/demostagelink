@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
-import { performNuclearWipe } from "@/lib/cleanupStorage";
 
 interface Profile {
   id: string;
@@ -280,23 +279,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!loading) return;
-
-    const timeoutId = setTimeout(async () => {
-      console.warn("Auth loading timed out (5s). Executing Nuclear Refresh Protocol.");
-
-      // 1. Force Sign Out (ignoring errors)
-      await supabase.auth.signOut().catch(err => console.error("SignOut error:", err));
-
-      // 2. Execute Nuclear Wipe
-      performNuclearWipe();
-    }, 5000);
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
-
   // CORRECTED: Added firstName parameter and removed extra closing brace
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
@@ -370,7 +352,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // If loading but on a public path, allow rendering (read-only mode)
   if (loading && !isPublicPath) {
-    return <FullPageLoader text="Loading StageLink..." />;
+    return <FullPageLoader text="Loading StageLink..." autoRecovery={true} />;
   }
 
   return (
