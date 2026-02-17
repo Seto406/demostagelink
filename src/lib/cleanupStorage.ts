@@ -45,13 +45,17 @@ export const cleanupStorage = () => {
   }
 };
 
-export const performNuclearWipe = () => {
+export const performNuclearWipe = (preserveSession = true) => {
   console.warn("Executing Nuclear Refresh Protocol.");
+
+  // Record timestamp to detect loops
+  localStorage.setItem('stagelink_last_nuclear_wipe', Date.now().toString());
 
   // 1. Selective Wipe: Clear Storage but preserve Supabase sessions and critical settings
   const keysToRemove: string[] = [];
-  const preservedPrefixes = ['sb-', 'stagelink_'];
-  const preservedKeys = ['vite-ui-theme', 'app_version', 'pendingUserRole'];
+  // Only preserve prefixes/keys if preserveSession is true
+  const preservedPrefixes = preserveSession ? ['sb-', 'stagelink_'] : [];
+  const preservedKeys = preserveSession ? ['vite-ui-theme', 'app_version', 'pendingUserRole'] : [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
