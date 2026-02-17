@@ -511,6 +511,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_analytics_summary: {
+        Args: {
+          group_id?: string
+          target_group_id?: string
+        }
+        Returns: Json
+      }
       get_city_show_counts: {
         Args: Record<PropertyKey, never>
         Returns: {
