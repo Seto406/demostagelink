@@ -169,6 +169,7 @@ const UserFeed = () => {
         .from("profiles")
         .select("id, group_name, avatar_url, niche, group_logo_url")
         .eq("role", "producer")
+        .order("created_at", { ascending: false })
         .limit(5);
       if (error) throw error;
       return data as Producer[];
