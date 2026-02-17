@@ -37,6 +37,7 @@ interface Show {
   city: string | null;
   poster_url: string | null;
   production_status: string | null;
+  producer?: any; // Added to match query structure
 }
 
 const ProducerProfile = () => {
@@ -80,7 +81,7 @@ const ProducerProfile = () => {
       // Fetch producer's approved shows
       const { data: showsData, error: showsError } = await supabase
         .from("shows")
-        .select("id, title, description, date, venue, city, poster_url, production_status")
+        .select("id, title, description, date, venue, city, poster_url, production_status, producer:profiles!producer_id(*)")
         .eq("producer_id", id)
         .eq("status", "approved")
         .neq("production_status", "draft") // Exclude draft shows from public profile
