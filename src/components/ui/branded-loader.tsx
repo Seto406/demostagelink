@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
@@ -51,9 +52,52 @@ export const BrandedLoader = ({
 
 // Full page loader variant
 export const FullPageLoader = ({ text = "Loading..." }: { text?: string }) => {
+  const [showReset, setShowReset] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowReset(true);
+    }, 10000); // 10 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleReset = async () => {
+    try {
+      console.log("Executing manual cache reset...");
+      localStorage.clear();
+      sessionStorage.clear();
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+      }
+    } catch (error) {
+      console.error("Error resetting app:", error);
+    } finally {
+      window.location.reload();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       <BrandedLoader size="xl" text={text} />
+
+      {showReset && (
+        <button
+          onClick={handleReset}
+          className="mt-8 text-xs text-muted-foreground hover:text-foreground underline transition-colors animate-in fade-in duration-700"
+        >
+          Taking too long? Click here to reset cache
+        </button>
+      )}
     </div>
   );
 };

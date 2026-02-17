@@ -283,48 +283,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!loading) return;
 
     const timeoutId = setTimeout(async () => {
-      // Check if there is a session token in localStorage before clearing
-      const hasSessionToken = Object.keys(localStorage).some(key =>
-        key.startsWith("sb-") && key.endsWith("-auth-token")
-      );
+      console.warn("Auth loading timed out (5s). Executing Nuclear Refresh Protocol.");
 
-      if (hasSessionToken) {
-        console.warn("Auth loading timed out (10s) but session token found. Attempting session refresh...");
+      // 1. Force Sign Out (ignoring errors)
+      await supabase.auth.signOut().catch(err => console.error("SignOut error:", err));
 
-        try {
-          const { data, error } = await supabase.auth.refreshSession();
-
-          if (!error && data.session) {
-            console.log("Session refreshed successfully via fail-safe");
-            setSession(data.session);
-            setUser(data.session.user);
-            await ensureProfile(data.session.user.id, data.session.user.user_metadata);
-            setLoading(false);
-            return;
-          } else {
-            console.warn("Session refresh failed:", error);
-          }
-        } catch (refreshError) {
-          console.error("Unexpected error during session refresh:", refreshError);
-        }
-      }
-
-      console.warn("Auth loading timed out (10s). executing fail-safe cleanup...");
+      // 2. Clear Storage
       localStorage.clear();
-      setLoading(false);
+      sessionStorage.clear();
 
-      // Allow public viewing for shows, producers, etc. without redirecting to login
-      const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
-      const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === "/";
-
-      if (!isPublicPath) {
-        navigate("/login");
-      }
-    }, 10000);
+      // 3. Reload
+      window.location.reload();
+    }, 5000);
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, navigate, location.pathname]);
+  }, [loading]);
 
   // CORRECTED: Added firstName parameter and removed extra closing brace
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
