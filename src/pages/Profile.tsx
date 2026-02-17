@@ -24,6 +24,7 @@ interface ProfileData {
   created_at: string;
   group_name?: string | null;
   niche?: string | null;
+  producer_role?: string | null;
 }
 
 // Interfaces for fetched data
@@ -259,6 +260,12 @@ const Profile = () => {
                    {profile.role === 'producer' ? 'Theater Group' : 'Audience Member'}
                  </span>
                </div>
+
+               {profile.producer_role && (
+                 <p className="text-lg text-muted-foreground font-medium mb-2 text-center md:text-left">
+                   {profile.producer_role}
+                 </p>
+               )}
 
                <div className="flex flex-col gap-2 justify-center md:justify-start text-sm text-muted-foreground mb-4">
                  {isOwnProfile && user?.email && (

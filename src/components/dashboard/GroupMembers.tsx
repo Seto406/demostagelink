@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface GroupMember {
   id: string;
@@ -41,6 +42,7 @@ interface GroupMembersProps {
 
 export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMembersProps) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -131,7 +133,11 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
   const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!profileId) {
+    // Prefer session profile ID for security/correctness when adding members to own group.
+    // Note: fetchMembers uses profileId prop to allow viewing, but adding is scoped to session.
+    const effectiveProfileId = profile?.id || profileId;
+
+    if (!effectiveProfileId) {
       console.error("Missing profileId in GroupMembers");
       toast({
         title: "Error",
@@ -157,7 +163,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       // Upload avatar if selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `${profileId}/members/${Date.now()}.${fileExt}`;
+        const fileName = `${effectiveProfileId}/members/${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from("avatars")
@@ -194,11 +200,11 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       } else {
         // Add new member
         try {
-          console.log("Adding member for group:", profileId);
+          console.log("Adding member for group:", effectiveProfileId);
           const { error } = await supabase
             .from("group_members")
             .insert({
-              group_id: profileId,
+              group_id: effectiveProfileId,
               member_name: memberName.trim(),
               role_in_group: roleInGroup.trim() || null,
               avatar_url: avatarUrl,

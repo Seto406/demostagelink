@@ -33,12 +33,13 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile) {
+    if (open && profile) {
       setUsername(profile.username || "");
       setProducerRole(profile.producer_role || "");
       setAvatarUrl(profile.avatar_url || null);
     }
-  }, [profile, open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
