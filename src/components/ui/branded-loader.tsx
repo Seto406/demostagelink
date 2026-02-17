@@ -60,10 +60,18 @@ interface FullPageLoaderProps {
 export const FullPageLoader = ({ text = "Loading...", autoRecovery = false }: FullPageLoaderProps) => {
   const [showReset, setShowReset] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
+  const [loopDetected, setLoopDetected] = useState(false);
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     if (autoRecovery) {
+      // Loop Detection Logic: Prevent infinite reload loops
+      const lastWipe = localStorage.getItem('stagelink_last_nuclear_wipe');
+      if (lastWipe && Date.now() - parseInt(lastWipe, 10) < 15000) {
+        setLoopDetected(true);
+        return;
+      }
+
       // 5 seconds threshold for auto-recovery mode
       const timer = setTimeout(() => {
         setShowRecovery(true);
@@ -79,7 +87,7 @@ export const FullPageLoader = ({ text = "Loading...", autoRecovery = false }: Fu
   }, [autoRecovery]);
 
   useEffect(() => {
-    if (showRecovery) {
+    if (showRecovery && !loopDetected) {
       if (countdown > 0) {
         const interval = setInterval(() => {
           setCountdown((prev) => prev - 1);
@@ -89,11 +97,42 @@ export const FullPageLoader = ({ text = "Loading...", autoRecovery = false }: Fu
         performNuclearWipe();
       }
     }
-  }, [showRecovery, countdown]);
+  }, [showRecovery, countdown, loopDetected]);
 
   const handleReset = () => {
     performNuclearWipe();
   };
+
+  if (loopDetected) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background px-4 text-center">
+        <BrandedLoader size="xl" text="Connection Issue Detected" />
+
+        <div className="mt-8 max-w-md space-y-4 text-sm text-muted-foreground animate-in fade-in duration-700">
+          <p>We've detected a recurring issue with your session.</p>
+
+          <div className="bg-destructive/10 p-4 rounded-lg text-left space-y-2">
+            <p className="font-medium text-destructive">Required Actions:</p>
+            <ol className="list-decimal list-inside space-y-1 text-xs">
+              <li><strong>Sync your computer clock.</strong> Supabase security rejects requests if your time is incorrect.</li>
+              <li>If the issue persists, perform a full reset below.</li>
+            </ol>
+          </div>
+
+          <button
+            onClick={() => performNuclearWipe(false)}
+            className="w-full px-6 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg font-medium transition-colors"
+          >
+            Factory Reset & Reload
+          </button>
+
+          <p className="text-xs opacity-70">
+            This will clear all app data, including your session.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const displayText = showRecovery
     ? `Optimizing your session... Auto-refreshing in ${countdown}...`
