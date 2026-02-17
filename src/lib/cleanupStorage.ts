@@ -48,12 +48,18 @@ export const cleanupStorage = () => {
 export const performNuclearWipe = () => {
   console.warn("Executing Nuclear Refresh Protocol.");
 
-  // 1. Selective Wipe: Clear Storage but preserve Supabase sessions
+  // 1. Selective Wipe: Clear Storage but preserve Supabase sessions and critical settings
   const keysToRemove: string[] = [];
+  const preservedPrefixes = ['sb-', 'stagelink_'];
+  const preservedKeys = ['vite-ui-theme', 'app_version', 'pendingUserRole'];
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    // Only remove if it doesn't start with 'sb-'
-    if (key && !key.startsWith('sb-')) {
+    if (!key) continue;
+
+    const isPreserved = preservedPrefixes.some(prefix => key.startsWith(prefix)) || preservedKeys.includes(key);
+
+    if (!isPreserved) {
       keysToRemove.push(key);
     }
   }
@@ -62,7 +68,11 @@ export const performNuclearWipe = () => {
   const sessionKeysToRemove: string[] = [];
   for (let i = 0; i < sessionStorage.length; i++) {
     const key = sessionStorage.key(i);
-    if (key && !key.startsWith('sb-')) {
+    if (!key) continue;
+
+    const isPreserved = preservedPrefixes.some(prefix => key.startsWith(prefix));
+
+    if (!isPreserved) {
       sessionKeysToRemove.push(key);
     }
   }
