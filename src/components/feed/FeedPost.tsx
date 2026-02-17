@@ -205,6 +205,13 @@ export function FeedPost({ show }: FeedPostProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <BookmarkButton
+              isFavorited={isFavorited(show.id)}
+              onClick={() => toggleFavorite(show.id)}
+              size="sm"
+              className="hover:bg-background/50"
+            />
+
             {isProducerOrAdmin && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -315,23 +322,6 @@ export function FeedPost({ show }: FeedPostProps) {
         <CardFooter className="flex flex-col p-0">
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                        <LikeButton
-                            isLiked={isLiked(show.id)}
-                            onClick={() => toggleLike(show.id)}
-                            size="sm"
-                            className="hover:bg-background/50"
-                        />
-                        <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
-                    </div>
-
-                    <BookmarkButton
-                        isFavorited={isFavorited(show.id)}
-                        onClick={() => toggleFavorite(show.id)}
-                        size="sm"
-                        className="hover:bg-background/50"
-                    />
-
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -351,6 +341,16 @@ export function FeedPost({ show }: FeedPostProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        <LikeButton
+                            isLiked={isLiked(show.id)}
+                            onClick={() => toggleLike(show.id)}
+                            size="sm"
+                            className="hover:bg-background/50"
+                        />
+                        <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
+                    </div>
+
                     <Link to={`/show/${show.id}`}>
                         <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
                             <Ticket className="w-4 h-4 mr-1" />
