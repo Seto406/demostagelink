@@ -57,6 +57,7 @@ import { schools } from "@/data/schools";
 import { venues } from "@/data/venues";
 import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { QuickActions } from "@/components/dashboard/QuickActions";
 
 interface CastMember {
   name: string;
@@ -1089,27 +1090,15 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                <div id="quick-actions-container" className="bg-card border border-secondary/20 p-6">
-                  <h2 className="font-serif text-xl text-foreground mb-4">Quick Actions</h2>
-                  {isTrialExpired ? (
-                    <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl flex items-center gap-4">
-                      <AlertTriangle className="w-6 h-6 text-destructive" />
-                      <div>
-                        <h3 className="font-medium text-destructive">Trial Expired</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Your 1-month free trial has ended. Please upgrade to continue creating shows.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    profile?.role === "producer" && (
-                      <RippleButton id="add-show-button" onClick={openAddModal} variant="ios" size="lg">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Show
-                      </RippleButton>
-                    )
-                  )}
-                </div>
+                {profile?.role === "producer" && (
+                  <QuickActions
+                    onPostShow={openAddModal}
+                    onManageEnsemble={() => setActiveTab("members")}
+                    shows={shows}
+                    profileId={profile.id}
+                    isTrialExpired={isTrialExpired}
+                  />
+                )}
               </div>
 
               {/* Sidebar Column */}
