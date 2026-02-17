@@ -236,7 +236,7 @@ const UserFeed = () => {
           {loadingShows && shows.length === 0 ? (
             <div className="flex justify-center py-12"><BrandedLoader size="md" /></div>
           ) : (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 w-full">
               {shows.map((show, index) => (
                 <div key={show.id}>
                   <FeedPost show={show} />

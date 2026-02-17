@@ -23,6 +23,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 /* iOS-style momentum scrolling */
 * {
   -webkit-overflow-scrolling: touch;
