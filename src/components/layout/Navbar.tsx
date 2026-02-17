@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Shield, Menu, X, Settings, Heart, Bell, LogOut, User, Ticket, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, Settings, Bookmark, Bell, LogOut, User, Ticket, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import {
@@ -147,7 +147,7 @@ const Navbar = () => {
                     <TooltipTrigger asChild>
                       <Link to="/favorites">
                         <Button variant="ghost" size="sm" aria-label="Favorites">
-                          <Heart className="w-4 h-4" />
+                          <Bookmark className="w-4 h-4" />
                         </Button>
                       </Link>
                     </TooltipTrigger>
@@ -305,7 +305,7 @@ const Navbar = () => {
                       </Link>
                       <Link to="/favorites" className="w-full">
                         <Button variant="ghost" className="w-full justify-center font-sans rounded-xl">
-                          <Heart className="w-4 h-4 mr-2" />
+                          <Bookmark className="w-4 h-4 mr-2" />
                           Favorites
                         </Button>
                       </Link>
