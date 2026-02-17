@@ -13,6 +13,7 @@ interface DigitalPassProps {
   ticketId: string;
   ticketPrice?: number | null;
   reservationFee?: number | null;
+  paymentInstructions?: string | null;
 }
 
 export const DigitalPass = ({
@@ -26,6 +27,7 @@ export const DigitalPass = ({
   status,
   ticketPrice,
   reservationFee,
+  paymentInstructions,
 }: DigitalPassProps) => {
   const paidAmount = reservationFee ?? 25;
   const balance = (ticketPrice && ticketPrice > 0) ? Math.max(0, ticketPrice - paidAmount) : 0;
@@ -61,7 +63,7 @@ export const DigitalPass = ({
                     <div className="flex justify-between items-start gap-2 mb-2">
                         {status === 'confirmed' || status === 'paid' ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-                            PAID ONLINE: ₱{paidAmount.toFixed(2)}
+                            PAID: ₱{paidAmount.toFixed(2)}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
@@ -97,21 +99,29 @@ export const DigitalPass = ({
                 </div>
 
                 {/* Verification Section */}
-                <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex items-center justify-between gap-4">
-                    <div className="flex-1">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT DOOR</p>
-                        <p className="text-lg text-foreground font-bold leading-tight">
-                            ₱{balance.toFixed(2)}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                            Present at venue to pay balance.
-                        </p>
-                    </div>
+                <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT VENUE</p>
+                            <p className="text-lg text-foreground font-bold leading-tight">
+                                ₱{balance.toFixed(2)}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                                Present at venue to pay balance.
+                            </p>
+                        </div>
 
-                    {/* QR Code Placeholder */}
-                    <div className="bg-white p-1.5 rounded-md shrink-0 border border-secondary/20">
-                        <QrCode className="w-12 h-12 text-black" />
+                        {/* QR Code Placeholder */}
+                        <div className="bg-white p-1.5 rounded-md shrink-0 border border-secondary/20">
+                            <QrCode className="w-12 h-12 text-black" />
+                        </div>
                     </div>
+                    {paymentInstructions && (
+                        <div className="text-xs bg-muted/50 p-2 rounded border border-secondary/20">
+                            <span className="font-semibold text-secondary block mb-1">Payment Instructions:</span>
+                            <span className="text-muted-foreground whitespace-pre-wrap">{paymentInstructions}</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

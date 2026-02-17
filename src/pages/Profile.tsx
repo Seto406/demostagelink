@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon } from "lucide-react";
@@ -39,6 +40,7 @@ interface TicketData {
     city: string | null;
     price: number | null;
     reservation_fee: number | null;
+    seo_metadata: Json | null;
     profiles: {
       group_name: string | null;
     } | null;
@@ -121,6 +123,7 @@ const Profile = () => {
                 city,
                 price,
                 reservation_fee,
+                seo_metadata,
                 profiles (
                   group_name
                 )
@@ -364,6 +367,7 @@ const Profile = () => {
                                 status={ticket.status || undefined}
                                 ticketPrice={ticket.shows?.price}
                                 reservationFee={ticket.shows?.reservation_fee}
+                                paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
                             />
                         ))}
                     </div>
