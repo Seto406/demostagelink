@@ -23,6 +23,7 @@ interface PaymentSummaryModalProps {
   onConfirm: () => void;
   show: ShowDetails;
   isProcessing: boolean;
+  reservationFee?: number;
 }
 
 export function PaymentSummaryModal({
@@ -31,6 +32,7 @@ export function PaymentSummaryModal({
   onConfirm,
   show,
   isProcessing,
+  reservationFee = 25,
 }: PaymentSummaryModalProps) {
 
   // Format date if available
@@ -78,12 +80,12 @@ export function PaymentSummaryModal({
 
           <div className="flex justify-between items-center px-2">
             <span className="text-muted-foreground">Seat Commitment</span>
-            <span className="font-bold text-foreground">{formatCurrency(25)}</span>
+            <span className="font-bold text-foreground">{formatCurrency(reservationFee)}</span>
           </div>
 
           <div className="flex justify-between items-center px-2">
             <span className="text-muted-foreground">Remaining Balance</span>
-            <span className="font-bold text-foreground">{formatCurrency(Math.max(0, show.price - 25))}</span>
+            <span className="font-bold text-foreground">{formatCurrency(Math.max(0, show.price - reservationFee))}</span>
           </div>
           <p className="text-xs text-muted-foreground px-2 text-right -mt-2">(To be paid at the door)</p>
 
@@ -93,6 +95,10 @@ export function PaymentSummaryModal({
             <span className="font-bold text-foreground">Total Ticket Price</span>
             <span className="font-bold text-secondary">{formatCurrency(show.price)}</span>
           </div>
+
+          <p className="text-xs text-muted-foreground italic text-center px-4 mt-2">
+            "You are paying a {formatCurrency(reservationFee)} reservation fee now to secure your seat. The remaining balance of {formatCurrency(Math.max(0, show.price - reservationFee))} will be collected at the venue."
+          </p>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">

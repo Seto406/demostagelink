@@ -37,6 +37,8 @@ interface TicketData {
     date: string | null;
     venue: string | null;
     city: string | null;
+    price: number | null;
+    reservation_fee: number | null;
     profiles: {
       group_name: string | null;
     } | null;
@@ -117,6 +119,8 @@ const Profile = () => {
                 date,
                 venue,
                 city,
+                price,
+                reservation_fee,
                 profiles (
                   group_name
                 )
@@ -358,6 +362,8 @@ const Profile = () => {
                                 venue={ticket.shows?.venue}
                                 city={ticket.shows?.city}
                                 status={ticket.status || undefined}
+                                ticketPrice={ticket.shows?.price}
+                                reservationFee={ticket.shows?.reservation_fee}
                             />
                         ))}
                     </div>

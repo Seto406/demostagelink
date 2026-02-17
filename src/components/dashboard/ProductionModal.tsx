@@ -28,6 +28,7 @@ import { Image, Trash2, HelpCircle, Plus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
 import { Json } from "@/integrations/supabase/types";
+import { calculateReservationFee } from "@/lib/pricing";
 
 interface ProductionModalProps {
   open: boolean;
@@ -51,6 +52,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
   const [niche, setNiche] = useState<"local" | "university">("local");
   const [ticketLink, setTicketLink] = useState("");
   const [price, setPrice] = useState("");
+  const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
   const [genre, setGenre] = useState<string[]>([]);
   const [director, setDirector] = useState("");
   const [duration, setDuration] = useState("");
@@ -76,6 +78,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
     setNiche("local");
     setTicketLink("");
     setPrice("");
+    setCollectBalanceOnsite(true);
     setGenre([]);
     setDirector("");
     setDuration("");
@@ -205,6 +208,8 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
           poster_url: posterUrl,
           ticket_link: ticketLink || null,
           price: price ? parseFloat(price) : 0,
+          reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
+          collect_balance_onsite: collectBalanceOnsite,
           genre: genre.length > 0 ? genre.join(", ") : null,
           director: director || null,
           duration: duration || null,
@@ -370,6 +375,18 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                   placeholder="0.00"
                   className="bg-background border-secondary/30"
                 />
+                {price && parseFloat(price) > 0 && (
+                   <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                     <div className="flex justify-between">
+                       <span>Online Reservation:</span>
+                       <span className="font-medium">₱{calculateReservationFee(parseFloat(price), niche).toFixed(2)}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span>Door Balance:</span>
+                       <span className="font-medium">₱{(parseFloat(price) - calculateReservationFee(parseFloat(price), niche)).toFixed(2)}</span>
+                     </div>
+                   </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ticketLink">Ticket Link (Optional)</Label>

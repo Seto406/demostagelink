@@ -398,6 +398,8 @@ export type Database = {
           updated_at: string
           venue: string | null
           video_url: string | null
+          reservation_fee: number | null
+          collect_balance_onsite: boolean | null
         }
         Insert: {
           cast_members?: Json | null
@@ -424,6 +426,8 @@ export type Database = {
           updated_at?: string
           venue?: string | null
           video_url?: string | null
+          reservation_fee?: number | null
+          collect_balance_onsite?: boolean | null
         }
         Update: {
           cast_members?: Json | null
@@ -450,6 +454,8 @@ export type Database = {
           updated_at?: string
           venue?: string | null
           video_url?: string | null
+          reservation_fee?: number | null
+          collect_balance_onsite?: boolean | null
         }
         Relationships: [
           {

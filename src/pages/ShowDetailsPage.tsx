@@ -22,6 +22,7 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
+import { calculateReservationFee } from "@/lib/pricing";
 
 const ShowDetailsPage = () => {
   const { user, profile } = useAuth();
@@ -597,6 +598,7 @@ END:VCALENDAR`;
             venue: show.venue || (show.city ? `${show.city}` : null)
           }}
           isProcessing={buyingTicket}
+          reservationFee={show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.profiles?.niche ?? null) : 25)}
         />
       )}
     </div>

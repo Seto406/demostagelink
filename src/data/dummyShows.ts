@@ -22,6 +22,8 @@ export interface ShowDetails {
   tags: string[] | null;
   cast_members: CastMember[] | null;
   price: number | null;
+  reservation_fee?: number | null;
+  collect_balance_onsite?: boolean | null;
   profiles: {
     id: string;
     group_name: string | null;
@@ -56,6 +58,8 @@ export const dummyShows: ShowDetails[] = [
       { name: "Markki Stroem", role: "Christian" }
     ],
     price: 1500,
+    reservation_fee: 25,
+    collect_balance_onsite: true,
     profiles: {
       id: "demo-producer-1",
       group_name: "Barefoot Theatre Collaborative",
@@ -88,6 +92,8 @@ export const dummyShows: ShowDetails[] = [
       { name: "Topper Fabregas", role: "Young Anthony" }
     ],
     price: 2000,
+    reservation_fee: 25,
+    collect_balance_onsite: true,
     profiles: {
       id: "demo-producer-2",
       group_name: "Full House Theater Company",
@@ -119,6 +125,8 @@ export const dummyShows: ShowDetails[] = [
       { name: "Juliene Mendoza", role: "Julian Bartolome" }
     ],
     price: 1200,
+    reservation_fee: 25,
+    collect_balance_onsite: true,
     profiles: {
       id: "demo-producer-3",
       group_name: "Black Box Productions",
@@ -147,6 +155,8 @@ export const dummyShows: ShowDetails[] = [
     tags: ["Test", "QA"],
     cast_members: [],
     price: 20, // 20 PHP
+    reservation_fee: 20, // Full reservation for cheap ticket
+    collect_balance_onsite: false,
     profiles: {
       id: "demo-producer-test",
       group_name: "Test Group",
