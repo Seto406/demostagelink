@@ -189,12 +189,15 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-collab-proposal', {
-        body: { recipient_profile_id: producer.id }
-      });
+      const { error } = await supabase
+        .from('collab_proposals' as any)
+        .insert({
+          sender_id: profile.id,
+          recipient_id: producer.id,
+          status: 'pending'
+        });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
 
       toast.success("Collaboration request sent successfully!");
     } catch (error: any) {
