@@ -130,6 +130,17 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
 
   const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!profileId) {
+      console.error("Missing profileId in GroupMembers");
+      toast({
+        title: "Error",
+        description: "Missing profile information. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!memberName.trim()) {
       toast({
         title: "Error",
@@ -182,21 +193,27 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
         });
       } else {
         // Add new member
-        const { error } = await supabase
-          .from("group_members")
-          .insert({
-            group_id: profileId,
-            member_name: memberName.trim(),
-            role_in_group: roleInGroup.trim() || null,
-            avatar_url: avatarUrl,
+        try {
+          console.log("Adding member for group:", profileId);
+          const { error } = await supabase
+            .from("group_members")
+            .insert({
+              group_id: profileId,
+              member_name: memberName.trim(),
+              role_in_group: roleInGroup.trim() || null,
+              avatar_url: avatarUrl,
+            });
+
+          if (error) throw error;
+
+          toast({
+            title: "Success",
+            description: "Member added successfully!",
           });
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Member added successfully!",
-        });
+        } catch (insertError: any) {
+          console.error("Error adding member:", insertError);
+          throw insertError;
+        }
       }
 
       resetForm();
