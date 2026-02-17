@@ -55,6 +55,7 @@ export interface FeedShow {
     group_name: string | null;
     id: string;
     avatar_url: string | null;
+    group_logo_url: string | null;
   };
   favorites?: { count: number }[];
 }
@@ -64,11 +65,21 @@ interface Producer {
   group_name: string | null;
   avatar_url: string | null;
   niche: string | null;
+  group_logo_url: string | null;
+}
+
+// Local interface extension for Profile to include group_logo_url without modifying global types yet
+interface ExtendedProfile {
+  group_logo_url?: string | null;
+  avatar_url?: string | null;
+  group_name?: string | null;
+  role?: string;
 }
 
 const UserFeed = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
+  const extendedProfile = profile as unknown as ExtendedProfile;
   const { isPro } = useSubscription();
   const [producerRequestModal, setProducerRequestModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
@@ -114,7 +125,8 @@ const UserFeed = () => {
           profiles:producer_id (
             group_name,
             id,
-            avatar_url
+            avatar_url,
+            group_logo_url
           ),
           favorites(count)
         `)
@@ -155,7 +167,7 @@ const UserFeed = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, group_name, avatar_url, niche")
+        .select("id, group_name, avatar_url, niche, group_logo_url")
         .eq("role", "producer")
         .limit(5);
       if (error) throw error;
@@ -209,7 +221,7 @@ const UserFeed = () => {
             <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm cursor-pointer hover:border-secondary/40 transition-all" onClick={() => setShowProductionModal(true)}>
               <CardContent className="p-4 flex gap-4 items-center">
                 <Avatar>
-                  <AvatarImage src={profile.avatar_url || undefined} />
+                  <AvatarImage src={extendedProfile?.group_logo_url || profile.avatar_url || undefined} />
                   <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 bg-muted/50 rounded-full px-4 py-2.5 text-muted-foreground text-sm">
@@ -253,7 +265,7 @@ const UserFeed = () => {
                   <TooltipTrigger asChild>
                     <Link to={`/group/${producer.id}`}>
                       <Avatar className="h-10 w-10 border-2 border-transparent hover:border-secondary transition-all">
-                        <AvatarImage src={producer.avatar_url || undefined} />
+                        <AvatarImage src={producer.group_logo_url || producer.avatar_url || undefined} />
                         <AvatarFallback>{producer.group_name?.[0]}</AvatarFallback>
                       </Avatar>
                     </Link>
