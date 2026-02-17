@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Loader2, ServerCrash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { performNuclearWipe } from '@/lib/cleanupStorage';
 
 export const MaintenanceMode = ({ retry, error }: { retry?: () => void, error?: Error | null }) => {
+  const [showReset, setShowReset] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowReset(true);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
       <div className="bg-card border border-secondary/20 p-8 rounded-2xl max-w-md w-full shadow-lg">
@@ -31,6 +42,16 @@ export const MaintenanceMode = ({ retry, error }: { retry?: () => void, error?: 
         {retry && (
           <Button onClick={retry} variant="outline" className="w-full">
             Retry Connection
+          </Button>
+        )}
+
+        {showReset && (
+          <Button
+            onClick={performNuclearWipe}
+            variant="ghost"
+            className="w-full mt-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            Manual Reset
           </Button>
         )}
       </div>

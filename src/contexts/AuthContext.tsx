@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { FullPageLoader } from "@/components/ui/branded-loader";
+import { performNuclearWipe } from "@/lib/cleanupStorage";
 
 interface Profile {
   id: string;
@@ -288,12 +289,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // 1. Force Sign Out (ignoring errors)
       await supabase.auth.signOut().catch(err => console.error("SignOut error:", err));
 
-      // 2. Clear Storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // 3. Reload
-      window.location.reload();
+      // 2. Execute Nuclear Wipe
+      performNuclearWipe();
     }, 5000);
 
     return () => clearTimeout(timeoutId);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { performNuclearWipe } from "@/lib/cleanupStorage";
 
 interface BrandedLoaderProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -62,28 +63,8 @@ export const FullPageLoader = ({ text = "Loading..." }: { text?: string }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleReset = async () => {
-    try {
-      console.log("Executing manual cache reset...");
-      localStorage.clear();
-      sessionStorage.clear();
-
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-      }
-
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-          await registration.unregister();
-        }
-      }
-    } catch (error) {
-      console.error("Error resetting app:", error);
-    } finally {
-      window.location.reload();
-    }
+  const handleReset = () => {
+    performNuclearWipe();
   };
 
   return (
