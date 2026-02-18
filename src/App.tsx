@@ -15,6 +15,7 @@ import IdleTimerProvider from "@/providers/IdleTimerProvider";
 import { FullPageLoader } from "@/components/ui/branded-loader";
 import { HealthCheckGate } from "@/components/health-check-gate";
 import { SystemStability } from "@/components/SystemStability";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -118,6 +119,7 @@ const App = () => (
                       <AppRoutes />
                     </HealthCheckGate>
                     <MobileBottomNav />
+                    <ScrollToTop />
                   </IdleTimerProvider>
                 </NotificationProvider>
               </AuthProvider>
