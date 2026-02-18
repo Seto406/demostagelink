@@ -225,10 +225,11 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       resetForm();
       setShowModal(false);
       fetchMembers();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Save member error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save member.",
+        description: error.message || (error instanceof Error ? error.message : "Failed to save member."),
         variant: "destructive",
       });
     } finally {

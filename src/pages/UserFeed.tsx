@@ -130,7 +130,8 @@ const UserFeed = () => {
           )
         `)
         .eq("status", "approved")
-        .order("created_at", { ascending: false })
+        .order("production_status", { ascending: false })
+        .order("date", { ascending: true })
         .range(from, to);
 
       if (error) throw error;
@@ -263,7 +264,7 @@ const UserFeed = () => {
               {suggestedProducers.map(producer => (
                 <Tooltip key={producer.id}>
                   <TooltipTrigger asChild>
-                    <Link to={`/group/${producer.id}`}>
+                    <Link to={`/producer/${producer.id}`}>
                       <Avatar className="h-10 w-10 border-2 border-transparent hover:border-secondary transition-all">
                         <AvatarImage src={producer.group_logo_url || producer.avatar_url || undefined} />
                         <AvatarFallback>{producer.group_name?.[0]}</AvatarFallback>

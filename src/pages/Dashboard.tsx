@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw, Check } from "lucide-react";
+import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw, Check, Home } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { TourGuide } from "@/components/onboarding/TourGuide";
@@ -1032,16 +1032,23 @@ const Dashboard = () => {
       <main className="flex-1 min-h-screen">
         {/* Top Bar */}
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="w-10">
             <Link to="/feed">
               <button
                 aria-label="Back to Home"
                 className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm">Back to Home</span>
+                <Home className="w-5 h-5" />
               </button>
             </Link>
+          </div>
+          <h1 className="font-serif text-xl text-foreground text-center flex-1">
+            {activeTab === "dashboard" && "Dashboard"}
+            {activeTab === "shows" && "My Productions"}
+            {activeTab === "profile" && "Group Profile"}
+            {activeTab === "members" && "Group Members"}
+          </h1>
+          <div className="w-10 flex justify-end">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 hover:bg-muted transition-colors"
@@ -1050,13 +1057,6 @@ const Dashboard = () => {
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
-          <h1 className="font-serif text-xl text-foreground">
-            {activeTab === "dashboard" && "Dashboard"}
-            {activeTab === "shows" && "My Productions"}
-            {activeTab === "profile" && "Group Profile"}
-            {activeTab === "members" && "Group Members"}
-          </h1>
-          <div className="w-10" />
         </header>
 
         <div className="p-6">

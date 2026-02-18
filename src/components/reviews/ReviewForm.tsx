@@ -11,9 +11,10 @@ import { Loader2 } from "lucide-react";
 interface ReviewFormProps {
   showId: string;
   onReviewSubmitted: () => void;
+  isUpcoming?: boolean;
 }
 
-export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
+export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewFormProps) => {
   const { user } = useAuth();
   const { addXp } = useGamification();
   const [rating, setRating] = useState(0);
@@ -30,7 +31,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
       return;
     }
 
-    if (rating === 0) {
+    if (!isUpcoming && rating === 0) {
       toast.error("Rating required", {
         description: "Please select a star rating.",
       });
@@ -45,7 +46,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
         .insert({
           show_id: showId,
           user_id: user.id,
-          rating,
+          rating: isUpcoming ? 0 : rating,
           comment: comment.trim() || null,
           is_approved: true,
         });
@@ -57,7 +58,11 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
       });
 
       // Award XP for review
-      addXp(50);
+      try {
+        await addXp(50);
+      } catch (e) {
+        console.error("Failed to add XP", e);
+      }
 
       setRating(0);
       setComment("");
@@ -89,29 +94,31 @@ export const ReviewForm = ({ showId, onReviewSubmitted }: ReviewFormProps) => {
     <div className="bg-card border border-secondary/20 rounded-xl p-6">
       <h3 className="font-serif text-xl text-foreground mb-4">Write a Review</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-muted-foreground mb-2">
-            Rating
-          </label>
-          <StarRating rating={rating} onRatingChange={setRating} size={24} />
-        </div>
+        {!isUpcoming && (
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Rating
+            </label>
+            <StarRating rating={rating} onRatingChange={setRating} size={24} />
+          </div>
+        )}
 
         <div>
           <label htmlFor="comment" className="block text-sm font-medium text-muted-foreground mb-2">
-            Your Thoughts (Optional)
+            Your Thoughts {isUpcoming ? "" : "(Optional)"}
           </label>
           <Textarea
             id="comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="What did you think of the performance?"
+            placeholder={isUpcoming ? "Share your excitement or questions..." : "What did you think of the performance?"}
             className="bg-background border-secondary/30 min-h-[100px]"
           />
         </div>
 
         <Button
           type="submit"
-          disabled={isSubmitting || rating === 0}
+          disabled={isSubmitting || (!isUpcoming && rating === 0)}
           className="w-full sm:w-auto"
         >
           {isSubmitting ? (

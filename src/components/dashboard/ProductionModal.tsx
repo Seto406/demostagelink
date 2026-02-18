@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CreatableSelect } from "@/components/ui/creatable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { toast } from "@/hooks/use-toast";
@@ -316,11 +316,11 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="venue">Venue <span className="text-destructive">*</span></Label>
-                <SearchableSelect
+              <CreatableSelect
                   options={venues}
                   value={venue}
                   onChange={setVenue}
-                  placeholder="Select venue"
+                placeholder="Select or type venue"
                   className="bg-background border-secondary/30"
                 />
               </div>

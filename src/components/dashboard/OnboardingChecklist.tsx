@@ -30,7 +30,8 @@ export const OnboardingChecklist = ({ profile, hasShows }: OnboardingChecklistPr
     fetchMembers();
   }, [profile?.id]);
 
-  const hasProfile = !!(profile?.group_name && profile?.description && profile?.avatar_url);
+  // Relaxed check: Description is optional as per client feedback
+  const hasProfile = !!(profile?.group_name && profile?.avatar_url);
   const hasMembers = memberCount > 0;
 
   const steps = [

@@ -394,11 +394,13 @@ END:VCALENDAR`;
                         <ReviewForm
                           showId={show.id}
                           onReviewSubmitted={() => setRefreshReviews(prev => prev + 1)}
+                          isUpcoming={show.date ? new Date(show.date) > new Date() : false}
                         />
                         <div className="mt-8">
                             <ReviewList
                               showId={show.id}
                               refreshTrigger={refreshReviews}
+                              isUpcoming={show.date ? new Date(show.date) > new Date() : false}
                             />
                         </div>
                    </section>
