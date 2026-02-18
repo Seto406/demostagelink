@@ -92,6 +92,7 @@ export function FeedPost({ show }: FeedPostProps) {
   }, [show.id]);
 
   useEffect(() => {
+    fetchLikeCount();
     // Subscriptions for real-time counts
     const likeChannel = supabase.channel(`show_likes-${show.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'show_likes', filter: `show_id=eq.${show.id}` }, () => {
