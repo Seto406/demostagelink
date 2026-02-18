@@ -280,29 +280,35 @@ export function FeedPost({ show }: FeedPostProps) {
           </div>
 
           {/* Image */}
-          <Link to={`/show/${show.id}`} className="block relative aspect-[4/3] sm:aspect-[16/9] overflow-hidden bg-muted">
+          <Link to={`/show/${show.id}`} className="block relative w-full overflow-hidden bg-black group max-h-[600px]">
              {isProducerOrAdmin && (
-                <div className="absolute top-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white p-2 text-xs flex justify-between z-10 font-mono">
+                <div className="absolute top-0 left-0 right-0 bg-black/60 backdrop-blur-sm text-white p-2 text-xs flex justify-between z-20 font-mono">
                    <span>Reservations: {reservationCount}</span>
                    <span>Est. Rev: {formatCurrency(estimatedRevenue)}</span>
                 </div>
              )}
              {show.poster_url ? (
-                <img
-                  src={show.poster_url}
-                  alt={show.title}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
+                <>
+                   <div
+                      className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                      style={{ backgroundImage: `url(${show.poster_url})` }}
+                   />
+                   <img
+                     src={show.poster_url}
+                     alt={show.title}
+                     className="relative w-full h-auto object-contain max-h-[600px] z-10 transition-transform duration-500 group-hover:scale-[1.02] mx-auto"
+                   />
+                </>
              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
+                <div className="w-full aspect-video flex items-center justify-center bg-muted text-muted-foreground">
                     <span className="text-4xl">🎭</span>
                 </div>
              )}
              {/* Overlay Gradient */}
-             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-60" />
+             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-60 z-10 pointer-events-none" />
 
              {/* Badge Overlay */}
-             <div className="absolute bottom-3 left-3 flex flex-wrap gap-2">
+             <div className="absolute bottom-3 left-3 flex flex-wrap gap-2 z-20">
                 {show.city && (
                     <span className="bg-background/80 backdrop-blur-md text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-secondary/20">
                         <MapPin className="w-3 h-3 text-secondary" />
