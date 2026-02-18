@@ -69,7 +69,8 @@ export function AudienceLinking({ isPro = false }: AudienceLinkingProps) {
         .from("profiles")
         .select("user_id")
         .eq("role", "audience")
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       // For now, we'll create a placeholder - in production, you'd verify the email
       toast.info("Audience linking requires the user to have an account. Share your group link instead!");

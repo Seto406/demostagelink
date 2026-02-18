@@ -49,7 +49,7 @@ export function CreatableSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover border-secondary/30 rounded-xl" align="start">
-        <Command className="rounded-xl">
+        <Command className="rounded-xl" shouldFilter={false}>
           <CommandInput
             placeholder={`Search or type new ${placeholder.toLowerCase()}...`}
             value={inputValue}
@@ -71,14 +71,14 @@ export function CreatableSelect({
                       Create "{inputValue}"
                   </CommandItem>
               )}
-              {options.map((option) => (
+              {options
+                .filter(option => !inputValue || option.toLowerCase().includes(inputValue.toLowerCase()))
+                .map((option) => (
                 <CommandItem
                   key={option}
                   value={option}
-                  onSelect={(currentValue) => {
-                    // cmdk lowercases the value, so we need to find the original case
-                    const originalValue = options.find((opt) => opt.toLowerCase() === currentValue) || currentValue;
-                    onChange(originalValue === value ? "" : originalValue)
+                  onSelect={() => {
+                    onChange(option === value ? "" : option)
                     setOpen(false)
                   }}
                   className="aria-selected:bg-secondary/20 aria-selected:text-secondary"

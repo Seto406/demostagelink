@@ -56,6 +56,8 @@ const ProducerProfile = () => {
   // Collab State
   const [collabLoading, setCollabLoading] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
   useEffect(() => {
     // Guard against data race: Wait for auth to settle
@@ -66,6 +68,21 @@ const ProducerProfile = () => {
 
       // Track profile view
       trackEvent('profile_view', id);
+
+      // Check for existing membership application
+      if (user) {
+        const { data: applicationData } = await supabase
+          .from("membership_applications")
+          .select("status")
+          .eq("user_id", user.id)
+          .eq("group_id", id)
+          .maybeSingle();
+
+        if (applicationData) {
+          setHasApplied(true);
+          setApplicationStatus(applicationData.status);
+        }
+      }
 
       // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
@@ -397,12 +414,14 @@ const ProducerProfile = () => {
                         ) : (
                           <Button
                             onClick={handleJoinRequest}
-                            disabled={joinLoading}
+                            disabled={joinLoading || hasApplied}
                             variant="outline"
                             className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
                           >
                             {joinLoading ? (
                               "Sending..."
+                            ) : hasApplied ? (
+                              `Application ${applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}`
                             ) : (
                               <>
                                 <UserPlus className="w-4 h-4 mr-2" />
