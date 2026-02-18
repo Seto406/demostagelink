@@ -378,7 +378,17 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Ticket Price (PHP)</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="price">Ticket Price (PHP)</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Enter the amount you want to receive (Door Balance).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
                   id="price"
                   type="number"
@@ -392,12 +402,12 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                 {price && parseFloat(price) > 0 && (
                    <div className="text-xs text-muted-foreground mt-1 space-y-1">
                      <div className="flex justify-between">
-                       <span>Online Reservation:</span>
+                       <span>Online Reservation Fee:</span>
                        <span className="font-medium">₱{calculateReservationFee(parseFloat(price), niche).toFixed(2)}</span>
                      </div>
                      <div className="flex justify-between">
-                       <span>Door Balance:</span>
-                       <span className="font-medium">₱{(parseFloat(price) - calculateReservationFee(parseFloat(price), niche)).toFixed(2)}</span>
+                       <span>Total Audience Price:</span>
+                       <span className="font-medium">₱{(parseFloat(price) + calculateReservationFee(parseFloat(price), niche)).toFixed(2)}</span>
                      </div>
                    </div>
                 )}
