@@ -11,6 +11,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 interface Producer {
   id: string;
@@ -54,6 +55,7 @@ const ProducerProfile = () => {
 
   // Collab State
   const [collabLoading, setCollabLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
 
   useEffect(() => {
     // Guard against data race: Wait for auth to settle
@@ -178,10 +180,52 @@ const ProducerProfile = () => {
             setIsFollowing(true);
             setFollowerCount(prev => prev + 1);
             toast.success("Following group");
+
+            // Notify producer
+            await createNotification({
+              userId: producer.id,
+              actorId: user.id,
+              type: 'follow',
+              title: 'New Follower',
+              message: `${profile?.username || 'Someone'} started following your group.`,
+            });
         }
     }
 
     setFollowLoading(false);
+  };
+
+  const handleJoinRequest = async () => {
+    if (!user || !profile || !producer) return;
+
+    setJoinLoading(true);
+    try {
+      const { error } = await supabase
+        .from('membership_applications' as any)
+        .insert([{
+          user_id: user.id,
+          group_id: producer.id,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+
+      await createNotification({
+        userId: producer.id,
+        actorId: user.id,
+        type: 'membership_application',
+        title: 'New Member Application',
+        message: `${profile.username || 'Someone'} wants to join your group.`,
+        link: `/dashboard/members`
+      });
+
+      toast.success("Membership application sent successfully!");
+    } catch (error: any) {
+      console.error("Error sending membership application:", error);
+      toast.error(error.message || "Failed to send application");
+    } finally {
+      setJoinLoading(false);
+    }
   };
 
   const handleCollabRequest = async () => {
@@ -332,23 +376,41 @@ const ProducerProfile = () => {
                         )}
                       </Button>
 
-                      {/* Collab Button */}
-                      {user && profile && (profile.role === 'producer' || profile.role === 'admin') && producer && profile.id !== producer.id && (
-                        <Button
-                          onClick={handleCollabRequest}
-                          disabled={collabLoading}
-                          variant="outline"
-                          className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
-                        >
-                          {collabLoading ? (
-                            "Sending..."
-                          ) : (
-                            <>
-                              <Handshake className="w-4 h-4 mr-2" />
-                              Request Collab
-                            </>
-                          )}
-                        </Button>
+                      {/* Collab / Join Button */}
+                      {user && profile && producer && profile.id !== producer.id && (
+                        (profile.role === 'producer' || profile.role === 'admin') ? (
+                          <Button
+                            onClick={handleCollabRequest}
+                            disabled={collabLoading}
+                            variant="outline"
+                            className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                          >
+                            {collabLoading ? (
+                              "Sending..."
+                            ) : (
+                              <>
+                                <Handshake className="w-4 h-4 mr-2" />
+                                Request Collab
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleJoinRequest}
+                            disabled={joinLoading}
+                            variant="outline"
+                            className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                          >
+                            {joinLoading ? (
+                              "Sending..."
+                            ) : (
+                              <>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Join as Member
+                              </>
+                            )}
+                          </Button>
+                        )
                       )}
                   </div>
                   

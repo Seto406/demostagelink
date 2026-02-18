@@ -32,6 +32,7 @@ interface GroupMember {
   role_in_group: string | null;
   avatar_url: string | null;
   created_at: string;
+  user_id: string | null;
 }
 
 interface GroupMembersProps {
@@ -180,6 +181,18 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
         avatarUrl = publicUrl;
       }
 
+      // Check if user exists with this name to link account
+      let linkedUserId: string | null = null;
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', memberName.trim())
+        .maybeSingle();
+
+      if (userData) {
+        linkedUserId = userData.id;
+      }
+
       if (editingMember) {
         // Update existing member
         const { error } = await supabase
@@ -188,6 +201,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
             member_name: memberName.trim(),
             role_in_group: roleInGroup.trim() || null,
             avatar_url: avatarUrl,
+            user_id: linkedUserId
           })
           .eq("id", editingMember.id);
 
@@ -208,6 +222,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
               member_name: memberName.trim(),
               role_in_group: roleInGroup.trim() || null,
               avatar_url: avatarUrl,
+              user_id: linkedUserId
             });
 
           if (error) throw error;

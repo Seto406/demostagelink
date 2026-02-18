@@ -3,11 +3,14 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, UserPlus } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 
 // Group logos
 import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
@@ -121,8 +124,10 @@ const demoGroups: TheaterGroup[] = [
 ];
 
 const Directory = () => {
+  const { user, profile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
+  const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
 
@@ -233,6 +238,45 @@ const Directory = () => {
         const nextPage = page + 1;
         setPage(nextPage);
         fetchGroups(nextPage, true);
+    }
+  };
+
+  const handleJoinRequest = async (e: React.MouseEvent, group: TheaterGroup) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+        toast.error("Please login to join a group.");
+        return;
+    }
+
+    setJoiningGroupId(group.id);
+    try {
+      const { error } = await supabase
+        .from('membership_applications' as any)
+        .insert([{
+          user_id: user.id,
+          group_id: group.id,
+          status: 'pending'
+        }]);
+
+      if (error) throw error;
+
+      await createNotification({
+        userId: group.id,
+        actorId: user.id,
+        type: 'membership_application',
+        title: 'New Member Application',
+        message: `${profile?.username || 'Someone'} wants to join your group.`,
+        link: `/dashboard/members`
+      });
+
+      toast.success(`Application sent to ${group.group_name}!`);
+    } catch (error: any) {
+      console.error("Error sending membership application:", error);
+      toast.error(error.message || "Failed to send application");
+    } finally {
+      setJoiningGroupId(null);
     }
   };
 
@@ -391,40 +435,62 @@ const Directory = () => {
                         </p>
                       </Link>
                     ) : (
-                      <Link 
-                        to={`/producer/${group.id}`}
-                        className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-full overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
-                            {group.logo ? (
-                              <img 
-                                src={group.logo} 
-                                alt={`${group.group_name} logo`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-2xl">🎭</span>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-xs text-secondary uppercase tracking-wider">
-                              {getNicheLabel(group.niche)}
-                            </span>
-                            {group.city && (
-                              <span className="text-xs text-muted-foreground">
-                                {group.city}
+                      <div className="block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col">
+                        <Link
+                          to={`/producer/${group.id}`}
+                          className="block p-6 flex-1"
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-full overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
+                              {group.logo ? (
+                                <img
+                                  src={group.logo}
+                                  alt={`${group.group_name} logo`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-2xl">🎭</span>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs text-secondary uppercase tracking-wider">
+                                {getNicheLabel(group.niche)}
                               </span>
-                            )}
+                              {group.city && (
+                                <span className="text-xs text-muted-foreground">
+                                  {group.city}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
-                          {group.group_name}
-                        </h3>
-                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                          {group.description || "A theater group in Metro Manila."}
-                        </p>
-                      </Link>
+                          <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
+                            {group.group_name}
+                          </h3>
+                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                            {group.description || "A theater group in Metro Manila."}
+                          </p>
+                        </Link>
+                        {(user?.role === 'audience' || !user || (user.role !== 'producer' && user.role !== 'admin')) && (
+                            <div className="px-6 pb-6 pt-0 mt-auto">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={(e) => handleJoinRequest(e, group)}
+                                    disabled={joiningGroupId === group.id}
+                                >
+                                    {joiningGroupId === group.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <UserPlus className="w-4 h-4 mr-2" />
+                                            Join as Member
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+                      </div>
                     )}
                   </motion.div>
                 ))}
