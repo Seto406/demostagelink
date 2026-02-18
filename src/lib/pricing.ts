@@ -3,11 +3,11 @@
  * Calculates the reservation fee based on ticket price and producer niche.
  *
  * Logic:
- * - Indie/Student (University): Flat ₱15
- * - Local/Community: Flat ₱20
+ * - Indie/Student (University): Flat ₱25
+ * - Local/Community: Flat ₱25
  * - Professional/Commercial (Others): 10% of ticket price
  *
- * @param price - The total ticket price
+ * @param price - The ticket price (Producer's take)
  * @param niche - The producer's niche ("university", "local", etc.)
  * @returns The calculated reservation fee
  */
@@ -17,9 +17,9 @@ export function calculateReservationFee(price: number, niche: string | null): nu
   let fee = 0;
 
   if (niche === "university") {
-    fee = 15;
+    fee = 25;
   } else if (niche === "local") {
-    fee = 20;
+    fee = 25;
   } else {
     // Default logic for other niches (Professional/Commercial)
     // 10% of the ticket price
