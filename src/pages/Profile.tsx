@@ -261,7 +261,7 @@ const Profile = () => {
                  </span>
                </div>
 
-               {profile.producer_role && (
+               {profile.role === "producer" && profile.producer_role && (
                  <p className="text-lg text-muted-foreground font-medium mb-2 text-center md:text-left">
                    {profile.producer_role}
                  </p>
@@ -318,12 +318,6 @@ const Profile = () => {
                        <Pencil className="w-4 h-4 mr-2" />
                        Edit Profile
                      </Button>
-                     <Link to="/settings">
-                       <Button variant="ghost" size="sm" className="hover:bg-secondary/10 hover:text-secondary">
-                         <Settings className="w-4 h-4 mr-2" />
-                         Settings
-                       </Button>
-                     </Link>
                    </>
                  )}
                  {isProducer && (

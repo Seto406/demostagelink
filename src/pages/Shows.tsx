@@ -493,7 +493,7 @@ const Shows = () => {
             <div className="relative max-w-md mx-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search productions or theater groups..."
+                placeholder="Search productions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 bg-card border-secondary/30 focus:border-secondary h-12"

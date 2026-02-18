@@ -18,9 +18,10 @@ interface Review {
 interface ReviewListProps {
   showId: string;
   refreshTrigger: number;
+  isUpcoming?: boolean;
 }
 
-export const ReviewList = ({ showId, refreshTrigger }: ReviewListProps) => {
+export const ReviewList = ({ showId, refreshTrigger, isUpcoming }: ReviewListProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,7 +100,7 @@ export const ReviewList = ({ showId, refreshTrigger }: ReviewListProps) => {
                     {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
                   </p>
                 </div>
-                <StarRating rating={review.rating} readOnly size={16} />
+                {!isUpcoming && <StarRating rating={review.rating} readOnly size={16} />}
               </div>
               {review.comment && (
                 <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">

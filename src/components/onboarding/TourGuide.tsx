@@ -14,8 +14,9 @@ export const TourGuide = ({ isTrialExpired = false, run, setRun, onFinish }: Tou
   const { user, profile } = useAuth();
   const helpersRef = useRef<StoreHelpers | null>(null);
 
-  // Kill switch: If the user has already completed the tour, never render it again.
-  if (profile?.has_completed_tour) {
+  // Kill switch: If the user has already completed the tour, never render it again,
+  // unless explicitly requested to run (e.g. restart tour).
+  if (profile?.has_completed_tour && !run) {
     return null;
   }
 
