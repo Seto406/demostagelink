@@ -43,7 +43,6 @@ export interface FeedPostProps {
       avatar_url: string | null;
       group_logo_url: string | null;
     };
-    show_likes?: { count: number }[];
     favorites?: { count: number }[]; // Keep for backward compatibility if needed, but we'll use show_likes for display
   };
 }
@@ -54,8 +53,7 @@ export function FeedPost({ show }: FeedPostProps) {
   const { toggleLike, isLiked } = useShowLikes();
   const [showComments, setShowComments] = useState(false);
 
-  // Use show_likes for the count if available, otherwise 0
-  const [likeCount, setLikeCount] = useState(show.show_likes?.[0]?.count || 0);
+  const [likeCount, setLikeCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [reservationCount, setReservationCount] = useState(0);
   const queryClient = useQueryClient();
@@ -92,6 +90,8 @@ export function FeedPost({ show }: FeedPostProps) {
   }, [show.id]);
 
   useEffect(() => {
+    fetchLikeCount();
+
     // Subscriptions for real-time counts
     const likeChannel = supabase.channel(`show_likes-${show.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'show_likes', filter: `show_id=eq.${show.id}` }, () => {
