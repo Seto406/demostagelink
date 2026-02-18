@@ -56,26 +56,21 @@ export function CreatableSelect({
             onValueChange={setInputValue}
           />
           <CommandList>
-            <CommandEmpty>
-                <div className="p-2">
-                    <p className="text-sm text-muted-foreground mb-2">No results found.</p>
-                    {inputValue && (
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="w-full justify-start h-8"
-                            onClick={() => {
-                                onChange(inputValue);
-                                setOpen(false);
-                            }}
-                        >
-                            <Plus className="w-3 h-3 mr-2" />
-                            Use "{inputValue}"
-                        </Button>
-                    )}
-                </div>
-            </CommandEmpty>
+            <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
+              {inputValue && !options.some(opt => opt.toLowerCase() === inputValue.toLowerCase()) && (
+                  <CommandItem
+                      value={inputValue}
+                      onSelect={() => {
+                          onChange(inputValue);
+                          setOpen(false);
+                      }}
+                      className="aria-selected:bg-secondary/20 aria-selected:text-secondary font-medium text-primary"
+                  >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create "{inputValue}"
+                  </CommandItem>
+              )}
               {options.map((option) => (
                 <CommandItem
                   key={option}

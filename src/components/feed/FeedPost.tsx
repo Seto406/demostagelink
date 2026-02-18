@@ -351,7 +351,7 @@ export function FeedPost({ show }: FeedPostProps) {
                     <div className="flex items-center gap-1">
                         <LikeButton
                             isLiked={isLiked(show.id)}
-                            onClick={() => toggleLike(show.id)}
+            onClick={() => toggleLike(show.id, show.producer_id?.id)}
                             size="sm"
                             className="hover:bg-background/50"
                         />
