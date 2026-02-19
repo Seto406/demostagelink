@@ -6,52 +6,59 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Time-Traveler Logic: fetch interceptor to handle clock skew
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-  try {
-    // Perform the request
-    const response = await fetch(input, init);
+  let attempt = 0;
+  const MAX_RETRIES = 3;
 
-    // Check for specific error indicating clock skew
-    if (!response.ok) {
-      const clone = response.clone();
-      try {
-        const body = await clone.json();
-        const errorMsg = body?.error_description || body?.msg || body?.message || '';
+  while (true) {
+    try {
+      // Perform the request
+      const response = await fetch(input, init);
 
-        // "Session in the future" indicates the client's clock is likely behind the server's,
-        // causing the token's 'iat' (issued at) to be in the future relative to the client
-        // or leading to server-side validation issues if the client sends time-sensitive data.
-        if (typeof errorMsg === 'string' && errorMsg.includes("Session in the future")) {
-          console.warn("Detected clock skew error: Session in the future. Adjusting time offset...");
+      // Check for specific error indicating clock skew
+      if (!response.ok) {
+        const clone = response.clone();
+        let isClockSkew = false;
 
-          const serverDateStr = response.headers.get('Date');
-          if (serverDateStr) {
-            const serverTime = new Date(serverDateStr).getTime();
-            const clientTime = Date.now();
-            const offset = serverTime - clientTime;
+        try {
+          const body = await clone.json();
+          const errorMsg = body?.error_description || body?.msg || body?.message || '';
 
-            // Store the offset for potential future use or global adjustment
-            console.log(`Calculated time offset: ${offset}ms`);
-            localStorage.setItem('stagelink_time_offset', offset.toString());
+          // "Session in the future" indicates the client's clock is likely behind the server's
+          if (typeof errorMsg === 'string' && errorMsg.includes("Session in the future")) {
+            isClockSkew = true;
 
-            // Retry the request.
-            // If the error was due to a temporary race condition or if the server accepts the retry
-            // after we acknowledge the offset (conceptually), this might succeed.
-            // "Session in the future" usually means the token is "too fresh" (iat > now).
-            // We manually offset the current time by waiting 5 seconds before retrying to allow the clock to catch up.
-            console.warn("Waiting 5 seconds to resolve clock skew...");
+            const serverDateStr = response.headers.get('Date');
+            if (serverDateStr) {
+              const serverTime = new Date(serverDateStr).getTime();
+              const clientTime = Date.now();
+              const offset = serverTime - clientTime;
+              localStorage.setItem('stagelink_time_offset', offset.toString());
+            }
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+
+        if (isClockSkew) {
+          if (attempt < MAX_RETRIES) {
+            console.warn(`Clock skew detected (Attempt ${attempt + 1}/${MAX_RETRIES}). Waiting 5s...`);
             await new Promise(resolve => setTimeout(resolve, 5000));
-
-            return fetch(input, init);
+            attempt++;
+            continue; // Retry loop
+          } else {
+            console.error("Max retries reached for clock skew.");
+            if (typeof window !== 'undefined') {
+              window.alert("Check your device clock. It seems to be out of sync with the server.");
+            }
+            return response; // Return the error response
           }
         }
-      } catch (e) {
-        // Ignore JSON parse errors or other issues reading the body
       }
-    }
 
-    return response;
-  } catch (err) {
-    throw err;
+      return response;
+    } catch (err) {
+      throw err;
+    }
   }
 };
 

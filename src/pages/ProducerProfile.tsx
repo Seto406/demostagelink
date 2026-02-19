@@ -551,13 +551,19 @@ const ProducerProfile = () => {
                               className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
                             >
                               {/* Poster */}
-                              <div className="aspect-[3/2] relative overflow-hidden">
+                              <div className="aspect-[3/2] relative overflow-hidden rounded-xl bg-black/5">
                                 {show.poster_url ? (
-                                  <img
-                                    src={show.poster_url}
-                                    alt={show.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  />
+                                  <>
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-50"
+                                      style={{ backgroundImage: `url(${show.poster_url})` }}
+                                    />
+                                    <img
+                                      src={show.poster_url}
+                                      alt={show.title}
+                                      className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  </>
                                 ) : (
                                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                                     <span className="text-4xl opacity-30">🎭</span>
@@ -614,13 +620,19 @@ const ProducerProfile = () => {
                               className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300 opacity-80 hover:opacity-100"
                             >
                               {/* Poster */}
-                              <div className="aspect-[3/2] relative overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500">
+                              <div className="aspect-[3/2] relative overflow-hidden rounded-xl bg-black/5 grayscale group-hover:grayscale-0 transition-all duration-500">
                                 {show.poster_url ? (
-                                  <img
-                                    src={show.poster_url}
-                                    alt={show.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  />
+                                  <>
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-50"
+                                      style={{ backgroundImage: `url(${show.poster_url})` }}
+                                    />
+                                    <img
+                                      src={show.poster_url}
+                                      alt={show.title}
+                                      className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  </>
                                 ) : (
                                   <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
                                     <span className="text-4xl opacity-30">🎭</span>

@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2, Pencil } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2, Pencil, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -99,12 +99,12 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
           className="block bg-card overflow-hidden group relative flex flex-col h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
-          <Link to={`/show/${show.id}`} className="absolute inset-0 z-10">
+          <Link to={`/shows/${show.id}`} className="absolute inset-0 z-10">
             <span className="sr-only">View {show.title}</span>
           </Link>
 
           {/* Poster */}
-          <div className="aspect-[2/3] relative overflow-hidden bg-black/5">
+          <div className="aspect-[2/3] relative overflow-hidden bg-black/5 pointer-events-none">
             {posterUrl ? (
               <>
                 <div
@@ -155,7 +155,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
             {/* Favorite Button */}
             <div
-              className="absolute top-3 left-3 z-20"
+              className="absolute top-3 left-3 z-20 pointer-events-auto"
               style={{ transform: "translateZ(30px)" }}
             >
               <BookmarkButton
@@ -171,7 +171,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
             {/* Share Button */}
             <div
-              className="absolute top-3 left-12 z-20"
+              className="absolute top-3 left-12 z-20 pointer-events-auto"
               style={{ transform: "translateZ(30px)" }}
             >
                <Button
@@ -188,7 +188,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
             {/* Edit Button */}
             {isProducerOrAdmin && (
               <div
-                className="absolute top-3 left-[84px] z-20"
+                className="absolute top-3 left-[84px] z-20 pointer-events-auto"
                 style={{ transform: "translateZ(30px)" }}
               >
                 <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
@@ -227,7 +227,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 <Link
                   to={`/producer/${show.producer_id?.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors"
+                  className="text-sm text-secondary/80 hover:text-secondary hover:underline transition-colors pointer-events-auto relative"
                 >
                   {show.producer_id?.group_name || "Theater Group"}
                 </Link>
@@ -253,7 +253,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
               {/* Buy Ticket Button */}
               {show.ticket_link && (
-                <div className="mt-4 pt-2 border-t border-white/10 relative z-20">
+                <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto">
                   <Button
                     size="sm"
                     className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
@@ -293,6 +293,7 @@ const Shows = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -699,15 +700,42 @@ const Shows = () => {
             </div>
           )}
 
-          {/* Results Count */}
+          {/* Results Count & View Toggle */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mb-6 text-center text-sm text-muted-foreground"
+            className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
           >
-            {loading
-              ? "Loading..."
-              : `${filteredShows.length} ${filteredShows.length === 1 ? "production" : "productions"} found`}
+            <div className="text-sm text-muted-foreground order-2 sm:order-1">
+              {loading
+                ? "Loading..."
+                : `${filteredShows.length} ${filteredShows.length === 1 ? "production" : "productions"} found`}
+            </div>
+
+            <div className="flex items-center gap-2 bg-card border border-secondary/30 rounded-lg p-1 order-1 sm:order-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-secondary/20 text-secondary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-secondary/20 text-secondary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </motion.div>
 
           {/* Shows Grid */}
@@ -738,7 +766,10 @@ const Shows = () => {
             <>
               <motion.div
                 layout
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+                className={viewMode === 'grid'
+                  ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+                  : "flex flex-col gap-4 max-w-3xl mx-auto"
+                }
               >
                 <AnimatePresence mode="popLayout">
                   {filteredShows.map((show, index) => (
