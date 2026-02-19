@@ -36,10 +36,11 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
             // Retry the request.
             // If the error was due to a temporary race condition or if the server accepts the retry
             // after we acknowledge the offset (conceptually), this might succeed.
-            // In a real-world scenario, we might need to wait for the 'offset' duration
-            // if the token is strictly 'not valid yet'.
-            // For now, we retry immediately as per instructions to "retry with corrected timestamp"
-            // (implying the action of retrying with the new knowledge/state resolves it).
+            // "Session in the future" usually means the token is "too fresh" (iat > now).
+            // We manually offset the current time by waiting 5 seconds before retrying to allow the clock to catch up.
+            console.warn("Waiting 5 seconds to resolve clock skew...");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
             return fetch(input, init);
           }
         }

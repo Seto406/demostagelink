@@ -36,7 +36,16 @@ export function CreatableSelect({
   const [inputValue, setInputValue] = React.useState("")
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen);
+      // Auto-save logic: If closing and inputValue exists (but wasn't explicitly selected via click), select it.
+      if (!newOpen && inputValue) {
+        const match = options.find(opt => opt.toLowerCase() === inputValue.toLowerCase());
+        onChange(match || inputValue);
+        // Clear input value to prevent double selection issues
+        setInputValue("");
+      }
+    }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -63,6 +72,7 @@ export function CreatableSelect({
                       value={inputValue}
                       onSelect={() => {
                           onChange(inputValue);
+                          setInputValue("");
                           setOpen(false);
                       }}
                       className="aria-selected:bg-secondary/20 aria-selected:text-secondary font-medium text-primary"
@@ -79,6 +89,7 @@ export function CreatableSelect({
                   value={option}
                   onSelect={() => {
                     onChange(option === value ? "" : option)
+                    setInputValue("");
                     setOpen(false)
                   }}
                   className="aria-selected:bg-secondary/20 aria-selected:text-secondary"
