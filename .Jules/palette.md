@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-02-23 - Dynamic Labels for List Actions
+**Learning:** When rendering a list of interactive items (like tags), generic "Remove" labels are ambiguous to screen reader users. They need to know *what* they are removing.
+**Action:** Always include the item's name/content in the `aria-label` (e.g., `aria-label={\`Remove \${tag}\`}`) to provide necessary context.
