@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { FullPageLoader } from "@/components/ui/branded-loader";
 
 interface Profile {
   id: string;
@@ -62,6 +63,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const latestSessionRef = useRef<Session | null>(null);
   const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
   const profileRef = useRef<Profile | null>(null);
+  const isPublicPath = PUBLIC_PATHS.some((path) =>
+    path === "/" ? window.location.pathname === "/" : window.location.pathname.startsWith(path)
+  );
 
   useEffect(() => {
     profileRef.current = profile;
@@ -208,11 +212,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
+        if (!data.session?.user) {
+          await setAuthStateIfChanged(null);
+          return;
+        }
+
         await setAuthStateIfChanged(data.session);
       } catch (error) {
         console.error("Unexpected error or timeout checking session:", error);
         await setAuthStateIfChanged(null);
       } finally {
+        clearTimeout(circuitBreaker);
         setLoading(false);
       }
     };
@@ -294,8 +304,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  if (isPublicPath) {
+    return <>{children}</>;
+  }
+
   if (loading) {
-    return <div>System Updating...</div>;
+    return <FullPageLoader />;
   }
 
   const isAdmin = profile?.role === "admin";
