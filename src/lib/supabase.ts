@@ -23,9 +23,13 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
           const body = await clone.json();
           const errorMsg = body?.error_description || body?.msg || body?.message || '';
 
-          // "Session in the future" indicates the client's clock is likely behind the server's
-          if (typeof errorMsg === 'string' && errorMsg.includes("Session in the future")) {
-            console.error("Session in the future detected. Performing hard reset.");
+          const isFunctionsError = typeof errorMsg === 'string' && errorMsg.includes("FunctionsFetchError");
+          const isSessionFuture = typeof errorMsg === 'string' && errorMsg.includes("Session in the future");
+          const isSessionNotFound = typeof errorMsg === 'string' && errorMsg.includes("session_not_found");
+
+          // Safe Auth Reset: Only reload for specific session errors, never for function errors
+          if (!isFunctionsError && ((response.status === 401 && isSessionFuture) || isSessionNotFound)) {
+            console.error("Critical session error detected. Performing hard reset.");
             // Clear all sb- keys to kill the bad session
             Object.keys(localStorage).forEach((key) => {
               if (key.startsWith('sb-')) {
