@@ -168,7 +168,7 @@ const Directory = () => {
     try {
         let query = supabase
             .from("profiles")
-            .select("id, group_name, description, niche, address")
+            .select("id, group_name, description, niche, address, group_logo_url")
             .eq("role", "producer")
             .not("group_name", "is", null);
 
@@ -202,7 +202,8 @@ const Directory = () => {
         } else {
             const mappedData = (data || []).map(p => ({
                 ...p,
-                city: p.address || undefined
+                city: p.address || undefined,
+                logo: p.group_logo_url
             })) as TheaterGroup[];
 
             const hasNextPage = mappedData.length > ITEMS_PER_PAGE;
@@ -413,7 +414,7 @@ const Directory = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-2xl">🎭</span>
+                              <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                             )}
                           </div>
                           <div className="flex flex-col items-end gap-1">
@@ -449,7 +450,7 @@ const Directory = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-2xl">🎭</span>
+                              <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                               )}
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -470,7 +471,7 @@ const Directory = () => {
                             {group.description || "A theater group in Metro Manila."}
                           </p>
                         </Link>
-                        {(user?.role === 'audience' || !user || (user.role !== 'producer' && user.role !== 'admin')) && (
+                        {(!user || (profile?.role !== 'producer' && profile?.role !== 'admin')) && (
                             <div className="px-6 pb-6 pt-0 mt-auto">
                                 <Button
                                     size="sm"
