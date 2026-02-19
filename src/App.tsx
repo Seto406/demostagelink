@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ThemeProvider } from "next-themes";
 import { useEffect, Suspense, lazy } from "react";
@@ -16,6 +17,7 @@ import { FullPageLoader } from "@/components/ui/branded-loader";
 import { HealthCheckGate } from "@/components/health-check-gate";
 import { SystemStability } from "@/components/SystemStability";
 import ScrollToTop from "@/components/ui/scroll-to-top";
+import Navbar from "@/components/layout/Navbar";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -101,6 +103,19 @@ const AppRoutes = () => {
   );
 };
 
+const AppLayout = () => {
+  const { loading } = useAuth();
+
+  return (
+    <>
+      {!loading && <Navbar />}
+      <main className={!loading ? "pt-[72px]" : undefined}>
+        <AppRoutes />
+      </main>
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -116,7 +131,7 @@ const App = () => (
                 <NotificationProvider>
                   <IdleTimerProvider>
                     <HealthCheckGate>
-                      <AppRoutes />
+                      <AppLayout />
                     </HealthCheckGate>
                     <MobileBottomNav />
                     <ScrollToTop />
