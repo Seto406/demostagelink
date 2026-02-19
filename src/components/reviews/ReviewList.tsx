@@ -12,6 +12,9 @@ interface Review {
   profiles: {
     group_name: string | null;
     avatar_url: string | null;
+    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
   } | null;
 }
 
@@ -31,14 +34,8 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming }: ReviewListPro
       const { data, error } = await supabase
         .from("reviews")
         .select(`
-          id,
-          rating,
-          comment,
-          created_at,
-          profiles (
-            group_name,
-            avatar_url
-          )
+          *,
+          profiles (*)
         `)
         .eq("show_id", showId)
         .order("created_at", { ascending: false });
@@ -94,7 +91,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming }: ReviewListPro
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div>
                   <h4 className="font-medium text-foreground">
-                    {review.profiles?.group_name || "Audience Member"}
+                    {review.profiles?.group_name || review.profiles?.username || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ''}` : "Audience Member")}
                   </h4>
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
