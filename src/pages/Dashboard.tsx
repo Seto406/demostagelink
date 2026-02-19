@@ -1,1953 +1,268 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { RippleButton } from "@/components/ui/ripple-button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { FloatingInput, FloatingTextarea } from "@/components/ui/floating-input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Menu, X, Upload, Image, Trash2, Pencil, ArrowLeft, Lock, AlertTriangle, HelpCircle, User, RotateCcw, Check, Home } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
-import { TourGuide } from "@/components/onboarding/TourGuide";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
-import { toast } from "@/hooks/use-toast";
-import { GroupMembers } from "@/components/dashboard/GroupMembers";
-import { AudienceLinking } from "@/components/dashboard/AudienceLinking";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
-import { TagInput } from "@/components/ui/tag-input";
-import { ImageCropper } from "@/components/ui/image-cropper";
-import { useSubscription } from "@/hooks/useSubscription";
-import { UpsellModal } from "@/components/dashboard/UpsellModal";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import { schools } from "@/data/schools";
-import { venues } from "@/data/venues";
-import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { QuickActions } from "@/components/dashboard/QuickActions";
+import { toast } from "sonner";
+import { Check, X } from "lucide-react";
 
-interface CastMember {
-  name: string;
-  role: string;
-}
-
-interface Show {
+type ManagedGroup = {
   id: string;
-  title: string;
-  description: string | null;
-  date: string | null;
-  venue: string | null;
-  city: string | null;
-  niche: "local" | "university" | null;
-  ticket_link: string | null;
-  poster_url: string | null;
-  status: "pending" | "approved" | "rejected" | "archived";
-  production_status: "ongoing" | "completed" | "draft";
+  group_name: string | null;
+  avatar_url: string | null;
+};
+
+type MembershipApplication = {
+  id: string;
+  user_id: string;
+  group_id: string;
   created_at: string;
-  deleted_at?: string | null;
-  genre: string | null;
-  director: string | null;
-  duration: string | null;
-  tags: string[] | null;
-  cast_members: CastMember[] | null;
-  price: number | null;
-  is_featured?: boolean;
-  seo_metadata: Json | null;
-}
+  status: string;
+};
 
-const resizeImage = (file: File, maxWidth = 1200): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const resizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              });
-              resolve(resizedFile);
-            } else {
-              reject(new Error("Canvas to Blob conversion failed"));
-            }
-          },
-          "image/jpeg",
-          0.8
-        );
-      };
-    };
-    reader.onerror = (error) => reject(error);
-  });
+type ApplicantProfile = {
+  user_id: string;
+  username: string | null;
+  avatar_url: string | null;
 };
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user, profile, signOut, loading, refreshProfile } = useAuth();
-  const { isPro } = useSubscription();
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
-  const [activeTab, setActiveTab] = useState<"dashboard" | "shows" | "profile" | "members">("dashboard");
-  const [showModal, setShowModal] = useState(false);
-  const [successModal, setSuccessModal] = useState(false);
-  const [editingShow, setEditingShow] = useState<Show | null>(null);
-  const [runTour, setRunTour] = useState(false);
-  const [showUpsellModal, setShowUpsellModal] = useState(false);
-  const [showFilter, setShowFilter] = useState<'ongoing' | 'archived'>('ongoing');
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [showIdToDelete, setShowIdToDelete] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+  const { user, profile, loading } = useAuth();
+  const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [applicantsByUserId, setApplicantsByUserId] = useState<Record<string, ApplicantProfile>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  // Handle URL query parameters for deep linking
+  const canManage = useMemo(() => managedGroups.length > 0, [managedGroups.length]);
+
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam && ["dashboard", "shows", "profile", "members"].includes(tabParam)) {
-      setActiveTab(tabParam as "dashboard" | "shows" | "profile" | "members");
+    if (!loading && !user) {
+      navigate("/login", { replace: true });
     }
-  }, [searchParams]);
+  }, [loading, user, navigate]);
 
-  // Use React Query for fetching shows
-  const { data: shows = [], isLoading: loadingShows, refetch: fetchShows } = useQuery({
-    queryKey: ['producer-shows', profile?.id],
-    queryFn: async () => {
-      if (!profile) return [];
-      const { data, error } = await supabase
-        .from("shows")
-        .select("*")
-        .eq("producer_id", profile.id)
-        // Fetches all shows, including archived ones, to enable the "Archived" tab
-        .order("created_at", { ascending: false });
+  useEffect(() => {
+    const fetchManagedGroups = async () => {
+      if (!profile) return;
+      setIsLoading(true);
 
-      if (error) {
-        console.error("Error fetching shows:", error);
-        throw error;
+      const ownedOrManagedGroupIds = new Set<string>();
+
+      if (profile.role === "producer") {
+        ownedOrManagedGroupIds.add(profile.id);
       }
-      return data as Show[];
-    },
-    enabled: !!profile,
-  });
 
-  const showIds = useMemo(() => shows.map(s => s.id), [shows]);
+      const { data: managedMemberships, error: membershipsError } = await supabase
+        .from("group_members")
+        .select("group_id, role_in_group")
+        .eq("user_id", profile.id)
+        .or("role_in_group.ilike.%producer%,role_in_group.ilike.%owner%,role_in_group.ilike.%admin%,role_in_group.ilike.%director%");
 
-  // Form states for new show
-  const [newShowTitle, setNewShowTitle] = useState("");
-  const [newShowDescription, setNewShowDescription] = useState("");
-  const [newShowDate, setNewShowDate] = useState("");
-  const [newShowVenue, setNewShowVenue] = useState("");
-  const [newShowCity, setNewShowCity] = useState("");
-  const [newShowNiche, setNewShowNiche] = useState<"local" | "university">("local");
-  const [posterFile, setPosterFile] = useState<File | null>(null);
-  const [posterPreview, setPosterPreview] = useState<string | null>(null);
-  const [uploadingPoster, setUploadingPoster] = useState(false);
-  const [newShowTicketLink, setNewShowTicketLink] = useState("");
-  const [newShowPrice, setNewShowPrice] = useState("");
-  const [newShowPaymentInstructions, setNewShowPaymentInstructions] = useState("");
-  const [newShowGenre, setNewShowGenre] = useState<string[]>([]);
-  const [newShowDirector, setNewShowDirector] = useState("");
-  const [newShowDuration, setNewShowDuration] = useState("");
-  const [newShowTags, setNewShowTags] = useState("");
-  const [newShowCast, setNewShowCast] = useState<CastMember[]>([]);
-  const [tempCastName, setTempCastName] = useState("");
-  const [tempCastRole, setTempCastRole] = useState("");
-  const [newShowProductionStatus, setNewShowProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
-
-  // Profile form states
-  const [groupName, setGroupName] = useState("");
-  const [description, setDescription] = useState("");
-  const [foundedYear, setFoundedYear] = useState("");
-  const [niche, setNiche] = useState<"local" | "university" | "">("");
-  const [university, setUniversity] = useState("");
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [groupLogoFile, setGroupLogoFile] = useState<File | null>(null);
-  const [groupLogoPreview, setGroupLogoPreview] = useState<string | null>(null);
-  const [groupBannerFile, setGroupBannerFile] = useState<File | null>(null);
-  const [groupBannerPreview, setGroupBannerPreview] = useState<string | null>(null);
-  const [mapFile, setMapFile] = useState<File | null>(null);
-  const [mapPreview, setMapPreview] = useState<string | null>(null);
-  const [mapEmbedUrl, setMapEmbedUrl] = useState("");
-  const [uploadingProfile, setUploadingProfile] = useState(false);
-  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const isDirty = useMemo(() => {
-    if (!profile) return false;
-
-    // Check for new file uploads
-    if (groupLogoFile || groupBannerFile || mapFile) return true;
-
-    // Check text fields
-    if (groupName !== (profile.group_name || "")) return true;
-    if (description !== (profile.description || "")) return true;
-    if (foundedYear !== (profile.founded_year?.toString() || "")) return true;
-    if (niche !== (profile.niche || "")) return true;
-    if (niche === "university" && university !== (profile.university || "")) return true;
-
-    // Check Map changes
-    const initialMapUrl = profile.map_screenshot_url;
-
-    // If embed URL changed
-    if (mapEmbedUrl !== (initialMapUrl?.startsWith("<iframe") ? initialMapUrl : "")) return true;
-
-    // If map was removed (and not replaced by embed or file)
-    if (!mapEmbedUrl && !mapPreview && initialMapUrl && !initialMapUrl.startsWith("<iframe")) return true;
-
-    return false;
-  }, [profile, groupName, description, foundedYear, niche, university, groupLogoFile, groupBannerFile, mapFile, mapEmbedUrl, mapPreview]);
-
-  // Reset success state when changes are made
-  useEffect(() => {
-    if (isDirty) {
-      setSaveSuccess(false);
-    }
-  }, [isDirty]);
-
-  // Redirect if not logged in or not a producer
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        navigate("/login");
-      } else if (profile && profile.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else if (profile && profile.role !== "producer") {
-        navigate("/", { replace: true });
+      if (membershipsError) {
+        console.error("Error fetching managed memberships:", membershipsError);
       }
-    }
-  }, [user, profile, loading, navigate]);
 
-  // Handle URL routing
-  useEffect(() => {
-    if (location.pathname === "/dashboard/analytics") {
-      setActiveTab("dashboard");
-    }
-  }, [location.pathname]);
-
-  // Load profile data
-  useEffect(() => {
-    if (profile && !isProfileLoaded) {
-      setGroupName(profile.group_name || "");
-      setDescription(profile.description || "");
-      setFoundedYear(profile.founded_year?.toString() || "");
-      setNiche(profile.niche || "");
-      setUniversity(profile.university || "");
-      setAvatarPreview(profile.avatar_url || null);
-      setGroupLogoPreview(profile.group_logo_url || null);
-      setGroupBannerPreview(profile.group_banner_url || null);
-      if (profile.map_screenshot_url && profile.map_screenshot_url.startsWith("<iframe")) {
-        setMapEmbedUrl(profile.map_screenshot_url);
-        setMapPreview(null);
-      } else {
-        setMapPreview(profile.map_screenshot_url || null);
-        setMapEmbedUrl("");
+      for (const membership of managedMemberships || []) {
+        if (membership.group_id) {
+          ownedOrManagedGroupIds.add(membership.group_id);
+        }
       }
-      setIsProfileLoaded(true);
-    }
-  }, [profile, isProfileLoaded]);
 
-  const isTrialExpired = false; // FORCE TRIAL NOT EXPIRED FOR TESTING
+      if (ownedOrManagedGroupIds.size === 0) {
+        setManagedGroups([]);
+        setSelectedGroupId(null);
+        setIsLoading(false);
+        return;
+      }
 
-  // Handle tour
-  useEffect(() => {
-    if (profile && !profile.has_completed_tour) {
-      // Delay tour start to ensure Dashboard DOM is fully rendered
-      const timer = setTimeout(() => setRunTour(true), 500);
-      return () => clearTimeout(timer);
-    }
+      const { data: groups, error: groupsError } = await supabase
+        .from("profiles")
+        .select("id, group_name, avatar_url")
+        .in("id", Array.from(ownedOrManagedGroupIds));
+
+      if (groupsError) {
+        console.error("Error fetching managed groups:", groupsError);
+        toast.error("Failed to load your dashboards.");
+        setManagedGroups([]);
+        setSelectedGroupId(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const hydratedGroups = (groups || []) as ManagedGroup[];
+      setManagedGroups(hydratedGroups);
+      setSelectedGroupId((prev) => prev || hydratedGroups[0]?.id || null);
+      setIsLoading(false);
+    };
+
+    fetchManagedGroups();
   }, [profile]);
 
-  const handleRestartTour = () => {
-    setRunTour(true);
-  };
+  useEffect(() => {
+    const fetchApplications = async () => {
+      if (!selectedGroupId) {
+        setApplications([]);
+        setApplicantsByUserId({});
+        return;
+      }
 
-  const handleTourFinish = async () => {
-    if (!profile) return;
+      const { data: pendingApplications, error: applicationsError } = await supabase
+        .from("membership_applications" as never)
+        .select("id, user_id, group_id, created_at, status")
+        .eq("group_id", selectedGroupId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
 
-    // Update profile to mark tour as completed
+      if (applicationsError) {
+        console.error("Error loading membership applications:", applicationsError);
+        toast.error("Failed to load pending approvals.");
+        return;
+      }
+
+      const apps = (pendingApplications || []) as MembershipApplication[];
+      setApplications(apps);
+
+      const applicantUserIds = Array.from(new Set(apps.map((app) => app.user_id))).filter(Boolean);
+      if (applicantUserIds.length === 0) {
+        setApplicantsByUserId({});
+        return;
+      }
+
+      const { data: applicantProfiles, error: applicantError } = await supabase
+        .from("profiles")
+        .select("user_id, username, avatar_url")
+        .in("user_id", applicantUserIds);
+
+      if (applicantError) {
+        console.error("Error loading applicant profiles:", applicantError);
+        return;
+      }
+
+      const lookup = Object.fromEntries(((applicantProfiles || []) as ApplicantProfile[]).map((p) => [p.user_id, p]));
+      setApplicantsByUserId(lookup);
+    };
+
+    fetchApplications();
+  }, [selectedGroupId]);
+
+  const handleDecision = async (applicationId: string, decision: "approved" | "declined") => {
+    setIsUpdating(applicationId);
     const { error } = await supabase
-      .from("profiles")
-      .update({ has_completed_tour: true })
-      .eq("id", profile.id);
+      .from("membership_applications" as never)
+      .update({ status: decision } as never)
+      .eq("id", applicationId);
 
     if (error) {
-      console.error("Error updating tour status:", error);
-    } else {
-      refreshProfile();
-    }
-  };
-
-  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an avatar smaller than 2MB.",
-        variant: "destructive",
-      });
+      console.error(`Error marking application as ${decision}:`, error);
+      toast.error(`Unable to ${decision === "approved" ? "approve" : "decline"} application.`);
+      setIsUpdating(null);
       return;
     }
 
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setApplications((prev) => prev.filter((application) => application.id !== applicationId));
+    toast.success(decision === "approved" ? "Application approved." : "Application declined.");
+    setIsUpdating(null);
   };
 
-  const handleGroupLogoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload a group logo smaller than 2MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setGroupLogoFile(file);
-    setGroupLogoPreview(URL.createObjectURL(file));
-  };
-
-  const handleGroupBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload a banner image smaller than 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setGroupBannerFile(file);
-    setGroupBannerPreview(URL.createObjectURL(file));
-  };
-
-  const handleMapSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload a map image smaller than 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setMapFile(file);
-    setMapPreview(URL.createObjectURL(file));
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
-
-  const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload a JPG, PNG, or WebP image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      setTempPosterSrc(reader.result?.toString() || "");
-      setCropperOpen(true);
-    });
-    reader.readAsDataURL(file);
-    e.target.value = "";
-  };
-
-  const onCropComplete = (croppedBlob: Blob) => {
-    const file = new File([croppedBlob], "poster.jpg", { type: "image/jpeg" });
-    setPosterFile(file);
-    setPosterPreview(URL.createObjectURL(croppedBlob));
-    setCropperOpen(false);
-    setTempPosterSrc(null);
-  };
-
-  const clearPoster = () => {
-    setPosterFile(null);
-    if (posterPreview) {
-      URL.revokeObjectURL(posterPreview);
-      setPosterPreview(null);
-    }
-  };
-
-  const resetForm = () => {
-    setNewShowTitle("");
-    setNewShowDescription("");
-    setNewShowDate("");
-    setNewShowVenue("");
-    setNewShowCity("");
-    setNewShowNiche("local");
-    setNewShowTicketLink("");
-    setNewShowPrice("");
-    setNewShowPaymentInstructions("");
-    setNewShowGenre([]);
-    setNewShowDirector("");
-    setNewShowDuration("");
-    setNewShowTags("");
-    setNewShowCast([]);
-    setTempCastName("");
-    setTempCastRole("");
-    setNewShowProductionStatus("ongoing");
-    clearPoster();
-    setEditingShow(null);
-  };
-
-  const openAddModal = () => {
-    resetForm();
-    setShowModal(true);
-  };
-
-  const openEditModal = useCallback((show: Show) => {
-    setEditingShow(show);
-    setNewShowTitle(show.title);
-    setNewShowDescription(show.description || "");
-    setNewShowDate(show.date || "");
-    setNewShowVenue(show.venue || "");
-    setNewShowCity(show.city || "");
-    setNewShowNiche(show.niche || "local");
-    setNewShowTicketLink(show.ticket_link || "");
-    setNewShowPrice(show.price?.toString() || "");
-    setNewShowGenre(show.genre ? show.genre.split(",").map(g => g.trim()) : []);
-    setNewShowDirector(show.director || "");
-    setNewShowDuration(show.duration || "");
-    setNewShowTags(show.tags?.join(", ") || "");
-
-    // Parse cast members safely
-    const castData = show.cast_members && Array.isArray(show.cast_members)
-      ? (show.cast_members as unknown as CastMember[])
-      : [];
-    setNewShowCast(castData);
-
-    setNewShowProductionStatus(show.production_status || "ongoing");
-
-    const metadata = show.seo_metadata as { payment_instructions?: string } | null;
-    setNewShowPaymentInstructions(metadata?.payment_instructions || "");
-
-    setPosterPreview(show.poster_url);
-    setPosterFile(null);
-    setShowModal(true);
-  }, []);
-
-  // Handle edit param after shows are loaded
-  useEffect(() => {
-    const editId = searchParams.get("edit");
-    // Ensure shows are loaded before checking. !loadingShows is safer than shows.length > 0
-    // because a user might have 0 shows but we still want to know loading is done.
-    if (editId && !loadingShows && !showModal) {
-      const showToEdit = shows.find(s => s.id === editId);
-      if (showToEdit) {
-        openEditModal(showToEdit);
-        // Ensure we switch to the shows tab if not already there
-        setActiveTab("shows");
-
-        // Remove edit param to prevent loop when closing modal.
-        // Critical: If this remains, closing the modal would re-trigger this effect
-        // (since showModal becomes false) and re-open it indefinitely.
-        const newParams = new URLSearchParams(searchParams);
-        newParams.delete("edit");
-        setSearchParams(newParams, { replace: true });
-      } else if (shows.length > 0) {
-        // Only clear if we have some shows but couldn't find the ID.
-        // If shows is empty, we might still be syncing or user truly has none.
-        // But if user has none, showToEdit is undefined anyway.
-        // We leave the param if show not found? Or clear it?
-        // Clearing it prevents confusion.
-        // But let's just leave it for now to match original logic but safer.
-      }
-    }
-  }, [searchParams, shows, loadingShows, showModal, openEditModal, setSearchParams]);
-
-  const handleAddCastMember = () => {
-    if (tempCastName.trim() && tempCastRole.trim()) {
-      setNewShowCast([...newShowCast, { name: tempCastName.trim(), role: tempCastRole.trim() }]);
-      setTempCastName("");
-      setTempCastRole("");
-    }
-  };
-
-  const handleRemoveCastMember = (index: number) => {
-    setNewShowCast(newShowCast.filter((_, i) => i !== index));
-  };
-
-  const handleAddShow = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || !user) return;
-
-    const errors: string[] = [];
-    if (!newShowTitle) errors.push("Title");
-    if (!newShowDate) errors.push("Show Date");
-    if (!newShowVenue) errors.push("Venue");
-    if (!newShowCity) errors.push("City");
-    if (!newShowNiche) errors.push("Type (Niche)");
-
-    if (errors.length > 0) {
-      toast({
-        title: "Missing Required Fields",
-        description: `Please fill in: ${errors.join(", ")}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setUploadingPoster(true);
-    let posterUrl: string | null = null;
-
-    try {
-      // Upload poster if selected
-      if (posterFile) {
-        const fileExt = posterFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("show-posters")
-          .upload(fileName, posterFile);
-
-        if (uploadError) {
-          throw new Error(`Failed to upload poster: ${uploadError.message}`);
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("show-posters")
-          .getPublicUrl(fileName);
-        
-        posterUrl = publicUrl;
-      }
-
-      const { error } = await supabase
-        .from("shows")
-        .insert({
-          producer_id: profile.id,
-          title: newShowTitle,
-          description: newShowDescription || null,
-          date: newShowDate || null,
-          venue: newShowVenue || null,
-          city: newShowCity || null,
-          niche: newShowNiche,
-          status: "approved",
-          production_status: newShowProductionStatus,
-          poster_url: posterUrl,
-          ticket_link: newShowTicketLink || null,
-          price: newShowPrice ? parseFloat(newShowPrice) : 0,
-          genre: newShowGenre.length > 0 ? newShowGenre.join(", ") : null,
-          director: newShowDirector || null,
-          duration: newShowDuration || null,
-          tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
-          seo_metadata: newShowPaymentInstructions ? { payment_instructions: newShowPaymentInstructions } : null,
-        });
-
-      if (error) {
-        throw new Error(`Failed to submit show: ${error.message}`);
-      }
-
-      resetForm();
-      setShowModal(false);
-      setSuccessModal(true);
-      fetchShows();
-    } catch (error) {
-      const message = (error as { message?: string })?.message || "Failed to submit show. Please try again.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingPoster(false);
-    }
-  };
-
-  const handleUpdateShow = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || !user || !editingShow) return;
-
-    setUploadingPoster(true);
-    let posterUrl: string | null = editingShow.poster_url;
-
-    try {
-      // Upload new poster if selected
-      if (posterFile) {
-        const fileExt = posterFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from("show-posters")
-          .upload(fileName, posterFile);
-
-        if (uploadError) {
-          throw new Error(`Failed to upload poster: ${uploadError.message}`);
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("show-posters")
-          .getPublicUrl(fileName);
-        
-        posterUrl = publicUrl;
-      }
-
-      const { error } = await supabase
-        .from("shows")
-        .update({
-          title: newShowTitle,
-          description: newShowDescription || null,
-          date: newShowDate || null,
-          venue: newShowVenue || null,
-          city: newShowCity || null,
-          niche: newShowNiche,
-          poster_url: posterUrl,
-          production_status: newShowProductionStatus,
-          ticket_link: newShowTicketLink || null,
-          price: newShowPrice ? parseFloat(newShowPrice) : 0,
-          genre: newShowGenre.length > 0 ? newShowGenre.join(", ") : null,
-          director: newShowDirector || null,
-          duration: newShowDuration || null,
-          tags: newShowTags ? newShowTags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          cast_members: newShowCast.length > 0 ? (newShowCast as unknown as Json) : null,
-          seo_metadata: { ...(editingShow.seo_metadata as object), payment_instructions: newShowPaymentInstructions },
-        })
-        .eq("id", editingShow.id);
-
-      if (error) {
-        throw new Error(`Failed to update show: ${error.message}`);
-      }
-
-      toast({
-        title: "Success",
-        description: "Show updated successfully!",
-      });
-
-      resetForm();
-      setShowModal(false);
-      fetchShows();
-    } catch (error) {
-      const message = (error as { message?: string })?.message || "Failed to update show. Please try again.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingPoster(false);
-    }
-  };
-
-  const handleRestoreShow = async (showId: string) => {
-    // Optimistic Update: Immediately restore in UI
-    const previousShows = queryClient.getQueryData<Show[]>(['producer-shows', profile?.id]);
-    queryClient.setQueryData(['producer-shows', profile?.id], (old: Show[] | undefined) => {
-      if (!old) return [];
-      return old.map(s =>
-        s.id === showId
-          // @ts-ignore
-          ? { ...s, status: 'approved', deleted_at: null }
-          : s
-      );
-    });
-
-    try {
-      const { error } = await supabase
-        .from("shows")
-        // @ts-ignore
-        .update({ status: 'approved', deleted_at: null })
-        .eq("id", showId);
-
-      if (error) {
-        // Rollback on error
-        if (previousShows) {
-            queryClient.setQueryData(['producer-shows', profile?.id], previousShows);
-        }
-        throw error;
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['producer-shows', profile?.id] });
-
-      toast({
-        title: "Show Restored",
-        description: "The show has been restored from archive.",
-      });
-    } catch (error) {
-      console.error("Restore error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to restore show.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteShow = (showId: string) => {
-    setShowIdToDelete(showId);
-    setDeleteAlertOpen(true);
-  };
-
-  const confirmDeleteShow = async () => {
-    if (!showIdToDelete) return;
-    const showId = showIdToDelete;
-
-    // Optimistic Update: Immediately remove from UI (move to archive)
-    const previousShows = queryClient.getQueryData<Show[]>(['producer-shows', profile?.id]);
-    queryClient.setQueryData(['producer-shows', profile?.id], (old: Show[] | undefined) => {
-      if (!old) return [];
-      return old.map(s =>
-        s.id === showId
-          ? { ...s, status: 'archived' as const, deleted_at: new Date().toISOString() }
-          : s
-      );
-    });
-
-    setDeleteAlertOpen(false);
-
-    try {
-      const { error } = await supabase
-        .from("shows")
-        // @ts-ignore: 'archived' is not yet in the generated types
-        .update({ status: 'archived', deleted_at: new Date().toISOString() })
-        .eq("id", showId);
-
-      if (error) {
-        // Rollback on error
-        if (previousShows) {
-            queryClient.setQueryData(['producer-shows', profile?.id], previousShows);
-        }
-        throw error;
-      }
-
-      // Force cache refresh as requested
-      await queryClient.invalidateQueries({ queryKey: ['producer-shows', profile?.id] });
-
-      toast({
-        title: "Show Deleted",
-        description: "The show has been moved to archive.",
-      });
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete show.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handlePromoteShow = async (showId: string, showTitle: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
-        body: {
-          amount: 50000, // 500 PHP
-          description: `Feature Show: ${showTitle}`,
-          metadata: {
-            type: "featured_show",
-            show_id: showId
-          },
-          redirect_url: window.location.origin + "/payment/success",
-        },
-      });
-
-      if (error) throw error;
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error("No checkout URL returned");
-      }
-    } catch (error) {
-      console.error("Promotion error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to initiate promotion payment.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateProfile = async () => {
-    if (!profile) return;
-    setUploadingProfile(true);
-
-    try {
-      let groupLogoUrl = profile.group_logo_url;
-      let groupBannerUrl = profile.group_banner_url;
-      let mapUrl = profile.map_screenshot_url;
-
-      // Upload group logo if changed
-      if (groupLogoFile) {
-        const fileExt = groupLogoFile.name.split(".").pop();
-        const fileName = `${profile.id}/group_logo_${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(fileName, groupLogoFile, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(fileName);
-
-        groupLogoUrl = publicUrl;
-      }
-
-      // Upload group banner if changed
-      if (groupBannerFile) {
-        const fileExt = groupBannerFile.name.split(".").pop();
-        const fileName = `${profile.id}/group_banner_${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("show-posters") // Using show-posters as it's public
-          .upload(fileName, groupBannerFile, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("show-posters")
-          .getPublicUrl(fileName);
-
-        groupBannerUrl = publicUrl;
-      }
-
-      // Handle Map Update logic
-      if (mapEmbedUrl.trim()) {
-        // If embed URL is provided, prioritize it
-        mapUrl = mapEmbedUrl.trim();
-      } else if (mapFile) {
-        // Upload map if changed and no embed URL
-        const fileExt = mapFile.name.split(".").pop();
-        const fileName = `${profile.id}/map_${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("show-posters") // Using show-posters bucket for now as it's general purpose public
-          .upload(fileName, mapFile, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("show-posters")
-          .getPublicUrl(fileName);
-
-        mapUrl = publicUrl;
-      } else if (!mapPreview && !mapEmbedUrl) {
-        // If both are empty/cleared
-        mapUrl = null;
-      }
-
-      // Construct update object dynamically
-      const updates: any = {
-        group_name: groupName || null,
-        description: description || null,
-        founded_year: foundedYear ? parseInt(foundedYear) : null,
-        niche: niche || null,
-        group_logo_url: groupLogoUrl,
-        group_banner_url: groupBannerUrl,
-        map_screenshot_url: mapUrl
-      };
-
-      if (niche === "university") {
-        updates.university = university;
-      } else {
-        updates.university = null;
-      }
-
-      try {
-        const { error } = await supabase
-          .from("profiles")
-          .update(updates)
-          .eq("id", profile.id);
-
-        if (error) throw error;
-      } catch (firstError: any) {
-        // Retry without university if it looks like a schema error
-        if (firstError.code === 'PGRST204' || firstError.message?.includes('university') || firstError.code === '42703') {
-          console.warn("Retrying profile update without university field due to schema mismatch.");
-          delete updates.university;
-          const { error: retryError } = await supabase
-            .from("profiles")
-            .update(updates)
-            .eq("id", profile.id);
-
-          if (retryError) throw retryError;
-        } else {
-          throw firstError;
-        }
-      }
-
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      toast({
-        title: "Success",
-        description: "Theater Group Profile Updated Successfully",
-      });
-      refreshProfile();
-    } catch (error: any) {
-      console.error("Profile update error:", error);
-      const message = error.message || "Failed to update profile. Please try again.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingProfile(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "text-green-500 bg-green-500/10 border-green-500/30";
-      case "pending":
-        return "text-yellow-500 bg-yellow-500/10 border-yellow-500/30";
-      case "rejected":
-        return "text-red-500 bg-red-500/10 border-red-500/30";
-      default:
-        return "text-muted-foreground";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "UNDER REVIEW";
-      case "approved":
-        return "APPROVED";
-      case "rejected":
-        return "REJECTED";
-      default:
-        return status.toUpperCase();
-    }
-  };
-
-  if (loading) {
+  if (loading || isLoading) {
+    return <BrandedLoader size="lg" text="Loading management dashboard..." />;
+  }
+
+  if (!canManage) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <BrandedLoader size="lg" text="Loading dashboard..." />
+      <div className="container mx-auto px-6 py-10">
+        <div className="mx-auto max-w-2xl rounded-xl border border-secondary/20 bg-card/70 p-8 text-center backdrop-blur-md">
+          <h1 className="mb-2 text-2xl font-serif font-bold text-foreground">Management Hub</h1>
+          <p className="text-muted-foreground">
+            You don&apos;t have a producer dashboard yet. Create or manage a theater group to unlock this portal.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <TourGuide
-        isTrialExpired={isTrialExpired}
-        run={runTour}
-        setRun={setRunTour}
-        onFinish={handleTourFinish}
-      />
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+    <div className="container mx-auto px-6 py-8">
+      <div className="mb-6 rounded-xl border border-secondary/20 bg-card/70 p-5 backdrop-blur-md">
+        <h1 className="text-2xl font-serif font-bold text-foreground">My Dashboards</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Pending Approvals</p>
 
-      <DashboardSidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        handleLogout={handleLogout}
-        isPro={isPro}
-        onUpsell={() => setShowUpsellModal(true)}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1 min-h-screen">
-        {/* Top Bar */}
-        <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
-          <div className="w-10">
-            <Link to="/feed">
-              <button
-                aria-label="Back to Home"
-                className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground"
-              >
-                <Home className="w-5 h-5" />
-              </button>
-            </Link>
-          </div>
-          <h1 className="font-serif text-xl text-foreground text-center flex-1">
-            {activeTab === "dashboard" && "Dashboard"}
-            {activeTab === "shows" && "My Productions"}
-            {activeTab === "profile" && "Group Profile"}
-            {activeTab === "members" && "Group Members"}
-          </h1>
-          <div className="w-10 flex justify-end">
+        <div className="mt-4 flex flex-wrap gap-2">
+          {managedGroups.map((group) => (
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-muted transition-colors"
-              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+              key={group.id}
+              onClick={() => setSelectedGroupId(group.id)}
+              className={`rounded-xl px-4 py-2 text-sm transition ${
+                selectedGroupId === group.id
+                  ? "border border-secondary/40 bg-secondary/15 text-secondary"
+                  : "border border-secondary/20 bg-background/40 text-foreground hover:bg-secondary/10"
+              }`}
             >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {group.group_name || "Unnamed Group"}
             </button>
-          </div>
-        </header>
-
-        <div className="p-6">
-          {/* Dashboard Tab */}
-          {activeTab === "dashboard" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start"
-            >
-              {/* Main Column */}
-              <div className="lg:col-span-2 space-y-6">
-                <div id="dashboard-stats" className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-card border border-secondary/20 p-6">
-                    <p className="text-muted-foreground text-sm mb-2">Total Productions</p>
-                    <p className="text-3xl font-serif text-foreground">{shows.length}</p>
-                  </div>
-                  <div className="bg-card border border-secondary/20 p-6">
-                    <p className="text-muted-foreground text-sm mb-2">Approved</p>
-                    <p className="text-3xl font-serif text-green-500">
-                      {shows.filter((s) => s.status === "approved").length}
-                    </p>
-                  </div>
-                  <div className="bg-card border border-secondary/20 p-6">
-                    <p className="text-muted-foreground text-sm mb-2">Under Review</p>
-                    <p className="text-3xl font-serif text-yellow-500">
-                      {shows.filter((s) => s.status === "pending").length}
-                    </p>
-                  </div>
-                </div>
-
-                {profile && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-serif text-xl text-foreground">Analytics Overview</h2>
-                      {!isPro && <Lock className="w-5 h-5 text-muted-foreground" />}
-                    </div>
-                    <AnalyticsDashboard profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
-                  </div>
-                )}
-
-                {profile?.role === "producer" && (
-                  <QuickActions
-                    onPostShow={openAddModal}
-                    onManageEnsemble={() => setActiveTab("members")}
-                    shows={shows}
-                    profileId={profile.id}
-                    isTrialExpired={isTrialExpired}
-                  />
-                )}
-              </div>
-
-              {/* Sidebar Column */}
-              <div className="space-y-6">
-                {profile && (
-                  <OnboardingChecklist profile={profile} hasShows={shows.length > 0} />
-                )}
-                <RecentActivity showIds={showIds} />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Shows Tab */}
-          {activeTab === "shows" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <h2 className="font-serif text-xl text-foreground">Your Shows</h2>
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      onClick={() => setShowFilter('ongoing')}
-                      className={`text-sm px-3 py-1 rounded-full transition-colors ${
-                        showFilter === 'ongoing'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary/10 text-muted-foreground hover:bg-secondary/20'
-                      }`}
-                    >
-                      Ongoing
-                    </button>
-                    <button
-                      onClick={() => setShowFilter('archived')}
-                      className={`text-sm px-3 py-1 rounded-full transition-colors ${
-                        showFilter === 'archived'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-secondary/10 text-muted-foreground hover:bg-secondary/20'
-                      }`}
-                    >
-                      Archived
-                    </button>
-                  </div>
-                </div>
-
-                {isTrialExpired ? (
-                  <Button variant="outline" disabled className="opacity-50 cursor-not-allowed">
-                    <Lock className="w-4 h-4 mr-2" />
-                    Add Show (Expired)
-                  </Button>
-                ) : (
-                  profile?.role === "producer" && showFilter === 'ongoing' && (
-                    <RippleButton onClick={openAddModal} variant="ios">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Show
-                    </RippleButton>
-                  )
-                )}
-              </div>
-
-              {loadingShows ? (
-                <div className="text-muted-foreground text-center py-8">Loading shows...</div>
-              ) : shows.filter(s => showFilter === 'ongoing' ? s.status !== 'archived' : s.status === 'archived').length === 0 ? (
-                <div className="bg-card border border-secondary/20 p-12 text-center ios-rounded">
-                  <p className="text-muted-foreground mb-4">
-                    {showFilter === 'ongoing' ? "You haven't submitted any shows yet." : "No archived shows."}
-                  </p>
-                  {!isTrialExpired && profile?.role === "producer" && showFilter === 'ongoing' && (
-                    <RippleButton id="add-show-button" onClick={openAddModal} variant="ios-secondary">
-                      Submit Your First Show
-                    </RippleButton>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-card border border-secondary/20 overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Title</th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Date</th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Approval</th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Production Status</th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {shows
-                        .filter(s => showFilter === 'ongoing' ? s.status !== 'archived' : s.status === 'archived')
-                        .map((show) => (
-                        <tr key={show.id} className="border-t border-secondary/10">
-                          <td className="p-4 text-foreground">{show.title}</td>
-                          <td className="p-4 text-muted-foreground">
-                            {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-xs border ${getStatusColor(show.status)}`}>
-                              {getStatusLabel(show.status)}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-3 py-1 text-xs border border-secondary/30 bg-secondary/10 text-secondary rounded-full capitalize">
-                              {show.production_status || "ongoing"}
-                            </span>
-                          </td>
-                          <td className="p-4 flex items-center gap-2">
-                            {showFilter === 'ongoing' ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditModal(show)}
-                                  className="h-8 w-8 p-0"
-                                  title="Edit Show"
-                                  aria-label={`Edit ${show.title}`}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteShow(show.id)}
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  title="Archive Show"
-                                  aria-label={`Archive ${show.title}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-
-                                {!show.is_featured && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => !isPro ? setShowUpsellModal(true) : handlePromoteShow(show.id, show.title)}
-                                    className="text-xs h-7 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
-                                  >
-                                    {!isPro && <Lock className="w-3 h-3 mr-1" />}
-                                    Promote (₱500)
-                                  </Button>
-                                )}
-                                {show.is_featured && (
-                                  <span className="text-xs text-yellow-500 font-medium px-2 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20">
-                                    Featured
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRestoreShow(show.id)}
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                  title="Restore Show"
-                                >
-                                  <RotateCcw className="w-4 h-4" />
-                                </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Profile Tab */}
-          {activeTab === "profile" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start"
-            >
-              {/* Left Column: Basic Info */}
-              <div className="bg-card border border-secondary/20 p-6 ios-rounded space-y-6">
-                <h2 className="font-serif text-xl text-foreground mb-4">Group Information</h2>
-
-                {/* Group Logo Upload */}
-                <div className="flex flex-col items-center mb-6">
-                  <div className="relative w-32 h-32 mb-4 group cursor-pointer">
-                    <label className="cursor-pointer block w-full h-full rounded-full overflow-hidden border-2 border-dashed border-secondary/30 hover:border-secondary transition-colors relative">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleGroupLogoSelect}
-                      />
-                      {groupLogoPreview ? (
-                        <img
-                          src={groupLogoPreview}
-                          alt="Group Logo preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-secondary/10">
-                          <User className="w-10 h-10 text-secondary/50 mb-2" />
-                          <span className="text-xs text-secondary/50">Upload Logo</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Pencil className="w-8 h-8 text-white" />
-                      </div>
-                    </label>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Tap to change group logo</p>
-                </div>
-
-                {/* Group Banner Upload */}
-                <div className="space-y-4 mb-6">
-                  <Label className="text-sm font-medium text-muted-foreground">Group Banner (Optional)</Label>
-                  {groupBannerPreview ? (
-                    <div className="relative rounded-xl overflow-hidden border border-secondary/30 aspect-[3/1]">
-                      <img
-                        src={groupBannerPreview}
-                        alt="Group Banner"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setGroupBannerFile(null);
-                          setGroupBannerPreview(null);
-                        }}
-                        className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press block aspect-[3/1] flex flex-col items-center justify-center">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleGroupBannerSelect}
-                      />
-                      <Image className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
-                        Click to upload a banner image
-                      </p>
-                    </label>
-                  )}
-                </div>
-
-                <div className="space-y-6">
-                  <FloatingInput
-                    label="Group Name"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                  />
-
-                  <FloatingTextarea
-                    label="Description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-
-                  <FloatingInput
-                    label="Founded Year"
-                    type="number"
-                    value={foundedYear}
-                    onChange={(e) => setFoundedYear(e.target.value)}
-                    min={1900}
-                    max={new Date().getFullYear()}
-                  />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="niche" className="text-sm font-medium text-muted-foreground">Niche</Label>
-                    <Select value={niche} onValueChange={(val) => setNiche(val as "local" | "university")}>
-                      <SelectTrigger className="bg-background border-secondary/30 h-12 rounded-xl">
-                        <SelectValue placeholder="Select your group type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-secondary/30 rounded-xl">
-                        <SelectItem value="local">Local/Community-based</SelectItem>
-                        <SelectItem value="university">University Theater Group</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {niche === "university" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="university" className="text-sm font-medium text-muted-foreground">University Affiliation</Label>
-                      <SearchableSelect
-                        options={schools}
-                        value={university}
-                        onChange={setUniversity}
-                        placeholder="Select University"
-                        className="h-12 rounded-xl"
-                      />
-                    </div>
-                  )}
-
-                  <RippleButton
-                    onClick={handleUpdateProfile}
-                    variant="ios"
-                    size="lg"
-                    className={`w-full transition-all duration-300 ${
-                      saveSuccess
-                        ? "!bg-green-500 hover:!bg-green-600 text-white border-green-600 shadow-md"
-                        : ""
-                    }`}
-                    disabled={(!isDirty && !saveSuccess) || uploadingProfile}
-                  >
-                    {saveSuccess ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <Check className="w-5 h-5" />
-                        <span>Saved!</span>
-                      </div>
-                    ) : uploadingProfile ? (
-                      "Saving..."
-                    ) : isDirty ? (
-                      "Save Profile"
-                    ) : (
-                      "Update Profile"
-                    )}
-                  </RippleButton>
-                </div>
-              </div>
-
-              {/* Right Column: Location & Visuals */}
-              <div className="space-y-6">
-                <div className="bg-card border border-secondary/20 p-6 ios-rounded">
-                  <h2 className="font-serif text-xl text-foreground mb-4">Location & Visuals</h2>
-
-                  <div className="space-y-4">
-                    <Label className="text-sm font-medium text-muted-foreground">Upload Map Screenshot (Optional)</Label>
-                    {mapPreview ? (
-                      <div className="relative rounded-xl overflow-hidden border border-secondary/30">
-                        <img
-                          src={mapPreview}
-                          alt="Venue Map"
-                          className="w-full max-h-64 object-contain bg-black/20"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMapFile(null);
-                            setMapPreview(null);
-                          }}
-                          className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : !mapEmbedUrl ? (
-                      <label className="border-2 border-dashed border-secondary/30 p-8 text-center cursor-pointer hover:border-secondary/50 transition-colors rounded-xl ios-press block">
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleMapSelect}
-                        />
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground text-sm">
-                          Click to upload your venue map
-                        </p>
-                      </label>
-                    ) : null}
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-secondary/20" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Or using Google Maps</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="mapEmbedUrl" className="text-sm font-medium text-muted-foreground">Google Maps Embed Link</Label>
-                      <Input
-                        id="mapEmbedUrl"
-                        value={mapEmbedUrl}
-                        onChange={(e) => {
-                          setMapEmbedUrl(e.target.value);
-                          if (e.target.value) {
-                            setMapFile(null);
-                            setMapPreview(null);
-                          }
-                        }}
-                        placeholder='<iframe src="https://www.google.com/maps/embed?...'
-                        className="bg-background border-secondary/30"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Paste the "Embed a map" HTML code from Google Maps here. This will override any uploaded map image.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Application Settings Section (Moved to Right Column) */}
-                <div className="bg-card border border-secondary/20 p-6 ios-rounded">
-                <h2 className="font-serif text-xl text-foreground mb-4">Application Settings</h2>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">Onboarding Tour</p>
-                    <p className="text-sm text-muted-foreground">Restart the guided tour of the dashboard.</p>
-                  </div>
-                  <Button variant="outline" onClick={handleRestartTour}>
-                    Restart Tour
-                  </Button>
-                </div>
-              </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Members Tab */}
-          {activeTab === "members" && profile && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-4xl space-y-6"
-            >
-              <GroupMembers profileId={profile.id} isPro={isPro} onUpsell={() => setShowUpsellModal(true)} />
-              <AudienceLinking isPro={isPro} />
-            </motion.div>
-          )}
+          ))}
         </div>
-      </main>
+      </div>
 
-      {tempPosterSrc && (
-        <ImageCropper
-          imageSrc={tempPosterSrc}
-          open={cropperOpen}
-          onCropComplete={onCropComplete}
-          onCancel={() => {
-            setCropperOpen(false);
-            setTempPosterSrc(null);
-          }}
-          aspect={2 / 3}
-        />
-      )}
-
-      {/* Add/Edit Show Modal */}
-      <Dialog open={showModal} onOpenChange={(open) => { setShowModal(open); if (!open) resetForm(); }}>
-        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">
-              {editingShow ? "Edit Show" : "Add New Show"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingShow 
-                ? "Update your show details. Changes will be saved immediately."
-                : "Submit your show for review. It will be visible after admin approval."}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={editingShow ? handleUpdateShow : handleAddShow} className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="showTitle">Show Title *</Label>
-              <Input
-                id="showTitle"
-                value={newShowTitle}
-                onChange={(e) => setNewShowTitle(e.target.value)}
-                placeholder="Enter show title"
-                className="bg-background border-secondary/30"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showDescription">Description</Label>
-              <Textarea
-                id="showDescription"
-                value={newShowDescription}
-                onChange={(e) => setNewShowDescription(e.target.value)}
-                placeholder="Describe your show"
-                className="bg-background border-secondary/30"
-              />
-            </div>
-
-            {/* Location & Schedule Section */}
-            <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-secondary/20">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Location & Schedule</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="showDate">Show Date <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="showDate"
-                    type="date"
-                    value={newShowDate}
-                    onChange={(e) => setNewShowDate(e.target.value)}
-                    className="bg-background border-secondary/30"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="showCity">City</Label>
-                  <Select value={newShowCity} onValueChange={setNewShowCity}>
-                    <SelectTrigger className="bg-background border-secondary/30">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-secondary/30">
-                      <SelectItem value="Mandaluyong">Mandaluyong</SelectItem>
-                      <SelectItem value="Taguig">Taguig</SelectItem>
-                      <SelectItem value="Manila">Manila</SelectItem>
-                      <SelectItem value="Quezon City">Quezon City</SelectItem>
-                      <SelectItem value="Makati">Makati</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="showVenue">Venue <span className="text-destructive">*</span></Label>
-                <SearchableSelect
-                  options={venues}
-                  value={newShowVenue}
-                  onChange={setNewShowVenue}
-                  placeholder="Select venue"
-                  className="bg-background border-secondary/30"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="showNiche">Type</Label>
-                <Select value={newShowNiche} onValueChange={(val) => setNewShowNiche(val as "local" | "university")}>
-                  <SelectTrigger className="bg-background border-secondary/30">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-secondary/30">
-                    <SelectItem value="local">Local/Community</SelectItem>
-                    <SelectItem value="university">University</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="showProductionStatus">Production Status</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Adding past productions helps build trust with new audience members and acts as a digital portfolio.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Select value={newShowProductionStatus} onValueChange={(val) => setNewShowProductionStatus(val as "ongoing" | "completed" | "draft")}>
-                  <SelectTrigger className="bg-background border-secondary/30">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-secondary/30">
-                    <SelectItem value="ongoing">Ongoing/Upcoming</SelectItem>
-                    <SelectItem value="completed">Completed (Past)</SelectItem>
-                    <SelectItem value="draft">Draft (Hidden)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="showPrice">Ticket Price (PHP)</Label>
-                <Input
-                  id="showPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={newShowPrice}
-                  onChange={(e) => setNewShowPrice(e.target.value)}
-                  placeholder="0.00"
-                  className="bg-background border-secondary/30"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Set to 0 for free shows or external ticketing.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="showTicketLink">External Ticket Link</Label>
-                <Input
-                  id="showTicketLink"
-                  type="url"
-                  value={newShowTicketLink}
-                  onChange={(e) => setNewShowTicketLink(e.target.value)}
-                  placeholder="https://tickets.example.com"
-                  className="bg-background border-secondary/30"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional override
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showPaymentInstructions">Payment Instructions</Label>
-              <Textarea
-                id="showPaymentInstructions"
-                value={newShowPaymentInstructions}
-                onChange={(e) => setNewShowPaymentInstructions(e.target.value)}
-                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'GCash QR at venue')"
-                className="bg-background border-secondary/30"
-              />
-            </div>
-
-            {/* New Fields: Genre, Director, Duration */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="showGenre">Genre</Label>
-                <TagInput
-                  id="showGenre"
-                  tags={newShowGenre}
-                  setTags={setNewShowGenre}
-                  placeholder="Type genre and press Enter..."
-                  suggestions={[
-                    "Drama", "Comedy", "Musical", "Tragedy", "Opera",
-                    "Ballet", "Improv", "Experimental", "Children's Theatre",
-                    "Pantomime", "Farce", "Satire", "Historical"
-                  ]}
-                  className="bg-background"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="showDuration">Duration</Label>
-                <Input
-                  id="showDuration"
-                  value={newShowDuration}
-                  onChange={(e) => setNewShowDuration(e.target.value)}
-                  placeholder="e.g., 2 hours"
-                  className="bg-background border-secondary/30"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showDirector">Director</Label>
-              <Input
-                id="showDirector"
-                value={newShowDirector}
-                onChange={(e) => setNewShowDirector(e.target.value)}
-                placeholder="Director name"
-                className="bg-background border-secondary/30"
-              />
-            </div>
-
-            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
-              <div className="flex items-center justify-between">
-                <Label>Cast Members</Label>
-                <span className="text-xs text-muted-foreground">{newShowCast.length} added</span>
-              </div>
-
-              <div className="space-y-3">
-                {/* List of added members */}
-                {newShowCast.map((member, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-background p-2 rounded-lg border border-secondary/20">
-                    <div className="flex-1 grid grid-cols-2 gap-2 text-sm">
-                      <div className="font-medium text-foreground truncate" title={member.name}>{member.name}</div>
-                      <div className="text-muted-foreground border-l border-secondary/20 pl-2 truncate" title={member.role}>{member.role}</div>
-                    </div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveCastMember(index)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          aria-label={`Remove ${member.name}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Remove cast member</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                ))}
-
-                {/* Input fields for new member */}
-                <div className="grid grid-cols-[1fr,1fr,auto] items-end gap-2 pt-2 border-t border-secondary/10">
-                  <div className="space-y-1">
-                    <Label htmlFor="castName" className="text-xs text-muted-foreground">Name</Label>
-                    <Input
-                      id="castName"
-                      value={tempCastName}
-                      onChange={(e) => setTempCastName(e.target.value)}
-                      placeholder="Actor Name"
-                      className="bg-background border-secondary/30 h-9 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          document.getElementById('castRole')?.focus();
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="castRole" className="text-xs text-muted-foreground">Role</Label>
-                    <Input
-                      id="castRole"
-                      value={tempCastRole}
-                      onChange={(e) => setTempCastRole(e.target.value)}
-                      placeholder="Role"
-                      className="bg-background border-secondary/30 h-9 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddCastMember();
-                        }
-                      }}
-                    />
-                  </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        onClick={handleAddCastMember}
-                        variant="secondary"
-                        size="sm"
-                        className="h-9 w-9 p-0"
-                        disabled={!tempCastName.trim() || !tempCastRole.trim()}
-                        aria-label="Add cast member"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Add cast member</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showTags">Tags (SEO)</Label>
-              <Input
-                id="showTags"
-                value={newShowTags}
-                onChange={(e) => setNewShowTags(e.target.value)}
-                placeholder="Comma-separated tags (e.g., Filipino, Original, Award-winning)"
-                className="bg-background border-secondary/30"
-              />
-              <p className="text-xs text-muted-foreground">
-                Tags help users find your show
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Show Poster</Label>
-              {posterPreview ? (
-                <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden border border-secondary/30 bg-secondary/10">
-                  <img
-                    src={posterPreview}
-                    alt="Poster preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={clearPoster}
-                        className="absolute top-2 right-2 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                        aria-label="Remove poster"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Remove poster</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              ) : (
-                <label className="border-2 border-dashed border-secondary/30 p-6 text-center cursor-pointer hover:border-primary/50 transition-colors block">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handlePosterSelect}
-                    className="hidden"
-                  />
-                  <Image className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">
-                    Click to upload poster
-                  </p>
-                  <p className="text-muted-foreground text-xs mt-1">
-                    JPG, PNG or WebP (max 5MB)
-                  </p>
-                </label>
-              )}
-            </div>
-
-            <Button type="submit" variant="default" className="w-full" disabled={uploadingPoster}>
-              {uploadingPoster ? "Saving..." : (editingShow ? "Save Changes" : "Submit Show")}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Modal */}
-      <Dialog open={successModal} onOpenChange={setSuccessModal}>
-        <DialogContent className="bg-card border-secondary/30 text-center">
-          <div className="py-6">
-            <div className="text-5xl mb-6">🎭</div>
-            <DialogTitle className="font-serif text-2xl mb-4">
-              Thank You! Your Submission Is Under Review
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              We've received your entry, and it is now awaiting approval from our admin team. 
-              You'll be notified once your show has been reviewed.
-            </DialogDescription>
-            <Button onClick={() => setSuccessModal(false)} variant="outline" className="mt-6">
-              Got it
-            </Button>
+      <div className="space-y-3">
+        {applications.length === 0 ? (
+          <div className="rounded-xl border border-secondary/20 bg-card/60 p-6 text-sm text-muted-foreground backdrop-blur-md">
+            No pending applications for this group.
           </div>
-        </DialogContent>
-      </Dialog>
+        ) : (
+          applications.map((application) => {
+            const applicant = applicantsByUserId[application.user_id];
+            const name = applicant?.username || "Applicant";
+            const initial = name.charAt(0).toUpperCase();
 
-      {/* Delete Confirmation Alert */}
-      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-        <AlertDialogContent className="bg-card border-secondary/30 rounded-[16px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Show?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this show? This action will archive the show.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteShow}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Archive
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            return (
+              <div
+                key={application.id}
+                className="flex flex-col gap-4 rounded-xl border border-secondary/20 bg-card/70 p-4 backdrop-blur-md md:flex-row md:items-center md:justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border border-secondary/30">
+                    <AvatarImage src={applicant?.avatar_url || undefined} alt={`${name} avatar`} />
+                    <AvatarFallback>{initial}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-foreground">{name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Applied {format(new Date(application.created_at), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                </div>
 
-      <UpsellModal open={showUpsellModal} onOpenChange={setShowUpsellModal} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                    disabled={isUpdating === application.id}
+                    onClick={() => handleDecision(application.id, "approved")}
+                  >
+                    <Check className="mr-1 h-4 w-4" /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                    disabled={isUpdating === application.id}
+                    onClick={() => handleDecision(application.id, "declined")}
+                  >
+                    <X className="mr-1 h-4 w-4" /> Decline
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
