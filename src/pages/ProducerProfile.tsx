@@ -395,7 +395,7 @@ const ProducerProfile = () => {
 
                       {/* Collab / Join Button */}
                       {user && profile && producer && profile.id !== producer.id && (
-                        (profile.role === 'producer' || profile.role === 'admin') ? (
+                        profile.role === 'producer' ? (
                           <Button
                             onClick={handleCollabRequest}
                             disabled={collabLoading}
@@ -411,7 +411,7 @@ const ProducerProfile = () => {
                               </>
                             )}
                           </Button>
-                        ) : (
+                        ) : profile.role === 'audience' ? (
                           <Button
                             onClick={handleJoinRequest}
                             disabled={joinLoading || hasApplied}
@@ -429,7 +429,7 @@ const ProducerProfile = () => {
                               </>
                             )}
                           </Button>
-                        )
+                        ) : null
                       )}
                   </div>
                   
