@@ -15,6 +15,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
   
   const [isMobile, setIsMobile] = useState(false);
   const [shouldReduceMotion, setShouldReduceMotion] = useState(false);
+  const [shouldAvoidFlicker, setShouldAvoidFlicker] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -30,6 +31,28 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
     const handler = (e: MediaQueryListEvent) => setShouldReduceMotion(e.matches);
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    const updateFlickerPreference = () => {
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const contrastMore = window.matchMedia("(prefers-contrast: more)").matches;
+      const reducedData = window.matchMedia("(prefers-reduced-data: reduce)").matches;
+      const forcedColors = window.matchMedia("(forced-colors: active)").matches;
+      setShouldAvoidFlicker(reducedMotion || contrastMore || reducedData || forcedColors);
+    };
+
+    updateFlickerPreference();
+
+    const watchers = [
+      window.matchMedia("(prefers-reduced-motion: reduce)"),
+      window.matchMedia("(prefers-contrast: more)"),
+      window.matchMedia("(prefers-reduced-data: reduce)"),
+      window.matchMedia("(forced-colors: active)"),
+    ];
+
+    watchers.forEach((query) => query.addEventListener("change", updateFlickerPreference));
+    return () => watchers.forEach((query) => query.removeEventListener("change", updateFlickerPreference));
   }, []);
 
   useEffect(() => {
@@ -293,23 +316,34 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
           }}
         />
 
-        {/* Animated grain flicker */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='15' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)'/%3E%3C/svg%3E")`,
-            backgroundRepeat: "repeat",
-            willChange: "opacity",
-          }}
-          animate={{
-            opacity: [0.02, 0.04, 0.015, 0.03, 0.02],
-          }}
-          transition={{
-            duration: 0.5,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
+        {/* Film grain overlay (reduced intensity to avoid visible flicker on some GPUs/displays) */}
+        {shouldAvoidFlicker ? (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='15' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              opacity: 0.018,
+            }}
+          />
+        ) : (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='15' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              willChange: "opacity",
+            }}
+            animate={{
+              opacity: [0.016, 0.022, 0.017, 0.02, 0.016],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        )}
 
         {/* Vignette overlay */}
         <div 

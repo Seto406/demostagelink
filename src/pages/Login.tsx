@@ -13,13 +13,13 @@ const Login = () => {
   useEffect(() => {
     if (user && !loading) {
       if (profile) {
-        if (profile.role === "producer" || profile.role === "admin") {
+        if (profile.role === "admin") {
+          navigate("/admin", { replace: true });
+        } else if (profile.role === "producer") {
           navigate("/dashboard", { replace: true });
         } else {
           navigate("/feed", { replace: true });
         }
-      } else {
-        navigate("/feed", { replace: true });
       }
     }
   }, [user, profile, loading, navigate]);
