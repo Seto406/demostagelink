@@ -351,7 +351,11 @@ export function FeedPost({ show }: FeedPostProps) {
                     <div className="flex items-center gap-1">
                         <LikeButton
                             isLiked={isLiked(show.id)}
-            onClick={() => toggleLike(show.id, show.producer_id?.id)}
+                            onClick={() => {
+                                const currentlyLiked = isLiked(show.id);
+                                setLikeCount(prev => currentlyLiked ? Math.max(0, prev - 1) : prev + 1);
+                                toggleLike(show.id, show.producer_id?.id);
+                            }}
                             size="sm"
                             className="hover:bg-background/50"
                         />

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, profile, isAdmin, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { unreadCount } = useNotifications();
@@ -50,6 +51,7 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
+    navigate("/");
     setIsMobileMenuOpen(false);
   };
 
