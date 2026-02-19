@@ -67,6 +67,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     profileRef.current = profile;
   }, [profile]);
 
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
+      console.log("Playwright Test detected: Force disabling auth loader");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockUser = (window as any).PlaywrightUser;
+
+      if (mockUser) {
+        console.log("Injecting Playwright Mock User");
+        setUser(mockUser);
+        setSession({
+          access_token: "mock-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          refresh_token: "mock-refresh",
+          user: mockUser,
+          expires_at: 9999999999,
+        } as Session);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const playwrightProfile = (window as any).PlaywrightProfile;
+        const mockProfile = playwrightProfile || {
+          id: "profile-" + mockUser.id,
+          user_id: mockUser.id,
+          role: localStorage.getItem("pendingUserRole") || "audience",
+          username: "Mock User",
+          created_at: new Date().toISOString(),
+          avatar_url: mockUser.user_metadata?.avatar_url,
+          group_name: null,
+          description: null,
+          founded_year: null,
+          niche: null,
+          map_screenshot_url: null,
+          rank: null,
+          xp: null,
+          facebook_url: null,
+          instagram_url: null,
+          address: null,
+          university: null,
+          has_completed_tour: false,
+          producer_role: null,
+        };
+        setProfile(mockProfile as unknown as Profile);
+      }
+
+      setLoading(false);
+    }
+  }, []);
+
   const ensureProfile = async (
     userId: string,
     userMetadata?: Record<string, unknown> & { avatar_url?: string },
@@ -111,6 +160,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.removeItem("pendingUserRole");
           return;
         }
+          const newProfile = {
+            user_id: userId,
+            role: role,
+            avatar_url: userMetadata?.avatar_url || null,
+          };
+
+          const { data: createdProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert([newProfile])
+            .select()
+            .single();
+
+          if (createdProfile) {
+            setProfile(createdProfile as Profile);
+
+            try {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+              if (user?.email) {
+                supabase.functions
+                  .invoke("send-welcome-email", {
+                    body: {
+                      email: user.email,
+                      name:
+                        (createdProfile as Profile).group_name ||
+                        user.user_metadata?.full_name ||
+                        user.user_metadata?.first_name,
+                      role: role,
+                    },
+                  })
+                  .then(({ error }) => {
+                    if (error) console.warn("Failed to trigger welcome email:", error);
+                  })
+                  .catch((err) => {
+                    console.warn("Welcome email invocation failed:", err);
+                  });
+              }
+            } catch (emailError) {
+              console.error("Failed to trigger welcome email:", emailError);
+            }
 
         console.warn("Error creating profile, retrying fetch:", createError);
         const { data: retryData } = await supabase
@@ -156,6 +246,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
+    // 5-second circuit breaker: force-unblock UI if auth init hangs
     const circuitBreaker = window.setTimeout(() => {
       console.warn("Auth initialization exceeded 5s, forcing loading=false");
       setLoading(false);
@@ -190,6 +281,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             await setAuthStateIfChanged(authSession);
+            if (event === "TOKEN_REFRESHED") {
+              console.log("Auth token refreshed");
+            }
+
+            if (event === "PASSWORD_RECOVERY") {
+              if (window.location.pathname !== "/reset-password") {
+                navigate("/reset-password?type=recovery");
+              }
+            }
+
+            setSession(authSession);
+            setUser(authSession?.user ?? null);
+
+            if (authSession?.user) {
+              await ensureProfile(authSession.user.id, authSession.user.user_metadata);
+            } else {
+              setProfile(null);
+            }
           } catch (error) {
             console.error("Error handling auth state change:", error);
           } finally {
@@ -212,6 +321,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error("Unexpected error or timeout checking session:", error);
         await setAuthStateIfChanged(null);
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          return;
+        }
+
+        const currentSession = data.session;
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          await ensureProfile(currentSession.user.id, currentSession.user.user_metadata);
+        } else {
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error("Unexpected error or timeout checking session:", err);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -237,6 +366,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
+  let isPublicPath = true;
+  try {
+    const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
+    isPublicPath = publicPaths.some((path) => location.pathname.startsWith(path)) || location.pathname === "/";
+  } catch (pathError) {
+    console.error("Error evaluating public path, defaulting to public access:", pathError);
+    isPublicPath = true;
+  }
+
+  console.log("[AuthContext] Path/loading state:", {
+    pathname: typeof window !== "undefined" ? window.location.pathname : location.pathname,
+    loading,
+    isPublicPath,
+  });
+
+  if (loading && !isPublicPath) {
+    return <FullPageLoader text="Loading StageLink..." autoRecovery={true} />;
+  }
+
+  const isAdmin = profile?.role === "admin";
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        loading,
+        isAdmin,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        refreshProfile,
+        updateProfileState,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+
+  async function signUp(email: string, password: string, role: "audience" | "producer", firstName: string) {
     const redirectUrl = `${window.location.origin}/verify-email`;
 
     const { error } = await supabase.auth.signUp({
@@ -256,17 +427,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return { error };
-  };
+  }
 
-  const signIn = async (email: string, password: string) => {
+  async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     return { error };
-  };
+  }
 
-  const signInWithGoogle = async () => {
+  async function signInWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -278,11 +449,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     return { error };
-  };
+  }
 
-  const signOut = async () => {
+  async function signOut() {
     try {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Sign out timed out")), 5000));
+
       await Promise.race([supabase.auth.signOut(), timeoutPromise]);
     } catch (error) {
       console.error("Error signing out:", error);
@@ -305,6 +477,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
+  }
 };
 
 export const useAuth = () => {
