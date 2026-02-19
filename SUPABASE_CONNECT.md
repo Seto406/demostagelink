@@ -18,8 +18,16 @@ To enable Jules to interact with your Supabase database, you need to provide the
 1.  Open the **Integrations** or **Settings** panel in your current environment (where you are chatting with Jules).
 2.  Locate the **Supabase** integration.
 3.  Enter the **Project URL** and **Service Role Key** you copied.
+    *   **Note:** If the field is labeled "Auth API Key", it typically expects your `service_role` key (starts with `ey...`), **not** a "Project Signing Key" or "Personal Access Token".
 4.  Save the settings.
 
 ## 3. Verify Connection
 
 Once configured, Jules should be able to access your database tables and run queries. You can ask Jules to "list all users" or "show me the schema" to test the connection.
+
+## Troubleshooting: "Auth API Key" vs "Project Signing Key"
+
+If you see a field labeled "Auth API Key" and are confused by Supabase documentation mentioning a "Project Signing Key":
+
+*   **Auth API Key**: Usually refers to the **Service Role Key** (or sometimes the Anon Key) found in your project's API settings. This is what you need to connect Jules.
+*   **Project Signing Key**: This is an internal cryptographic key (JWT secret) used by Supabase to verify tokens. You typically do **not** need to create or manage this manually unless you are doing advanced server-side configuration. **Do not follow the "Create Project Signing Key" documentation for connecting Jules.**
