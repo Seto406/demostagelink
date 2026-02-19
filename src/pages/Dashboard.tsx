@@ -32,6 +32,7 @@ type MembershipApplication = {
   created_at: string;
   status: string;
   member_name: string;
+  role_in_group?: string | null;
 };
 
 type UnlinkedMember = {
@@ -133,7 +134,7 @@ const Dashboard = () => {
       // Fetch Member Applications
       const { data: pendingApplications, error: applicationsError } = await supabase
         .from("group_members" as never)
-        .select("id, user_id, group_id, created_at, status, member_name" as never)
+        .select("id, user_id, group_id, created_at, status, member_name, role_in_group" as never)
         .eq("group_id", selectedGroupId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -226,6 +227,22 @@ const Dashboard = () => {
       toast.error("Unable to approve application.");
       setIsUpdating(null);
       return;
+    }
+
+    // Update profile if the member is a producer
+    if (application.role_in_group === 'producer') {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          role: 'producer',
+          group_name: selectedGroup.group_name
+        })
+        .eq("user_id", application.user_id);
+
+      if (profileError) {
+        console.error("Error updating producer profile:", profileError);
+        toast.error("Member approved, but profile update failed.");
+      }
     }
 
     const { data: userStatsRow, error: userStatsError } = await supabase
@@ -333,6 +350,20 @@ const Dashboard = () => {
 
     if (updateError) {
         console.error("Error updating request status:", updateError);
+    }
+
+    // Update profile for the new producer
+    const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+            role: 'producer',
+            group_name: managedGroups.find(g => g.id === selectedGroupId)?.group_name
+        })
+        .eq("user_id", request.sender_id);
+
+    if (profileError) {
+        console.error("Error updating producer profile:", profileError);
+        toast.error("Collaborator approved, but profile update failed.");
     }
 
     // Notification
