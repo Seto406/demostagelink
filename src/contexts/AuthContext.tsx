@@ -1,9 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { FullPageLoader } from "@/components/ui/branded-loader";
 
 interface Profile {
   id: string;
@@ -41,17 +40,28 @@ interface AuthContextType {
   updateProfileState: (updates: Partial<Profile>) => void;
 }
 
+const PUBLIC_PATHS = ["/", "/show", "/shows", "/producer", "/group", "/directory", "/about"];
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const areSessionsEqual = (a: Session | null, b: Session | null) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.access_token === b.access_token && a.user?.id === b.user?.id && a.expires_at === b.expires_at;
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
-  const location = useLocation();
+
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const hasInitialized = useRef(false);
+  const latestSessionRef = useRef<Session | null>(null);
   const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
-  const profileRef = useRef(profile);
+  const profileRef = useRef<Profile | null>(null);
 
   useEffect(() => {
     profileRef.current = profile;
@@ -111,9 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userMetadata?: Record<string, unknown> & { avatar_url?: string },
     force = false
   ) => {
-    if (!force && profileRef.current?.user_id === userId) {
-      return;
-    }
+    if (!force && profileRef.current?.user_id === userId) return;
 
     if (fetchingProfileRef.current[userId]) {
       return fetchingProfileRef.current[userId]!;
@@ -129,14 +137,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (!error && data) {
           setProfile(data as Profile);
-        } else {
-          const pendingRoleRaw = localStorage.getItem("pendingUserRole");
-          let role: "audience" | "producer" = "audience";
+          return;
+        }
 
-          if (pendingRoleRaw === "audience" || pendingRoleRaw === "producer") {
-            role = pendingRoleRaw;
-          }
+        const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+        const role: "audience" | "producer" = pendingRoleRaw === "producer" ? "producer" : "audience";
 
+        const { data: createdProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              user_id: userId,
+              role,
+              avatar_url: userMetadata?.avatar_url || null,
+            },
+          ])
+          .select()
+          .single();
+
+        if (createdProfile) {
+          setProfile(createdProfile as Profile);
+          localStorage.removeItem("pendingUserRole");
+          return;
+        }
           const newProfile = {
             user_id: userId,
             role: role,
@@ -179,27 +202,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error("Failed to trigger welcome email:", emailError);
             }
 
-            localStorage.removeItem("pendingUserRole");
-          } else {
-            console.warn("Error creating profile, retrying fetch:", createError);
-            const { data: retryData } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("user_id", userId)
-              .maybeSingle();
+        console.warn("Error creating profile, retrying fetch:", createError);
+        const { data: retryData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-            if (retryData) {
-              setProfile(retryData as Profile);
-              localStorage.removeItem("pendingUserRole");
-            } else {
-              console.error("Failed to ensure profile:", createError);
-              await signOut();
-            }
-          }
+        if (retryData) {
+          setProfile(retryData as Profile);
+          localStorage.removeItem("pendingUserRole");
+          return;
         }
+
+        console.error("Failed to ensure profile:", createError);
       } catch (error) {
         console.error("Unexpected error in ensureProfile:", error);
-        await signOut();
       } finally {
         delete fetchingProfileRef.current[userId];
       }
@@ -209,22 +227,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return fetchPromise;
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      await ensureProfile(user.id, user.user_metadata, true);
+  const setAuthStateIfChanged = async (nextSession: Session | null) => {
+    if (!areSessionsEqual(latestSessionRef.current, nextSession)) {
+      latestSessionRef.current = nextSession;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
     }
-  };
 
-  const updateProfileState = (updates: Partial<Profile>) => {
-    setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+    if (nextSession?.user) {
+      await ensureProfile(nextSession.user.id, nextSession.user.user_metadata);
+      return;
+    }
+
+    setProfile(null);
   };
 
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     // 5-second circuit breaker: force-unblock UI if auth init hangs
     const circuitBreaker = window.setTimeout(() => {
       console.warn("Auth initialization exceeded 5s, forcing loading=false");
       setLoading(false);
     }, 5000);
+
+    console.log("[AuthContext:init]", {
+      pathname: window.location.pathname,
+      initialLoading: true,
+      isPublicPath: PUBLIC_PATHS.some((path) =>
+        path === "/" ? window.location.pathname === "/" : window.location.pathname.startsWith(path)
+      ),
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
@@ -242,6 +276,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data: { subscription: authSubscription },
         } = supabase.auth.onAuthStateChange(async (event, authSession) => {
           try {
+            if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
+              navigate("/reset-password?type=recovery");
+            }
+
+            await setAuthStateIfChanged(authSession);
             if (event === "TOKEN_REFRESHED") {
               console.log("Auth token refreshed");
             }
@@ -274,6 +313,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error) {
           console.error("Error retrieving session:", error);
           localStorage.clear();
+          await setAuthStateIfChanged(null);
+          return;
+        }
+
+        await setAuthStateIfChanged(data.session);
+      } catch (error) {
+        console.error("Unexpected error or timeout checking session:", error);
+        await setAuthStateIfChanged(null);
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -308,6 +355,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const refreshProfile = async () => {
+    if (user) {
+      await ensureProfile(user.id, user.user_metadata, true);
+    }
+  };
+
+  const updateProfileState = (updates: Partial<Profile>) => {
+    setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+  };
+
+  const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
   let isPublicPath = true;
   try {
     const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
@@ -401,10 +459,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
+      latestSessionRef.current = null;
       setProfile(null);
       setSession(null);
       setUser(null);
     }
+  };
+
+  if (loading) {
+    return <div>System Updating...</div>;
+  }
+
+  const isAdmin = profile?.role === "admin";
+
+  return (
+    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState }}>
+      {children}
+    </AuthContext.Provider>
+  );
   }
 };
 
