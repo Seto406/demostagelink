@@ -217,7 +217,8 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate("/feed", { replace: true });
+          // Let auth-aware route guards decide destination based on role/profile
+          navigate("/", { replace: true });
         }
       }
     } catch (err) {

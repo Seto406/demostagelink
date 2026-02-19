@@ -20,8 +20,6 @@ const Login = () => {
         } else {
           navigate("/feed", { replace: true });
         }
-      } else {
-        navigate("/feed", { replace: true });
       }
     }
   }, [user, profile, loading, navigate]);
