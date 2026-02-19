@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Bell, Film, Users, Theater, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Bell, Film, Users, House, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
@@ -17,11 +17,17 @@ const Navbar = () => {
   const [isBellShaking, setIsBellShaking] = useState(false);
   const [canAccessManagement, setCanAccessManagement] = useState(false);
 
-  const centerNavLinks = [
-    { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
-    { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
-    { path: "/directory#groups", label: "Theater Groups", icon: Theater, matchPath: "/directory" },
-  ];
+  const centerNavLinks = user
+    ? [
+        { path: "/feed", label: "Home", icon: House, matchPath: "/feed" },
+        { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
+        { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
+        { path: "/favorites", label: "Favorites", icon: Bookmark, matchPath: "/favorites" },
+      ]
+    : [
+        { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
+        { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
+      ];
 
   const mobileNavLinks = user
     ? [
