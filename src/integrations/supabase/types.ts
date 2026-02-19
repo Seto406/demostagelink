@@ -79,6 +79,45 @@ export type Database = {
         }
         Relationships: []
       }
+      collaboration_requests: {
+        Row: {
+          id: string
+          created_at: string
+          sender_id: string
+          receiver_id: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          sender_id: string
+          receiver_id: string
+          status: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          sender_id?: string
+          receiver_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_requests_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_requests_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -263,6 +302,51 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          id: string
+          created_at: string
+          show_id: string
+          user_id: string
+          rating: number
+          comment: string | null
+          is_approved: boolean
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          show_id: string
+          user_id: string
+          rating: number
+          comment?: string | null
+          is_approved?: boolean
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          show_id?: string
+          user_id?: string
+          rating?: number
+          comment?: string | null
+          is_approved?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
