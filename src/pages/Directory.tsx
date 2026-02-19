@@ -413,7 +413,9 @@ const Directory = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-2xl">🎭</span>
+                              <span className="text-2xl font-serif font-bold text-secondary">
+                                {(group.group_name?.[0] || "?").toUpperCase()}
+                              </span>
                             )}
                           </div>
                           <div className="flex flex-col items-end gap-1">
@@ -449,7 +451,9 @@ const Directory = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-2xl">🎭</span>
+                                <span className="text-2xl font-serif font-bold text-secondary">
+                                  {(group.group_name?.[0] || "?").toUpperCase()}
+                                </span>
                               )}
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -470,7 +474,7 @@ const Directory = () => {
                             {group.description || "A theater group in Metro Manila."}
                           </p>
                         </Link>
-                        {(user?.role === 'audience' || !user || (user.role !== 'producer' && user.role !== 'admin')) && (
+                        {(!user || profile?.role === 'audience') && (
                             <div className="px-6 pb-6 pt-0 mt-auto">
                                 <Button
                                     size="sm"
