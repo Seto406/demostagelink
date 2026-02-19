@@ -22,6 +22,14 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
         try {
           const body = await clone.json();
           const errorMsg = body?.error_description || body?.msg || body?.message || '';
+          isClockSkew = typeof errorMsg === 'string' && errorMsg.includes('issued in the future');
+
+          if (isClockSkew) {
+            return new Response('null', {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            });
+          }
 
           const isFunctionsError = typeof errorMsg === 'string' && errorMsg.includes("FunctionsFetchError");
           const isSessionFuture = typeof errorMsg === 'string' && errorMsg.includes("Session in the future");
