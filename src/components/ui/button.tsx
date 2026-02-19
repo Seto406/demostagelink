@@ -6,18 +6,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 uppercase tracking-wider font-sans active:scale-[0.97]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 uppercase tracking-wider font-sans active:scale-95",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_0_30px_hsl(0_100%_25%/0.5)] rounded-xl",
+          "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_0_20px_hsl(0_100%_25%/0.4)] rounded-xl",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl",
         outline:
-          "border border-secondary/50 bg-transparent text-secondary hover:bg-secondary/10 hover:border-secondary rounded-xl",
+          "border border-secondary/50 bg-transparent text-secondary hover:bg-secondary/10 hover:border-secondary hover:shadow-[0_0_15px_hsl(43_72%_52%/0.2)] rounded-xl",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-xl",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-[0_0_20px_hsl(43_72%_52%/0.4)] rounded-xl",
         ghost: "text-foreground hover:bg-muted hover:text-foreground rounded-xl",
         link: "text-secondary underline-offset-4 hover:underline",
         hero: "bg-primary text-primary-foreground border border-secondary/30 hover:border-secondary hover:shadow-[0_0_40px_hsl(0_100%_25%/0.6)] text-base rounded-2xl",

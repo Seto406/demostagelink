@@ -69,7 +69,7 @@ const DirectoryListItem = ({
       className="flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group"
     >
       {/* Logo */}
-      <div className="w-[88px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
+      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
          <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border border-secondary/30 bg-background relative">
             {group.logo ? (
               <>
@@ -106,6 +106,9 @@ const DirectoryListItem = ({
              )}
         </div>
 
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
+          {group.description || "No description available."}
+        </p>
       </div>
 
       {/* Action */}
@@ -380,8 +383,7 @@ const Directory = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-8 pb-16">
         <div className="container mx-auto px-6">
           {/* Header */}
           <motion.div
@@ -666,7 +668,7 @@ const Directory = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );

@@ -537,9 +537,8 @@ const Shows = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <PullToRefresh onRefresh={handleRefresh}>
-        <main className="pt-20 sm:pt-24 pb-16">
+        <div className="pt-4 sm:pt-8 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
           {/* Header */}
           <motion.div
@@ -883,7 +882,7 @@ const Shows = () => {
             </>
           )}
         </div>
-      </main>
+      </div>
       </PullToRefresh>
       <Footer />
     </div>

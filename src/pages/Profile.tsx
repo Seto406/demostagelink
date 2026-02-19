@@ -230,8 +230,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
            {/* Header */}
            <div
@@ -286,6 +285,27 @@ const Profile = () => {
                       </div>
                     )}
                  </div>
+               </div>
+
+               {/* XP / Level Display */}
+               <div className="w-full max-w-[200px] mx-auto md:mx-0 mb-6">
+                 <div className="flex justify-between items-end mb-1">
+                   <span className="text-xs font-semibold text-secondary uppercase tracking-wider">
+                     Level {Math.floor((profile.xp || 0) / 100) + 1}
+                   </span>
+                   <span className="text-xs text-muted-foreground">
+                     {profile.xp || 0} XP
+                   </span>
+                 </div>
+                 <div className="h-1.5 bg-secondary/10 rounded-full overflow-hidden border border-secondary/20">
+                   <div
+                     className="h-full bg-secondary transition-all duration-500 ease-out shadow-[0_0_10px_hsl(43_72%_52%/0.5)]"
+                     style={{ width: `${Math.min(((profile.xp || 0) % 100), 100)}%` }}
+                   />
+                 </div>
+                 <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                   {100 - ((profile.xp || 0) % 100)} XP to Level {Math.floor((profile.xp || 0) / 100) + 2}
+                 </p>
                </div>
 
                 {/* Stats Bar */}

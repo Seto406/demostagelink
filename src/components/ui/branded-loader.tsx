@@ -111,7 +111,7 @@ export const FullPageLoader = ({ text = "Loading...", autoRecovery = false }: Fu
         <div className="mt-8 max-w-md space-y-4 text-sm text-muted-foreground animate-in fade-in duration-700">
           <p>We've detected a recurring issue with your session.</p>
 
-          <div className="bg-destructive/10 p-4 rounded-lg text-left space-y-2">
+          <div className="bg-destructive/10 p-4 rounded-xl text-left space-y-2">
             <p className="font-medium text-destructive">Required Actions:</p>
             <ol className="list-decimal list-inside space-y-1 text-xs">
               <li><strong>Sync your computer clock.</strong> Supabase security rejects requests if your time is incorrect.</li>
@@ -121,7 +121,7 @@ export const FullPageLoader = ({ text = "Loading...", autoRecovery = false }: Fu
 
           <button
             onClick={() => performNuclearWipe(false)}
-            className="w-full px-6 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg font-medium transition-colors"
+            className="w-full px-6 py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-xl font-medium transition-colors"
           >
             Factory Reset & Reload
           </button>
