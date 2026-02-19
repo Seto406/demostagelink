@@ -86,7 +86,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .eq("user_id", userId)
           .maybeSingle();
 
-        if (!error && data) {
+        if (error) {
+          console.error("Error fetching profile in ensureProfile:", error);
+          // Do not proceed to create profile on fetch error to avoid duplicates/race conditions
+          return;
+        }
+
+        if (data) {
           setProfile(data as Profile);
           return;
         }
