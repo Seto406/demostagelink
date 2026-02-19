@@ -21,6 +21,7 @@ type MembershipApplication = {
   group_id: string;
   created_at: string;
   status: string;
+  member_name: string;
 };
 
 type ApplicantProfile = {
@@ -52,39 +53,11 @@ const Dashboard = () => {
       if (!profile) return;
       setIsLoading(true);
 
-      const ownedOrManagedGroupIds = new Set<string>();
-
-      if (profile.role === "producer") {
-        ownedOrManagedGroupIds.add(profile.id);
-      }
-
-      const { data: managedMemberships, error: membershipsError } = await supabase
-        .from("group_members")
-        .select("group_id, role_in_group")
-        .eq("user_id", profile.id)
-        .or("role_in_group.ilike.%producer%,role_in_group.ilike.%owner%,role_in_group.ilike.%admin%,role_in_group.ilike.%director%");
-
-      if (membershipsError) {
-        console.error("Error fetching managed memberships:", membershipsError);
-      }
-
-      for (const membership of managedMemberships || []) {
-        if (membership.group_id) {
-          ownedOrManagedGroupIds.add(membership.group_id);
-        }
-      }
-
-      if (ownedOrManagedGroupIds.size === 0) {
-        setManagedGroups([]);
-        setSelectedGroupId(null);
-        setIsLoading(false);
-        return;
-      }
-
       const { data: groups, error: groupsError } = await supabase
         .from("profiles")
         .select("id, group_name, avatar_url")
-        .in("id", Array.from(ownedOrManagedGroupIds));
+        .eq("user_id", profile.user_id)
+        .not("group_name", "is", null);
 
       if (groupsError) {
         console.error("Error fetching managed groups:", groupsError);
@@ -96,6 +69,13 @@ const Dashboard = () => {
       }
 
       const hydratedGroups = (groups || []) as ManagedGroup[];
+      if (hydratedGroups.length === 0) {
+        setManagedGroups([]);
+        setSelectedGroupId(null);
+        setIsLoading(false);
+        return;
+      }
+
       setManagedGroups(hydratedGroups);
       setSelectedGroupId((prev) => prev || hydratedGroups[0]?.id || null);
       setIsLoading(false);
@@ -113,8 +93,8 @@ const Dashboard = () => {
       }
 
       const { data: pendingApplications, error: applicationsError } = await supabase
-        .from("membership_applications" as never)
-        .select("id, user_id, group_id, created_at, status")
+        .from("group_members" as never)
+        .select("id, user_id, group_id, created_at, status, member_name" as never)
         .eq("group_id", selectedGroupId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -125,7 +105,7 @@ const Dashboard = () => {
         return;
       }
 
-      const apps = (pendingApplications || []) as MembershipApplication[];
+      const apps = ((pendingApplications || []) as MembershipApplication[]).filter((app) => Boolean(app.user_id));
       setApplications(apps);
 
       const applicantUserIds = Array.from(new Set(apps.map((app) => app.user_id))).filter(Boolean);
@@ -151,22 +131,99 @@ const Dashboard = () => {
     fetchApplications();
   }, [selectedGroupId]);
 
-  const handleDecision = async (applicationId: string, decision: "approved" | "declined") => {
+  const handleApproval = async (applicationId: string) => {
+    if (!selectedGroupId) return;
+
+    const application = applications.find((item) => item.id === applicationId);
+    const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
+
+    if (!application?.user_id || !selectedGroup) {
+      toast.error("Unable to approve this member right now.");
+      return;
+    }
+
+    setIsUpdating(applicationId);
+
+    const { error: statusError } = await supabase
+      .from("group_members" as never)
+      .update({ status: "active" } as never)
+      .eq("id", applicationId)
+      .eq("group_id", selectedGroupId);
+
+    if (statusError) {
+      console.error("Error updating member status:", statusError);
+      toast.error("Unable to approve application.");
+      setIsUpdating(null);
+      return;
+    }
+
+    const { data: userStatsRow, error: userStatsError } = await supabase
+      .from("user_stats" as never)
+      .select("xp" as never)
+      .eq("user_id", application.user_id as never)
+      .maybeSingle();
+
+    if (userStatsError) {
+      console.error("Error fetching user stats:", userStatsError);
+      toast.error("Member approved, but XP update failed.");
+      setIsUpdating(null);
+      return;
+    }
+
+    const currentXp = Number((userStatsRow as { xp?: number } | null)?.xp || 0);
+    const nextXp = currentXp + 50;
+    const nextLevel = Math.floor(nextXp / 100) + 1;
+
+    const { error: upsertStatsError } = await supabase
+      .from("user_stats" as never)
+      .upsert({ user_id: application.user_id, xp: nextXp, level: nextLevel } as never, { onConflict: "user_id" as never });
+
+    if (upsertStatsError) {
+      console.error("Error upserting user stats:", upsertStatsError);
+      toast.error("Member approved, but XP update failed.");
+      setIsUpdating(null);
+      return;
+    }
+
+    const groupName = selectedGroup.group_name || "the group";
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: application.user_id,
+        title: "Membership Approved",
+        message: `You are now a member of ${groupName}!`,
+        type: "membership",
+        link: `/group/${selectedGroupId}`,
+      });
+
+    if (notificationError) {
+      console.error("Error creating approval notification:", notificationError);
+      toast.error("Member approved, but notification delivery failed.");
+      setIsUpdating(null);
+      return;
+    }
+
+    setApplications((prev) => prev.filter((item) => item.id !== applicationId));
+    toast.success("Member approved and XP awarded.");
+    setIsUpdating(null);
+  };
+
+  const handleDecline = async (applicationId: string) => {
     setIsUpdating(applicationId);
     const { error } = await supabase
-      .from("membership_applications" as never)
-      .update({ status: decision } as never)
+      .from("group_members" as never)
+      .update({ status: "declined" } as never)
       .eq("id", applicationId);
 
     if (error) {
-      console.error(`Error marking application as ${decision}:`, error);
-      toast.error(`Unable to ${decision === "approved" ? "approve" : "decline"} application.`);
+      console.error("Error declining member:", error);
+      toast.error("Unable to decline application.");
       setIsUpdating(null);
       return;
     }
 
     setApplications((prev) => prev.filter((application) => application.id !== applicationId));
-    toast.success(decision === "approved" ? "Application approved." : "Application declined.");
+    toast.success("Application declined.");
     setIsUpdating(null);
   };
 
@@ -210,21 +267,23 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
         {applications.length === 0 ? (
-          <div className="rounded-xl border border-secondary/20 bg-card/60 p-6 text-sm text-muted-foreground backdrop-blur-md">
+          <div className="p-6 text-sm text-muted-foreground">
             No pending applications for this group.
           </div>
         ) : (
-          applications.map((application) => {
+          applications.map((application, index) => {
             const applicant = applicantsByUserId[application.user_id];
-            const name = applicant?.username || "Applicant";
+            const name = applicant?.username || application.member_name || "Applicant";
             const initial = name.charAt(0).toUpperCase();
 
             return (
               <div
                 key={application.id}
-                className="flex flex-col gap-4 rounded-xl border border-secondary/20 bg-card/70 p-4 backdrop-blur-md md:flex-row md:items-center md:justify-between"
+                className={`flex min-h-[120px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                  index < applications.length - 1 ? "border-b border-secondary/20" : ""
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border border-secondary/30">
@@ -244,7 +303,7 @@ const Dashboard = () => {
                     size="sm"
                     className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
                     disabled={isUpdating === application.id}
-                    onClick={() => handleDecision(application.id, "approved")}
+                    onClick={() => handleApproval(application.id)}
                   >
                     <Check className="mr-1 h-4 w-4" /> Approve
                   </Button>
@@ -253,7 +312,7 @@ const Dashboard = () => {
                     variant="ghost"
                     className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                     disabled={isUpdating === application.id}
-                    onClick={() => handleDecision(application.id, "declined")}
+                    onClick={() => handleDecline(application.id)}
                   >
                     <X className="mr-1 h-4 w-4" /> Decline
                   </Button>

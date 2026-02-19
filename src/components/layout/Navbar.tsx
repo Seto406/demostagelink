@@ -12,7 +12,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, newNotificationSignal } = useNotifications();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBellShaking, setIsBellShaking] = useState(false);
   const [canAccessManagement, setCanAccessManagement] = useState(false);
@@ -40,12 +40,12 @@ const Navbar = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (unreadCount > 0) {
+    if (newNotificationSignal > 0) {
       setIsBellShaking(true);
       const timeout = setTimeout(() => setIsBellShaking(false), 500);
       return () => clearTimeout(timeout);
     }
-  }, [unreadCount]);
+  }, [newNotificationSignal]);
 
   useEffect(() => {
     const checkManagementAccess = async () => {
@@ -54,16 +54,11 @@ const Navbar = () => {
         return;
       }
 
-      if (profile.role === "producer") {
-        setCanAccessManagement(true);
-        return;
-      }
-
       const { count, error } = await supabase
-        .from("group_members")
+        .from("profiles")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", profile.id)
-        .or("role_in_group.ilike.%producer%,role_in_group.ilike.%owner%,role_in_group.ilike.%admin%,role_in_group.ilike.%director%");
+        .eq("user_id", profile.user_id)
+        .not("group_name", "is", null);
 
       if (error) {
         console.error("Error checking management access:", error);
