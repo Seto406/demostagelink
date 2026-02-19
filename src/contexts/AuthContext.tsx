@@ -252,14 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initSession = async () => {
       try {
-        const timeoutPromise = new Promise<{ data: { session: Session | null }; error: any }>((_, reject) =>
-          setTimeout(() => reject(new Error("Session check timed out")), 5000)
-        );
-
-        const { data, error } = await Promise.race([
-          supabase.auth.getSession(),
-          timeoutPromise
-        ]);
+        const { data, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error("Error retrieving session:", error);

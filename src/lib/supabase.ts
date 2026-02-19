@@ -29,15 +29,14 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 
           // Safe Auth Reset: Only reload for specific session errors, never for function errors
           if (!isFunctionsError && ((response.status === 401 && isSessionFuture) || isSessionNotFound)) {
-            console.error("Critical session error detected. Performing hard reset.");
+            console.error("Critical session error detected. Clearing session.");
             // Clear all sb- keys to kill the bad session
             Object.keys(localStorage).forEach((key) => {
               if (key.startsWith('sb-')) {
                 localStorage.removeItem(key);
               }
             });
-            // Force reload to let the user back in with a fresh state
-            window.location.reload();
+            // Return error so app can handle it (e.g. redirect to login)
             return new Response(JSON.stringify({ error: "Session reset" }), { status: 401 });
           }
         } catch (e) {
