@@ -202,7 +202,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
           title: title,
           description: description || null,
           date: date || null,
-          venue: venue || null,
+          venue: venue?.trim() || null,
           city: city || null,
           niche: niche,
           status: "approved",
