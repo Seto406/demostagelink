@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Bell, Film, Users, Theater } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Bell, Film, Users, Theater, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
@@ -14,6 +15,7 @@ const Navbar = () => {
   const { unreadCount } = useNotifications();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBellShaking, setIsBellShaking] = useState(false);
+  const [canAccessManagement, setCanAccessManagement] = useState(false);
 
   const centerNavLinks = [
     { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
@@ -44,6 +46,36 @@ const Navbar = () => {
       return () => clearTimeout(timeout);
     }
   }, [unreadCount]);
+
+  useEffect(() => {
+    const checkManagementAccess = async () => {
+      if (!user || !profile) {
+        setCanAccessManagement(false);
+        return;
+      }
+
+      if (profile.role === "producer") {
+        setCanAccessManagement(true);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from("group_members")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.id)
+        .or("role_in_group.ilike.%producer%,role_in_group.ilike.%owner%,role_in_group.ilike.%admin%,role_in_group.ilike.%director%");
+
+      if (error) {
+        console.error("Error checking management access:", error);
+        setCanAccessManagement(false);
+        return;
+      }
+
+      setCanAccessManagement((count || 0) > 0);
+    };
+
+    checkManagementAccess();
+  }, [user, profile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -163,12 +195,16 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
-                  {profile?.role === "producer" && (
-                    <Link to="/dashboard" className="w-full">
-                      <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
-                        Dashboard
-                      </Button>
-                    </Link>
+                  {canAccessManagement && (
+                    <div className="rounded-xl border border-secondary/20 bg-card/50 p-3 backdrop-blur-md">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Management</p>
+                      <Link to="/dashboard" className="w-full">
+                        <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          My Dashboards
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                   <Link to="/profile" className="w-full">
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
