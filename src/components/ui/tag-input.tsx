@@ -57,6 +57,7 @@ export const TagInput = ({ placeholder, tags, setTags, suggestions, className, i
               size="icon"
               className="h-4 w-4 p-0 hover:bg-transparent"
               onClick={() => removeTag(index)}
+              aria-label={`Remove ${tag}`}
             >
               <X className="h-3 w-3" />
             </Button>
