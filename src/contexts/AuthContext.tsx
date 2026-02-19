@@ -248,37 +248,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) {
-        console.error("Error retrieving session:", error);
-        localStorage.clear();
-        setSession(null);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
+    const initSession = async () => {
       try {
+        const timeoutPromise = new Promise<{ data: { session: Session | null }; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error("Session check timed out")), 5000)
+        );
+
+        const { data, error } = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]);
+
+        if (error) {
+          console.error("Error retrieving session:", error);
+          localStorage.clear();
+          setSession(null);
+          setUser(null);
+          return; // Finally block will handle setLoading(false)
+        }
+
+        const session = data.session;
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
           await ensureProfile(session.user.id, session.user.user_metadata);
         }
-      } catch (error) {
-        console.error("Error processing session:", error);
-        localStorage.clear();
+      } catch (err) {
+        console.error("Unexpected error or timeout checking session:", err);
+        // On timeout/error, assume no session to unblock UI
         setSession(null);
         setUser(null);
       } finally {
         setLoading(false);
       }
-    }).catch((err) => {
-      console.error("Unexpected error checking session:", err);
-      localStorage.clear();
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-    });
+    };
+
+    initSession();
 
     return () => {
       subscription.unsubscribe();

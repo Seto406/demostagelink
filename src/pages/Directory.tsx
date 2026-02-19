@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, UserPlus } from "lucide-react";
+import { Search, Loader2, UserPlus, LayoutGrid, List } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
@@ -41,6 +41,106 @@ interface TheaterGroup {
 }
 
 // Demo theater groups for display when no real data
+// Helper for niche labels
+const getNicheLabel = (niche: string | null) => {
+  switch (niche) {
+    case "local":
+      return "Local/Community";
+    case "university":
+      return "University";
+    default:
+      return "Theater Group";
+  }
+};
+
+const DirectoryListItem = ({
+  group,
+  isUsingDemo,
+  user,
+  profile,
+  joiningGroupId,
+  handleJoinRequest
+}: {
+  group: TheaterGroup;
+  isUsingDemo: boolean;
+  user: any;
+  profile: any;
+  joiningGroupId: string | null;
+  handleJoinRequest: (e: React.MouseEvent, group: TheaterGroup) => void;
+}) => {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="flex h-[120px] bg-card border border-secondary/20 rounded-lg overflow-hidden hover:border-secondary/50 transition-colors group"
+    >
+      {/* Logo */}
+      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
+         <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/30 bg-background">
+            {group.logo ? (
+              <img
+                src={group.logo}
+                alt={`${group.group_name} logo`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
+            )}
+         </div>
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0">
+        <div className="flex items-start justify-between gap-2">
+            <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors">
+                {group.group_name}
+            </h3>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1 mb-2">
+             <span className="text-secondary uppercase tracking-wider">
+                 {getNicheLabel(group.niche)}
+             </span>
+             {group.city && (
+                 <span>• {group.city}</span>
+             )}
+        </div>
+
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
+             {group.description || "A theater group in Metro Manila."}
+        </p>
+      </div>
+
+      {/* Action */}
+      <div className="flex items-center px-4 border-l border-white/5 bg-muted/5 shrink-0 gap-2">
+        <Link to={isUsingDemo ? `/group/${group.id}` : `/producer/${group.id}`}>
+          <Button size="sm" variant="secondary" className="h-8 text-xs font-medium whitespace-nowrap">
+            View Profile
+          </Button>
+        </Link>
+        {!isUsingDemo && (!user || (profile?.role !== 'producer' && profile?.role !== 'admin')) && (
+             <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={(e) => handleJoinRequest(e, group)}
+                disabled={joiningGroupId === group.id}
+                title="Join as Member"
+            >
+                {joiningGroupId === group.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                    <UserPlus className="w-4 h-4" />
+                )}
+            </Button>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
 const demoGroups: TheaterGroup[] = [
   {
     id: "demo-1",
@@ -130,6 +230,7 @@ const Directory = () => {
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [groups, setGroups] = useState<TheaterGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,17 +399,6 @@ const Directory = () => {
     return matchesSearch && matchesCity && matchesNiche;
   }) : groups;
 
-  const getNicheLabel = (niche: string | null) => {
-    switch (niche) {
-      case "local":
-        return "Local/Community";
-      case "university":
-        return "University";
-      default:
-        return "Theater Group";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -387,59 +477,72 @@ const Directory = () => {
             </div>
           </motion.div>
 
-          {/* Groups Grid */}
+          {/* Results Count & View Toggle */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
+          >
+            <div className="text-sm text-muted-foreground order-2 sm:order-1">
+              {loading
+                ? "Loading..."
+                : `${displayGroups.length} ${displayGroups.length === 1 ? "group" : "groups"} found`}
+            </div>
+
+            <div className="flex items-center gap-2 bg-card border border-secondary/30 rounded-lg p-1 order-1 sm:order-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-secondary/20 text-secondary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-secondary/20 text-secondary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Groups Grid/List */}
           {loading ? (
             <ProducerListSkeleton count={6} />
           ) : (
             <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className={viewMode === 'grid' ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
                 {displayGroups.map((group, index) => (
-                  <motion.div
-                    key={group.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.05 }}
-                  >
-                    {isUsingDemo ? (
-                      <Link 
-                        to={`/group/${group.id}`}
-                        className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
-                            {group.logo ? (
-                              <img 
-                                src={group.logo} 
-                                alt={`${group.group_name} logo`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-xs text-secondary uppercase tracking-wider">
-                              {getNicheLabel(group.niche)}
-                            </span>
-                            {group.city && (
-                              <span className="text-xs text-muted-foreground">
-                                {group.city}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
-                          {group.group_name}
-                        </h3>
-                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                          {group.description || "A theater group in Metro Manila."}
-                        </p>
-                      </Link>
-                    ) : (
-                      <div className="block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col">
+                  viewMode === 'list' ? (
+                     <DirectoryListItem
+                        key={group.id}
+                        group={group}
+                        isUsingDemo={isUsingDemo}
+                        user={user}
+                        profile={profile}
+                        joiningGroupId={joiningGroupId}
+                        handleJoinRequest={handleJoinRequest}
+                     />
+                  ) : (
+                    <motion.div
+                      key={group.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                    >
+                      {isUsingDemo ? (
                         <Link
-                          to={`/producer/${group.id}`}
-                          className="block p-6 flex-1"
+                          to={`/group/${group.id}`}
+                          className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl"
                         >
                           <div className="flex items-start justify-between mb-4">
                             <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
@@ -450,7 +553,7 @@ const Directory = () => {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                              <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
+                                <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                               )}
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -471,29 +574,66 @@ const Directory = () => {
                             {group.description || "A theater group in Metro Manila."}
                           </p>
                         </Link>
-                        {(!user || (profile?.role !== 'producer' && profile?.role !== 'admin')) && (
-                            <div className="px-6 pb-6 pt-0 mt-auto">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={(e) => handleJoinRequest(e, group)}
-                                    disabled={joiningGroupId === group.id}
-                                >
-                                    {joiningGroupId === group.id ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <UserPlus className="w-4 h-4 mr-2" />
-                                            Join as Member
-                                        </>
-                                    )}
-                                </Button>
+                      ) : (
+                        <div className="block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col">
+                          <Link
+                            to={`/producer/${group.id}`}
+                            className="block p-6 flex-1"
+                          >
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
+                                {group.logo ? (
+                                  <img
+                                    src={group.logo}
+                                    alt={`${group.group_name} logo`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-xs text-secondary uppercase tracking-wider">
+                                  {getNicheLabel(group.niche)}
+                                </span>
+                                {group.city && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {group.city}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
+                            <h3 className="font-serif text-xl text-foreground mb-2 group-hover:text-secondary transition-colors">
+                              {group.group_name}
+                            </h3>
+                            <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                              {group.description || "A theater group in Metro Manila."}
+                            </p>
+                          </Link>
+                          {(!user || (profile?.role !== 'producer' && profile?.role !== 'admin')) && (
+                              <div className="px-6 pb-6 pt-0 mt-auto">
+                                  <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-full"
+                                      onClick={(e) => handleJoinRequest(e, group)}
+                                      disabled={joiningGroupId === group.id}
+                                  >
+                                      {joiningGroupId === group.id ? (
+                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                          <>
+                                              <UserPlus className="w-4 h-4 mr-2" />
+                                              Join as Member
+                                          </>
+                                      )}
+                                  </Button>
+                              </div>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )
                 ))}
               </div>
               

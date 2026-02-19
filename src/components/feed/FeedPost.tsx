@@ -329,13 +329,17 @@ export function FeedPost({ show }: FeedPostProps) {
         <CardFooter className="flex flex-col p-0">
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
                 <div className="flex items-center gap-3">
+                    {/* Left side empty for balance or future stats */}
+                </div>
+
+                <div className="flex items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={handleShare}
-                          className="text-muted-foreground hover:text-foreground hover:bg-background/50"
+                          className="text-muted-foreground hover:text-foreground hover:bg-background/50 h-8 w-8 p-0"
                           aria-label="Share this show"
                         >
                             <Share2 className="w-4 h-4" />
@@ -345,9 +349,21 @@ export function FeedPost({ show }: FeedPostProps) {
                         <p>Share this show</p>
                       </TooltipContent>
                     </Tooltip>
-                </div>
 
-                <div className="flex items-center gap-2">
+                    <BookmarkButton
+                        isFavorited={isFavorited(show.id)}
+                        onClick={() => {
+                            const willFavorite = !isFavorited(show.id);
+                            toggleFavorite(show.id);
+                            toast({
+                                title: willFavorite ? "Saved to Watchlist" : "Removed from Watchlist",
+                                description: willFavorite ? "This show has been added to your favorites." : "This show has been removed from your favorites.",
+                            });
+                        }}
+                        size="sm"
+                        className="hover:bg-background/50 h-8 w-8 p-0"
+                    />
+
                     <div className="flex items-center gap-1">
                         <LikeButton
                             isLiked={isLiked(show.id)}
