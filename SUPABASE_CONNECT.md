@@ -9,10 +9,10 @@ Verified on: 2026-02-19
 - **Verified Table**: `profiles`
 - **Result**: Data accessible (row count: 19)
 
-## Configuration Discrepancy
-- The `.env` file uses project ID `dssbduklgbmxezpjpuen` and URL `https://dssbduklgbmxezpjpuen.supabase.co`.
-- The `supabase/config.toml` file uses project ID `jfttjnoxveekouqcznis`.
-- This likely means the `.env` points to the *production* or *live* project, while `supabase/config.toml` might be pointing to a different or older project. **Use the credentials from `.env` for active usage.**
+## Configuration Status
+- The `.env` file uses project ID `dssbduklgbmxezpjpuen`.
+- The `supabase/config.toml` file also uses project ID `dssbduklgbmxezpjpuen`.
+- Configuration is consistent across environment and Supabase config.
 
 ## Retrieving the Service Role Key for MCP
 To fully connect the Supabase MCP tool (which requires admin access), you need the **Service Role Key** (secret) corresponding to the active project (`dssbduklgbmxezpjpuen`).
