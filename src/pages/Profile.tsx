@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon } from "lucide-react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";

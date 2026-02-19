@@ -24,7 +24,7 @@ import { CreatableSelect } from "@/components/ui/creatable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { toast } from "@/hooks/use-toast";
-import { Image, Trash2, HelpCircle, Plus } from "lucide-react";
+import { Image, Trash2, HelpCircle, Plus, Ticket } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
 import { Json } from "@/integrations/supabase/types";
@@ -409,6 +409,12 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
                        <span>Total Audience Price:</span>
                        <span className="font-medium">₱{(parseFloat(price) + calculateReservationFee(parseFloat(price), niche)).toFixed(2)}</span>
                      </div>
+                   </div>
+                )}
+                {price && parseFloat(price) === 0 && (
+                   <div className="text-xs text-[#3b82f6] mt-1 font-medium flex items-center gap-1">
+                     <Ticket className="w-3 h-3" />
+                     Free Ticket
                    </div>
                 )}
               </div>

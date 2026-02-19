@@ -34,7 +34,6 @@ const Navbar = () => {
         { path: "/feed", label: "Home" },
         { path: "/shows", label: "Shows" },
         { path: "/directory", label: "Directory" },
-        { path: "/favorites", label: "Favorites" },
         { path: "/about", label: "About" },
       ]
     : [
