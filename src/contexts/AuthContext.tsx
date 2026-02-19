@@ -164,7 +164,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     role: role,
                   },
                 }).then(({ error }) => {
-                  if (error) console.error("Failed to trigger welcome email:", error);
+                  if (error) console.warn("Failed to trigger welcome email:", error);
+                }).catch(err => {
+                  console.warn("Welcome email invocation failed:", err);
                 });
               }
             } catch (emailError) {
