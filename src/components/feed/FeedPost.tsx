@@ -363,10 +363,17 @@ export function FeedPost({ show }: FeedPostProps) {
                     </div>
 
                     <Link to={`/show/${show.id}`}>
-                        <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
-                            <Ticket className="w-4 h-4 mr-1" />
-                            Reserve for ₱25
-                        </Button>
+                        {show.price === 0 ? (
+                            <Button size="sm" variant="default" className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-medium">
+                                <Ticket className="w-4 h-4 mr-1" />
+                                Get Free Ticket
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
+                                <Ticket className="w-4 h-4 mr-1" />
+                                Reserve for ₱25
+                            </Button>
+                        )}
                     </Link>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -156,9 +156,8 @@ const ShowDetailsPage = () => {
               <p className="text-muted-foreground mb-8">
                 This production may have been removed or is still pending approval.
               </p>
-              <Button variant="outline" onClick={() => navigate("/")}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
+              <Button variant="outline" size="icon" onClick={() => navigate("/")} aria-label="Home">
+                <Home className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -428,15 +427,17 @@ END:VCALENDAR`;
                                 </div>
 
                                 <div className="space-y-3">
-                                    {show.price && show.price > 0 ? (
+                                    {(show.price !== null && show.price !== undefined && show.price >= 0) ? (
                                         <Button
                                             size="xl"
-                                            className="w-full text-lg font-serif shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
+                                            className={`w-full text-lg font-serif shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow ${
+                                                show.price === 0 ? "bg-[#3b82f6] hover:bg-[#2563eb] text-white" : ""
+                                            }`}
                                             onClick={handleBuyTicket}
                                             disabled={buyingTicket}
                                         >
                                             <Ticket className="w-5 h-5 mr-2" />
-                                            Reserve Now
+                                            {show.price === 0 ? "Get Free Ticket" : "Reserve Now"}
                                         </Button>
                                     ) : show.ticket_link ? (
                                         <a href={show.ticket_link} target="_blank" rel="noopener noreferrer" className="block w-full">

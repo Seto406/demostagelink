@@ -21,6 +21,7 @@ import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -103,13 +104,19 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
           </Link>
 
           {/* Poster */}
-          <div className="aspect-[2/3] relative overflow-hidden">
+          <div className="aspect-[2/3] relative overflow-hidden bg-black/5">
             {posterUrl ? (
-              <motion.img
-                src={posterUrl}
-                alt={show.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
+              <>
+                <div
+                  className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                  style={{ backgroundImage: `url(${posterUrl})` }}
+                />
+                <motion.img
+                  src={posterUrl}
+                  alt={show.title}
+                  className="relative w-full h-full object-contain z-10 transition-transform duration-500 group-hover:scale-105"
+                />
+              </>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                 <span className="text-6xl opacity-30">🎭</span>
@@ -765,6 +772,7 @@ const Shows = () => {
         </div>
       </main>
       </PullToRefresh>
+      <ScrollToTop />
       <Footer />
     </div>
   );

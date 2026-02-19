@@ -38,6 +38,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 
 // Interface for Feed Shows (includes joined data)
 export interface FeedShow {
@@ -326,6 +327,7 @@ const UserFeed = () => {
         </aside>
       </div>
 
+      <ScrollToTop />
       <Footer />
 
       {/* Modals */}

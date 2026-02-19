@@ -36,7 +36,7 @@ import {
   Image as ImageIcon,
   Trash2,
   RotateCcw,
-  ArrowLeft,
+  Home,
   Megaphone,
   CheckCircle,
   Mail,
@@ -845,9 +845,8 @@ const AdminPanel = () => {
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link to="/feed">
-              <button className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center gap-2 text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm">Back to Home</span>
+              <button className="p-2 hover:bg-muted transition-colors rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground" aria-label="Home">
+                <Home className="w-5 h-5" />
               </button>
             </Link>
             <button

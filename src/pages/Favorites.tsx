@@ -99,7 +99,7 @@ const Favorites = () => {
             <div className="flex items-center gap-3 mb-2">
               <Bookmark className="w-6 h-6 text-primary fill-primary" />
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
-                My Favorites
+                Favorites
               </h1>
             </div>
             <p className="text-muted-foreground">
@@ -138,19 +138,25 @@ const Favorites = () => {
                 >
                   <Link to={`/show/${show.id}`}>
                     <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-all">
-                      <div className="aspect-[3/4] relative overflow-hidden">
+                      <div className="aspect-[3/4] relative overflow-hidden bg-black/5">
                         {show.poster_url ? (
-                          <img
-                            src={show.poster_url}
-                            alt={show.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
+                          <>
+                            <div
+                              className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                              style={{ backgroundImage: `url(${show.poster_url})` }}
+                            />
+                            <img
+                              src={show.poster_url}
+                              alt={show.title}
+                              className="relative w-full h-full object-contain z-10 transition-transform duration-500 group-hover:scale-105"
+                            />
+                          </>
                         ) : (
                           <div className="w-full h-full bg-muted flex items-center justify-center">
                             <span className="text-4xl">🎭</span>
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-20 pointer-events-none" />
                       </div>
                       <div className="p-4">
                         <h3 className="font-serif font-semibold text-foreground mb-1 line-clamp-1">
