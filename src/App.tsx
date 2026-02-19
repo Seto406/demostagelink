@@ -2,12 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ThemeProvider } from "next-themes";
-import { useEffect, Suspense, lazy } from "react";
+import { useEffect, Suspense, lazy, ReactNode } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
@@ -64,6 +64,20 @@ const AppRoutes = () => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  const RequireAuth = ({ children }: { children: ReactNode }) => {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+      return <FullPageLoader />;
+    }
+
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+
+    return children;
+  };
+
   return (
     <PageTransition>
       <Suspense fallback={<FullPageLoader />}>
@@ -76,9 +90,9 @@ const AppRoutes = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/guests/:showId" element={<GuestList />} />
-          <Route path="/dashboard/analytics" element={<Dashboard />} />
+          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/dashboard/guests/:showId" element={<RequireAuth><GuestList /></RequireAuth>} />
+          <Route path="/dashboard/analytics" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/admin/dashboard" element={<AdminPanel />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />

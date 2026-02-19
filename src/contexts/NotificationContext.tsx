@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationContextType {
   unreadCount: number;
+  newNotificationSignal: number;
   refreshUnreadCount: () => Promise<void>;
 }
 
@@ -13,6 +14,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newNotificationSignal, setNewNotificationSignal] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
     if (!user) {
@@ -43,7 +45,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-        () => fetchUnreadCount()
+        (payload) => {
+          fetchUnreadCount();
+          if (payload.eventType === "INSERT") {
+            setNewNotificationSignal((prev) => prev + 1);
+          }
+        }
       )
       .subscribe();
 
@@ -53,7 +60,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchUnreadCount]);
 
   return (
-    <NotificationContext.Provider value={{ unreadCount, refreshUnreadCount: fetchUnreadCount }}>
+    <NotificationContext.Provider value={{ unreadCount, newNotificationSignal, refreshUnreadCount: fetchUnreadCount }}>
       {children}
     </NotificationContext.Provider>
   );
