@@ -261,8 +261,10 @@ const Dashboard = () => {
     if (!loading) {
       if (!user) {
         navigate("/login");
+      } else if (profile && profile.role === "admin") {
+        navigate("/admin", { replace: true });
       } else if (profile && profile.role !== "producer") {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     }
   }, [user, profile, loading, navigate]);

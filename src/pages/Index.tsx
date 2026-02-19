@@ -13,15 +13,21 @@ import LandingFooter from "@/components/landing/LandingFooter";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect logged-in users to the dashboard
+  // Redirect logged-in users based on role
   useEffect(() => {
     if (!loading && user) {
-      navigate("/dashboard");
+      if (profile?.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (profile?.role === "producer") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/feed", { replace: true });
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, profile, loading, navigate]);
 
   // Show loader while checking auth
   if (loading) {
