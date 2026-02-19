@@ -136,7 +136,7 @@ const ShowDetailsPage = () => {
               <BrandedLoader size="lg" text="Loading production details..." />
             </div>
           </div>
-        </main>
+      </div>
       </div>
     );
   }
@@ -159,7 +159,7 @@ const ShowDetailsPage = () => {
               </Button>
             </div>
           </div>
-        </main>
+      </div>
         <Footer />
       </div>
     );
@@ -586,7 +586,7 @@ END:VCALENDAR`;
             </div>
 
         </div>
-      </main>
+    </div>
       <Footer />
 
       {show && (
