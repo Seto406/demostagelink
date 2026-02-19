@@ -15,6 +15,7 @@
     "node": ">=20",
     "pnpm": ">=9"
   },
+  "packageManager": "pnpm@9.15.9",
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
