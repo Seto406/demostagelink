@@ -22,14 +22,16 @@ export const HealthCheckGate = ({ children }: { children: ReactNode }) => {
     return <MaintenanceMode />;
   }
 
-  // If we have an error, show the "Connection Issue" state
+  // If we have an error, log it but let the app load (Fail Open)
   if (error) {
-    return <MaintenanceMode error={error} retry={() => refetch()} />;
+    console.error("Health check failed:", error);
+    return <>{children}</>;
   }
 
-  // If data is null or undefined (RPC failed silently?)
+  // If data is null or undefined (RPC failed silently?), proceed anyway
   if (!data) {
-     return <MaintenanceMode error={new Error("No response from server")} retry={() => refetch()} />;
+     console.warn("Health check returned no data, proceeding.");
+     return <>{children}</>;
   }
 
   // If all good, render children
