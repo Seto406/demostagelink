@@ -217,12 +217,40 @@ const ProducerProfile = () => {
 
     setJoinLoading(true);
     try {
+      // Check if already a member or pending
+      const { data: existingMember, error: fetchError } = await supabase
+        .from('group_members' as any)
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('group_id', producer.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingMember) {
+        if (existingMember.status === 'pending') {
+          toast.info("You already have a pending application.");
+          setHasApplied(true);
+          setApplicationStatus('pending');
+          return;
+        } else if (existingMember.status === 'active') {
+          toast.info("You are already a member of this group.");
+          setHasApplied(true);
+          setApplicationStatus('active');
+          return;
+        }
+      }
+
       const { error } = await supabase
-        .from('membership_applications' as any)
+        .from('group_members' as any)
         .insert([{
           user_id: user.id,
           group_id: producer.id,
-          status: 'pending'
+          member_name: profile.username || 'Unknown User',
+          status: 'pending',
+          role_in_group: 'member',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }]);
 
       if (error) throw error;
@@ -233,10 +261,12 @@ const ProducerProfile = () => {
         type: 'membership_application',
         title: 'New Member Application',
         message: `${profile.username || 'Someone'} wants to join your group.`,
-        link: `/dashboard/members`
+        link: `/dashboard` // Updated link to point to main dashboard as members is likely a tab
       });
 
       toast.success("Membership application sent successfully!");
+      setHasApplied(true);
+      setApplicationStatus('pending');
     } catch (error: any) {
       console.error("Error sending membership application:", error);
       toast.error(error.message || "Failed to send application");
@@ -250,6 +280,22 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
+      // Check for existing pending request
+      const { data: existingRequest, error: fetchError } = await supabase
+        .from('collaboration_requests' as any)
+        .select('id')
+        .eq('sender_id', user.id)
+        .eq('receiver_id', producer.id)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingRequest) {
+        toast.info("You already have a pending collaboration request.");
+        return;
+      }
+
       // Emergency Fix: Bypass Edge Function and write directly to table
       const { error } = await supabase
         .from('collaboration_requests' as any)

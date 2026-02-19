@@ -7,7 +7,17 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type ManagedGroup = {
   id: string;
@@ -24,10 +34,27 @@ type MembershipApplication = {
   member_name: string;
 };
 
+type UnlinkedMember = {
+  id: string;
+  member_name: string;
+  role_in_group: string | null;
+  status: string;
+};
+
+type CollaborationRequest = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  status: string;
+  created_at: string;
+};
+
 type ApplicantProfile = {
   user_id: string;
   username: string | null;
   avatar_url: string | null;
+  group_name?: string | null;
+  role?: string;
 };
 
 const Dashboard = () => {
@@ -36,9 +63,18 @@ const Dashboard = () => {
   const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [collabRequests, setCollabRequests] = useState<CollaborationRequest[]>([]);
+  const [unlinkedMembers, setUnlinkedMembers] = useState<UnlinkedMember[]>([]);
   const [applicantsByUserId, setApplicantsByUserId] = useState<Record<string, ApplicantProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  // Linking State
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [selectedUnlinkedMember, setSelectedUnlinkedMember] = useState<UnlinkedMember | null>(null);
+  const [searchUsername, setSearchUsername] = useState("");
+  const [foundUser, setFoundUser] = useState<ApplicantProfile | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const canManage = useMemo(() => managedGroups.length > 0, [managedGroups.length]);
 
@@ -88,10 +124,13 @@ const Dashboard = () => {
     const fetchApplications = async () => {
       if (!selectedGroupId) {
         setApplications([]);
+        setCollabRequests([]);
+        setUnlinkedMembers([]);
         setApplicantsByUserId({});
         return;
       }
 
+      // Fetch Member Applications
       const { data: pendingApplications, error: applicationsError } = await supabase
         .from("group_members" as never)
         .select("id, user_id, group_id, created_at, status, member_name" as never)
@@ -105,19 +144,51 @@ const Dashboard = () => {
         return;
       }
 
+      // Fetch Collab Requests
+      const { data: collabData, error: collabError } = await supabase
+        .from("collaboration_requests" as any)
+        .select("*")
+        .eq("receiver_id", selectedGroupId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (collabError) {
+        console.error("Error loading collab requests:", collabError);
+      }
+
+      // Fetch Unlinked Members (Manual Entries)
+      const { data: unlinkedData, error: unlinkedError } = await supabase
+        .from("group_members" as any)
+        .select("id, member_name, status, role_in_group")
+        .eq("group_id", selectedGroupId)
+        .is("user_id", null);
+
+      if (unlinkedError) {
+        console.error("Error loading unlinked members:", unlinkedError);
+      }
+
       const apps = ((pendingApplications || []) as MembershipApplication[]).filter((app) => Boolean(app.user_id));
       setApplications(apps);
 
-      const applicantUserIds = Array.from(new Set(apps.map((app) => app.user_id))).filter(Boolean);
-      if (applicantUserIds.length === 0) {
+      const collabs = (collabData || []) as CollaborationRequest[];
+      setCollabRequests(collabs);
+
+      setUnlinkedMembers((unlinkedData || []) as UnlinkedMember[]);
+
+      // Collect IDs from both sources
+      const appUserIds = apps.map((app) => app.user_id).filter(Boolean);
+      const collabUserIds = collabs.map((r) => r.sender_id).filter(Boolean);
+      const allUserIds = Array.from(new Set([...appUserIds, ...collabUserIds]));
+
+      if (allUserIds.length === 0) {
         setApplicantsByUserId({});
         return;
       }
 
       const { data: applicantProfiles, error: applicantError } = await supabase
         .from("profiles")
-        .select("user_id, username, avatar_url")
-        .in("user_id", applicantUserIds);
+        .select("user_id, username, avatar_url, group_name, role")
+        .in("user_id", allUserIds);
 
       if (applicantError) {
         console.error("Error loading applicant profiles:", applicantError);
@@ -227,6 +298,120 @@ const Dashboard = () => {
     setIsUpdating(null);
   };
 
+  const handleApproveCollab = async (requestId: string) => {
+    if (!selectedGroupId) return;
+    const request = collabRequests.find(r => r.id === requestId);
+    if (!request) return;
+
+    setIsUpdating(requestId);
+
+    // 1. Insert into group_members
+    const { error: insertError } = await supabase
+        .from("group_members" as any)
+        .insert({
+            user_id: request.sender_id,
+            group_id: selectedGroupId,
+            role_in_group: 'producer',
+            status: 'active',
+            member_name: applicantsByUserId[request.sender_id]?.username || applicantsByUserId[request.sender_id]?.group_name || "Producer",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        });
+
+    if (insertError) {
+        console.error("Error inserting group member:", insertError);
+        toast.error("Failed to add producer to group members.");
+        setIsUpdating(null);
+        return;
+    }
+
+    // 2. Update request status
+    const { error: updateError } = await supabase
+        .from("collaboration_requests" as any)
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+
+    if (updateError) {
+        console.error("Error updating request status:", updateError);
+    }
+
+    // Notification
+    await supabase.from("notifications").insert({
+        user_id: request.sender_id,
+        title: "Collab Request Accepted",
+        message: `Your collaboration request to ${managedGroups.find(g => g.id === selectedGroupId)?.group_name} was accepted!`,
+        type: "collab",
+        link: `/group/${selectedGroupId}`
+    });
+
+    setCollabRequests(prev => prev.filter(r => r.id !== requestId));
+    toast.success("Collaborator approved!");
+    setIsUpdating(null);
+  };
+
+  const handleDeclineCollab = async (requestId: string) => {
+    setIsUpdating(requestId);
+    const { error } = await supabase
+      .from("collaboration_requests" as any)
+      .update({ status: 'rejected' })
+      .eq("id", requestId);
+
+    if (error) {
+      console.error("Error rejecting collab:", error);
+      toast.error("Unable to reject request.");
+      setIsUpdating(null);
+      return;
+    }
+
+    setCollabRequests(prev => prev.filter((r) => r.id !== requestId));
+    toast.success("Request rejected.");
+    setIsUpdating(null);
+  };
+
+  const handleSearchUser = async () => {
+    if (!searchUsername.trim()) return;
+    setIsSearching(true);
+    setFoundUser(null);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("user_id, username, avatar_url")
+      .eq("username", searchUsername.trim())
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error searching user:", error);
+      toast.error("Search failed.");
+    } else if (data) {
+      setFoundUser(data as ApplicantProfile);
+    } else {
+      toast.info("User not found.");
+    }
+    setIsSearching(false);
+  };
+
+  const handleLinkUser = async () => {
+    if (!selectedUnlinkedMember || !foundUser) return;
+
+    setIsUpdating(selectedUnlinkedMember.id);
+    const { error } = await supabase
+      .from("group_members" as any)
+      .update({ user_id: foundUser.user_id } as any)
+      .eq("id", selectedUnlinkedMember.id);
+
+    if (error) {
+      console.error("Error linking user:", error);
+      toast.error("Failed to link user.");
+    } else {
+      toast.success(`Linked ${foundUser.username} to ${selectedUnlinkedMember.member_name}`);
+      setUnlinkedMembers(prev => prev.filter(m => m.id !== selectedUnlinkedMember.id));
+      setLinkDialogOpen(false);
+      setFoundUser(null);
+      setSearchUsername("");
+    }
+    setIsUpdating(null);
+  };
+
   if (loading || isLoading) {
     return <BrandedLoader size="lg" text="Loading management dashboard..." />;
   }
@@ -267,10 +452,77 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+      {/* Collaboration Requests Section */}
+      {collabRequests.length > 0 && (
+        <div className="mb-8 overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+           <div className="bg-secondary/10 px-6 py-3 border-b border-secondary/20">
+             <h2 className="font-serif font-bold text-lg flex items-center gap-2">
+               <Handshake className="w-5 h-5 text-secondary" />
+               Incoming Collaboration Requests
+             </h2>
+           </div>
+           {collabRequests.map((request, index) => {
+             const sender = applicantsByUserId[request.sender_id];
+             const name = sender?.group_name || sender?.username || "Producer";
+             const initial = name.charAt(0).toUpperCase();
+
+             return (
+               <div
+                 key={request.id}
+                 className={`flex min-h-[100px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                   index < collabRequests.length - 1 ? "border-b border-secondary/20" : ""
+                 }`}
+               >
+                 <div className="flex items-center gap-3">
+                   <Avatar className="h-10 w-10 border border-secondary/30">
+                     <AvatarImage src={sender?.avatar_url || undefined} alt={`${name} avatar`} />
+                     <AvatarFallback>{initial}</AvatarFallback>
+                   </Avatar>
+                   <div>
+                     <p className="font-medium text-foreground">{name}</p>
+                     <p className="text-xs text-muted-foreground">
+                       Requested {format(new Date(request.created_at), "MMM d, yyyy")}
+                     </p>
+                     <span className="inline-block mt-1 text-[10px] uppercase tracking-wider bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">
+                        Producer
+                     </span>
+                   </div>
+                 </div>
+
+                 <div className="flex items-center gap-2">
+                   <Button
+                     size="sm"
+                     className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                     disabled={isUpdating === request.id}
+                     onClick={() => handleApproveCollab(request.id)}
+                   >
+                     <Check className="mr-1 h-4 w-4" /> Accept Collab
+                   </Button>
+                   <Button
+                     size="sm"
+                     variant="ghost"
+                     className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                     disabled={isUpdating === request.id}
+                     onClick={() => handleDeclineCollab(request.id)}
+                   >
+                     <X className="mr-1 h-4 w-4" /> Reject
+                   </Button>
+                 </div>
+               </div>
+             );
+           })}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8">
+        <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+             <h2 className="font-serif font-bold text-lg text-muted-foreground">
+               Member Applications
+             </h2>
+        </div>
         {applications.length === 0 ? (
           <div className="p-6 text-sm text-muted-foreground">
-            No pending applications for this group.
+            No pending member applications.
           </div>
         ) : (
           applications.map((application, index) => {
@@ -322,6 +574,107 @@ const Dashboard = () => {
           })
         )}
       </div>
+
+      {/* Unlinked Members Section */}
+      {unlinkedMembers.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+           <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+             <h2 className="font-serif font-bold text-lg text-muted-foreground flex items-center gap-2">
+               <User className="w-5 h-5" />
+               Manual Entries (Unlinked)
+             </h2>
+             <p className="text-xs text-muted-foreground">These members were added manually and are not linked to a user account.</p>
+           </div>
+           {unlinkedMembers.map((member, index) => (
+               <div
+                 key={member.id}
+                 className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                   index < unlinkedMembers.length - 1 ? "border-b border-secondary/20" : ""
+                 }`}
+               >
+                 <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">
+                     {member.member_name.charAt(0).toUpperCase()}
+                   </div>
+                   <div>
+                     <p className="font-medium text-foreground">{member.member_name}</p>
+                     <p className="text-xs text-muted-foreground capitalize">{member.role_in_group || "Member"}</p>
+                   </div>
+                 </div>
+
+                 <Button
+                   size="sm"
+                   variant="outline"
+                   className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10"
+                   onClick={() => {
+                     setSelectedUnlinkedMember(member);
+                     setLinkDialogOpen(true);
+                     setFoundUser(null);
+                     setSearchUsername("");
+                   }}
+                 >
+                   <LinkIcon className="mr-1 h-4 w-4" /> Link User
+                 </Button>
+               </div>
+           ))}
+        </div>
+      )}
+
+      {/* Link User Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link User to Member</DialogTitle>
+            <DialogDescription>
+              Search for a user by username to link them to <strong>{selectedUnlinkedMember?.member_name}</strong>.
+              This will merge their history with the user account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex gap-2 items-end">
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Enter username..."
+                  value={searchUsername}
+                  onChange={(e) => setSearchUsername(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearchUser()}
+                />
+              </div>
+              <Button onClick={handleSearchUser} disabled={isSearching || !searchUsername}>
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {foundUser && (
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-secondary/10 border-secondary/20">
+                <Avatar>
+                  <AvatarImage src={foundUser.avatar_url || undefined} />
+                  <AvatarFallback>{foundUser.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{foundUser.username}</p>
+                  <p className="text-xs text-muted-foreground">User ID: {foundUser.user_id.slice(0, 8)}...</p>
+                </div>
+                <Check className="h-5 w-5 text-emerald-500" />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="secondary" onClick={() => setLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!foundUser || isUpdating === selectedUnlinkedMember?.id}
+              onClick={handleLinkUser}
+            >
+              {isUpdating === selectedUnlinkedMember?.id ? "Linking..." : "Confirm Link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
