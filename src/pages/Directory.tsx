@@ -56,17 +56,9 @@ const getNicheLabel = (niche: string | null) => {
 const DirectoryListItem = ({
   group,
   isUsingDemo,
-  user,
-  profile,
-  joiningGroupId,
-  handleJoinRequest
 }: {
   group: TheaterGroup;
   isUsingDemo: boolean;
-  user: any;
-  profile: any;
-  joiningGroupId: string | null;
-  handleJoinRequest: (e: React.MouseEvent, group: TheaterGroup) => void;
 }) => {
   return (
     <motion.div
@@ -74,11 +66,11 @@ const DirectoryListItem = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="flex h-[120px] bg-card border border-secondary/20 rounded-lg overflow-hidden hover:border-secondary/50 transition-colors group"
+      className="flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group"
     >
       {/* Logo */}
-      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
-         <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border border-secondary/30 bg-background">
+      <div className="w-[88px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
+         <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border border-secondary/30 bg-background">
             {group.logo ? (
               <img
                 src={group.logo}
@@ -108,34 +100,15 @@ const DirectoryListItem = ({
              )}
         </div>
 
-        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
-             {group.description || "A theater group in Metro Manila."}
-        </p>
       </div>
 
       {/* Action */}
-      <div className="flex items-center px-4 border-l border-white/5 bg-muted/5 shrink-0 gap-2">
+      <div className="flex items-center px-4 border-l border-white/5 bg-muted/5 shrink-0">
         <Link to={isUsingDemo ? `/group/${group.id}` : `/producer/${group.id}`}>
           <Button size="sm" variant="secondary" className="h-8 text-xs font-medium whitespace-nowrap">
-            View Profile
+            View
           </Button>
         </Link>
-        {!isUsingDemo && (!user || (profile?.role !== 'producer' && profile?.role !== 'admin')) && (
-             <Button
-                size="sm"
-                variant="outline"
-                className="h-8 w-8 p-0"
-                onClick={(e) => handleJoinRequest(e, group)}
-                disabled={joiningGroupId === group.id}
-                title="Join as Member"
-            >
-                {joiningGroupId === group.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    <UserPlus className="w-4 h-4" />
-                )}
-            </Button>
-        )}
       </div>
     </motion.div>
   );
@@ -527,10 +500,6 @@ const Directory = () => {
                         key={group.id}
                         group={group}
                         isUsingDemo={isUsingDemo}
-                        user={user}
-                        profile={profile}
-                        joiningGroupId={joiningGroupId}
-                        handleJoinRequest={handleJoinRequest}
                      />
                   ) : (
                     <motion.div

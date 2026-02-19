@@ -21,7 +21,6 @@ import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdBanner } from "@/components/ads/AdBanner";
-import ScrollToTop from "@/components/ui/scroll-to-top";
 // Import all posters for local mapping
 import posterElBimbo from "@/assets/posters/ang-huling-el-bimbo.jpg";
 import posterMulaSaBuwan from "@/assets/posters/mula-sa-buwan.jpg";
@@ -96,7 +95,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
     >
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
         <div
-          className="block bg-card overflow-hidden group relative flex flex-col h-full"
+          className="block bg-card rounded-xl overflow-hidden group relative flex flex-col h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
           <Link to={`/shows/${show.id}`} className="absolute inset-0 z-10">
@@ -880,7 +879,6 @@ const Shows = () => {
         </div>
       </main>
       </PullToRefresh>
-      <ScrollToTop />
       <Footer />
     </div>
   );
