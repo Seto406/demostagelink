@@ -32,7 +32,6 @@ const Navbar = () => {
 
   const mobileNavLinks = user
     ? [
-        { path: "/feed", label: "Home" },
         ...centerNavLinks.map(({ path, label }) => ({ path, label })),
         { path: "/about", label: "About" },
       ]
