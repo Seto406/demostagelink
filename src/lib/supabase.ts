@@ -25,15 +25,16 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
 
           // "Session in the future" indicates the client's clock is likely behind the server's
           if (typeof errorMsg === 'string' && errorMsg.includes("Session in the future")) {
-            isClockSkew = true;
-
-            const serverDateStr = response.headers.get('Date');
-            if (serverDateStr) {
-              const serverTime = new Date(serverDateStr).getTime();
-              const clientTime = Date.now();
-              const offset = serverTime - clientTime;
-              localStorage.setItem('stagelink_time_offset', offset.toString());
-            }
+            console.error("Session in the future detected. Performing hard reset.");
+            // Clear all sb- keys to kill the bad session
+            Object.keys(localStorage).forEach((key) => {
+              if (key.startsWith('sb-')) {
+                localStorage.removeItem(key);
+              }
+            });
+            // Force reload to let the user back in with a fresh state
+            window.location.reload();
+            return new Response(JSON.stringify({ error: "Session reset" }), { status: 401 });
           }
         } catch (e) {
           // Ignore JSON parse errors

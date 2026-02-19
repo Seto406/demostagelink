@@ -280,6 +280,79 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 });
 ShowCard.displayName = "ShowCard";
 
+// Compact List Item for List View
+const ShowListItem = ({ show }: { show: Show }) => {
+  const posterUrl = posterMap[show.title] || show.poster_url;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="flex h-[120px] bg-card border border-secondary/20 rounded-lg overflow-hidden hover:border-secondary/50 transition-colors group"
+    >
+      {/* Thumbnail */}
+      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5">
+        {posterUrl ? (
+          <img
+            src={posterUrl}
+            alt={show.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <span className="text-xl">🎭</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors">
+            {show.title}
+          </h3>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1 mb-2">
+           {show.date && (
+              <span className="flex items-center gap-1">
+                 <Calendar className="w-3 h-3 text-secondary/70" />
+                 {new Date(show.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+           )}
+           {show.venue && (
+             <span className="hidden sm:flex items-center gap-1 truncate max-w-[150px]">
+               <MapPin className="w-3 h-3 text-secondary/70" />
+               {show.venue}
+             </span>
+           )}
+           {show.city && !show.venue && (
+              <span className="flex items-center gap-1 truncate">
+                 <MapPin className="w-3 h-3 text-secondary/70" />
+                 {show.city}
+              </span>
+           )}
+        </div>
+
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
+          {show.description || "No description available."}
+        </p>
+      </div>
+
+      {/* Action */}
+      <div className="flex items-center px-4 border-l border-white/5 bg-muted/5 shrink-0">
+        <Link to={`/shows/${show.id}`}>
+          <Button size="sm" variant="secondary" className="h-8 text-xs font-medium whitespace-nowrap">
+            View Details
+          </Button>
+        </Link>
+      </div>
+    </motion.div>
+  );
+};
+
 const PAGE_SIZE = 12;
 
 const Shows = () => {
@@ -773,7 +846,11 @@ const Shows = () => {
               >
                 <AnimatePresence mode="popLayout">
                   {filteredShows.map((show, index) => (
-                    <ShowCard key={show.id} show={show} index={index} />
+                    viewMode === 'grid' ? (
+                      <ShowCard key={show.id} show={show} index={index} />
+                    ) : (
+                      <ShowListItem key={show.id} show={show} />
+                    )
                   ))}
                 </AnimatePresence>
               </motion.div>
