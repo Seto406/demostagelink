@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { MaintenanceMode } from '@/components/ui/maintenance-mode';
 import { ReactNode } from 'react';
 
 export const HealthCheckGate = ({ children }: { children: ReactNode }) => {
@@ -17,21 +16,12 @@ export const HealthCheckGate = ({ children }: { children: ReactNode }) => {
     refetchOnWindowFocus: true,
   });
 
-  // If we are loading for the first time, show the "Updating" state
-  if (isLoading) {
-    return <MaintenanceMode />;
-  }
+  // Fail Open: We no longer block with "System Updating" (MaintenanceMode)
 
-  // If we have an error, log it but let the app load (Fail Open)
-  if (error) {
-    console.error("Health check failed:", error);
+  // If loading or error, just proceed (Fail Open)
+  if (isLoading || error || !data) {
+    if (error) console.error("Health check failed:", error);
     return <>{children}</>;
-  }
-
-  // If data is null or undefined (RPC failed silently?), proceed anyway
-  if (!data) {
-     console.warn("Health check returned no data, proceeding.");
-     return <>{children}</>;
   }
 
   // If all good, render children
