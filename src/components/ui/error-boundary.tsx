@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             {import.meta.env.DEV && this.state.error && (
-              <div className="bg-destructive/5 p-4 rounded-lg text-left overflow-auto max-h-48 text-xs font-mono text-destructive">
+              <div className="bg-destructive/5 p-4 rounded-xl text-left overflow-auto max-h-48 text-xs font-mono text-destructive">
                 {this.state.error.toString()}
               </div>
             )}

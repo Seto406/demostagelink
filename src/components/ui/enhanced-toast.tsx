@@ -99,7 +99,7 @@ export const EnhancedToast: React.FC<EnhancedToastProps> = ({
       role={variant === 'error' ? 'alert' : 'status'}
       aria-live={variant === 'error' ? 'assertive' : 'polite'}
       className={cn(
-        "relative overflow-hidden rounded-lg border shadow-lg backdrop-blur-sm",
+        "relative overflow-hidden rounded-xl border shadow-lg backdrop-blur-sm",
         "w-full max-w-sm pointer-events-auto",
         styles.bg,
         styles.border

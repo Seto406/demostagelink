@@ -178,6 +178,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
       console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
+      if ((window as any).PlaywrightUser) {
+        setUser((window as any).PlaywrightUser);
+      }
+      if ((window as any).PlaywrightProfile) {
+        setProfile((window as any).PlaywrightProfile);
+      }
       clearTimeout(circuitBreaker);
       setLoading(false);
       return;

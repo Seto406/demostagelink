@@ -7,7 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
 import { BookmarkButton } from "@/components/ui/bookmark-button";
-import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
+import { CinematicEmptyState } from "@/components/ui/cinematic-empty-state";
 import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Bookmark } from "lucide-react";
@@ -88,8 +88,7 @@ const Favorites = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-8 pb-16">
         <div className="container mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -112,19 +111,8 @@ const Favorites = () => {
               <BrandedLoader size="md" text="Loading favorites..." />
             </div>
           ) : shows.length === 0 ? (
-            <div className="max-w-lg mx-auto py-12">
-              <PremiumEmptyState
-                title="No Favorites Yet"
-                description="You haven't saved any shows to your favorites list. Explore our collection and click the bookmark icon to save shows for later."
-                icon={Bookmark}
-                action={
-                  <Link to="/shows">
-                    <Button className="bg-secondary hover:bg-secondary/90 text-primary-foreground">
-                      Browse Shows
-                    </Button>
-                  </Link>
-                }
-              />
+            <div className="max-w-2xl mx-auto py-12">
+              <CinematicEmptyState />
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -210,7 +198,7 @@ const Favorites = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );

@@ -211,9 +211,7 @@ const UserFeed = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-      
-      <div className="pt-24 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
+      <div className="pt-8 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
         
         {/* Feed (Center) */}
         <main className="w-full max-w-2xl pb-24">

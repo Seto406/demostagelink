@@ -20,6 +20,7 @@ const Navbar = () => {
   const centerNavLinks = user
     ? [
         { path: "/feed", label: "Home", icon: House, matchPath: "/feed" },
+        ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Management", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
         { path: "/favorites", label: "Favorites", icon: Bookmark, matchPath: "/favorites" },

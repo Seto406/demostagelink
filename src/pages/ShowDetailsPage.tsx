@@ -130,8 +130,7 @@ const ShowDetailsPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="pt-24 pb-16">
+        <div className="pt-8 pb-16">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-center min-h-[50vh]">
               <BrandedLoader size="lg" text="Loading production details..." />
@@ -145,8 +144,7 @@ const ShowDetailsPage = () => {
   if (error || !show) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="pt-24 pb-16">
+        <div className="pt-8 pb-16">
           <div className="container mx-auto px-6">
             <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
               <div className="text-6xl mb-6">🎭</div>
@@ -258,8 +256,7 @@ END:VCALENDAR`;
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-8 pb-16">
         <div className="container mx-auto px-6">
 
             {/* Back Button */}
