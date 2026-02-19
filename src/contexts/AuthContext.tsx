@@ -295,7 +295,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   if (loading) {
-    return <div>System Updating...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 text-center">
+        <p className="text-lg font-semibold text-foreground">System Updating...</p>
+      </div>
+    );
   }
 
   const isAdmin = profile?.role === "admin";
