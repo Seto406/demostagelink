@@ -280,10 +280,14 @@ END:VCALENDAR`;
 
                    {/* Large Poster */}
                    <div
-                        className="w-full relative rounded-2xl overflow-hidden shadow-2xl border border-secondary/20 bg-card aspect-[2/3]"
+                        className="w-full relative rounded-xl overflow-hidden shadow-2xl border border-secondary/20 bg-card aspect-[2/3]"
                    >
                         {show.poster_url ? (
                             <div className="relative w-full h-full flex justify-center bg-black/40 backdrop-blur-sm">
+                                <div
+                                  className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                                  style={{ backgroundImage: `url(${show.poster_url})` }}
+                                />
                                 {imageLoading && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-muted animate-pulse z-10">
                                         <Ticket className="w-16 h-16 text-muted-foreground/30" />
@@ -292,10 +296,9 @@ END:VCALENDAR`;
                                 <img
                                   src={show.poster_url}
                                   alt={show.title}
-                                  className={`w-full h-full object-contain transition-opacity duration-500 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                                  className={`relative z-10 w-full h-full object-contain transition-opacity duration-500 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                                   onLoad={() => setImageLoading(false)}
                                 />
-                                {/* Blurred background filler if needed, but handled by parent bg */}
                             </div>
                         ) : (
                             <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -346,7 +349,7 @@ END:VCALENDAR`;
                    </div>
 
                    {/* About */}
-                   <section className="bg-card/50 rounded-2xl p-6 border border-secondary/10">
+                   <section className="bg-card/50 rounded-xl p-6 border border-secondary/10">
                         <h2 className="text-2xl font-serif font-bold text-foreground mb-6">About the Show</h2>
                         <div className="prose prose-lg prose-invert max-w-none text-muted-foreground">
                             <p className="leading-relaxed whitespace-pre-line">{show.description || "No description available."}</p>
@@ -411,7 +414,7 @@ END:VCALENDAR`;
                     <div className="sticky top-24 space-y-6">
 
                         {/* Reserve / Ticket Card */}
-                        <div className="bg-card border border-secondary/20 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+                        <div className="bg-card border border-secondary/20 rounded-xl p-6 shadow-xl relative overflow-hidden group">
                             {/* Texture/Gradient */}
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
 
@@ -496,7 +499,7 @@ END:VCALENDAR`;
 
                         {/* Venue Info */}
                         {(show.venue || show.city) && (
-                            <div className="bg-card border border-secondary/10 rounded-2xl p-6">
+                            <div className="bg-card border border-secondary/10 rounded-xl p-6">
                                 <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
                                     <MapPin className="w-5 h-5 text-secondary" />
                                     Venue Information
@@ -548,7 +551,7 @@ END:VCALENDAR`;
 
                         {/* Producer Info */}
                         {show.producer_id && (
-                            <div className="bg-card border border-secondary/10 rounded-2xl p-6">
+                            <div className="bg-card border border-secondary/10 rounded-xl p-6">
                                 <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-secondary" />
                                     Produced By

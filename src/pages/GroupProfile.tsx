@@ -172,17 +172,23 @@ const GroupProfile = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-card border border-secondary/20 p-8 md:p-12 mb-8"
+            className="bg-card border border-secondary/20 rounded-xl p-8 md:p-12 mb-8"
           >
             <div className="flex flex-col md:flex-row items-start gap-8">
               {/* Logo */}
-              <div className="w-32 h-32 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border-2 border-secondary/30 shrink-0">
+              <div className="w-32 h-32 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border-2 border-secondary/30 shrink-0 relative">
                 {group.logo ? (
-                  <img 
-                    src={group.logo} 
-                    alt={`${group.group_name} logo`}
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                      style={{ backgroundImage: `url(${group.logo})` }}
+                    />
+                    <img
+                      src={group.logo}
+                      alt={`${group.group_name} logo`}
+                      className="relative z-10 w-full h-full object-contain"
+                    />
+                  </>
                 ) : (
                   <span className="text-5xl">🎭</span>
                 )}
@@ -227,7 +233,7 @@ const GroupProfile = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-card border border-secondary/20 p-6"
+              className="bg-card border border-secondary/20 rounded-xl p-6"
             >
               <div className="flex items-center gap-3 mb-4">
                 <Users className="w-5 h-5 text-secondary" />
@@ -245,7 +251,7 @@ const GroupProfile = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-card border border-secondary/20 p-6"
+              className="bg-card border border-secondary/20 rounded-xl p-6"
             >
               <div className="flex items-center gap-3 mb-4">
                 <ExternalLink className="w-5 h-5 text-secondary" />
@@ -265,7 +271,7 @@ const GroupProfile = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-8 bg-card border border-secondary/20 p-8 text-center"
+            className="mt-8 bg-card border border-secondary/20 rounded-xl p-8 text-center"
           >
             <h2 className="font-serif text-2xl text-foreground mb-4">Upcoming Shows</h2>
             <p className="text-muted-foreground mb-6">

@@ -206,13 +206,6 @@ export function FeedPost({ show }: FeedPostProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <BookmarkButton
-              isFavorited={isFavorited(show.id)}
-              onClick={() => toggleFavorite(show.id)}
-              size="sm"
-              className="hover:bg-background/50"
-            />
-
             {isProducerOrAdmin && (
               <Tooltip>
                 <TooltipTrigger asChild>

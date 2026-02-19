@@ -1,31 +1,15 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNotifications } from "@/contexts/NotificationContext";
-import { Shield, Menu, X, Settings, Bookmark, Bell, LogOut, User, Ticket, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Home } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { unreadCount } = useNotifications();
 
   // Dynamic nav links based on auth state
   // Nav links without Favorites - moved to user section
@@ -54,6 +38,8 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const homePath = user ? "/feed" : "/";
+
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 h-[72px] bg-background/95 backdrop-blur-md border-b ${
@@ -61,174 +47,25 @@ const Navbar = () => {
       }`}>
         <div className="container mx-auto px-4 sm:px-6 h-full relative z-10">
           <div className="flex items-center justify-between h-full">
-            {/* Logo - Routes to feed if logged in, landing if not */}
-            <Link to={user ? "/feed" : "/"} className="flex items-center gap-2 sm:gap-3 group">
-              <img
-                src={stageLinkLogo}
-                alt="StageLink Logo"
-                className="h-8 sm:h-10 w-auto"
-              />
-              <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
-                Stage<span className="text-secondary">Link</span>
-              </span>
-            </Link>
-
-            {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center gap-6 lg:gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative text-sm uppercase tracking-widest font-medium transition-colors duration-300 hover:text-secondary py-2 ${
-                    location.pathname === link.path
-                      ? "text-secondary border-b-2 border-secondary"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link to={homePath}>
+                <Button variant="ghost" size="icon" aria-label="Home" className="rounded-full">
+                  <Home className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to={homePath} className="flex items-center gap-2 sm:gap-3 group">
+                <img
+                  src={stageLinkLogo}
+                  alt="StageLink Logo"
+                  className="h-8 sm:h-10 w-auto"
+                />
+                <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
+                  Stage<span className="text-secondary">Link</span>
+                </span>
+              </Link>
             </div>
 
-            {/* Desktop Auth Buttons */}
-            <div className="hidden md:flex items-center gap-3">
-              {user ? (
-                <>
-                  {isAdmin && (
-                    <Link to="/admin">
-                      <Button variant="ghost" size="sm" className="text-primary">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Admin
-                      </Button>
-                    </Link>
-                  )}
-                  {profile?.role === "producer" && (
-                    <Link to="/dashboard">
-                      <Button variant="ghost" size="sm">
-                        Dashboard
-                      </Button>
-                    </Link>
-                  )}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link to="/notifications">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="relative"
-                          aria-label="Notifications"
-                        >
-                          <Bell className="w-4 h-4" />
-                          {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
-                          )}
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Notifications</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {/* My Passes Ticket Icon */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link to="/profile">
-                        <Button variant="ghost" size="sm" aria-label="My Passes">
-                          <Ticket className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>My Passes</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link to="/favorites">
-                        <Button variant="ghost" size="sm" aria-label="Favorites">
-                          <Bookmark className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Favorites</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                        <Avatar className="h-8 w-8 border border-secondary/20">
-                          <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username || "User"} />
-                          <AvatarFallback className="bg-secondary/10 text-secondary">
-                            {profile?.username?.[0]?.toUpperCase() || <User className="w-4 h-4" />}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      {profile?.role === "producer" && (
-                        <>
-                          <DropdownMenuItem asChild>
-                            <Link to="/dashboard" className="w-full cursor-pointer font-medium text-amber-500 focus:text-amber-500">
-                              <LayoutDashboard className="mr-2 h-4 w-4" />
-                              <span>Dashboard</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      )}
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{profile?.username || "User"}</p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {user.email}
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/profile" className="w-full cursor-pointer">
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/settings" className="w-full cursor-pointer">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Settings</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500 focus:text-red-500">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Sign out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <>
-                  <Link to="/login">
-                    <Button variant="outline" size="sm" className="rounded-xl">
-                      Login
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-
-            {/* Mobile Menu Toggle & Ticket Icon */}
-            <div className="flex items-center gap-4 md:hidden">
-              {user && (
-                <Link to="/profile">
-                  <Button variant="ghost" size="icon" aria-label="My Passes" className="rounded-full">
-                    <Ticket className="w-5 h-5" />
-                  </Button>
-                </Link>
-              )}
+            <div className="flex items-center">
               <button
                 className="p-2 text-foreground touch-target"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -247,7 +84,7 @@ const Navbar = () => {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background md:hidden pt-[72px]">
+        <div className="fixed inset-0 z-40 bg-background pt-[72px]">
             <div className="h-full overflow-y-auto p-6 flex flex-col">
                 <nav className="flex flex-col gap-2 mb-8">
                   {navLinks.map((link) => (

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -11,15 +12,22 @@ import {
 
 const ScrollToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const location = useLocation();
+  const showOnPath = location.pathname === "/shows" || location.pathname === "/directory";
 
   useEffect(() => {
+    if (!showOnPath) {
+      setIsVisible(false);
+      return;
+    }
+
     const toggleVisibility = () => {
       setIsVisible(window.scrollY > 400);
     };
 
     window.addEventListener("scroll", toggleVisibility);
     return () => window.removeEventListener("scroll", toggleVisibility);
-  }, []);
+  }, [showOnPath]);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -30,7 +38,7 @@ const ScrollToTop = () => {
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {showOnPath && isVisible && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
