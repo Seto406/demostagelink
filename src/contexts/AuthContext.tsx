@@ -33,7 +33,6 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
-  // UPDATED: Added firstName to the signature
   signUp: (email: string, password: string, role: "audience" | "producer", firstName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -60,50 +59,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
-        console.log("Playwright Test detected: Force disabling auth loader");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mockUser = (window as any).PlaywrightUser;
+    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
+      console.log("Playwright Test detected: Force disabling auth loader");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockUser = (window as any).PlaywrightUser;
 
-        if (mockUser) {
-            console.log("Injecting Playwright Mock User");
-            setUser(mockUser);
-            setSession({
-                access_token: "mock-token",
-                token_type: "bearer",
-                expires_in: 3600,
-                refresh_token: "mock-refresh",
-                user: mockUser,
-                expires_at: 9999999999
-            } as Session);
-            // Bypass Supabase and set mock profile directly for testing
-            const playwrightProfile = (window as any).PlaywrightProfile;
-            const mockProfile = playwrightProfile || {
-                id: "profile-" + mockUser.id,
-                user_id: mockUser.id,
-                role: localStorage.getItem("pendingUserRole") || "audience",
-                username: "Mock User",
-                created_at: new Date().toISOString(),
-                avatar_url: mockUser.user_metadata?.avatar_url,
-                group_name: null,
-                description: null,
-                founded_year: null,
-                niche: null,
-                map_screenshot_url: null,
-                rank: null,
-                xp: null,
-                facebook_url: null,
-                instagram_url: null,
-                address: null,
-                university: null,
-                has_completed_tour: false,
-                producer_role: null
-            };
-            setProfile(mockProfile as unknown as Profile);
-            setLoading(false);
-        } else {
-            setLoading(false);
-        }
+      if (mockUser) {
+        console.log("Injecting Playwright Mock User");
+        setUser(mockUser);
+        setSession({
+          access_token: "mock-token",
+          token_type: "bearer",
+          expires_in: 3600,
+          refresh_token: "mock-refresh",
+          user: mockUser,
+          expires_at: 9999999999,
+        } as Session);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const playwrightProfile = (window as any).PlaywrightProfile;
+        const mockProfile = playwrightProfile || {
+          id: "profile-" + mockUser.id,
+          user_id: mockUser.id,
+          role: localStorage.getItem("pendingUserRole") || "audience",
+          username: "Mock User",
+          created_at: new Date().toISOString(),
+          avatar_url: mockUser.user_metadata?.avatar_url,
+          group_name: null,
+          description: null,
+          founded_year: null,
+          niche: null,
+          map_screenshot_url: null,
+          rank: null,
+          xp: null,
+          facebook_url: null,
+          instagram_url: null,
+          address: null,
+          university: null,
+          has_completed_tour: false,
+          producer_role: null,
+        };
+        setProfile(mockProfile as unknown as Profile);
+      }
+
+      setLoading(false);
     }
   }, []);
 
@@ -154,20 +153,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setProfile(createdProfile as Profile);
 
             try {
-              const { data: { user } } = await supabase.auth.getUser();
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
               if (user?.email) {
-                // Non-blocking call to send welcome email
-                supabase.functions.invoke("send-welcome-email", {
-                  body: {
-                    email: user.email,
-                    name: (createdProfile as Profile).group_name || user.user_metadata?.full_name || user.user_metadata?.first_name,
-                    role: role,
-                  },
-                }).then(({ error }) => {
-                  if (error) console.warn("Failed to trigger welcome email:", error);
-                }).catch(err => {
-                  console.warn("Welcome email invocation failed:", err);
-                });
+                supabase.functions
+                  .invoke("send-welcome-email", {
+                    body: {
+                      email: user.email,
+                      name:
+                        (createdProfile as Profile).group_name ||
+                        user.user_metadata?.full_name ||
+                        user.user_metadata?.first_name,
+                      role: role,
+                    },
+                  })
+                  .then(({ error }) => {
+                    if (error) console.warn("Failed to trigger welcome email:", error);
+                  })
+                  .catch((err) => {
+                    console.warn("Welcome email invocation failed:", err);
+                  });
               }
             } catch (emailError) {
               console.error("Failed to trigger welcome email:", emailError);
@@ -214,44 +220,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // 5-second circuit breaker: force-unblock UI if auth init hangs
+    const circuitBreaker = window.setTimeout(() => {
+      console.warn("Auth initialization exceeded 5s, forcing loading=false");
+      setLoading(false);
+    }, 5000);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).PlaywrightTest) {
-        console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
-        return;
+    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
+      console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
+      clearTimeout(circuitBreaker);
+      setLoading(false);
+      return;
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        try {
-          if (event === 'TOKEN_REFRESHED') {
-            console.log('Auth token refreshed');
-          }
-
-          // Explicitly handle password recovery event to prevent redirect loops
-          if (event === "PASSWORD_RECOVERY") {
-            if (window.location.pathname !== "/reset-password") {
-              navigate("/reset-password?type=recovery");
-            }
-          }
-
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            await ensureProfile(session.user.id, session.user.user_metadata);
-          } else {
-            setProfile(null);
-          }
-        } catch (error) {
-          console.error("Error handling auth state change:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    );
+    let subscription: { unsubscribe: () => void } | null = null;
 
     const initSession = async () => {
       try {
+        const {
+          data: { subscription: authSubscription },
+        } = supabase.auth.onAuthStateChange(async (event, authSession) => {
+          try {
+            if (event === "TOKEN_REFRESHED") {
+              console.log("Auth token refreshed");
+            }
+
+            if (event === "PASSWORD_RECOVERY") {
+              if (window.location.pathname !== "/reset-password") {
+                navigate("/reset-password?type=recovery");
+              }
+            }
+
+            setSession(authSession);
+            setUser(authSession?.user ?? null);
+
+            if (authSession?.user) {
+              await ensureProfile(authSession.user.id, authSession.user.user_metadata);
+            } else {
+              setProfile(null);
+            }
+          } catch (error) {
+            console.error("Error handling auth state change:", error);
+          } finally {
+            setLoading(false);
+          }
+        });
+
+        subscription = authSubscription;
+
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -259,21 +276,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.clear();
           setSession(null);
           setUser(null);
-          return; // Finally block will handle setLoading(false)
+          setProfile(null);
+          return;
         }
 
-        const session = data.session;
-        setSession(session);
-        setUser(session?.user ?? null);
+        const currentSession = data.session;
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
 
-        if (session?.user) {
-          await ensureProfile(session.user.id, session.user.user_metadata);
+        if (currentSession?.user) {
+          await ensureProfile(currentSession.user.id, currentSession.user.user_metadata);
+        } else {
+          setProfile(null);
         }
       } catch (err) {
         console.error("Unexpected error or timeout checking session:", err);
-        // On timeout/error, assume no session to unblock UI
         setSession(null);
         setUser(null);
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -282,68 +302,102 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initSession();
 
     return () => {
-      subscription.unsubscribe();
+      clearTimeout(circuitBreaker);
+      subscription?.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // CORRECTED: Added firstName parameter and removed extra closing brace
-  const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
+  let isPublicPath = true;
+  try {
+    const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
+    isPublicPath = publicPaths.some((path) => location.pathname.startsWith(path)) || location.pathname === "/";
+  } catch (pathError) {
+    console.error("Error evaluating public path, defaulting to public access:", pathError);
+    isPublicPath = true;
+  }
+
+  console.log("[AuthContext] Path/loading state:", {
+    pathname: typeof window !== "undefined" ? window.location.pathname : location.pathname,
+    loading,
+    isPublicPath,
+  });
+
+  if (loading && !isPublicPath) {
+    return <FullPageLoader text="Loading StageLink..." autoRecovery={true} />;
+  }
+
+  const isAdmin = profile?.role === "admin";
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        loading,
+        isAdmin,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        refreshProfile,
+        updateProfileState,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+
+  async function signUp(email: string, password: string, role: "audience" | "producer", firstName: string) {
     const redirectUrl = `${window.location.origin}/verify-email`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { 
+        data: {
           role,
-          // Matches {{ .Data.first_name }} in your Supabase email template
-          first_name: firstName 
-        }
-      }
+          first_name: firstName,
+        },
+      },
     });
 
     if (error) {
-      // Enhanced logging as recommended by Jules
       console.error("SignUp detailed error:", error);
     }
 
     return { error };
-  };
+  }
 
-  const signIn = async (email: string, password: string) => {
+  async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
     return { error };
-  };
+  }
 
-  const signInWithGoogle = async () => {
+  async function signInWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
         queryParams: {
-          access_type: 'offline',
-          prompt: 'consent select_account',
+          access_type: "offline",
+          prompt: "consent select_account",
         },
         redirectTo: `${window.location.origin}/`,
       },
     });
     return { error };
-  };
+  }
 
-  const signOut = async () => {
+  async function signOut() {
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Sign out timed out')), 5000)
-      );
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Sign out timed out")), 5000));
 
-      await Promise.race([
-        supabase.auth.signOut(),
-        timeoutPromise
-      ]);
+      await Promise.race([supabase.auth.signOut(), timeoutPromise]);
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -351,23 +405,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(null);
       setUser(null);
     }
-  };
-
-  const isAdmin = profile?.role === "admin";
-
-  const publicPaths = ["/show", "/shows", "/producer", "/group", "/directory", "/about"];
-  const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === "/";
-
-  // If loading but on a public path, allow rendering (read-only mode)
-  if (loading && !isPublicPath) {
-    return <FullPageLoader text="Loading StageLink..." autoRecovery={true} />;
   }
-
-  return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState }}>
-      {children}
-    </AuthContext.Provider>
-  );
 };
 
 export const useAuth = () => {
