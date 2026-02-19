@@ -4,20 +4,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
 export const useFavorites = () => {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  const queryKey = ['favorites', profile?.id];
+  const queryKey = ['favorites', user?.id];
 
   const { data: favorites = [], isLoading, refetch } = useQuery({
     queryKey,
     queryFn: async () => {
-      if (!profile?.id) return [];
+      if (!user?.id) return [];
 
       const { data, error } = await supabase
         .from('favorites')
         .select('show_id')
-        .eq('user_id', profile.id);
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error fetching favorites:', error);
@@ -25,12 +25,12 @@ export const useFavorites = () => {
       }
       return data?.map(f => f.show_id) || [];
     },
-    enabled: !!profile?.id && !authLoading,
+    enabled: !!user?.id && !authLoading,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   // Determine loading state exposed to consumers
-  const loading = authLoading || (isLoading && !!profile?.id);
+  const loading = authLoading || (isLoading && !!user?.id);
 
   const toggleFavorite = async (showId: string) => {
     if (!user) {
@@ -38,15 +38,6 @@ export const useFavorites = () => {
         title: "Login Required",
         description: "Please log in to save favorites.",
         variant: "destructive",
-      });
-      return;
-    }
-
-    if (!profile) {
-      toast({
-        title: "Profile Loading",
-        description: "Please wait while your profile loads.",
-        variant: "default", // Informational
       });
       return;
     }
@@ -67,14 +58,14 @@ export const useFavorites = () => {
         const { error } = await supabase
           .from('favorites')
           .delete()
-          .eq('user_id', profile.id)
+          .eq('user_id', user.id)
           .eq('show_id', showId);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('favorites')
-          .insert({ user_id: profile.id, show_id: showId });
+          .insert({ user_id: user.id, show_id: showId });
 
         if (error) throw error;
         

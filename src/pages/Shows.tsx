@@ -289,16 +289,22 @@ const ShowListItem = ({ show }: { show: Show }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="flex h-[120px] bg-card border border-secondary/20 rounded-lg overflow-hidden hover:border-secondary/50 transition-colors group"
+      className="flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group"
     >
       {/* Thumbnail */}
-      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5">
+      <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 overflow-hidden">
         {posterUrl ? (
-          <img
-            src={posterUrl}
-            alt={show.title}
-            className="w-full h-full object-cover"
-          />
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+              style={{ backgroundImage: `url(${posterUrl})` }}
+            />
+            <img
+              src={posterUrl}
+              alt={show.title}
+              className="relative z-10 w-full h-full object-contain"
+            />
+          </>
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center">
             <span className="text-xl">🎭</span>

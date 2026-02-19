@@ -70,13 +70,19 @@ const DirectoryListItem = ({
     >
       {/* Logo */}
       <div className="w-[88px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
-         <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border border-secondary/30 bg-background">
+         <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border border-secondary/30 bg-background relative">
             {group.logo ? (
-              <img
-                src={group.logo}
-                alt={`${group.group_name} logo`}
-                className="w-full h-full object-cover"
-              />
+              <>
+                <div
+                  className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                  style={{ backgroundImage: `url(${group.logo})` }}
+                />
+                <img
+                  src={group.logo}
+                  alt={`${group.group_name} logo`}
+                  className="relative z-10 w-full h-full object-contain"
+                />
+              </>
             ) : (
               <span className="text-xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
             )}
@@ -514,13 +520,19 @@ const Directory = () => {
                           className="block bg-card border border-secondary/20 p-6 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl"
                         >
                           <div className="flex items-start justify-between mb-4">
-                            <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
+                            <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm relative">
                               {group.logo ? (
-                                <img
-                                  src={group.logo}
-                                  alt={`${group.group_name} logo`}
-                                  className="w-full h-full object-cover"
-                                />
+                                <>
+                                  <div
+                                    className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                                    style={{ backgroundImage: `url(${group.logo})` }}
+                                  />
+                                  <img
+                                    src={group.logo}
+                                    alt={`${group.group_name} logo`}
+                                    className="relative z-10 w-full h-full object-contain"
+                                  />
+                                </>
                               ) : (
                                 <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                               )}
@@ -550,13 +562,19 @@ const Directory = () => {
                             className="block p-6 flex-1"
                           >
                             <div className="flex items-start justify-between mb-4">
-                              <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-lg overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm">
+                              <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-xl overflow-hidden border-2 border-secondary/30 transition-all duration-200 group-hover:scale-105 group-hover:border-secondary/50 shadow-sm relative">
                                 {group.logo ? (
-                                  <img
-                                    src={group.logo}
-                                    alt={`${group.group_name} logo`}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  <>
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110"
+                                      style={{ backgroundImage: `url(${group.logo})` }}
+                                    />
+                                    <img
+                                      src={group.logo}
+                                      alt={`${group.group_name} logo`}
+                                      className="relative z-10 w-full h-full object-contain"
+                                    />
+                                  </>
                                 ) : (
                                 <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                                 )}
