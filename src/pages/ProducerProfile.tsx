@@ -125,13 +125,20 @@ const ProducerProfile = () => {
       }
 
       // Fetch producer's approved shows
-      const { data: showsData, error: showsError } = await supabase
+      let query = supabase
         .from("shows")
         .select("id, title, description, date, venue, city, poster_url, production_status, producer:profiles!producer_id(*)")
-        .eq("producer_id", id)
         .eq("status", "approved")
         .neq("production_status", "draft") // Exclude draft shows from public profile
         .order("date", { ascending: false });
+
+      if (groupData) {
+         query = query.or(`producer_id.eq.${id},theater_group_id.eq.${groupData.id}`);
+      } else {
+         query = query.eq("producer_id", id);
+      }
+
+      const { data: showsData, error: showsError } = await query;
 
       if (showsError) {
         console.error("Error fetching shows:", showsError);
@@ -410,20 +417,53 @@ const ProducerProfile = () => {
           </div>
         )}
 
-        {/* Featured Show Placeholder */}
+        {/* Featured Show Section */}
         <div className="container mx-auto px-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="w-full bg-gradient-to-r from-secondary/10 to-transparent border-l-4 border-secondary p-6 rounded-r-xl"
           >
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <span className="text-secondary text-xs uppercase tracking-wider font-bold mb-1 block">Featured Production</span>
-                <h3 className="text-xl md:text-2xl font-serif font-bold">New Season Coming Soon</h3>
-                <p className="text-muted-foreground text-sm mt-1">Stay tuned for our upcoming announcements.</p>
+            {shows.length > 0 ? (
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex-1">
+                   <span className="text-secondary text-xs uppercase tracking-wider font-bold mb-1 block">Featured Production</span>
+                   <h3 className="text-xl md:text-2xl font-serif font-bold">{shows[0].title}</h3>
+                   <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                      {shows[0].date && (
+                        <div className="flex items-center gap-1">
+                           <Calendar className="w-4 h-4 text-secondary" />
+                           <span>{new Date(shows[0].date).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      {shows[0].venue && (
+                        <div className="flex items-center gap-1">
+                           <MapPin className="w-4 h-4 text-secondary" />
+                           <span>{shows[0].venue}</span>
+                        </div>
+                      )}
+                   </div>
+                   {shows[0].description && (
+                     <p className="text-muted-foreground text-sm mt-3 line-clamp-2 max-w-2xl">
+                       {shows[0].description}
+                     </p>
+                   )}
+                </div>
+                <Link to={`/show/${shows[0].id}`}>
+                  <Button variant="outline" className="border-secondary/50 hover:bg-secondary/10 text-foreground whitespace-nowrap">
+                    View Details
+                  </Button>
+                </Link>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <span className="text-secondary text-xs uppercase tracking-wider font-bold mb-1 block">Featured Production</span>
+                  <h3 className="text-xl md:text-2xl font-serif font-bold">New Season Coming Soon</h3>
+                  <p className="text-muted-foreground text-sm mt-1">Stay tuned for our upcoming announcements.</p>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
 

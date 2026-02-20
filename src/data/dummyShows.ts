@@ -33,6 +33,12 @@ export interface ShowDetails {
     niche: "local" | "university" | null;
     avatar_url?: string | null;
   } | null;
+  theater_group?: {
+    id: string;
+    name: string;
+    logo_url: string | null;
+    owner_id: string;
+  } | null;
 }
 
 export const dummyShows: ShowDetails[] = [
