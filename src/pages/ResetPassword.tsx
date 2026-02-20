@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Navbar from "@/components/layout/Navbar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -156,8 +155,7 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16 min-h-screen flex items-center justify-center">
+      <div className="pt-6 pb-16 min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-6">
           <div className="max-w-md mx-auto">
             <div className="bg-card border border-secondary/20 p-8">
@@ -335,7 +333,7 @@ const ResetPassword = () => {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

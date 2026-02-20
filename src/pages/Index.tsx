@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import LandingNavbar from "@/components/landing/LandingNavbar";
 import { CinematicLanding } from "@/components/landing/CinematicLanding";
 import MissionSection from "@/components/landing/MissionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
@@ -45,9 +44,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <LandingNavbar />
-      
-      <main>
+      <div>
         <CinematicLanding />
         <MissionSection />
         <FeaturesSection />
@@ -55,7 +52,7 @@ const Index = () => {
         <RoadmapSection />
         <FAQSection />
         <ShowcaseSection />
-      </main>
+      </div>
       
       <LandingFooter />
     </div>

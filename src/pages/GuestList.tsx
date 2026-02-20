@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { ArrowLeft, Download, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 interface Guest {
@@ -132,9 +131,7 @@ const GuestList = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 container mx-auto px-4 py-8 pt-24 max-w-6xl">
+      <div className="flex-1 container mx-auto px-4 py-8 pt-6 max-w-6xl">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -215,7 +212,7 @@ const GuestList = () => {
             )}
           </CardContent>
         </Card>
-      </main>
+      </div>
 
       <Footer />
     </div>

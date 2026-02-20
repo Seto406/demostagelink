@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2, Pencil, LayoutGrid, List } from "lucide-react";

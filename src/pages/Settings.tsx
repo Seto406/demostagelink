@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -257,8 +256,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-6 pb-16">
         <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
           {/* Header */}
           <motion.div
@@ -501,7 +499,7 @@ const Settings = () => {
             </motion.section>
           </div>
         </div>
-      </main>
+      </div>
       <Footer />
 
       {/* Change Password Modal */}

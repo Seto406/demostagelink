@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import Navbar from "@/components/layout/Navbar";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { CheckCircle, Loader2, XCircle, Mail, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -152,8 +151,7 @@ const VerifyEmail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16 min-h-screen flex items-center justify-center">
+      <div className="pt-6 pb-16 min-h-screen flex items-center justify-center">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -282,7 +280,7 @@ const VerifyEmail = () => {
             </div>
           </motion.div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

@@ -1,11 +1,9 @@
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const Privacy = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-6 pb-16">
         <div className="container mx-auto px-6 max-w-3xl">
           <h1 className="text-3xl font-serif font-bold text-foreground mb-8">Privacy Policy</h1>
           <div className="prose prose-invert max-w-none text-muted-foreground">
@@ -70,7 +68,7 @@ const Privacy = () => {
             </section>
           </div>
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );

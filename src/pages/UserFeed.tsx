@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -214,7 +213,7 @@ const UserFeed = () => {
       <div className="pt-8 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
         
         {/* Feed (Center) */}
-        <main className="w-full max-w-2xl pb-24">
+        <div className="w-full max-w-2xl pb-24">
           {/* Post Production Bar - Visible only to Producers */}
           {profile?.role === "producer" && (
             <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm cursor-pointer hover:border-secondary/40 transition-all" onClick={() => setShowProductionModal(true)}>
@@ -246,7 +245,7 @@ const UserFeed = () => {
               </div>
             </div>
           )}
-        </main>
+        </div>
 
         {/* Sidebar (Right) */}
         <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit">

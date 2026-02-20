@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/layout/Navbar";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
 import { CheckCheck, BellOff, Loader2 } from "lucide-react";
@@ -128,8 +127,7 @@ const Notifications = () => {
   if (!user) {
      return (
         <div className="min-h-screen bg-background">
-           <Navbar />
-           <div className="pt-24 container mx-auto px-4 text-center">
+           <div className="pt-6 container mx-auto px-4 text-center">
               <p>Please log in to view notifications.</p>
            </div>
         </div>
@@ -138,8 +136,7 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Navbar />
-      <main className="pt-24 container mx-auto px-4 max-w-2xl">
+      <div className="pt-6 container mx-auto px-4 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-serif font-bold text-foreground">Notifications</h1>
           {notifications.some(n => !n.read) && (
@@ -191,7 +188,7 @@ const Notifications = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 };

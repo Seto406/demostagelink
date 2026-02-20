@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import Navbar from "@/components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrandedLoader } from "@/components/ui/branded-loader";
@@ -34,10 +33,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main>
+      <div>
         <CinematicLanding />
-      </main>
+      </div>
     </div>
   );
 };
