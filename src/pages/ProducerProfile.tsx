@@ -12,6 +12,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
+import { Pencil } from "lucide-react";
+
+interface TheaterGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  owner_id: string;
+}
 
 interface Producer {
   id: string;
@@ -45,8 +56,11 @@ const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { user, profile, loading: authLoading } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
+  const [theaterGroup, setTheaterGroup] = useState<TheaterGroup | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Follow State
   const [isFollowing, setIsFollowing] = useState(false);
@@ -68,6 +82,19 @@ const ProducerProfile = () => {
 
       // Track profile view
       trackEvent('profile_view', id);
+
+      // Fetch theater group details
+      const { data: groupData, error: groupError } = await supabase
+        .from("theater_groups" as any)
+        .select("*")
+        .eq("owner_id", id)
+        .maybeSingle();
+
+      if (groupError) {
+        console.error("Error fetching theater group:", groupError);
+      } else {
+        setTheaterGroup(groupData);
+      }
 
       // Check for existing membership application
       if (user) {
@@ -140,7 +167,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user, authLoading]);
+  }, [id, user, authLoading, refreshKey]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
@@ -316,6 +343,10 @@ const ProducerProfile = () => {
     }
   };
 
+  const handleEditSuccess = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -348,31 +379,54 @@ const ProducerProfile = () => {
     );
   }
 
+  const displayLogo = theaterGroup?.logo_url || producer.group_logo_url;
+  const displayBanner = theaterGroup?.banner_url || producer.group_banner_url;
+  const displayName = theaterGroup?.name || producer.group_name || "Unnamed Group";
+  const displayDescription = theaterGroup?.description || producer.description;
+
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>{producer.group_name ? `${producer.group_name} on StageLink` : "Producer on StageLink"}</title>
-        <meta name="description" content={producer.description ? producer.description.substring(0, 150) : "Check out this theater producer on StageLink."} />
+        <title>{displayName ? `${displayName} on StageLink` : "Producer on StageLink"}</title>
+        <meta name="description" content={displayDescription ? displayDescription.substring(0, 150) : "Check out this theater producer on StageLink."} />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="profile" />
-        <meta property="og:title" content={producer.group_name ? `${producer.group_name} on StageLink` : "Producer on StageLink"} />
-        <meta property="og:description" content={producer.description ? producer.description.substring(0, 150) : "Check out this theater producer on StageLink."} />
+        <meta property="og:title" content={displayName ? `${displayName} on StageLink` : "Producer on StageLink"} />
+        <meta property="og:description" content={displayDescription ? displayDescription.substring(0, 150) : "Check out this theater producer on StageLink."} />
         {/* Note: cover_image is not available in the database schema, so we use avatar_url as the best available fallback for OG image. */}
         {producer.avatar_url && <meta property="og:image" content={producer.avatar_url} />}
       </Helmet>
       <Navbar />
       <main className="pt-24 pb-16">
-        {producer.group_banner_url && (
+        {displayBanner && (
           <div className="w-full h-48 md:h-64 lg:h-80 relative mb-8">
             <img
-              src={producer.group_banner_url}
+              src={displayBanner}
               alt="Cover"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           </div>
         )}
+
+        {/* Featured Show Placeholder */}
+        <div className="container mx-auto px-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full bg-gradient-to-r from-secondary/10 to-transparent border-l-4 border-secondary p-6 rounded-r-xl"
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <span className="text-secondary text-xs uppercase tracking-wider font-bold mb-1 block">Featured Production</span>
+                <h3 className="text-xl md:text-2xl font-serif font-bold">New Season Coming Soon</h3>
+                <p className="text-muted-foreground text-sm mt-1">Stay tuned for our upcoming announcements.</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
         <div className="container mx-auto px-6">
           {/* Producer Header */}
           <motion.div
@@ -389,15 +443,15 @@ const ProducerProfile = () => {
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* Avatar */}
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-secondary/30">
-                  {producer.group_logo_url ? (
+                  {displayLogo ? (
                     <img 
-                      src={producer.group_logo_url}
-                      alt={producer.group_name || "Producer"} 
+                      src={displayLogo}
+                      alt={displayName || "Producer"}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-green-600 flex items-center justify-center text-white text-5xl md:text-6xl font-serif">
-                      {(producer.group_name?.[0] || "P").toUpperCase()}
+                      {(displayName?.[0] || "P").toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -409,9 +463,22 @@ const ProducerProfile = () => {
                           <span className="text-secondary text-xs uppercase tracking-wider mb-2 block">
                             {getNicheLabel(producer.niche, producer.university)}
                           </span>
-                          <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
-                            {producer.group_name || "Unnamed Group"}
-                          </h1>
+                          <div className="flex items-center gap-4">
+                            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
+                              {displayName || "Unnamed Group"}
+                            </h1>
+                            {user && user.id === producer.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-secondary"
+                                onClick={() => setIsEditOpen(true)}
+                                aria-label="Edit Profile"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                           {producer.producer_role && (
                             <p className="text-muted-foreground mt-1 text-lg font-medium">{producer.producer_role}</p>
                           )}
@@ -486,9 +553,9 @@ const ProducerProfile = () => {
                       )}
                   </div>
                   
-                  {producer.description && (
+                  {displayDescription && (
                     <p className="text-muted-foreground mb-6 max-w-2xl">
-                      {producer.description}
+                      {displayDescription}
                     </p>
                   )}
                   
@@ -726,6 +793,13 @@ const ProducerProfile = () => {
         </div>
       </main>
       <Footer />
+      <EditProducerProfileDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        producer={producer}
+        theaterGroup={theaterGroup}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 };
