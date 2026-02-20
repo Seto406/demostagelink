@@ -2,7 +2,6 @@ import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Users, Calendar, ExternalLink } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 
@@ -119,8 +118,7 @@ const GroupProfile = () => {
   if (!group) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="pt-24 pb-16">
+        <div className="pt-6 pb-16">
           <div className="container mx-auto px-6 text-center">
             <h1 className="text-3xl font-serif text-foreground mb-4">Group Not Found</h1>
             <p className="text-muted-foreground mb-8">The theater group you're looking for doesn't exist.</p>
@@ -131,7 +129,7 @@ const GroupProfile = () => {
               </Button>
             </Link>
           </div>
-        </main>
+        </div>
         <Footer />
       </div>
     );
@@ -149,8 +147,7 @@ const GroupProfile = () => {
         <meta property="og:description" content={(group.description || "").substring(0, 150)} />
         {group.logo && <meta property="og:image" content={group.logo} />}
       </Helmet>
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-6 pb-16">
         <div className="container mx-auto px-6">
           {/* Back Button */}
           <motion.div
@@ -284,7 +281,7 @@ const GroupProfile = () => {
             </Link>
           </motion.div>
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );

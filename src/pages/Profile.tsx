@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { supabase } from "@/integrations/supabase/client";
@@ -205,7 +204,6 @@ const Profile = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-background">
-      <Navbar />
       <div className="h-screen flex items-center justify-center">
         <BrandedLoader />
       </div>
@@ -215,7 +213,6 @@ const Profile = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-4">
            <h2 className="text-2xl font-serif mb-2 text-foreground">Profile not found</h2>
            <Link to="/feed"><Button>Go Home</Button></Link>

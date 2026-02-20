@@ -1,13 +1,11 @@
 import { motion } from "framer-motion";
 import { Mail, Facebook, Instagram, Twitter } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="pt-24 pb-16">
+      <div className="pt-6 pb-16">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -125,7 +123,7 @@ const About = () => {
             </div>
           </motion.div>
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );

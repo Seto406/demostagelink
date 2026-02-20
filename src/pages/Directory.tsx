@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, UserPlus, LayoutGrid, List } from "lucide-react";

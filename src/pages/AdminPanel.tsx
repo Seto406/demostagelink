@@ -840,7 +840,7 @@ const AdminPanel = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-screen">
+      <div className="flex-1 min-h-screen">
         {/* Top Bar */}
         <header className="border-b border-secondary/10 p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1475,7 +1475,7 @@ const AdminPanel = () => {
             </motion.div>
           )}
         </div>
-      </main>
+      </div>
 
       {/* Details Modal with Poster Image */}
       <Dialog open={detailsModal} onOpenChange={setDetailsModal}>

@@ -18,6 +18,7 @@ import { HealthCheckGate } from "@/components/health-check-gate";
 import { SystemStability } from "@/components/SystemStability";
 import ScrollToTop from "@/components/ui/scroll-to-top";
 import Navbar from "@/components/layout/Navbar";
+import LandingNavbar from "@/components/landing/LandingNavbar";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -119,11 +120,13 @@ const AppRoutes = () => {
 
 const AppLayout = () => {
   const { loading } = useAuth();
+  const location = useLocation();
+  const isLandingPage = location.pathname === "/";
 
   return (
     <>
-      {!loading && <Navbar />}
-      <main className={!loading ? "pt-[72px]" : undefined}>
+      {!loading && (isLandingPage ? <LandingNavbar /> : <Navbar />)}
+      <main className={!loading && !isLandingPage ? "pt-[72px]" : undefined}>
         <AppRoutes />
       </main>
     </>
