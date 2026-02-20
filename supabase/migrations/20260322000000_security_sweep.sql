@@ -28,7 +28,7 @@ DECLARE
   -- TODO: Move this secret to Supabase Vault or environment variable in a future update.
   -- This key is required for the trigger to call the Edge Function securely.
   project_url TEXT := 'https://dssbduklgbmxezpjpuen.supabase.co';
-  service_role_key TEXT := 'YOUR_SERVICE_ROLE_KEY'; -- REPLACE WITH ACTUAL SERVICE ROLE KEY
+  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzc2JkdWtsZ2JteGV6cGpwdWVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTc2NjQ0OCwiZXhwIjoyMDg1MzQyNDQ4fQ.XCdOnAkx7o_B0OADTbbuEBSBOHo3DSL8U8OdNHVgx08'; -- REPLACE WITH ACTUAL SERVICE ROLE KEY
   request_id BIGINT;
 BEGIN
   -- Construct the payload matches standard Supabase webhook format
