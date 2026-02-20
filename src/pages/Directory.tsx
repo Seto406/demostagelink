@@ -336,12 +336,38 @@ const Directory = () => {
 
     setJoiningGroupId(group.id);
     try {
+      // Check for existing membership/application
+      const { data: existingMember, error: fetchError } = await supabase
+        .from('group_members' as any)
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('group_id', group.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingMember) {
+        if (existingMember.status === 'pending') {
+          toast.info("You already have a pending application.");
+          setJoiningGroupId(null);
+          return;
+        } else if (existingMember.status === 'active') {
+          toast.info("You are already a member of this group.");
+          setJoiningGroupId(null);
+          return;
+        }
+      }
+
       const { error } = await supabase
-        .from('membership_applications' as any)
+        .from('group_members' as any)
         .insert([{
           user_id: user.id,
           group_id: group.id,
-          status: 'pending'
+          member_name: profile?.username || 'Unknown User',
+          role_in_group: 'member',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }]);
 
       if (error) throw error;

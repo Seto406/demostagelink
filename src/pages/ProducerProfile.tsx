@@ -72,7 +72,7 @@ const ProducerProfile = () => {
       // Check for existing membership application
       if (user) {
         const { data: applicationData } = await supabase
-          .from("membership_applications")
+          .from("group_members" as any)
           .select("status")
           .eq("user_id", user.id)
           .eq("group_id", id)
@@ -467,7 +467,14 @@ const ProducerProfile = () => {
                             {joinLoading ? (
                               "Sending..."
                             ) : hasApplied ? (
-                              `Application ${applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}`
+                              applicationStatus === 'active' ? (
+                                <>
+                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  Member
+                                </>
+                              ) : (
+                                `Application ${applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}`
+                              )
                             ) : (
                               <>
                                 <UserPlus className="w-4 h-4 mr-2" />
