@@ -178,6 +178,13 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
     let posterUrl: string | null = null;
 
     try {
+      // Get the producer's theater group ID
+      const { data: theaterGroup, error: groupError } = await supabase
+        .from("theater_groups" as any)
+        .select("id")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
       if (posterFile) {
         const fileExt = posterFile.name.split(".").pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -199,6 +206,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
         .from("shows")
         .insert({
           producer_id: profile.id,
+          theater_group_id: theaterGroup?.id || null,
           title: title,
           description: description || null,
           date: date || null,

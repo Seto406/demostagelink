@@ -66,6 +66,12 @@ const ShowDetailsPage = () => {
             description,
             founded_year,
             niche
+          ),
+          theater_group:theater_groups!theater_group_id (
+            id,
+            name,
+            logo_url,
+            owner_id
           )
         `)
         .eq("id", id)
@@ -324,10 +330,10 @@ END:VCALENDAR`;
                         </h1>
                          {/* Quick Stats Row */}
                         <div className="flex flex-wrap gap-4 md:gap-8 text-muted-foreground text-sm md:text-base">
-                            {show.producer_id && (show.producer_id.group_name || show.producer_id.username) && (
+                            {(show.theater_group?.name || (show.producer_id && (show.producer_id.group_name || show.producer_id.username))) && (
                                 <div className="flex items-center gap-2">
                                     <Users className="w-4 h-4 text-secondary" />
-                                    <span>{show.producer_id.group_name || show.producer_id.username}</span>
+                                    <span>{show.theater_group?.name || show.producer_id?.group_name || show.producer_id?.username}</span>
                                 </div>
                             )}
                             {show.duration && (
@@ -547,26 +553,30 @@ END:VCALENDAR`;
                         )}
 
                         {/* Producer Info */}
-                        {show.producer_id && (
+                        {(show.theater_group || show.producer_id) && (
                             <div className="bg-card border border-secondary/10 rounded-xl p-6">
                                 <h3 className="font-serif font-bold text-lg mb-4 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-secondary" />
                                     Produced By
                                 </h3>
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-xl shrink-0">
-                                        🎭
+                                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                                        {show.theater_group?.logo_url ? (
+                                            <img src={show.theater_group.logo_url} alt={show.theater_group.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            "🎭"
+                                        )}
                                     </div>
                                     <div>
                                         <p className="font-bold text-foreground line-clamp-1">
-                                            {show.producer_id.group_name || show.producer_id.username}
+                                            {show.theater_group?.name || show.producer_id?.group_name || show.producer_id?.username}
                                         </p>
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                                            {getNicheLabel(show.producer_id.niche)}
+                                            {getNicheLabel(show.producer_id?.niche)}
                                         </p>
                                     </div>
                                 </div>
-                                <Link to={`/producer/${show.producer_id.id}`}>
+                                <Link to={`/producer/${show.theater_group?.owner_id || show.producer_id?.id}`}>
                                     <Button variant="outline" className="w-full group">
                                         View Profile
                                         <ArrowLeft className="w-4 h-4 ml-2 rotate-180 group-hover:translate-x-1 transition-transform" />
