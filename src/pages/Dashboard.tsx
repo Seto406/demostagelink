@@ -7,7 +7,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,11 +18,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
 
 type ManagedGroup = {
   id: string;
+  user_id: string;
   group_name: string | null;
   avatar_url: string | null;
+  group_logo_url: string | null;
+  group_banner_url: string | null;
+  description: string | null;
 };
 
 type MembershipApplication = {
@@ -69,6 +74,7 @@ const Dashboard = () => {
   const [applicantsByUserId, setApplicantsByUserId] = useState<Record<string, ApplicantProfile>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   // Linking State
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -92,7 +98,7 @@ const Dashboard = () => {
 
       const { data: groups, error: groupsError } = await supabase
         .from("profiles")
-        .select("id, group_name, avatar_url")
+        .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description")
         .eq("user_id", profile.user_id)
         .not("group_name", "is", null);
 
@@ -460,11 +466,29 @@ const Dashboard = () => {
     );
   }
 
+  const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
+
   return (
-    <div className="container mx-auto px-6 py-8">
+    <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
       <div className="mb-6 rounded-xl border border-secondary/20 bg-card/70 p-5 backdrop-blur-md">
-        <h1 className="text-2xl font-serif font-bold text-foreground">My Dashboards</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Pending Approvals</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-serif font-bold text-foreground">My Dashboards</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Pending Approvals</p>
+          </div>
+
+          {selectedGroup && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditProfileOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Edit Group Profile
+            </Button>
+          )}
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {managedGroups.map((group) => (
@@ -706,6 +730,17 @@ const Dashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Producer Profile Dialog */}
+      <EditProducerProfileDialog
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
+        producer={selectedGroup}
+        theaterGroup={null}
+        onSuccess={() => {
+           toast.success("Profile updated.");
+        }}
+      />
     </div>
   );
 };

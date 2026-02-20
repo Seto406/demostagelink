@@ -20,7 +20,7 @@ const Navbar = () => {
   const centerNavLinks = user
     ? [
         { path: "/feed", label: "Home", icon: House, matchPath: "/feed" },
-        ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Management", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
+        ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
         { path: "/favorites", label: "Favorites", icon: Bookmark, matchPath: "/favorites" },
@@ -95,9 +95,18 @@ const Navbar = () => {
         }`}
       >
         <div className="container mx-auto h-full px-4 sm:px-6">
-          <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center">
-            <div className="flex items-center justify-self-start">
-              <Link to={homePath} className="flex items-center gap-2 sm:gap-3 group">
+          <div className="flex h-full items-center justify-between">
+            {/* Left Section: Mobile Hamburger + Desktop Logo */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button
+                className="touch-target p-2 text-foreground md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+
+              <Link to={homePath} className="hidden md:flex items-center gap-2 sm:gap-3 group">
                 <img src={stageLinkLogo} alt="StageLink Logo" className="h-8 w-auto sm:h-10" />
                 <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                   Stage<span className="text-secondary">Link</span>
@@ -105,31 +114,39 @@ const Navbar = () => {
               </Link>
             </div>
 
-            <div className="hidden items-center justify-center gap-x-8 md:flex">
-              {centerNavLinks.map(({ path, label, icon: Icon, matchPath }) => {
-                const isActive = location.pathname === matchPath;
+            {/* Center Section: Mobile Logo + Desktop Nav */}
+            <div className="flex items-center justify-center flex-1">
+              <Link to={homePath} className="flex md:hidden items-center gap-2 group">
+                <img src={stageLinkLogo} alt="StageLink Logo" className="h-8 w-auto" />
+              </Link>
 
-                return (
-                  <Link
-                    key={label}
-                    to={path}
-                    className={`relative flex items-center gap-2 px-1 py-2 text-sm font-medium transition-colors ${
-                      isActive ? "text-secondary" : "text-foreground/80 hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{label}</span>
-                    <span
-                      className={`absolute inset-x-0 -bottom-[3px] h-[2px] rounded-full transition-opacity ${
-                        isActive ? "bg-secondary opacity-100" : "bg-secondary/50 opacity-0"
+              <div className="hidden md:flex items-center justify-center gap-x-8">
+                {centerNavLinks.map(({ path, label, icon: Icon, matchPath }) => {
+                  const isActive = location.pathname === matchPath;
+
+                  return (
+                    <Link
+                      key={label}
+                      to={path}
+                      className={`relative flex items-center gap-2 px-1 py-2 text-sm font-medium transition-colors ${
+                        isActive ? "text-secondary" : "text-foreground/80 hover:text-foreground"
                       }`}
-                    />
-                  </Link>
-                );
-              })}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{label}</span>
+                      <span
+                        className={`absolute inset-x-0 -bottom-[3px] h-[2px] rounded-full transition-opacity ${
+                          isActive ? "bg-secondary opacity-100" : "bg-secondary/50 opacity-0"
+                        }`}
+                      />
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="flex items-center justify-self-end gap-1 sm:gap-2">
+            {/* Right Section: Actions + Desktop Hamburger */}
+            <div className="flex items-center justify-end gap-1 sm:gap-2">
               {user && (
                 <Link to="/notifications" className="relative">
                   <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
@@ -153,7 +170,7 @@ const Navbar = () => {
               )}
 
               <button
-                className="touch-target p-2 text-foreground"
+                className="touch-target p-2 text-foreground hidden md:block"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -177,6 +194,7 @@ const Navbar = () => {
                       ? "border border-secondary/30 bg-secondary/10 text-secondary"
                       : "text-foreground hover:bg-secondary/5 hover:text-secondary"
                   }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
@@ -189,7 +207,7 @@ const Navbar = () => {
               {user ? (
                 <div className="flex flex-col gap-3">
                   {isAdmin && (
-                    <Link to="/admin" className="w-full">
+                    <Link to="/admin" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-center rounded-xl font-sans text-primary">
                         <Shield className="mr-2 h-4 w-4" />
                         Admin Panel
@@ -199,7 +217,7 @@ const Navbar = () => {
                   {canAccessManagement && (
                     <div className="rounded-xl border border-secondary/20 bg-card/50 p-3 backdrop-blur-md">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Management</p>
-                      <Link to="/dashboard" className="w-full">
+                      <Link to="/dashboard" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
                           My Dashboards
@@ -207,25 +225,25 @@ const Navbar = () => {
                       </Link>
                     </div>
                   )}
-                  <Link to="/profile" className="w-full">
+                  <Link to="/profile" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Button>
                   </Link>
-                  <Link to="/profile" className="w-full">
+                  <Link to="/profile" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
                       <Ticket className="mr-2 h-4 w-4" />
                       My Passes
                     </Button>
                   </Link>
-                  <Link to="/settings" className="w-full">
+                  <Link to="/settings" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Button>
                   </Link>
-                  <Link to="/favorites" className="w-full">
+                  <Link to="/favorites" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
                       <Bookmark className="mr-2 h-4 w-4" />
                       Favorites
@@ -236,7 +254,7 @@ const Navbar = () => {
                   </Button>
                 </div>
               ) : (
-                <Link to="/login" className="block w-full">
+                <Link to="/login" className="block w-full" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button
                     variant="default"
                     className="w-full rounded-xl bg-secondary font-sans text-secondary-foreground hover:bg-secondary/90"
