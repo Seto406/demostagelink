@@ -1,0 +1,21 @@
+                                {show.poster_url ? (
+                                  <>
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center blur-md scale-110 opacity-50"
+                                      style={{ backgroundImage: `url(${show.poster_url})` }}
+                                    />
+                                    <img
+                                      src={show.poster_url}
+                                      alt={show.title}
+                                      className="w-full h-full object-cover relative z-10"
+                                    />
+                                  </>
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                                    <span className="text-4xl opacity-30">🎭</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content */}
+                              <div className="p-4">

@@ -1,3 +1,4 @@
+import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
@@ -60,6 +61,8 @@ const ProducerProfile = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [showProductionModal, setShowProductionModal] = useState(false);
+  const [showToEdit, setShowToEdit] = useState<any>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Follow State
@@ -351,6 +354,10 @@ const ProducerProfile = () => {
   };
 
   const handleEditSuccess = () => {
+  const handleEditShow = (show: Show) => {
+    setShowToEdit(show);
+    setShowProductionModal(true);
+  };
     setRefreshKey(prev => prev + 1);
   };
 
@@ -750,9 +757,24 @@ const ProducerProfile = () => {
                                       {show.city}
                                     </span>
                                   )}
-                                </div>
+                              </div>
                               </div>
                             </Link>
+                            {isOwnProfile && (
+                              <div className="mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => {
+                                    setShowToEdit(show);
+                                    setShowProductionModal(true);
+                                  }}
+                                >
+                                  Edit Show
+                                </Button>
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                     </div>
@@ -790,7 +812,7 @@ const ProducerProfile = () => {
                                     <img
                                       src={show.poster_url}
                                       alt={show.title}
-                                      className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                                      className="w-full h-full object-cover relative z-10"
                                     />
                                   </>
                                 ) : (
@@ -822,6 +844,21 @@ const ProducerProfile = () => {
                                 </div>
                               </div>
                             </Link>
+                            {isOwnProfile && (
+                              <div className="mt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => {
+                                    setShowToEdit(show);
+                                    setShowProductionModal(true);
+                                  }}
+                                >
+                                  Edit Show
+                                </Button>
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                     </div>
@@ -840,6 +877,13 @@ const ProducerProfile = () => {
         theaterGroup={theaterGroup}
         onSuccess={handleEditSuccess}
       />
+      {showProductionModal && (
+        <ProductionModal
+          open={showProductionModal}
+          onOpenChange={setShowProductionModal}
+          showToEdit={showToEdit}
+        />
+      )}
     </div>
   );
 };
