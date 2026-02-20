@@ -17,7 +17,7 @@ AS $$
 DECLARE
   -- SECURITY WARNING: THIS FILE CONTAINS SECRETS. DO NOT COMMIT TO PUBLIC REPO.
   project_url TEXT := 'https://dssbduklgbmxezpjpuen.supabase.co';
-  service_role_key TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzc2JkdWtsZ2JteGV6cGpwdWVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTc2NjQ0OCwiZXhwIjoyMDg1MzQyNDQ4fQ.XCdOnAkx7o_B0OADTbbuEBSBOHo3DSL8U8OdNHVgx08';
+  service_role_key TEXT := 'YOUR_SERVICE_ROLE_KEY'; -- REPLACE WITH ACTUAL SERVICE ROLE KEY
   request_id BIGINT;
 BEGIN
   -- Construct the payload matches standard Supabase webhook format
