@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil, Home } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil, Home, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -36,6 +36,7 @@ const ShowDetailsPage = () => {
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isTicketClaimed, setIsTicketClaimed] = useState(false);
 
   useEffect(() => {
     setImageLoading(true);
@@ -103,6 +104,26 @@ const ShowDetailsPage = () => {
       document.title = "StageLink | Discover Local Theater in Metro Manila";
     };
   }, [id]);
+
+  useEffect(() => {
+    const checkTicketStatus = async () => {
+      if (!user || !show || !profile) return;
+
+      const { data } = await supabase
+        .from("tickets")
+        .select("id")
+        .eq("user_id", profile.id)
+        .eq("show_id", show.id)
+        .eq("status", "confirmed")
+        .maybeSingle();
+
+      if (data) {
+        setIsTicketClaimed(true);
+      }
+    };
+
+    checkTicketStatus();
+  }, [user, show, profile]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return null;
@@ -226,7 +247,37 @@ END:VCALENDAR`;
     document.body.removeChild(link);
   };
 
-  const handleBuyTicket = () => {
+  const handleBuyTicket = async () => {
+    if (show?.price === 0) {
+      if (!user || !profile) {
+        toast.error("Please log in to get a ticket");
+        navigate("/login");
+        return;
+      }
+
+      setBuyingTicket(true);
+      try {
+        const { error } = await supabase
+          .from("tickets")
+          .insert({
+            user_id: profile.id,
+            show_id: show.id,
+            status: "confirmed"
+          });
+
+        if (error) throw error;
+
+        toast.success("Ticket Claimed!");
+        setIsTicketClaimed(true);
+      } catch (error) {
+        console.error("Error claiming ticket:", error);
+        toast.error("Failed to claim ticket");
+      } finally {
+        setBuyingTicket(false);
+      }
+      return;
+    }
+
     setShowPaymentModal(true);
   };
 
@@ -437,13 +488,13 @@ END:VCALENDAR`;
                                         <Button
                                             size="xl"
                                             className={`w-full text-lg font-serif shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow ${
-                                                show.price === 0 ? "bg-[#3b82f6] hover:bg-[#2563eb] text-white" : ""
-                                            }`}
+                                                show.price === 0 && !isTicketClaimed ? "bg-[#3b82f6] hover:bg-[#2563eb] text-white" : ""
+                                            } ${isTicketClaimed ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
                                             onClick={handleBuyTicket}
-                                            disabled={buyingTicket}
+                                            disabled={buyingTicket || isTicketClaimed}
                                         >
-                                            <Ticket className="w-5 h-5 mr-2" />
-                                            {show.price === 0 ? "Get Free Ticket" : "Reserve Now"}
+                                            {isTicketClaimed ? <Check className="w-5 h-5 mr-2" /> : <Ticket className="w-5 h-5 mr-2" />}
+                                            {isTicketClaimed ? "Ticket Claimed!" : (show.price === 0 ? "Get Free Ticket" : "Reserve Now")}
                                         </Button>
                                     ) : show.ticket_link ? (
                                         <a href={show.ticket_link} target="_blank" rel="noopener noreferrer" className="block w-full">

@@ -45,7 +45,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewForm
         .from("reviews")
         .insert({
           show_id: showId,
-          user_id: user.id,
+          user_id: profile.id,
           rating: isUpcoming ? 5 : rating,
           comment: comment.trim() || null,
           is_approved: true,
