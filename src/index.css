@@ -18,6 +18,7 @@
 /* iOS-inspired smooth scrolling and touch */
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
   -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
