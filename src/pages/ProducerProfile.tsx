@@ -50,7 +50,7 @@ interface Show {
   city: string | null;
   poster_url: string | null;
   production_status: string | null;
-  producer?: any; // Added to match query structure
+  producer?: any;
 }
 
 const ProducerProfile = () => {
@@ -77,16 +77,13 @@ const ProducerProfile = () => {
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    // Guard against data race: Wait for auth to settle
     if (authLoading) return;
 
     const fetchProducerData = async () => {
       if (!id) return;
 
-      // Track profile view
       trackEvent('profile_view', id);
 
-      // Fetch theater group details
       const { data: groupData, error: groupError } = await supabase
         .from("theater_groups" as any)
         .select("*")
@@ -99,7 +96,6 @@ const ProducerProfile = () => {
         setTheaterGroup(groupData);
       }
 
-      // Check for existing membership application
       if (user) {
         const { data: applicationData } = await supabase
           .from("group_members" as any)
@@ -114,7 +110,6 @@ const ProducerProfile = () => {
         }
       }
 
-      // Fetch producer profile
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
@@ -127,12 +122,11 @@ const ProducerProfile = () => {
         setProducer(profileData as Producer);
       }
 
-      // Fetch producer's approved shows
       let query = supabase
         .from("shows")
         .select("id, title, description, date, venue, city, poster_url, production_status, producer:profiles!producer_id(*)")
         .eq("status", "approved")
-        .neq("production_status", "draft") // Exclude draft shows from public profile
+        .neq("production_status", "draft")
         .order("date", { ascending: false });
 
       if (groupData) {
@@ -149,7 +143,6 @@ const ProducerProfile = () => {
         setShows(showsData as Show[]);
       }
 
-      // Fetch Follower Count
       const { count, error: countError } = await supabase
         .from("follows")
         .select("*", { count: 'exact', head: true })
@@ -159,7 +152,6 @@ const ProducerProfile = () => {
         setFollowerCount(count);
       }
 
-      // Check if current user is following
       if (user) {
         const { data: followData, error: followError } = await supabase
             .from("follows")
@@ -203,7 +195,6 @@ const ProducerProfile = () => {
     setFollowLoading(true);
 
     if (isFollowing) {
-        // Unfollow
         const { error } = await supabase
             .from("follows")
             .delete()
@@ -219,7 +210,6 @@ const ProducerProfile = () => {
             toast.success("Unfollowed group");
         }
     } else {
-        // Follow
         const { error } = await supabase
             .from("follows")
             .insert({
@@ -235,7 +225,6 @@ const ProducerProfile = () => {
             setFollowerCount(prev => prev + 1);
             toast.success("Following group");
 
-            // Notify producer
             await createNotification({
               userId: producer.id,
               actorId: user.id,
@@ -254,7 +243,6 @@ const ProducerProfile = () => {
 
     setJoinLoading(true);
     try {
-      // Check if already a member or pending
       const { data: existingMember, error: fetchError } = await supabase
         .from('group_members' as any)
         .select('id, status')
@@ -298,7 +286,7 @@ const ProducerProfile = () => {
         type: 'membership_application',
         title: 'New Member Application',
         message: `${profile.username || 'Someone'} wants to join your group.`,
-        link: `/dashboard` // Updated link to point to main dashboard as members is likely a tab
+        link: `/dashboard`
       });
 
       toast.success("Membership application sent successfully!");
@@ -317,7 +305,6 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
-      // Check for existing pending request
       const { data: existingRequest, error: fetchError } = await supabase
         .from('collaboration_requests' as any)
         .select('id')
@@ -333,7 +320,6 @@ const ProducerProfile = () => {
         return;
       }
 
-      // Emergency Fix: Bypass Edge Function and write directly to table
       const { error } = await supabase
         .from('collaboration_requests' as any)
         .insert([{
@@ -362,7 +348,7 @@ const ProducerProfile = () => {
     setRefreshKey(prev => prev + 1);
   };
 
-  // This is the missing variable that fixes your error
+  // This variable checks if the logged-in user owns the profile
   const isOwnProfile = user?.id === producer?.id;
 
   if (loading) {
@@ -407,12 +393,9 @@ const ProducerProfile = () => {
       <Helmet>
         <title>{displayName ? `${displayName} on StageLink` : "Producer on StageLink"}</title>
         <meta name="description" content={displayDescription ? displayDescription.substring(0, 150) : "Check out this theater producer on StageLink."} />
-
-        {/* Open Graph / Facebook */}
         <meta property="og:type" content="profile" />
         <meta property="og:title" content={displayName ? `${displayName} on StageLink` : "Producer on StageLink"} />
         <meta property="og:description" content={displayDescription ? displayDescription.substring(0, 150) : "Check out this theater producer on StageLink."} />
-        {/* Note: cover_image is not available in the database schema, so we use avatar_url as the best available fallback for OG image. */}
         {producer.avatar_url && <meta property="og:image" content={producer.avatar_url} />}
       </Helmet>
       <Navbar />
@@ -428,7 +411,6 @@ const ProducerProfile = () => {
           </div>
         )}
 
-        {/* Featured Show Section */}
         <div className="container mx-auto px-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -479,7 +461,6 @@ const ProducerProfile = () => {
         </div>
 
         <div className="container mx-auto px-6">
-          {/* Producer Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -492,7 +473,6 @@ const ProducerProfile = () => {
             
             <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl">
               <div className="flex flex-col md:flex-row gap-8 items-start">
-                {/* Avatar */}
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-secondary/30">
                   {displayLogo ? (
                     <img 
@@ -507,7 +487,6 @@ const ProducerProfile = () => {
                   )}
                 </div>
                 
-                {/* Info */}
                 <div className="flex-1 w-full">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                       <div>
@@ -518,7 +497,7 @@ const ProducerProfile = () => {
                             <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground">
                               {displayName || "Unnamed Group"}
                             </h1>
-                            {user && user.id === producer.id && (
+                            {isOwnProfile && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -535,7 +514,6 @@ const ProducerProfile = () => {
                           )}
                       </div>
 
-                      {/* Follow Button */}
                       <Button
                         onClick={handleFollow}
                         disabled={followLoading}
@@ -557,7 +535,6 @@ const ProducerProfile = () => {
                         )}
                       </Button>
 
-                      {/* Collab / Join Button */}
                       {user && profile && producer && profile.id !== producer.id && (
                         profile.role === 'producer' ? (
                           <Button
@@ -623,7 +600,6 @@ const ProducerProfile = () => {
                     </div>
                   </div>
                   
-                  {/* Social Media Links */}
                   {(producer.facebook_url || producer.instagram_url) && (
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
                       {producer.facebook_url && (
@@ -655,7 +631,6 @@ const ProducerProfile = () => {
             </div>
           </motion.div>
 
-          {/* Location Section */}
           {producer.map_screenshot_url && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -689,7 +664,6 @@ const ProducerProfile = () => {
             </motion.div>
           )}
 
-          {/* Shows Section */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -701,7 +675,6 @@ const ProducerProfile = () => {
               </div>
             ) : (
               <>
-                {/* Current/Upcoming Productions */}
                 {shows.some(s => s.production_status !== "completed") && (
                   <div className="mb-12">
                     <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
@@ -721,7 +694,6 @@ const ProducerProfile = () => {
                               to={`/show/${show.id}`}
                               className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
                             >
-                              {/* Poster */}
                               <div className="aspect-[3/2] relative overflow-hidden rounded-xl bg-black/5">
                                 {show.poster_url ? (
                                   <>
@@ -742,7 +714,6 @@ const ProducerProfile = () => {
                                 )}
                               </div>
 
-                              {/* Content */}
                               <div className="p-4">
                                 <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
                                   {show.title}
@@ -761,7 +732,7 @@ const ProducerProfile = () => {
                                       {show.city}
                                     </span>
                                   )}
-                              </div>
+                                </div>
                               </div>
                             </Link>
                             {isOwnProfile && (
@@ -785,7 +756,6 @@ const ProducerProfile = () => {
                   </div>
                 )}
 
-                {/* Past Productions */}
                 {shows.some(s => s.production_status === "completed") && (
                   <div>
                     <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
@@ -805,7 +775,6 @@ const ProducerProfile = () => {
                               to={`/show/${show.id}`}
                               className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300 opacity-80 hover:opacity-100"
                             >
-                              {/* Poster */}
                               <div className="aspect-[3/2] relative overflow-hidden rounded-xl bg-black/5 grayscale group-hover:grayscale-0 transition-all duration-500">
                                 {show.poster_url ? (
                                   <>
@@ -826,7 +795,6 @@ const ProducerProfile = () => {
                                 )}
                               </div>
 
-                              {/* Content */}
                               <div className="p-4">
                                 <h3 className="font-serif text-lg text-foreground mb-2 group-hover:text-secondary transition-colors">
                                   {show.title}
