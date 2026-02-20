@@ -1,3 +1,4 @@
+import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -36,13 +37,11 @@ type MembershipApplication = {
   group_id: string;
   created_at: string;
   status: string;
-  member_name: string;
   role_in_group?: string | null;
 };
 
 type UnlinkedMember = {
   id: string;
-  member_name: string;
   role_in_group: string | null;
   status: string;
 };
@@ -75,6 +74,8 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [showProductionModal, setShowProductionModal] = useState(false);
+  const [showToEdit, setShowToEdit] = useState<any>(null);
 
   // Linking State
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -140,7 +141,7 @@ const Dashboard = () => {
       // Fetch Member Applications
       const { data: pendingApplications, error: applicationsError } = await supabase
         .from("group_members" as never)
-        .select("id, user_id, group_id, created_at, status, member_name, role_in_group" as never)
+        .select("id, user_id, group_id, created_at, status, role_in_group" as never)
         .eq("group_id", selectedGroupId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -166,7 +167,7 @@ const Dashboard = () => {
       // Fetch Unlinked Members (Manual Entries)
       const { data: unlinkedData, error: unlinkedError } = await supabase
         .from("group_members" as any)
-        .select("id, member_name, status, role_in_group")
+        .select("id, status, role_in_group")
         .eq("group_id", selectedGroupId)
         .is("user_id", null);
 
@@ -336,7 +337,6 @@ const Dashboard = () => {
             group_id: selectedGroupId,
             role_in_group: 'producer',
             status: 'active',
-            member_name: applicantsByUserId[request.sender_id]?.username || applicantsByUserId[request.sender_id]?.group_name || "Producer",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         });
@@ -440,7 +440,7 @@ const Dashboard = () => {
       console.error("Error linking user:", error);
       toast.error("Failed to link user.");
     } else {
-      toast.success(`Linked ${foundUser.username} to ${selectedUnlinkedMember.member_name}`);
+      toast.success(`Linked ${foundUser.username} to ${"this member"}`);
       setUnlinkedMembers(prev => prev.filter(m => m.id !== selectedUnlinkedMember.id));
       setLinkDialogOpen(false);
       setFoundUser(null);
@@ -582,7 +582,7 @@ const Dashboard = () => {
         ) : (
           applications.map((application, index) => {
             const applicant = applicantsByUserId[application.user_id];
-            const name = applicant?.username || application.member_name || "Applicant";
+            const name = applicant?.username || "Unknown User" || "Applicant";
             const initial = name.charAt(0).toUpperCase();
 
             return (
@@ -649,10 +649,10 @@ const Dashboard = () => {
                >
                  <div className="flex items-center gap-3">
                    <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">
-                     {member.member_name.charAt(0).toUpperCase()}
+                     {"Unknown Member".charAt(0).toUpperCase()}
                    </div>
                    <div>
-                     <p className="font-medium text-foreground">{member.member_name}</p>
+                     <p className="font-medium text-foreground">{"Unknown Member"}</p>
                      <p className="text-xs text-muted-foreground capitalize">{member.role_in_group || "Member"}</p>
                    </div>
                  </div>
@@ -681,7 +681,7 @@ const Dashboard = () => {
           <DialogHeader>
             <DialogTitle>Link User to Member</DialogTitle>
             <DialogDescription>
-              Search for a user by username to link them to <strong>{selectedUnlinkedMember?.member_name}</strong>.
+              Search for a user by username to link them to <strong>{"this member"}</strong>.
               This will merge their history with the user account.
             </DialogDescription>
           </DialogHeader>
@@ -732,6 +732,13 @@ const Dashboard = () => {
       </Dialog>
 
       {/* Edit Producer Profile Dialog */}
+      {showProductionModal && (
+        <ProductionModal
+          open={showProductionModal}
+          onOpenChange={setShowProductionModal}
+          showToEdit={showToEdit}
+        />
+      )}
       <EditProducerProfileDialog
         open={isEditProfileOpen}
         onOpenChange={setIsEditProfileOpen}

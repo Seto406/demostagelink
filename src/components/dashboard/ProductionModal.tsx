@@ -40,7 +40,7 @@ interface CastMember {
   role: string;
 }
 
-export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
+export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
@@ -69,6 +69,22 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
   const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  useEffect(() => {
+    if (showToEdit) {
+      setTitle(showToEdit.title || "");
+      setDescription(showToEdit.description || "");
+      setDate(showToEdit.date || "");
+      setVenue(showToEdit.venue || "");
+      setCity(showToEdit.city || "");
+      setNiche(showToEdit.niche || "local");
+      setTicketLink(showToEdit.ticket_link || "");
+      setPrice(showToEdit.price ? String(showToEdit.price) : "");
+      setProductionStatus(showToEdit.production_status || "ongoing");
+      setPosterPreview(showToEdit.poster_url || null);
+    } else {
+      resetForm();
+    }
+  }, [showToEdit, open]);
 
   const resetForm = () => {
     setTitle("");
@@ -202,32 +218,45 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
         posterUrl = publicUrl;
       }
 
-      const { error } = await supabase
+    const payload = {
+      title,
+      description: description || null,
+      date: date || null,
+      venue: venue || null,
+      city: city || null,
+      niche,
+      ticket_link: ticketLink || null,
+      price: price ? parseFloat(price) : null,
+      production_status: productionStatus,
+      poster_url: posterUrl || (showToEdit ? showToEdit.poster_url : null),
+      reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
+      collect_balance_onsite: collectBalanceOnsite,
+      genre: genre.length > 0 ? genre.join(", ") : null,
+      director: director || null,
+      duration: duration || null,
+      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
+      cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
+      seo_metadata: paymentInstructions ? { payment_instructions: paymentInstructions } : null,
+    };
+
+    let query;
+    if (showToEdit) {
+      query = supabase
+        .from("shows")
+        .update(payload)
+        .eq("id", showToEdit.id);
+    } else {
+      query = supabase
         .from("shows")
         .insert({
+          ...payload,
           producer_id: profile.id,
           theater_group_id: theaterGroup?.id || null,
-          title: title,
-          description: description || null,
-          date: date || null,
-          venue: venue || null,
-          city: city || null,
-          niche: niche,
           status: "approved",
-          production_status: productionStatus,
-          poster_url: posterUrl,
-          ticket_link: ticketLink || null,
-          price: price ? parseFloat(price) : 0,
-          reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
-          collect_balance_onsite: collectBalanceOnsite,
-          genre: genre.length > 0 ? genre.join(", ") : null,
-          director: director || null,
-          duration: duration || null,
-          tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
-          cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
-          seo_metadata: paymentInstructions ? { payment_instructions: paymentInstructions } : null,
         });
+    }
 
+    const { error } = await query;
       if (error) throw new Error(`Failed to submit show: ${error.message}`);
 
       // Invalidate queries to update Feed and Dashboard immediately
@@ -256,12 +285,12 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
   return (
     <>
       <Dialog open={open} onOpenChange={(val) => {
-        if (!val) resetForm();
+        if (!val && !showToEdit) resetForm();
         onOpenChange(val);
       }}>
         <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Post New Production</DialogTitle>
+            {showToEdit ? <DialogTitle className="font-serif text-xl">Edit Production</DialogTitle> : <DialogTitle className="font-serif text-xl">Post New Production</DialogTitle>}
             <DialogDescription>
               Submit your show details. It will appear on the feed after approval.
             </DialogDescription>
@@ -597,7 +626,7 @@ export function ProductionModal({ open, onOpenChange }: ProductionModalProps) {
             </div>
 
             <Button type="submit" className="w-full" disabled={uploading}>
-              {uploading ? "Submitting..." : "Post Production"}
+              {uploading ? "Saving..." : showToEdit ? "Update Production" : "Post Production"}
             </Button>
           </form>
         </DialogContent>

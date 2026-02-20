@@ -6,7 +6,6 @@ import { CinematicLanding } from "@/components/landing/CinematicLanding";
 import MissionSection from "@/components/landing/MissionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import PricingSection from "@/components/landing/PricingSection";
-import RoadmapSection from "@/components/landing/RoadmapSection";
 import FAQSection from "@/components/landing/FAQSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import LandingFooter from "@/components/landing/LandingFooter";
@@ -52,7 +51,6 @@ const Index = () => {
         <MissionSection />
         <FeaturesSection />
         <PricingSection />
-        <RoadmapSection />
         <FAQSection />
         <ShowcaseSection />
       </main>

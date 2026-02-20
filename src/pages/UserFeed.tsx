@@ -327,7 +327,7 @@ const UserFeed = () => {
       <Footer />
 
       {/* Modals */}
-      <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} />
+      <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} showToEdit={null} />
 
       <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
         <DialogContent className="bg-card border-secondary/30 sm:max-w-md">

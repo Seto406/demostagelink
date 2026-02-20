@@ -17,7 +17,7 @@ interface ReviewFormProps {
 export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewFormProps) => {
   const { user, profile } = useAuth();
   const { addXp } = useGamification();
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,7 +46,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewForm
         .insert({
           show_id: showId,
           user_id: user.id,
-          rating: isUpcoming ? 0 : rating,
+          rating: isUpcoming ? 5 : rating,
           comment: comment.trim() || null,
           is_approved: true,
         });
@@ -64,7 +64,7 @@ export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewForm
         console.error("Failed to add XP", e);
       }
 
-      setRating(0);
+      setRating(5);
       setComment("");
       onReviewSubmitted();
     } catch (error) {

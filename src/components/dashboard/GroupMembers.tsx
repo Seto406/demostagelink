@@ -28,7 +28,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface GroupMember {
   id: string;
-  member_name: string;
   role_in_group: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -98,7 +97,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
 
   const openEditModal = (member: GroupMember) => {
     setEditingMember(member);
-    setMemberName(member.member_name);
+    setMemberName("Unknown Member");
     setRoleInGroup(member.role_in_group || "");
     setAvatarPreview(member.avatar_url);
     setShowModal(true);
@@ -198,10 +197,10 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
         const { error } = await supabase
           .from("group_members")
           .update({
-            member_name: memberName.trim(),
             role_in_group: roleInGroup.trim() || null,
             avatar_url: avatarUrl,
             user_id: linkedUserId
+            member_name: memberName.trim(),
           })
           .eq("id", editingMember.id);
 
@@ -219,8 +218,8 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
             .from("group_members")
             .insert({
               group_id: effectiveProfileId,
-              member_name: memberName.trim(),
               role_in_group: roleInGroup.trim() || null,
+              member_name: memberName.trim(),
               avatar_url: avatarUrl,
               user_id: linkedUserId
             });
@@ -348,17 +347,17 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
                 {member.avatar_url ? (
                   <img
                     src={member.avatar_url}
-                    alt={member.member_name}
+                    alt={"Unknown Member"}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-lg font-serif text-muted-foreground">
-                    {member.member_name.charAt(0).toUpperCase()}
+                    {"Unknown Member".charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{member.member_name}</p>
+                <p className="font-medium text-foreground truncate">{"Unknown Member"}</p>
                 {member.role_in_group && (
                   <p className="text-sm text-muted-foreground truncate">{member.role_in_group}</p>
                 )}
