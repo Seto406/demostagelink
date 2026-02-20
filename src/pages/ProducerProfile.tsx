@@ -353,13 +353,17 @@ const ProducerProfile = () => {
     }
   };
 
-  const handleEditSuccess = () => {
   const handleEditShow = (show: Show) => {
     setShowToEdit(show);
     setShowProductionModal(true);
   };
+
+  const handleEditSuccess = () => {
     setRefreshKey(prev => prev + 1);
   };
+
+  // This is the missing variable that fixes your error
+  const isOwnProfile = user?.id === producer?.id;
 
   if (loading) {
     return (
