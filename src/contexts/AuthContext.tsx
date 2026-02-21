@@ -40,14 +40,15 @@ interface AuthContextType {
   updateProfileState: (updates: Partial<Profile>) => void;
 }
 
-const PUBLIC_PATHS = ["/", "/show", "/shows", "/producer", "/group", "/directory", "/about"];
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const areSessionsEqual = (a: Session | null, b: Session | null) => {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  return a.access_token === b.access_token && a.user?.id === b.user?.id && a.expires_at === b.expires_at;
+// 🔥 THE GAME CHANGER: This forcefully aborts frozen background network requests 
+const withTimeout = <T,>(promise: Promise<T>, ms: number = 5000): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("Request timed out due to network sleep")), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -58,210 +59,150 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const latestSessionRef = useRef<Session | null>(null);
-  const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
-  const profileRef = useRef<Profile | null>(null);
+  const hasInitialized = useRef(false);
 
-  useEffect(() => {
-    profileRef.current = profile;
-  }, [profile]);
+  const fetchProfile = async (userId: string, userMetadata?: any) => {
+    try {
+      // Wrapped in strict 5s timeout to prevent infinite hangs
+      const fetchResponse = await withTimeout(
+        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle()
+      );
 
-  const ensureProfile = async (
-    userId: string,
-    userMetadata?: Record<string, unknown> & { avatar_url?: string },
-    force = false
-  ) => {
-    if (!force && profileRef.current?.user_id === userId) return;
-
-    if (!force && fetchingProfileRef.current[userId]) {
-      return fetchingProfileRef.current[userId]!;
-    }
-
-    // 🔥 DESTROY FROZEN LOCKS: If force is true, we kill the old promise lock so we can re-fetch
-    if (force) {
-      delete fetchingProfileRef.current[userId];
-    }
-
-    const fetchPromise = (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Error fetching profile in ensureProfile:", error);
-          return;
-        }
-
-        if (data) {
-          setProfile(data as Profile);
-          return;
-        }
-
-        const pendingRoleRaw = localStorage.getItem("pendingUserRole");
-        const role: "audience" | "producer" = pendingRoleRaw === "producer" ? "producer" : "audience";
-
-        const { data: createdProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert([
-            {
-              user_id: userId,
-              role,
-              avatar_url: userMetadata?.avatar_url || null,
-            },
-          ])
-          .select()
-          .single();
-
-        if (createdProfile) {
-          setProfile(createdProfile as Profile);
-          localStorage.removeItem("pendingUserRole");
-          return;
-        }
-
-        console.warn("Error creating profile, retrying fetch:", createError);
-        const { data: retryData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (retryData) {
-          setProfile(retryData as Profile);
-          localStorage.removeItem("pendingUserRole");
-          return;
-        }
-
-        console.error("Failed to ensure profile:", createError);
-      } catch (error) {
-        console.error("Unexpected error in ensureProfile:", error);
-      } finally {
-        delete fetchingProfileRef.current[userId];
+      if (fetchResponse.data) {
+        setProfile(fetchResponse.data as Profile);
+        return;
       }
-    })();
 
-    fetchingProfileRef.current[userId] = fetchPromise;
-    return fetchPromise;
+      if (fetchResponse.error) {
+        console.error("Profile fetch error:", fetchResponse.error);
+        return;
+      }
+
+      // If no profile exists, try to create one
+      const pendingRoleRaw = localStorage.getItem("pendingUserRole");
+      const role: "audience" | "producer" = pendingRoleRaw === "producer" ? "producer" : "audience";
+
+      const createResponse = await withTimeout(
+        supabase.from("profiles").insert([{
+          user_id: userId,
+          role,
+          avatar_url: userMetadata?.avatar_url || null,
+        }]).select().single()
+      );
+
+      if (createResponse.data) {
+        setProfile(createResponse.data as Profile);
+        localStorage.removeItem("pendingUserRole");
+      }
+    } catch (error) {
+      console.warn("Profile fetch/create aborted or timed out:", error);
+    }
   };
 
-  const setAuthStateIfChanged = async (nextSession: Session | null) => {
-    if (!areSessionsEqual(latestSessionRef.current, nextSession)) {
-      latestSessionRef.current = nextSession;
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-    }
-
-    if (nextSession?.user) {
-      await ensureProfile(nextSession.user.id, nextSession.user.user_metadata);
-      return;
-    }
-
-    setProfile(null);
-  };
-
-  // 1. Initial Load & Listeners
   useEffect(() => {
     let mounted = true;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((window as any).PlaywrightProfile) setProfile((window as any).PlaywrightProfile);
-      setLoading(false);
-      return;
-    }
-
-    const circuitBreaker = window.setTimeout(() => {
-      if (mounted) {
-        console.warn("Auth initialization timed out due to backgrounding, forcing UI to load...");
-        // 🔥 WIPE ALL LOCKS so the auto-recovery can take over
-        fetchingProfileRef.current = {};
+    // ABSOLUTE FAILSAFE: The app will never be permanently stuck on the loading screen.
+    const failsafeTimer = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn("AuthContext: Initial load timed out. Forcing UI to render.");
         setLoading(false);
       }
-    }, 3500);
+    }, 4000);
 
-    const initSession = async () => {
+    const initAuth = async () => {
+      if (hasInitialized.current) return;
+      hasInitialized.current = true;
+
       try {
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await withTimeout(supabase.auth.getSession());
         
         if (error) throw error;
 
         if (mounted) {
-          await setAuthStateIfChanged(initialSession);
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await fetchProfile(session.user.id, session.user.user_metadata);
+          }
         }
       } catch (error) {
-        console.error("Error initializing session:", error);
+        console.error("Auth initialization error:", error);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
         if (mounted) {
-          clearTimeout(circuitBreaker);
+          clearTimeout(failsafeTimer);
           setLoading(false);
         }
       }
     };
 
-    initSession();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((window as any).PlaywrightProfile) setProfile((window as any).PlaywrightProfile);
+        setLoading(false);
+        clearTimeout(failsafeTimer);
+        return;
+    }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, authSession) => {
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (!mounted) return;
       
-      try {
-        if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
-          navigate("/reset-password?type=recovery");
-        }
-        await setAuthStateIfChanged(authSession);
-      } catch (error) {
-        console.error("Error handling auth state change:", error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+      if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
+        navigate("/reset-password?type=recovery");
+      }
+
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        // Run quietly in background without forcing a loading screen
+        fetchProfile(currentSession.user.id, currentSession.user.user_metadata);
+      } else {
+        setProfile(null);
       }
     });
 
+    // Clean background recovery for ghost states
+    const handleFocus = () => {
+      if (mounted && user && !profile && !loading) {
+        console.log("Tab focus: Healing ghost state...");
+        fetchProfile(user.id, user.user_metadata);
+        supabase.auth.getSession(); // Ping Supabase internally
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       mounted = false;
-      clearTimeout(circuitBreaker);
+      clearTimeout(failsafeTimer);
       subscription.unsubscribe();
+      window.removeEventListener("focus", handleFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2. 🔥 AGGRESSIVE AUTO-RECOVERY FOR GHOST STATES 🔥
-  // Instead of trying once, this polls until your device actually reconnects to the network.
-  useEffect(() => {
-    let recoveryTimer: number | undefined;
-
-    const attemptRecovery = () => {
-      if (user && !profile && !loading) {
-        console.log("Ghost State Detected: Retrying profile network fetch...");
-        ensureProfile(user.id, user.user_metadata, true);
-        // Trigger supabase cache check
-        supabase.auth.getSession();
-      }
-    };
-
-    if (user && !profile && !loading) {
-      // Try immediately
-      attemptRecovery();
-      // Keep trying every 2.5 seconds until the network responds and 'profile' populates
-      recoveryTimer = window.setInterval(attemptRecovery, 2500);
-    }
-
-    // Once `profile` becomes populated, this effect cleans up and destroys the timer
-    return () => {
-      if (recoveryTimer) clearInterval(recoveryTimer);
-    };
-  }, [user, profile, loading]);
-
   const refreshProfile = async () => {
     if (user) {
-      await ensureProfile(user.id, user.user_metadata, true);
+      await fetchProfile(user.id, user.user_metadata);
     }
   };
 
@@ -271,31 +212,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: {
-          role,
-          first_name: firstName,
-        },
+        data: { role, first_name: firstName },
       },
     });
-
-    if (error) {
-      console.error("SignUp detailed error:", error);
-    }
-
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
 
@@ -303,10 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent select_account",
-        },
+        queryParams: { access_type: "offline", prompt: "consent select_account" },
         redirectTo: `${window.location.origin}/`,
       },
     });
@@ -314,16 +240,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // 🔥 OPTIMISTIC LOGOUT: We immediately clear the UI state here, line 1.
+    // The user will instantly see they are logged out without waiting for the server.
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    
     try {
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Sign out timed out")), 5000));
-      await Promise.race([supabase.auth.signOut(), timeoutPromise]);
+      // Ping the server to destroy the session, but only give it 2 seconds max
+      await withTimeout(supabase.auth.signOut(), 2000);
     } catch (error) {
-      console.error("Error signing out:", error);
-    } finally {
-      latestSessionRef.current = null;
-      setProfile(null);
-      setSession(null);
-      setUser(null);
+      console.warn("Sign out background sync delayed/failed", error);
     }
   };
 
