@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,22 +56,66 @@ export const EditProducerProfileDialog = ({
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+
+  const [initialValues, setInitialValues] = useState<{
+    name: string;
+    description: string;
+    logoUrl: string;
+    bannerUrl: string;
+  } | null>(null);
 
   useEffect(() => {
     if (open) {
+      let values = { name: "", description: "", logoUrl: "", bannerUrl: "" };
       if (theaterGroup) {
-        setName(theaterGroup.name || "");
-        setDescription(theaterGroup.description || "");
-        setLogoUrl(theaterGroup.logo_url || "");
-        setBannerUrl(theaterGroup.banner_url || "");
+        values = {
+            name: theaterGroup.name || "",
+            description: theaterGroup.description || "",
+            logoUrl: theaterGroup.logo_url || "",
+            bannerUrl: theaterGroup.banner_url || ""
+        };
       } else if (producer) {
-        setName(producer.group_name || "");
-        setDescription(producer.description || "");
-        setLogoUrl(producer.group_logo_url || "");
-        setBannerUrl(producer.group_banner_url || "");
+        values = {
+            name: producer.group_name || "",
+            description: producer.description || "",
+            logoUrl: producer.group_logo_url || "",
+            bannerUrl: producer.group_banner_url || ""
+        };
       }
+      setName(values.name);
+      setDescription(values.description);
+      setLogoUrl(values.logoUrl);
+      setBannerUrl(values.bannerUrl);
+      setInitialValues(values);
+      setShowDiscardAlert(false);
     }
   }, [open, theaterGroup, producer]);
+
+  const isDirty = useMemo(() => {
+    if (!initialValues) return false;
+    return (
+      name !== initialValues.name ||
+      description !== initialValues.description ||
+      logoUrl !== initialValues.logoUrl ||
+      bannerUrl !== initialValues.bannerUrl
+    );
+  }, [name, description, logoUrl, bannerUrl, initialValues]);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      if (isDirty) {
+        setShowDiscardAlert(true);
+        return;
+      }
+    }
+    onOpenChange(newOpen);
+  };
+
+  const handleDiscard = () => {
+    setShowDiscardAlert(false);
+    onOpenChange(false);
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -140,94 +194,116 @@ export const EditProducerProfileDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-secondary/30 sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Edit Theater Profile</DialogTitle>
-          <DialogDescription>
-            Update your theater group's public information.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          className="bg-card border-secondary/30 sm:max-w-lg max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Edit Theater Profile</DialogTitle>
+            <DialogDescription>
+              Update your theater group's public information.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Group Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Theater Group Name"
-              className="bg-background border-secondary/30"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell us about your group..."
-              className="bg-background border-secondary/30 min-h-[100px]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="logoUrl">Logo URL</Label>
-            <div className="flex gap-2">
-                <Input
-                id="logoUrl"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://example.com/logo.png"
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Group Name *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Theater Group Name"
                 className="bg-background border-secondary/30"
-                />
+              />
             </div>
-            {logoUrl && (
-                <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
-                    <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                </div>
-            )}
-            <p className="text-xs text-muted-foreground">Enter a direct link to your logo image.</p>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Tell us about your group..."
+                className="bg-background border-secondary/30 min-h-[100px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="logoUrl">Logo URL</Label>
+              <div className="flex gap-2">
+                  <Input
+                  id="logoUrl"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="bg-background border-secondary/30"
+                  />
+              </div>
+              {logoUrl && (
+                  <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
+                      <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  </div>
+              )}
+              <p className="text-xs text-muted-foreground">Enter a direct link to your logo image.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bannerUrl">Banner URL</Label>
+              <Input
+                id="bannerUrl"
+                value={bannerUrl}
+                onChange={(e) => setBannerUrl(e.target.value)}
+                placeholder="https://example.com/banner.jpg"
+                className="bg-background border-secondary/30"
+              />
+              {bannerUrl && (
+                  <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
+                      <img src={bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  </div>
+              )}
+               <p className="text-xs text-muted-foreground">Recommended size: 1200x400px.</p>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bannerUrl">Banner URL</Label>
-            <Input
-              id="bannerUrl"
-              value={bannerUrl}
-              onChange={(e) => setBannerUrl(e.target.value)}
-              placeholder="https://example.com/banner.jpg"
-              className="bg-background border-secondary/30"
-            />
-            {bannerUrl && (
-                <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
-                    <img src={bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                </div>
-            )}
-             <p className="text-xs text-muted-foreground">Recommended size: 1200x400px.</p>
-          </div>
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                  <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                  </>
+              ) : (
+                  <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Changes
+                  </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-                <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                </>
-            ) : (
-                <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <AlertDialog open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDiscardAlert(false)}>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
