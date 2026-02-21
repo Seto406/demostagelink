@@ -56,13 +56,6 @@ const LandingNavbar = () => {
               Pricing
             </a>
             <a 
-              href="#roadmap" 
-              onClick={(e) => scrollToSection(e, "roadmap")}
-              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
-            >
-              Roadmap
-            </a>
-            <a 
               href="#faq" 
               onClick={(e) => scrollToSection(e, "faq")}
               className="text-muted-foreground hover:text-foreground transition-colors font-medium"
