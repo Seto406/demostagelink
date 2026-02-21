@@ -372,10 +372,10 @@ END:VCALENDAR`;
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                 {/* Left Column - Poster */}
-                <div className="lg:col-span-4 flex justify-center lg:justify-end">
-                    <div className="relative h-[300px] lg:h-[500px] w-auto rounded-xl overflow-hidden shadow-2xl border border-white/10 group bg-black/20">
+                <div className="lg:col-span-3 flex justify-center lg:justify-end">
+                    <div className="relative h-[300px] lg:h-[400px] w-auto rounded-xl overflow-hidden shadow-2xl border border-white/10 group bg-black/20">
                         {show.poster_url ? (
                             <>
                                 {imageLoading && (
@@ -399,7 +399,7 @@ END:VCALENDAR`;
                 </div>
 
                 {/* Right Column - Details */}
-                <div className="lg:col-span-8 space-y-6 text-white">
+                <div className="lg:col-span-9 space-y-6 text-white">
                     <div className="flex flex-wrap items-center gap-4">
                         <span className="px-3 py-1 bg-primary/20 text-primary-foreground text-xs font-bold uppercase tracking-widest rounded-full border border-primary/30">
                             {getNicheLabel(show.niche)}
