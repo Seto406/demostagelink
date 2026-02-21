@@ -5,6 +5,13 @@ import App from "./App.tsx";
 import "./index.css";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 
+// 🔥 THE FIX: Catch Stale Chunk Errors from backgrounded tabs or new deployments
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('Stale cache or new version detected. Forcing a clean reload...');
+  event.preventDefault(); // Prevent the red error overlay
+  window.location.reload(); // Force the browser to grab the brand new files
+});
+
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
