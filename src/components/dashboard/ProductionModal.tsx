@@ -24,11 +24,13 @@ import { CreatableSelect } from "@/components/ui/creatable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { toast } from "@/hooks/use-toast";
-import { Image, Trash2, HelpCircle, Plus, Ticket } from "lucide-react";
+import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
 import { Json } from "@/integrations/supabase/types";
 import { calculateReservationFee } from "@/lib/pricing";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { format } from "date-fns";
 
 interface ProductionModalProps {
   open: boolean;
@@ -46,13 +48,31 @@ const METRO_MANILA_CITIES = [
   "Pasig", "San Juan", "Taguig", "Valenzuela", "Pateros"
 ].sort();
 
+const DAYS_OF_WEEK = [
+  { label: "M", value: "Mondays" },
+  { label: "T", value: "Tuesdays" },
+  { label: "W", value: "Wednesdays" },
+  { label: "Th", value: "Thursdays" },
+  { label: "F", value: "Fridays" },
+  { label: "S", value: "Saturdays" },
+  { label: "Su", value: "Sundays" },
+];
+
 export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
+  // Basic Details
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+
+  // Schedule State
+  const [scheduleType, setScheduleType] = useState<"single" | "multi">("single");
+  const [date, setDate] = useState(""); // For single date
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState<"local" | "university">("local");
@@ -63,13 +83,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
   const [genre, setGenre] = useState<string[]>([]);
   const [director, setDirector] = useState("");
 
-  // Refactored Duration State
-  const [durationValue, setDurationValue] = useState("");
-  const [durationUnit, setDurationUnit] = useState("Hours");
+  // Duration State
+  const [hours, setHours] = useState("");
+  const [minutes, setMinutes] = useState("");
 
-  // Refactored Tags State
   const [tags, setTags] = useState<string[]>([]);
-
   const [cast, setCast] = useState<CastMember[]>([]);
   const [productionStatus, setProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
 
@@ -86,7 +104,24 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
     if (showToEdit) {
       setTitle(showToEdit.title || "");
       setDescription(showToEdit.description || "");
-      setDate(showToEdit.date || "");
+
+      // Parse Date
+      const dateStr = showToEdit.date || "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        setScheduleType("single");
+        setDate(dateStr);
+        setStartDate("");
+        setEndDate("");
+        setSelectedDays([]);
+      } else {
+        setScheduleType("multi");
+        setDate("");
+        // Reset multi fields as parsing back from string is not reliable without structured data
+        setStartDate("");
+        setEndDate("");
+        setSelectedDays([]);
+      }
+
       setVenue(showToEdit.venue || "");
       setCity(showToEdit.city || "");
       setNiche(showToEdit.niche || "local");
@@ -97,30 +132,19 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
 
       // Parse Duration
       if (showToEdit.duration) {
-        const match = showToEdit.duration.match(/^(\d+(?:\.\d+)?)\s*(Hours?|Minutes?)$/i);
-        if (match) {
-          setDurationValue(match[1]);
-          const unit = match[2].toLowerCase();
-          if (unit.startsWith("minute")) setDurationUnit("Minutes");
-          else setDurationUnit("Hours");
-        } else {
-           // Fallback for unparseable strings: try to extract number, default to Hours
-           const val = parseFloat(showToEdit.duration);
-           if (!isNaN(val)) {
-             setDurationValue(String(val));
-             setDurationUnit("Hours");
-           }
-        }
+        const hoursMatch = showToEdit.duration.match(/(\d+)\s*Hours?/i);
+        const minutesMatch = showToEdit.duration.match(/(\d+)\s*Minutes?/i);
+        setHours(hoursMatch ? hoursMatch[1] : "");
+        setMinutes(minutesMatch ? minutesMatch[1] : "");
       } else {
-        setDurationValue("");
-        setDurationUnit("Hours");
+        setHours("");
+        setMinutes("");
       }
 
       // Handle tags (array or string fallback)
       if (Array.isArray(showToEdit.tags)) {
         setTags(showToEdit.tags);
       } else if (typeof showToEdit.tags === 'string') {
-        // Fallback if legacy data is string
         setTags(showToEdit.tags.split(',').map((t: string) => t.trim()).filter(Boolean));
       } else {
         setTags([]);
@@ -139,7 +163,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
   const resetForm = () => {
     setTitle("");
     setDescription("");
+    setScheduleType("single");
     setDate("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedDays([]);
     setVenue("");
     setCity("");
     setNiche("local");
@@ -149,8 +177,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
     setCollectBalanceOnsite(true);
     setGenre([]);
     setDirector("");
-    setDurationValue("");
-    setDurationUnit("Hours");
+    setHours("");
+    setMinutes("");
     setTags([]);
     setCast([]);
     setTempCastName("");
@@ -227,7 +255,15 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
 
     const errors: string[] = [];
     if (!title) errors.push("Title");
-    if (!date) errors.push("Show Date");
+
+    // Validate Date based on schedule type
+    if (scheduleType === "single" && !date) errors.push("Show Date");
+    if (scheduleType === "multi") {
+      if (!startDate) errors.push("Start Date");
+      if (!endDate) errors.push("End Date");
+      if (selectedDays.length === 0) errors.push("Show Days");
+    }
+
     if (!venue) errors.push("Venue");
     if (!city) errors.push("City");
     if (!niche) errors.push("Type (Niche)");
@@ -269,12 +305,38 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
         posterUrl = publicUrl;
       }
 
-    const duration = durationValue ? `${durationValue} ${durationUnit}` : null;
+    // Construct Duration String
+    let duration: string | null = "";
+    if (hours && parseInt(hours) > 0) {
+      duration += `${hours} ${parseInt(hours) === 1 ? "Hour" : "Hours"}`;
+    }
+    if (minutes && parseInt(minutes) > 0) {
+      if (duration) duration += " ";
+      duration += `${minutes} ${parseInt(minutes) === 1 ? "Minute" : "Minutes"}`;
+    }
+    if (!duration) duration = null;
+
+    // Construct Date String
+    let dateString: string | null = null;
+    if (scheduleType === "single") {
+      dateString = date;
+    } else {
+      const start = format(new Date(startDate), "MMM d");
+      const end = format(new Date(endDate), "MMM d");
+
+      // Sort selected days according to DAYS_OF_WEEK order
+      const sortedDays = DAYS_OF_WEEK
+        .filter(d => selectedDays.includes(d.value))
+        .map(d => d.value);
+
+      const daysStr = sortedDays.join(" & ");
+      dateString = `${daysStr}, ${start} - ${end}`;
+    }
 
     const payload = {
       title,
       description: description || null,
-      date: date || null,
+      date: dateString,
       venue: venue || null,
       city: city || null,
       niche,
@@ -377,41 +439,102 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
               </div>
             </div>
 
+            {/* New Schedule System */}
             <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-secondary/20">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Location & Schedule</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="bg-background border-secondary/30"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger className="bg-background border-secondary/30">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-secondary/30 max-h-60">
-                      {METRO_MANILA_CITIES.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                   <CalendarIcon className="w-4 h-4" /> Location & Schedule
+                </p>
+                <ToggleGroup type="single" value={scheduleType} onValueChange={(val) => val && setScheduleType(val as "single" | "multi")}>
+                   <ToggleGroupItem value="single" size="sm" aria-label="Single Date" className="h-7 text-xs">Single Date</ToggleGroupItem>
+                   <ToggleGroupItem value="multi" size="sm" aria-label="Multi-Date" className="h-7 text-xs">Schedule</ToggleGroupItem>
+                </ToggleGroup>
               </div>
-              <div className="space-y-2">
+
+              {scheduleType === "single" ? (
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+                       <Input
+                         id="date"
+                         type="date"
+                         value={date}
+                         onChange={(e) => setDate(e.target.value)}
+                         className="bg-background border-secondary/30"
+                         required
+                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Select value={city} onValueChange={setCity}>
+                        <SelectTrigger className="bg-background border-secondary/30">
+                          <SelectValue placeholder="Select city" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-secondary/30 max-h-60">
+                          {METRO_MANILA_CITIES.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                 </div>
+              ) : (
+                 <div className="space-y-4">
+                     <div className="space-y-2">
+                       <Label>Show Days <span className="text-destructive">*</span></Label>
+                       <ToggleGroup type="multiple" value={selectedDays} onValueChange={setSelectedDays} className="justify-start flex-wrap gap-2">
+                          {DAYS_OF_WEEK.map(day => (
+                             <ToggleGroupItem key={day.value} value={day.value} className="w-8 h-8 p-0 rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground" aria-label={day.value}>
+                                {day.label}
+                             </ToggleGroupItem>
+                          ))}
+                       </ToggleGroup>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label>Start Date <span className="text-destructive">*</span></Label>
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-background border-secondary/30"
+                                required
+                            />
+                         </div>
+                         <div className="space-y-2">
+                            <Label>End Date <span className="text-destructive">*</span></Label>
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-background border-secondary/30"
+                                required
+                            />
+                         </div>
+                     </div>
+                     <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Select value={city} onValueChange={setCity}>
+                        <SelectTrigger className="bg-background border-secondary/30">
+                          <SelectValue placeholder="Select city" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-secondary/30 max-h-60">
+                          {METRO_MANILA_CITIES.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                 </div>
+              )}
+
+              <div className="space-y-2 mt-4">
                 <Label htmlFor="venue">Venue <span className="text-destructive">*</span></Label>
-              <CreatableSelect
+                <CreatableSelect
                   options={venues}
                   value={venue}
                   onChange={setVenue}
-                placeholder="Select or type venue"
+                  placeholder="Select or type venue"
                   className="bg-background border-secondary/30"
                 />
               </div>
@@ -423,7 +546,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                 id="paymentInstructions"
                 value={paymentInstructions}
                 onChange={(e) => setPaymentInstructions(e.target.value)}
-                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'GCash QR at venue')"
+                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'QR Code at venue')"
                 className="bg-background border-secondary/30"
                 maxLength={500}
               />
@@ -529,37 +652,47 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Genre</Label>
-                <TagInput
-                  tags={genre}
-                  setTags={setGenre}
-                  placeholder="Genre..."
-                  suggestions={[
-                    "Drama", "Comedy", "Musical", "Tragedy", "Opera",
-                    "Ballet", "Improv", "Experimental"
-                  ]}
-                  className="bg-background"
-                />
+                <div onKeyDown={(e) => e.key === 'Enter' && e.stopPropagation()}>
+                    <TagInput
+                      tags={genre}
+                      setTags={setGenre}
+                      placeholder="Genre..."
+                      suggestions={[
+                        "Drama", "Comedy", "Musical", "Tragedy", "Opera",
+                        "Ballet", "Improv", "Experimental"
+                      ]}
+                      className="bg-background"
+                    />
+                </div>
               </div>
+
+              {/* Refactored Duration UI */}
               <div className="space-y-2">
                 <Label>Duration</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    value={durationValue}
-                    onChange={(e) => setDurationValue(e.target.value)}
-                    placeholder="Value"
-                    className="bg-background border-secondary/30 flex-1"
-                    min="0"
-                  />
-                  <Select value={durationUnit} onValueChange={setDurationUnit}>
-                    <SelectTrigger className="w-[120px] bg-background border-secondary/30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Hours">Hours</SelectItem>
-                      <SelectItem value="Minutes">Minutes</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-2 items-center">
+                    <div className="flex-1 space-y-1">
+                         <Label className="text-xs text-muted-foreground">Hours</Label>
+                         <Input
+                           type="number"
+                           min="0"
+                           value={hours}
+                           onChange={(e) => setHours(e.target.value)}
+                           placeholder="0"
+                           className="bg-background border-secondary/30"
+                         />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                         <Label className="text-xs text-muted-foreground">Minutes</Label>
+                         <Input
+                           type="number"
+                           min="0"
+                           max="59"
+                           value={minutes}
+                           onChange={(e) => setMinutes(e.target.value)}
+                           placeholder="0"
+                           className="bg-background border-secondary/30"
+                         />
+                    </div>
                 </div>
               </div>
             </div>
@@ -575,7 +708,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
               />
             </div>
 
-            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
+            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10 relative z-0">
               <div className="flex items-center justify-between">
                 <Label>Cast Members</Label>
                 <span className="text-xs text-muted-foreground">{cast.length} added</span>
@@ -649,14 +782,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 relative z-10">
               <Label>Tags (SEO)</Label>
-              <TagInput
-                tags={tags}
-                setTags={setTags}
-                placeholder="Add tags..."
-                className="bg-background"
-              />
+              <div onKeyDown={(e) => e.key === 'Enter' && e.stopPropagation()}>
+                  <TagInput
+                    tags={tags}
+                    setTags={setTags}
+                    placeholder="Add tags..."
+                    className="bg-background"
+                  />
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 interface TagInputProps {
@@ -23,6 +23,7 @@ export const TagInput = ({ placeholder, tags, setTags, suggestions, className, i
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
+      e.stopPropagation();
       addTag(inputValue);
     } else if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
       removeTag(tags.length - 1);
@@ -65,10 +66,11 @@ export const TagInput = ({ placeholder, tags, setTags, suggestions, className, i
       </div>
 
       <Popover open={open && (filteredSuggestions?.length ?? 0) > 0} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverAnchor asChild>
            <Input
             id={id}
             value={inputValue}
+            onFocus={() => setOpen(true)}
             onChange={(e) => {
                 setInputValue(e.target.value);
                 setOpen(true);
@@ -77,7 +79,7 @@ export const TagInput = ({ placeholder, tags, setTags, suggestions, className, i
             placeholder={placeholder}
             className="bg-background border-secondary/30"
           />
-        </PopoverTrigger>
+        </PopoverAnchor>
         <PopoverContent className="p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
           <Command>
             <CommandList>
