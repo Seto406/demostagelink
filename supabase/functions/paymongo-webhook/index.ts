@@ -92,6 +92,8 @@ serve(async (req) => {
     }
 
     const checkoutId = payload.data.attributes.data.id;
+    const session = payload.data.attributes.data.attributes;
+    const metadata = session.metadata || {};
 
     // Use Service Role to bypass RLS
     const supabaseAdmin = createClient(
@@ -113,38 +115,70 @@ serve(async (req) => {
           });
     }
 
-    const session = payload.data.attributes.data.attributes;
-    const metadata = session.metadata || {};
-
-    // Find the payment record using checkout ID (if not already found or status wasn't paid)
-    // We query again to get the full object if needed, or reuse logic.
-    // Let's reuse the logic from before, but we need the payment ID to update it.
-
+    // 7. Update Payment Status
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from("payments")
-      .select("*")
+      .update({ status: "paid", updated_at: new Date() })
       .eq("paymongo_checkout_id", checkoutId)
+      .select()
       .single();
 
     if (paymentError || !payment) {
-      console.error("Payment not found for checkout ID:", checkoutId);
-      return new Response(JSON.stringify({ message: "Payment record not found" }), {
+      console.error("Payment not found or update failed for checkout ID:", checkoutId);
+      return new Response(JSON.stringify({ message: "Payment record not found or update failed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    // Update Payment Status
-    await supabaseAdmin
-      .from("payments")
-      .update({ status: "paid", updated_at: new Date() })
-      .eq("id", payment.id);
-
     const type = metadata.type || "subscription";
-    const userId = payment.user_id;
+    const authUserId = metadata.user_id;
 
-    if (type === "subscription") {
-       // Update Subscription
+    if (type === "ticket") {
+        // Task 1 specific logic:
+        // Metadata Extraction: show_id and user_id (auth user id)
+        // Profile Lookup: query profiles table where user_id = metadata.user_id
+
+        const showId = metadata.show_id;
+
+        if (!authUserId) {
+            console.error("Missing user_id in metadata for ticket purchase");
+        } else {
+            const { data: profile, error: profileError } = await supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .eq("user_id", authUserId)
+                .single();
+
+            if (profileError || !profile) {
+                console.error("Profile not found for auth user:", authUserId);
+            } else {
+                if (showId) {
+                  const { error: ticketError } = await supabaseAdmin
+                    .from("tickets")
+                    .insert({
+                      user_id: profile.id, // Using the looked-up profile ID
+                      show_id: showId,
+                      status: "confirmed",
+                      payment_id: payment.id,
+                    });
+
+                  if (ticketError) {
+                    console.error("Ticket Insert Error:", ticketError);
+                  } else {
+                    // Trigger Email (fire and forget)
+                    supabaseAdmin.functions.invoke("send-ticket-confirmation", {
+                      body: { user_id: profile.id, show_id: showId },
+                    });
+                  }
+                } else {
+                    console.error("Missing show_id in metadata");
+                }
+            }
+        }
+    } else if (type === "subscription") {
+       // Legacy/Other logic
+       const userId = payment.user_id; // Using existing payment link
        const startDate = new Date();
        const endDate = new Date();
        endDate.setMonth(endDate.getMonth() + 1);
@@ -175,28 +209,6 @@ serve(async (req) => {
 
          if (showError) console.error("Show feature update failed:", showError);
        }
-
-    } else if (type === "ticket") {
-        const showId = metadata.show_id;
-        if (showId) {
-          const { error: ticketError } = await supabaseAdmin
-            .from("tickets")
-            .insert({
-              user_id: userId,
-              show_id: showId,
-              status: "confirmed",
-              payment_id: payment.id,
-            });
-
-          if (ticketError) {
-            console.error("Ticket Insert Error:", ticketError);
-          } else {
-            // Trigger Email (fire and forget)
-            supabaseAdmin.functions.invoke("send-ticket-confirmation", {
-              body: { user_id: userId, show_id: showId },
-            });
-          }
-        }
     }
 
     return new Response(JSON.stringify({ status: "success" }), {
@@ -210,7 +222,7 @@ serve(async (req) => {
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400, // Return 400 for general errors, 401 is returned above for signature
+        status: 400,
       }
     );
   }
