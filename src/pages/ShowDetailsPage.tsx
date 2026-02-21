@@ -20,8 +20,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
-import { PaymentSummaryModal } from "@/components/payment/PaymentSummaryModal";
-import { calculateReservationFee } from "@/lib/pricing";
 
 const ShowDetailsPage = () => {
   const { user, profile } = useAuth();
@@ -34,7 +32,6 @@ const ShowDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isTicketClaimed, setIsTicketClaimed] = useState(false);
 
   useEffect(() => {
@@ -306,45 +303,8 @@ END:VCALENDAR`;
       return;
     }
 
-    setShowPaymentModal(true);
-  };
-
-  const proceedToPayment = async () => {
-    if (!user) {
-      toast.error("Please log in to purchase tickets");
-      navigate("/login");
-      return;
-    }
-
-    if (!show || !show.price) return;
-    setBuyingTicket(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
-        body: {
-          amount: show.price * 100, // centavos
-          description: `Ticket for ${show.title}`,
-          metadata: {
-             type: "ticket",
-             show_id: show.id,
-             user_id: user.id
-          },
-          redirect_url: window.location.origin + "/payment/success",
-          cancel_url: window.location.origin + "/payment/cancel",
-        },
-      });
-
-      if (error) throw error;
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error("No checkout URL returned");
-      }
-    } catch (error) {
-      console.error("Purchase error:", error);
-      toast.error("Failed to initiate purchase. Please try again.");
-      setBuyingTicket(false);
-      setShowPaymentModal(false);
-    }
+    // Navigate to checkout page for paid tickets
+    navigate(`/checkout/${show.id}`);
   };
 
   return (
@@ -746,22 +706,6 @@ END:VCALENDAR`;
       </div>
 
       <Footer />
-
-      {show && (
-        <PaymentSummaryModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          onConfirm={proceedToPayment}
-          show={{
-            title: show.title,
-            price: show.price || 0,
-            date: show.date,
-            venue: show.venue || (show.city ? `${show.city}` : null)
-          }}
-          isProcessing={buyingTicket}
-          reservationFee={show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.producer_id?.niche ?? null) : 25)}
-        />
-      )}
     </div>
   );
 };
