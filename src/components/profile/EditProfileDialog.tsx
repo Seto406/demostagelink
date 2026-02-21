@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,18 +38,58 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [producerRole, setProducerRole] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDiscardAlert, setShowDiscardAlert] = useState(false);
 
   // Local avatar preview (optimistic UI or just reflecting prop)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  const [initialValues, setInitialValues] = useState<{
+    username: string;
+    producerRole: string;
+  } | null>(null);
+
   useEffect(() => {
     if (open && profile) {
-      setUsername(profile.username || "");
-      setProducerRole(profile.producer_role || "");
+      const initialUsername = profile.username || "";
+      const initialProducerRole = profile.producer_role || "";
+
+      setUsername(initialUsername);
+      setProducerRole(initialProducerRole);
       setAvatarUrl(profile.avatar_url || null);
+
+      setInitialValues({
+        username: initialUsername,
+        producerRole: initialProducerRole
+      });
+      setShowDiscardAlert(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const isDirty = useMemo(() => {
+    if (!initialValues) return false;
+    // Note: avatarUrl is intentionally excluded because avatar uploads are
+    // immediate and persistent (auto-saved), so there are no "unsaved" changes for it.
+    return (
+      username !== initialValues.username ||
+      producerRole !== initialValues.producerRole
+    );
+  }, [username, producerRole, initialValues]);
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      if (isDirty) {
+        setShowDiscardAlert(true);
+        return;
+      }
+    }
+    onOpenChange(newOpen);
+  };
+
+  const handleDiscard = () => {
+    setShowDiscardAlert(false);
+    onOpenChange(false);
+  };
 
   const handleSaveProfile = async () => {
     if (!user || !profile) return;
@@ -203,16 +253,20 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-secondary/30 sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Personal Settings</DialogTitle>
-          <DialogDescription>
-            Update your profile information.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          className="bg-card border-secondary/30 sm:max-w-lg max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Personal Settings</DialogTitle>
+            <DialogDescription>
+              Update your profile information.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4">
           {/* Avatar Upload */}
           <div>
             <Label className="text-muted-foreground text-sm mb-3 block">Profile Photo</Label>
@@ -327,7 +381,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         <DialogFooter className="gap-3 sm:gap-0">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
           >
             Cancel
           </Button>
@@ -341,5 +395,23 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={showDiscardAlert} onOpenChange={setShowDiscardAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDiscardAlert(false)}>Keep Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Discard Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
