@@ -8,7 +8,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 type ManagedGroup = {
   id: string;
@@ -33,6 +34,8 @@ type ManagedGroup = {
   group_logo_url: string | null;
   group_banner_url: string | null;
   description: string | null;
+  founded_year: number | null;
+  address: string | null;
 };
 
 type MembershipApplication = {
@@ -109,7 +112,7 @@ const Dashboard = () => {
 
       const { data: groups, error: groupsError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description")
+        .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description, founded_year, address")
         .eq("user_id", profile.user_id)
         .not("group_name", "is", null);
 
@@ -533,44 +536,87 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
-      <div className="mb-6 rounded-xl border border-secondary/20 bg-card/70 p-5 backdrop-blur-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-serif font-bold text-foreground">My Dashboards</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Manage your productions and team</p>
-          </div>
 
-          {selectedGroup && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditProfileOpen(true)}
-              className="gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              Edit Group Profile
-            </Button>
-          )}
-        </div>
+      {/* Zone 1: Brand Summary (Header) */}
+      <div className="mb-8 grid gap-6 md:grid-cols-1">
+        <Card className="bg-card/70 backdrop-blur-md border-secondary/20">
+            <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+                {/* Logo */}
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-secondary/30 bg-muted flex-shrink-0">
+                    {selectedGroup?.group_logo_url ? (
+                        <img src={selectedGroup.group_logo_url} alt={selectedGroup.group_name || "Group Logo"} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No Logo</div>
+                    )}
+                </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {managedGroups.map((group) => (
-            <button
-              key={group.id}
-              onClick={() => setSelectedGroupId(group.id)}
-              className={`rounded-xl px-4 py-2 text-sm transition ${
-                selectedGroupId === group.id
-                  ? "border border-secondary/40 bg-secondary/15 text-secondary"
-                  : "border border-secondary/20 bg-background/40 text-foreground hover:bg-secondary/10"
-              }`}
-            >
-              {group.group_name || "Unnamed Group"}
-            </button>
-          ))}
-        </div>
+                {/* Info */}
+                <div className="flex-1 text-center md:text-left space-y-2">
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
+                        <h1 className="text-3xl font-serif font-bold text-foreground">{selectedGroup?.group_name || "Unnamed Group"}</h1>
+                        {selectedGroup && (
+                            <Button variant="ghost" size="icon" onClick={() => setIsEditProfileOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                <Settings className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
+                        {selectedGroup?.founded_year && (
+                            <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                <span>Est. {selectedGroup.founded_year}</span>
+                            </div>
+                        )}
+                        {selectedGroup?.address && (
+                            <div className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                <span>{selectedGroup.address}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Public Profile Link */}
+                    <div className="pt-2 flex justify-center md:justify-start">
+                        <Button variant="outline" size="sm" className="gap-2" asChild>
+                            <a href={`/producer/${selectedGroup?.id}`} target="_blank" rel="noopener noreferrer">
+                                View Public Profile <ExternalLink className="w-3 h-3" />
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Group Switcher (if multiple groups) */}
+                {managedGroups.length > 1 && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-4 md:mt-0 md:ml-auto self-start">
+                        {managedGroups.map((group) => (
+                            <button
+                            key={group.id}
+                            onClick={() => setSelectedGroupId(group.id)}
+                            className={`rounded-full px-4 py-1.5 text-xs transition border ${
+                                selectedGroupId === group.id
+                                ? "border-secondary/40 bg-secondary/15 text-secondary"
+                                : "border-secondary/20 bg-background/40 text-muted-foreground hover:bg-secondary/10"
+                            }`}
+                            >
+                            {group.group_name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            </CardContent>
+        </Card>
       </div>
 
-      <div className="mb-8">
+      {/* Zone 2: Stats */}
+      <div className="mb-8" ref={analyticsRef}>
+         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
+      </div>
+
+      {/* Zone 3: Management */}
+      <div className="space-y-8">
           {selectedGroupId && (
               <QuickActions
                   onPostShow={handlePostShow}
@@ -583,202 +629,198 @@ const Dashboard = () => {
                   pendingMemberCount={applications.length}
               />
           )}
-      </div>
 
-      <div className="mb-8" ref={analyticsRef}>
-         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
-      </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3 bg-secondary/10 p-1 rounded-xl">
+                  <TabsTrigger value="approved" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                      Approved Shows ({approvedShows.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                      Pending Review ({pendingShows.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="rejected" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                      Rejected / Drafts ({rejectedShows.length})
+                  </TabsTrigger>
+              </TabsList>
+              <TabsContent value="approved" className="mt-4">
+                  <ShowList items={approvedShows} emptyText="No active shows found. Post a new production to get started!" onEdit={handleEditShow} />
+              </TabsContent>
+              <TabsContent value="pending" className="mt-4">
+                  <ShowList items={pendingShows} emptyText="No pending shows." onEdit={handleEditShow} />
+              </TabsContent>
+              <TabsContent value="rejected" className="mt-4">
+                  <ShowList items={rejectedShows} emptyText="No rejected or draft shows." onEdit={handleEditShow} />
+              </TabsContent>
+          </Tabs>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <TabsList className="grid w-full grid-cols-3 bg-secondary/10 p-1 rounded-xl">
-              <TabsTrigger value="approved" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                  Approved Shows ({approvedShows.length})
-              </TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                  Pending Review ({pendingShows.length})
-              </TabsTrigger>
-              <TabsTrigger value="rejected" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                  Rejected / Drafts ({rejectedShows.length})
-              </TabsTrigger>
-          </TabsList>
-          <TabsContent value="approved" className="mt-4">
-              <ShowList items={approvedShows} emptyText="No active shows found. Post a new production to get started!" onEdit={handleEditShow} />
-          </TabsContent>
-          <TabsContent value="pending" className="mt-4">
-              <ShowList items={pendingShows} emptyText="No pending shows." onEdit={handleEditShow} />
-          </TabsContent>
-          <TabsContent value="rejected" className="mt-4">
-              <ShowList items={rejectedShows} emptyText="No rejected or draft shows." onEdit={handleEditShow} />
-          </TabsContent>
-      </Tabs>
-
-      {/* Collaboration Requests Section */}
-      {collabRequests.length > 0 && (
-        <div className="mb-8 overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
-           <div className="bg-secondary/10 px-6 py-3 border-b border-secondary/20">
-             <h2 className="font-serif font-bold text-lg flex items-center gap-2">
-               <Handshake className="w-5 h-5 text-secondary" />
-               Incoming Collaboration Requests
-             </h2>
-           </div>
-           {collabRequests.map((request, index) => {
-             const sender = applicantsByUserId[request.sender_id];
-             const name = sender?.group_name || sender?.username || "Producer";
-             const initial = name.charAt(0).toUpperCase();
-
-             return (
-               <div
-                 key={request.id}
-                 className={`flex min-h-[100px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
-                   index < collabRequests.length - 1 ? "border-b border-secondary/20" : ""
-                 }`}
-               >
-                 <div className="flex items-center gap-3">
-                   <Avatar className="h-10 w-10 border border-secondary/30">
-                     <AvatarImage src={sender?.avatar_url || undefined} alt={`${name} avatar`} />
-                     <AvatarFallback>{initial}</AvatarFallback>
-                   </Avatar>
-                   <div>
-                     <p className="font-medium text-foreground">{name}</p>
-                     <p className="text-xs text-muted-foreground">
-                       Requested {format(new Date(request.created_at), "MMM d, yyyy")}
-                     </p>
-                     <span className="inline-block mt-1 text-[10px] uppercase tracking-wider bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">
-                        Producer
-                     </span>
-                   </div>
-                 </div>
-
-                 <div className="flex items-center gap-2">
-                   <Button
-                     size="sm"
-                     className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
-                     disabled={isUpdating === request.id}
-                     onClick={() => handleApproveCollab(request.id)}
-                   >
-                     <Check className="mr-1 h-4 w-4" /> Accept Collab
-                   </Button>
-                   <Button
-                     size="sm"
-                     variant="ghost"
-                     className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                     disabled={isUpdating === request.id}
-                     onClick={() => handleDeclineCollab(request.id)}
-                   >
-                     <X className="mr-1 h-4 w-4" /> Reject
-                   </Button>
-                 </div>
+          {/* Collaboration Requests Section */}
+          {collabRequests.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+               <div className="bg-secondary/10 px-6 py-3 border-b border-secondary/20">
+                 <h2 className="font-serif font-bold text-lg flex items-center gap-2">
+                   <Handshake className="w-5 h-5 text-secondary" />
+                   Incoming Collaboration Requests
+                 </h2>
                </div>
-             );
-           })}
-        </div>
-      )}
+               {collabRequests.map((request, index) => {
+                 const sender = applicantsByUserId[request.sender_id];
+                 const name = sender?.group_name || sender?.username || "Producer";
+                 const initial = name.charAt(0).toUpperCase();
 
-      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8" ref={membersRef}>
-        <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
-             <h2 className="font-serif font-bold text-lg text-muted-foreground">
-               Member Applications
-             </h2>
-        </div>
-        {applications.length === 0 ? (
-          <div className="p-6 text-sm text-muted-foreground">
-            No pending member applications.
-          </div>
-        ) : (
-          applications.map((application, index) => {
-            const applicant = applicantsByUserId[application.user_id];
-            const name = applicant?.username || "Unknown User" || "Applicant";
-            const initial = name.charAt(0).toUpperCase();
+                 return (
+                   <div
+                     key={request.id}
+                     className={`flex min-h-[100px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                       index < collabRequests.length - 1 ? "border-b border-secondary/20" : ""
+                     }`}
+                   >
+                     <div className="flex items-center gap-3">
+                       <Avatar className="h-10 w-10 border border-secondary/30">
+                         <AvatarImage src={sender?.avatar_url || undefined} alt={`${name} avatar`} />
+                         <AvatarFallback>{initial}</AvatarFallback>
+                       </Avatar>
+                       <div>
+                         <p className="font-medium text-foreground">{name}</p>
+                         <p className="text-xs text-muted-foreground">
+                           Requested {format(new Date(request.created_at), "MMM d, yyyy")}
+                         </p>
+                         <span className="inline-block mt-1 text-[10px] uppercase tracking-wider bg-secondary/20 text-secondary px-2 py-0.5 rounded-full">
+                            Producer
+                         </span>
+                       </div>
+                     </div>
 
-            return (
-              <div
-                key={application.id}
-                className={`flex min-h-[120px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
-                  index < applications.length - 1 ? "border-b border-secondary/20" : ""
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-secondary/30">
-                    <AvatarImage src={applicant?.avatar_url || undefined} alt={`${name} avatar`} />
-                    <AvatarFallback>{initial}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-foreground">{name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Applied {format(new Date(application.created_at), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                </div>
+                     <div className="flex items-center gap-2">
+                       <Button
+                         size="sm"
+                         className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleApproveCollab(request.id)}
+                       >
+                         <Check className="mr-1 h-4 w-4" /> Accept Collab
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleDeclineCollab(request.id)}
+                       >
+                         <X className="mr-1 h-4 w-4" /> Reject
+                       </Button>
+                     </div>
+                   </div>
+                 );
+               })}
+            </div>
+          )}
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
-                    disabled={isUpdating === application.id}
-                    onClick={() => handleApproval(application.id)}
-                  >
-                    <Check className="mr-1 h-4 w-4" /> Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                    disabled={isUpdating === application.id}
-                    onClick={() => handleDecline(application.id)}
-                  >
-                    <X className="mr-1 h-4 w-4" /> Decline
-                  </Button>
-                </div>
+          <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md" ref={membersRef}>
+            <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+                 <h2 className="font-serif font-bold text-lg text-muted-foreground">
+                   Member Applications
+                 </h2>
+            </div>
+            {applications.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground">
+                No pending member applications.
               </div>
-            );
-          })
-        )}
-      </div>
+            ) : (
+              applications.map((application, index) => {
+                const applicant = applicantsByUserId[application.user_id];
+                const name = applicant?.username || "Unknown User";
+                const initial = name.charAt(0).toUpperCase();
 
-      {/* Unlinked Members Section */}
-      {unlinkedMembers.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
-           <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
-             <h2 className="font-serif font-bold text-lg text-muted-foreground flex items-center gap-2">
-               <User className="w-5 h-5" />
-               Manual Entries (Unlinked)
-             </h2>
-             <p className="text-xs text-muted-foreground">These members were added manually and are not linked to a user account.</p>
-           </div>
-           {unlinkedMembers.map((member, index) => (
-               <div
-                 key={member.id}
-                 className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
-                   index < unlinkedMembers.length - 1 ? "border-b border-secondary/20" : ""
-                 }`}
-               >
-                 <div className="flex items-center gap-3">
-                   <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">
-                     {"Unknown Member".charAt(0).toUpperCase()}
-                   </div>
-                   <div>
-                     <p className="font-medium text-foreground">{"Unknown Member"}</p>
-                     <p className="text-xs text-muted-foreground capitalize">{member.role_in_group || "Member"}</p>
-                   </div>
-                 </div>
+                return (
+                  <div
+                    key={application.id}
+                    className={`flex min-h-[120px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                      index < applications.length - 1 ? "border-b border-secondary/20" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-secondary/30">
+                        <AvatarImage src={applicant?.avatar_url || undefined} alt={`${name} avatar`} />
+                        <AvatarFallback>{initial}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-foreground">{name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Applied {format(new Date(application.created_at), "MMM d, yyyy")}
+                        </p>
+                      </div>
+                    </div>
 
-                 <Button
-                   size="sm"
-                   variant="outline"
-                   className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10"
-                   onClick={() => {
-                     setSelectedUnlinkedMember(member);
-                     setLinkDialogOpen(true);
-                     setFoundUser(null);
-                     setSearchUsername("");
-                   }}
-                 >
-                   <LinkIcon className="mr-1 h-4 w-4" /> Link User
-                 </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                        disabled={isUpdating === application.id}
+                        onClick={() => handleApproval(application.id)}
+                      >
+                        <Check className="mr-1 h-4 w-4" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                        disabled={isUpdating === application.id}
+                        onClick={() => handleDecline(application.id)}
+                      >
+                        <X className="mr-1 h-4 w-4" /> Decline
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Unlinked Members Section */}
+          {unlinkedMembers.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+               <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+                 <h2 className="font-serif font-bold text-lg text-muted-foreground flex items-center gap-2">
+                   <User className="w-5 h-5" />
+                   Manual Entries (Unlinked)
+                 </h2>
+                 <p className="text-xs text-muted-foreground">These members were added manually and are not linked to a user account.</p>
                </div>
-           ))}
-        </div>
-      )}
+               {unlinkedMembers.map((member, index) => (
+                   <div
+                     key={member.id}
+                     className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                       index < unlinkedMembers.length - 1 ? "border-b border-secondary/20" : ""
+                     }`}
+                   >
+                     <div className="flex items-center gap-3">
+                       <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">
+                         {"Unknown Member".charAt(0).toUpperCase()}
+                       </div>
+                       <div>
+                         <p className="font-medium text-foreground">{"Unknown Member"}</p>
+                         <p className="text-xs text-muted-foreground capitalize">{member.role_in_group || "Member"}</p>
+                       </div>
+                     </div>
+
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10"
+                       onClick={() => {
+                         setSelectedUnlinkedMember(member);
+                         setLinkDialogOpen(true);
+                         setFoundUser(null);
+                         setSearchUsername("");
+                       }}
+                     >
+                       <LinkIcon className="mr-1 h-4 w-4" /> Link User
+                     </Button>
+                   </div>
+               ))}
+            </div>
+          )}
+      </div>
 
       {/* Link User Dialog */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
@@ -786,7 +828,7 @@ const Dashboard = () => {
           <DialogHeader>
             <DialogTitle>Link User to Member</DialogTitle>
             <DialogDescription>
-              Search for a user by username to link them to <strong>{"this member"}</strong>.
+              Search for a user by username to link them to <strong>{"this member"}.</strong>
               This will merge their history with the user account.
             </DialogDescription>
           </DialogHeader>
