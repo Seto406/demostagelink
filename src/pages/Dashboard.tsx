@@ -106,6 +106,12 @@ const Dashboard = () => {
   }, [loading, user, navigate]);
 
   useEffect(() => {
+    if (!loading && profile && profile.role !== 'producer') {
+      navigate("/feed", { replace: true });
+    }
+  }, [loading, profile, navigate]);
+
+  useEffect(() => {
     const fetchManagedGroups = async () => {
       if (!profile) return;
       setIsLoading(true);
@@ -511,17 +517,8 @@ const Dashboard = () => {
   }
 
   // Ensure Role is Producer
-  if (profile?.role !== 'producer' && !canManage) {
-    return (
-      <div className="container mx-auto px-6 py-10">
-        <div className="mx-auto max-w-2xl rounded-xl border border-secondary/20 bg-card/70 p-8 text-center backdrop-blur-md">
-          <h1 className="mb-2 text-2xl font-serif font-bold text-foreground">Management Hub</h1>
-          <p className="text-muted-foreground">
-            You don&apos;t have a producer dashboard yet. Create or manage a theater group to unlock this portal.
-          </p>
-        </div>
-      </div>
-    );
+  if (profile?.role !== 'producer') {
+    return null;
   }
 
   const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
