@@ -58,7 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const hasInitialized = useRef(false);
   const latestSessionRef = useRef<Session | null>(null);
   const fetchingProfileRef = useRef<Record<string, Promise<void> | null>>({});
   const profileRef = useRef<Profile | null>(null);
@@ -88,7 +87,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) {
           console.error("Error fetching profile in ensureProfile:", error);
-          // Do not proceed to create profile on fetch error to avoid duplicates/race conditions
           return;
         }
 
@@ -159,81 +157,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    const circuitBreaker = window.setTimeout(() => {
-      console.warn("Auth initialization exceeded 5s, forcing loading=false");
-      setLoading(false);
-    }, 5000);
-
-    console.log("[AuthContext:init]", {
-      pathname: window.location.pathname,
-      initialLoading: true,
-      isPublicPath: PUBLIC_PATHS.some((path) =>
-        path === "/" ? window.location.pathname === "/" : window.location.pathname.startsWith(path)
-      ),
-    });
+    let mounted = true; // Prevents state updates if the user closes tab mid-load
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
       console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
-      if ((window as any).PlaywrightUser) {
-        setUser((window as any).PlaywrightUser);
-      }
-      if ((window as any).PlaywrightProfile) {
-        setProfile((window as any).PlaywrightProfile);
-      }
-      clearTimeout(circuitBreaker);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((window as any).PlaywrightProfile) setProfile((window as any).PlaywrightProfile);
       setLoading(false);
       return;
     }
 
-    let subscription: { unsubscribe: () => void } | null = null;
-
     const initSession = async () => {
       try {
-        const {
-          data: { subscription: authSubscription },
-        } = supabase.auth.onAuthStateChange(async (event, authSession) => {
-          try {
-            if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
-              navigate("/reset-password?type=recovery");
-            }
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
 
-            await setAuthStateIfChanged(authSession);
-          } catch (error) {
-            console.error("Error handling auth state change:", error);
-          } finally {
-            setLoading(false);
-          }
-        });
-
-        subscription = authSubscription;
-
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Error retrieving session:", error);
+        if (mounted) {
+          await setAuthStateIfChanged(initialSession);
+        }
+      } catch (error) {
+        console.error("Error initializing session:", error);
+        if (mounted) {
           localStorage.clear();
           await setAuthStateIfChanged(null);
-          return;
         }
-
-        await setAuthStateIfChanged(data.session);
-      } catch (error) {
-        console.error("Unexpected error or timeout checking session:", error);
-        await setAuthStateIfChanged(null);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // 1. Check current session
     initSession();
 
+    // 2. Listen for background changes cleanly
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, authSession) => {
+      if (!mounted) return;
+      
+      try {
+        if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
+          navigate("/reset-password?type=recovery");
+        }
+        await setAuthStateIfChanged(authSession);
+      } catch (error) {
+        console.error("Error handling auth state change:", error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    });
+
     return () => {
-      clearTimeout(circuitBreaker);
-      subscription?.unsubscribe();
+      mounted = false; // Flag to prevent memory leaks when tab closes
+      subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
