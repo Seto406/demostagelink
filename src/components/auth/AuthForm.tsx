@@ -69,9 +69,10 @@ const GoogleIcon = () => (
 interface AuthFormProps {
   initialMode?: AuthMode;
   className?: string;
+  hideLogo?: boolean;
 }
 
-export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) => {
+export const AuthForm = ({ initialMode = "login", className, hideLogo = false }: AuthFormProps) => {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const [userType, setUserType] = useState<UserType>(null);
@@ -272,11 +273,13 @@ export const AuthForm = ({ initialMode = "login", className }: AuthFormProps) =>
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <img
-              src={stageLinkLogo}
-              alt="StageLink"
-              className="h-20 w-auto mx-auto mb-8 rounded-full"
-            />
+            {!hideLogo && (
+              <img
+                src={stageLinkLogo}
+                alt="StageLink"
+                className="h-20 w-auto mx-auto mb-8 rounded-full"
+              />
+            )}
             <h1 className="text-3xl font-sans font-bold text-foreground mb-4 tracking-tight">
               Join StageLink
             </h1>

@@ -67,7 +67,7 @@ const Login = () => {
 
         {/* Auth Form */}
         <div className="w-full">
-          <AuthForm />
+          <AuthForm hideLogo={true} />
         </div>
       </div>
     </div>
