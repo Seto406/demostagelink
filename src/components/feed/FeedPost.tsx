@@ -62,7 +62,7 @@ export function FeedPost({ show }: FeedPostProps) {
 
   const isProducerOrAdmin = !loading && user && (user.id === show.producer_id?.id || profile?.role === 'admin');
   const producerName = show.producer_id?.group_name || "Unknown Group";
-  const producerAvatar = show.producer_id?.group_logo_url || show.producer_id?.avatar_url;
+  const producerAvatar = show.producer_id?.group_logo_url;
   const initials = producerName
     .split(" ")
     .map((n) => n[0])
