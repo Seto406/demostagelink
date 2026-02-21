@@ -73,10 +73,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ) => {
     if (!force && profileRef.current?.user_id === userId) return;
 
-    // 🔥 THE FIX: If force is true (auto-recovery), we MUST ignore this lock.
-    // The previous request in the ref is likely a dead/frozen browser process.
     if (!force && fetchingProfileRef.current[userId]) {
       return fetchingProfileRef.current[userId]!;
+    }
+
+    // 🔥 DESTROY FROZEN LOCKS: If force is true, we kill the old promise lock so we can re-fetch
+    if (force) {
+      delete fetchingProfileRef.current[userId];
     }
 
     const fetchPromise = (async () => {
@@ -164,7 +167,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
-      console.log("AuthContext: Skipping Supabase Auth listeners (Test Mode)");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,6 +178,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const circuitBreaker = window.setTimeout(() => {
       if (mounted) {
         console.warn("Auth initialization timed out due to backgrounding, forcing UI to load...");
+        // 🔥 WIPE ALL LOCKS so the auto-recovery can take over
+        fetchingProfileRef.current = {};
         setLoading(false);
       }
     }, 3500);
@@ -228,25 +232,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2. 🔥 AUTO-RECOVERY FOR BACKGROUND TABS 🔥
+  // 2. 🔥 AGGRESSIVE AUTO-RECOVERY FOR GHOST STATES 🔥
+  // Instead of trying once, this polls until your device actually reconnects to the network.
   useEffect(() => {
-    const handleWakeUp = () => {
+    let recoveryTimer: number | undefined;
+
+    const attemptRecovery = () => {
       if (user && !profile && !loading) {
-        console.log("Tab awakened: Bypassing frozen locks and forcing profile fetch...");
-        // This will now successfully punch through the frozen request and pull your data!
+        console.log("Ghost State Detected: Retrying profile network fetch...");
         ensureProfile(user.id, user.user_metadata, true);
+        // Trigger supabase cache check
+        supabase.auth.getSession();
       }
-      supabase.auth.getSession();
     };
 
-    window.addEventListener("focus", handleWakeUp);
-    window.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") handleWakeUp();
-    });
+    if (user && !profile && !loading) {
+      // Try immediately
+      attemptRecovery();
+      // Keep trying every 2.5 seconds until the network responds and 'profile' populates
+      recoveryTimer = window.setInterval(attemptRecovery, 2500);
+    }
 
+    // Once `profile` becomes populated, this effect cleans up and destroys the timer
     return () => {
-      window.removeEventListener("focus", handleWakeUp);
-      window.removeEventListener("visibilitychange", handleWakeUp);
+      if (recoveryTimer) clearInterval(recoveryTimer);
     };
   }, [user, profile, loading]);
 
