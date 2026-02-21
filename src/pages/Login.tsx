@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AuthForm } from "@/components/auth/AuthForm";
 import heroTheater from "@/assets/landing/hero-theater.jpg";
-import logo from "@/assets/stagelink-logo.png";
+import logo from "@/assets/stagelink-logo-mask.png";
 import { ArrowLeft } from "lucide-react";
 
 const Login = () => {
@@ -62,7 +62,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-md px-6 flex flex-col items-center">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src={logo} alt="StageLink" className="h-16 w-auto drop-shadow-lg" />
+          <img src={logo} alt="StageLink" className="h-20 w-auto drop-shadow-lg" />
         </div>
 
         {/* Auth Form */}
