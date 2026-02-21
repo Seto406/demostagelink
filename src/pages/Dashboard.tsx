@@ -97,6 +97,11 @@ const Dashboard = () => {
   const [foundUser, setFoundUser] = useState<ApplicantProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Hard Lock: Immediate redirect for non-producers to prevent flicker
+  if (!loading && profile && profile.role !== 'producer') {
+    return <Navigate to="/feed" replace />;
+  }
+
   const canManage = useMemo(() => managedGroups.length > 0, [managedGroups.length]);
 
   useEffect(() => {
@@ -104,12 +109,6 @@ const Dashboard = () => {
       navigate("/login", { replace: true });
     }
   }, [loading, user, navigate]);
-
-  useEffect(() => {
-    if (!loading && profile && profile.role !== 'producer') {
-      navigate("/feed", { replace: true });
-    }
-  }, [loading, profile, navigate]);
 
   useEffect(() => {
     const fetchManagedGroups = async () => {
@@ -514,11 +513,6 @@ const Dashboard = () => {
 
   if (loading || isLoading) {
     return <BrandedLoader size="lg" text="Loading management dashboard..." />;
-  }
-
-  // Ensure Role is Producer
-  if (profile?.role !== 'producer') {
-    return null;
   }
 
   const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
