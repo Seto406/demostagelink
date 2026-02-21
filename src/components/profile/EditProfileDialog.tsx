@@ -269,7 +269,12 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
           <div className="space-y-6 py-4">
           {/* Avatar Upload */}
           <div>
-            <Label className="text-muted-foreground text-sm mb-3 block">Profile Photo</Label>
+            <Label className="text-muted-foreground text-sm mb-2 block">Profile Photo</Label>
+            {profile?.role === 'producer' && (
+              <p className="text-xs text-muted-foreground mb-3">
+                This is your personal avatar. To change your Theater Group logo, go to your Producer Profile.
+              </p>
+            )}
             <div className="flex items-center gap-4">
               <label className="cursor-pointer relative group">
                 <input

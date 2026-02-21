@@ -256,7 +256,7 @@ const Profile = () => {
                      ? 'bg-secondary/10 text-secondary border-secondary/20'
                      : 'bg-primary/10 text-primary border-primary/20'
                  }`}>
-                   {profile.role === 'producer' ? 'Theater Group' : 'Audience Member'}
+                   {profile.role === 'producer' ? 'Producer Account' : 'Audience Member'}
                  </span>
                </div>
 
