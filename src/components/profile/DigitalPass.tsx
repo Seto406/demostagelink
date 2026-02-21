@@ -63,7 +63,7 @@ export const DigitalPass = ({
                     <div className="flex justify-between items-start gap-2 mb-2">
                         {status === 'confirmed' || status === 'paid' ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-                            PAID: ₱{paidAmount.toFixed(2)}
+                            Confirmed
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
