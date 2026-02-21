@@ -139,7 +139,10 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
             </div>
 
             {/* Right side badges container */}
-            <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-2 pointer-events-none">
+            <div
+              className="absolute top-3 right-3 z-30 flex flex-col items-end gap-2 pointer-events-none"
+              style={{ transform: "translateZ(30px)" }}
+            >
               {/* Date Badge */}
               {show.date && (
                 <motion.div
@@ -147,7 +150,6 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                   className="flex flex-col items-center bg-card/90 backdrop-blur-sm rounded-md shadow-lg overflow-hidden border border-secondary/20 min-w-[50px]"
-                  style={{ transform: "translateZ(30px)" }}
                 >
                   <div className="bg-secondary text-secondary-foreground text-[10px] uppercase font-bold px-1.5 py-0.5 w-full text-center tracking-wider">
                     {new Date(show.date).toLocaleDateString("en-US", { month: "short" })}
@@ -164,7 +166,6 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  style={{ transform: "translateZ(30px)" }}
                 >
                   <span className="px-2 py-1 text-xs uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm shadow-sm">
                     {show.genre || (show.niche === "university" ? "University" : "Local")}
