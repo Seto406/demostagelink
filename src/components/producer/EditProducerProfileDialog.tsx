@@ -62,8 +62,10 @@ export const EditProducerProfileDialog = ({
   const [bannerUrl, setBannerUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bannerUploading, setBannerUploading] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const [initialValues, setInitialValues] = useState<{
     name: string;
@@ -161,7 +163,7 @@ export const EditProducerProfileDialog = ({
       // Also update theater_groups if we have the ID
       if (theaterGroup?.id) {
           const { error: groupError } = await supabase
-            .from('theater_groups' as any)
+            .from('theater_groups')
             .update({ logo_url: publicUrlWithTimestamp })
             .eq('id', theaterGroup.id);
 
@@ -170,14 +172,72 @@ export const EditProducerProfileDialog = ({
 
       toast.success("Logo uploaded successfully!");
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error uploading logo:", error);
-      toast.error(error.message || "Failed to upload logo");
+      toast.error((error as Error).message || "Failed to upload logo");
     } finally {
       setUploading(false);
       // Reset input
       if (fileInputRef.current) {
           fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0 || !user) {
+        return;
+      }
+      setBannerUploading(true);
+      const file = event.target.files[0];
+      const filePath = `${user.id}/banner.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('group-assets')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('group-assets')
+        .getPublicUrl(filePath);
+
+      // Add a timestamp to bust cache
+      const publicUrlWithTimestamp = `${publicUrl}?t=${new Date().getTime()}`;
+
+      setBannerUrl(publicUrlWithTimestamp);
+
+      // Update profiles immediately as per requirement
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ group_banner_url: publicUrlWithTimestamp })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Also update theater_groups if we have the ID
+      if (theaterGroup?.id) {
+          const { error: groupError } = await supabase
+            .from('theater_groups')
+            .update({ banner_url: publicUrlWithTimestamp })
+            .eq('id', theaterGroup.id);
+
+          if (groupError) console.error("Error updating theater group banner:", groupError);
+      }
+
+      toast.success("Banner uploaded successfully!");
+
+    } catch (error) {
+      console.error("Error uploading banner:", error);
+      toast.error((error as Error).message || "Failed to upload banner");
+    } finally {
+      setBannerUploading(false);
+      // Reset input
+      if (bannerInputRef.current) {
+          bannerInputRef.current.value = "";
       }
     }
   };
@@ -200,7 +260,7 @@ export const EditProducerProfileDialog = ({
       if (!groupId) {
          // Check if exists in DB even if not passed in prop (double check)
          const { data: existing } = await supabase
-            .from('theater_groups' as any)
+            .from('theater_groups')
             .select('id')
             .eq('owner_id', user.id)
             .maybeSingle();
@@ -221,13 +281,13 @@ export const EditProducerProfileDialog = ({
 
       if (groupId) {
         const { error } = await supabase
-          .from('theater_groups' as any)
+          .from('theater_groups')
           .update(theaterGroupData)
           .eq('id', groupId);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('theater_groups' as any)
+          .from('theater_groups')
           .insert([theaterGroupData]);
         if (error) throw error;
       }
@@ -250,9 +310,9 @@ export const EditProducerProfileDialog = ({
       toast.success("Profile updated successfully");
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.message || "Failed to update profile");
+      toast.error((error as Error).message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -344,20 +404,48 @@ export const EditProducerProfileDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bannerUrl">Banner URL</Label>
-              <Input
-                id="bannerUrl"
-                value={bannerUrl}
-                onChange={(e) => setBannerUrl(e.target.value)}
-                placeholder="https://example.com/banner.jpg"
-                className="bg-background border-secondary/30"
-              />
-              {bannerUrl && (
-                  <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
-                      <img src={bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              <Label htmlFor="bannerUrl">Banner Image</Label>
+              <div className="flex flex-col gap-4">
+                  <div className="w-full h-32 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center relative group">
+                      {bannerUrl ? (
+                          <img src={bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                      ) : (
+                          <div className="text-muted-foreground text-sm">No Banner Image</div>
+                      )}
                   </div>
-              )}
-               <p className="text-xs text-muted-foreground">Recommended size: 1200x400px.</p>
+
+                  <div className="flex items-center gap-4">
+                      <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={bannerInputRef}
+                          onChange={handleBannerUpload}
+                      />
+                      <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => bannerInputRef.current?.click()}
+                          disabled={bannerUploading}
+                          className="w-full"
+                      >
+                          {bannerUploading ? (
+                              <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Uploading...
+                              </>
+                          ) : (
+                              <>
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  Upload Banner
+                              </>
+                          )}
+                      </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                      Recommended size: 1200x400px.
+                  </p>
+              </div>
             </div>
           </div>
 
@@ -365,7 +453,7 @@ export const EditProducerProfileDialog = ({
             <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving || uploading}>
+            <Button onClick={handleSave} disabled={saving || uploading || bannerUploading}>
               {saving ? (
                   <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
