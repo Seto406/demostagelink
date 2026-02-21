@@ -119,11 +119,13 @@ const AppRoutes = () => {
 
 const AppLayout = () => {
   const { loading } = useAuth();
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
 
   return (
     <>
-      {!loading && <Navbar />}
-      <main className={!loading ? "pt-[72px]" : undefined}>
+      {!loading && !isLoginPage && <Navbar />}
+      <main className={!loading && !isLoginPage ? "pt-[72px]" : undefined}>
         <AppRoutes />
       </main>
     </>
