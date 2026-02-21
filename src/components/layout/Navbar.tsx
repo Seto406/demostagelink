@@ -102,12 +102,14 @@ const Navbar = () => {
                 className="touch-target p-2 text-foreground md:hidden"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
 
               <Link to={homePath} className="hidden md:flex items-center gap-2 sm:gap-3 group">
-                <img src={stageLinkLogo} alt="StageLink Logo" className="h-8 w-auto sm:h-10" />
+                <img src={stageLinkLogo} alt="" className="h-8 w-auto sm:h-10" aria-hidden="true" />
                 <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                   Stage<span className="text-secondary">Link</span>
                 </span>
@@ -116,8 +118,8 @@ const Navbar = () => {
 
             {/* Center Section: Mobile Logo + Desktop Nav */}
             <div className="flex items-center justify-center flex-1">
-              <Link to={homePath} className="flex md:hidden items-center gap-2 group">
-                <img src={stageLinkLogo} alt="StageLink Logo" className="h-8 w-auto" />
+              <Link to={homePath} className="flex md:hidden items-center gap-2 group" aria-label="StageLink Home">
+                <img src={stageLinkLogo} alt="" className="h-8 w-auto" aria-hidden="true" />
               </Link>
 
               <div className="hidden md:flex items-center justify-center gap-x-8">
@@ -173,6 +175,8 @@ const Navbar = () => {
                 className="touch-target p-2 text-foreground hidden md:block"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -182,7 +186,13 @@ const Navbar = () => {
       </nav>
 
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 pt-[72px] backdrop-blur-md">
+        <div
+          id="mobile-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile menu"
+          className="fixed inset-0 z-40 bg-background/95 pt-[72px] backdrop-blur-md"
+        >
           <div className="flex h-full flex-col overflow-y-auto p-6">
             <nav className="mb-8 flex flex-col gap-2">
               {mobileNavLinks.map((link) => (

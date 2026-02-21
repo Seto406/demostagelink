@@ -30,7 +30,8 @@ const LandingNavbar = () => {
           <Link to="/" className="flex items-center gap-2 sm:gap-3">
             <img 
               src={stagelinkLogo} 
-              alt="StageLink" 
+              alt=""
+              aria-hidden="true"
               className="h-8 sm:h-10 w-auto"
             />
             <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
