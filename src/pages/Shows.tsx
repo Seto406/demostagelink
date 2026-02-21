@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFavorites } from "@/hooks/use-favorites";
 import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
@@ -208,6 +209,25 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               className="absolute bottom-0 left-0 right-0 p-4"
               style={{ transform: "translateZ(20px)" }}
             >
+              <div className="mb-2 flex flex-col gap-1 relative z-20">
+                {show.venue && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-secondary tracking-wide uppercase shadow-sm">
+                    <MapPin className="w-3 h-3" />
+                    {show.venue}
+                  </span>
+                )}
+                {show.date && (
+                   <span className="flex items-center gap-1 text-xs font-medium text-white/90">
+                     <Calendar className="w-3 h-3 text-secondary" />
+                     {new Date(show.date).toLocaleDateString("en-US", {
+                       month: "long",
+                       day: "numeric",
+                       year: "numeric"
+                     })}
+                   </span>
+                )}
+              </div>
+
               <h3 className="font-serif text-lg text-foreground mb-1 line-clamp-2 group-hover:text-secondary transition-colors duration-300">
                 {show.title}
               </h3>
@@ -230,24 +250,6 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 >
                   {show.producer_id?.group_name || "Theater Group"}
                 </Link>
-              </div>
-
-              <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
-                {show.date && (
-                  <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
-                    <Calendar className="w-3 h-3 text-secondary" />
-                    {new Date(show.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                )}
-                {show.city && (
-                  <span className="flex items-center gap-1 bg-background/50 backdrop-blur-sm px-2 py-1 rounded-sm">
-                    <MapPin className="w-3 h-3 text-secondary" />
-                    {show.city}
-                  </span>
-                )}
               </div>
 
               {/* Buy Ticket Button */}
@@ -370,8 +372,9 @@ const Shows = () => {
   const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
   const [shows, setShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>("upcoming");
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -434,7 +437,7 @@ const Shows = () => {
   }, []);
 
   // Fetch function for shows
-  const fetchShows = useCallback(async (targetPage = 0) => {
+  const fetchShows = useCallback(async (targetPage = 0, tab = activeTab) => {
     // Treat targetPage 0 as a reset
     if (targetPage === 0) {
       setLoading(true);
@@ -481,11 +484,19 @@ const Shows = () => {
       query = query.gte("date", dateFilter);
     }
 
+    // Apply tab logic
+    const today = new Date().toISOString().split('T')[0];
+    if (tab === 'upcoming') {
+      query = query.gte('date', today).order("date", { ascending: true });
+    } else {
+      query = query.lt('date', today).order("date", { ascending: false });
+    }
+
     if (debouncedSearchQuery) {
       query = query.or(`title.ilike.%${debouncedSearchQuery}%,description.ilike.%${debouncedSearchQuery}%`);
     }
 
-    const { data, error } = await query.order("date", { ascending: true });
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching shows:", error);
@@ -503,12 +514,18 @@ const Shows = () => {
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery]);
+  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery, activeTab]);
 
   // Fetch approved shows (reset when filters change)
   useEffect(() => {
     fetchShows(0);
   }, [fetchShows]);
+
+  // Handle Tab Change
+  const handleTabChange = (value: string) => {
+    const newTab = value as 'upcoming' | 'past';
+    setActiveTab(newTab);
+  };
 
   // Pull to refresh handler
   const handleRefresh = async () => {
@@ -574,126 +591,69 @@ const Shows = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mb-8 sm:mb-12 space-y-4 sm:space-y-6"
           >
-            {/* Search */}
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search for shows, venues, or genres..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-card border-secondary/30 focus:border-secondary h-12"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            {/* Tabs */}
+            <div className="flex justify-center mb-6">
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <TabsList className="grid w-[400px] grid-cols-2">
+                  <TabsTrigger value="upcoming">Upcoming Shows</TabsTrigger>
+                  <TabsTrigger value="past">Past Productions</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
-            {/* Filter Pills - Desktop: always visible, Mobile: collapsible */}
-            {/* Desktop Filters */}
-            <div className="hidden sm:block space-y-4">
-              {/* City Filter */}
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1 mr-2">
-                  <MapPin className="w-3 h-3" /> City:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {availableCities.map((city) => (
-                    <motion.button
-                      key={city}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedCity(city)}
-                      className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
-                        selectedCity === city
-                          ? "border-secondary bg-secondary/20 text-secondary shadow-[0_0_15px_hsl(43_72%_52%/0.3)]"
-                          : "border-secondary/30 text-muted-foreground hover:border-secondary/60 hover:text-foreground"
-                      }`}
-                    >
-                      {city}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Genre Filter */}
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1 mr-2">
-                  <Filter className="w-3 h-3" /> Type:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {availableGenres.map((genre) => (
-                    <motion.button
-                      key={genre}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedGenre(genre)}
-                      className={`px-3 py-1.5 text-xs sm:text-sm border transition-all duration-300 touch-target ${
-                        selectedGenre === genre
-                          ? "border-secondary bg-secondary/20 text-secondary shadow-[0_0_15px_hsl(43_72%_52%/0.3)]"
-                          : "border-secondary/30 text-muted-foreground hover:border-secondary/60 hover:text-foreground"
-                      }`}
-                    >
-                      {genre}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Date Filter */}
-              <div className="flex justify-center items-center gap-2">
-                <span className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> From:
-                </span>
+            {/* Search and Advanced Toggle */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-40 bg-card border-secondary/30 focus:border-secondary text-sm h-10"
+                  placeholder="Search for shows, venues, or genres..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 bg-card border-secondary/30 focus:border-secondary h-12"
                 />
-                {dateFilter && (
+                {searchQuery && (
                   <button
-                    onClick={() => setDateFilter("")}
-                    className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`w-full sm:w-auto min-w-[160px] gap-2 border-secondary/30 ${showAdvancedFilters ? 'bg-secondary/10 text-secondary' : 'text-muted-foreground'}`}
+              >
+                <Filter className="w-4 h-4" />
+                {showAdvancedFilters ? "Hide Filters" : "Advanced Filters"}
+                {activeFilterCount > 0 && !showAdvancedFilters && (
+                  <span className="bg-secondary text-secondary-foreground text-xs px-1.5 py-0.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
             </div>
 
-            {/* Mobile Filters - Collapsible */}
-            <div className="sm:hidden">
-              <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-                <CollapsibleTrigger className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-card border border-secondary/30 rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Filter className="w-4 h-4" />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="bg-secondary/20 text-secondary text-xs px-2 py-0.5 rounded-full">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4 space-y-4 p-4 bg-card/50 border border-secondary/20 rounded-lg">
+            {/* Collapsible Filters (Desktop & Mobile Unified Logic) */}
+            <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+              <CollapsibleContent className="mt-6 space-y-6 p-6 bg-card/50 border border-secondary/20 rounded-xl backdrop-blur-sm animate-in slide-in-from-top-2 fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   {/* City Filter */}
-                  <div className="space-y-2">
-                    <span className="text-muted-foreground text-xs flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> City
+                  <div className="space-y-3">
+                    <span className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-secondary" /> City
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {availableCities.map((city) => (
                         <button
                           key={city}
                           onClick={() => setSelectedCity(city)}
-                          className={`px-3 py-1.5 text-xs border transition-all ${
+                          className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
                             selectedCity === city
                               ? "border-secondary bg-secondary/20 text-secondary"
-                              : "border-secondary/30 text-muted-foreground"
+                              : "border-secondary/30 text-muted-foreground hover:border-secondary/60"
                           }`}
                         >
                           {city}
@@ -703,19 +663,19 @@ const Shows = () => {
                   </div>
 
                   {/* Genre Filter */}
-                  <div className="space-y-2">
-                    <span className="text-muted-foreground text-xs flex items-center gap-1">
-                      <Filter className="w-3 h-3" /> Type
+                  <div className="space-y-3">
+                    <span className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-secondary" /> Type
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {availableGenres.map((genre) => (
                         <button
                           key={genre}
                           onClick={() => setSelectedGenre(genre)}
-                          className={`px-3 py-1.5 text-xs border transition-all ${
+                          className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
                             selectedGenre === genre
                               ? "border-secondary bg-secondary/20 text-secondary"
-                              : "border-secondary/30 text-muted-foreground"
+                              : "border-secondary/30 text-muted-foreground hover:border-secondary/60"
                           }`}
                         >
                           {genre}
@@ -725,16 +685,16 @@ const Shows = () => {
                   </div>
 
                   {/* Date Filter */}
-                  <div className="space-y-2">
-                    <span className="text-muted-foreground text-xs flex items-center gap-1">
-                      <Calendar className="w-3 h-3" /> From Date
+                  <div className="space-y-3">
+                    <span className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-secondary" /> From Date
                     </span>
                     <div className="flex items-center gap-2">
                       <Input
                         type="date"
                         value={dateFilter}
                         onChange={(e) => setDateFilter(e.target.value)}
-                        className="flex-1 bg-background border-secondary/30 text-sm h-10"
+                        className="bg-background border-secondary/30 text-sm h-10 w-full"
                       />
                       {dateFilter && (
                         <button
@@ -746,29 +706,22 @@ const Shows = () => {
                       )}
                     </div>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
+                </div>
 
-            {/* Active Filters & Clear */}
-            <AnimatePresence>
-              {hasActiveFilters && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-center"
-                >
-                  <button
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-2 text-secondary hover:text-secondary/80 text-sm transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {hasActiveFilters && (
+                  <div className="flex justify-end pt-4 border-t border-white/5">
+                    <Button
+                      variant="ghost"
+                      onClick={clearFilters}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-2 h-8 text-xs"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </motion.div>
 
           {(!profile || profile.role !== "producer") && (
@@ -825,8 +778,8 @@ const Shows = () => {
           ) : filteredShows.length === 0 ? (
             <div className="max-w-md mx-auto py-12">
               <PremiumEmptyState
-                title="No Productions Found"
-                description="We couldn't find any shows matching your current filters. Try adjusting your search or check back later for new productions."
+                title={activeTab === 'upcoming' ? "No Upcoming Productions" : "No Past Productions"}
+                description={`We couldn't find any ${activeTab} shows matching your current filters.`}
                 icon={Ticket}
                 action={
                   <Button
