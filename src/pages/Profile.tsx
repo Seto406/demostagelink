@@ -16,6 +16,7 @@ import { StarRating } from "@/components/ui/star-rating";
 
 interface ProfileData {
   id: string;
+  user_id: string;
   username: string | null;
   avatar_url: string | null;
   role: "audience" | "producer" | "admin";
@@ -83,7 +84,8 @@ const Profile = () => {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [following, setFollowing] = useState<FollowData[]>([]);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
-  const [counts, setCounts] = useState({ passes: 0, following: 0, reviews: 0 });
+  const [followerCount, setFollowerCount] = useState(0);
+  const [counts, setCounts] = useState({ passes: 0, following: 0, reviews: 0, followers: 0 });
 
   // Check if viewing own profile
   const isOwnProfile = !id || (currentUserProfile && id === currentUserProfile.id);
@@ -107,6 +109,14 @@ const Profile = () => {
 
         if (profileData) {
           setProfile(profileData as unknown as ProfileData);
+
+          // Fetch Followers Count
+          const { count } = await supabase
+            .from("follows")
+            .select("*", { count: 'exact', head: true })
+            .eq("following_id", profileId);
+
+          setFollowerCount(count || 0);
 
           // Fetch Tickets (Passes)
           const { data: ticketsData, error: ticketsError } = await supabase
@@ -141,22 +151,25 @@ const Profile = () => {
           // Fetch Following
           // Try-catch block in case 'follows' table doesn't exist yet or permissions issue
           try {
-            const { data: followsData, error: followsError } = await supabase
-              .from("follows")
-              .select(`
-                id,
-                following_id,
-                profiles!follows_following_id_fkey (
+            // We need the auth.users.id (profileData.user_id) to find who they are following
+            if (profileData.user_id) {
+              const { data: followsData, error: followsError } = await supabase
+                .from("follows")
+                .select(`
                   id,
-                  group_name,
-                  avatar_url,
-                  niche
-                )
-              `)
-              .eq("follower_id", profileId);
+                  following_id,
+                  profiles!follows_following_id_fkey (
+                    id,
+                    group_name,
+                    avatar_url,
+                    niche
+                  )
+                `)
+                .eq("follower_id", profileData.user_id);
 
-            if (!followsError && followsData) {
-              setFollowing(followsData as unknown as FollowData[]);
+              if (!followsError && followsData) {
+                setFollowing(followsData as unknown as FollowData[]);
+              }
             }
           } catch (e) {
             console.log("Could not fetch follows", e);
@@ -199,8 +212,9 @@ const Profile = () => {
       passes: tickets.length,
       following: following.length,
       reviews: reviews.length,
+      followers: followerCount,
     });
-  }, [tickets, following, reviews]);
+  }, [tickets, following, reviews, followerCount]);
 
 
   if (loading) return (
@@ -313,6 +327,11 @@ const Profile = () => {
                     <div className="flex items-center gap-2">
                         <span className="font-bold text-foreground">{counts.passes}</span>
                         <span className="text-muted-foreground">Passes</span>
+                    </div>
+                    <div className="w-[1px] h-4 bg-secondary/20"></div>
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground">{counts.followers}</span>
+                        <span className="text-muted-foreground">Followers</span>
                     </div>
                     <div className="w-[1px] h-4 bg-secondary/20"></div>
                     <div className="flex items-center gap-2">

@@ -27,6 +27,7 @@ interface TheaterGroup {
 
 interface Producer {
   id: string;
+  user_id: string;
   group_name: string | null;
   description: string | null;
   founded_year: number | null;
@@ -68,6 +69,7 @@ const ProducerProfile = () => {
   // Follow State
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
 
   // Collab State
@@ -112,7 +114,7 @@ const ProducerProfile = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
+        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
         .eq("id", id)
         .maybeSingle();
 
@@ -150,6 +152,18 @@ const ProducerProfile = () => {
 
       if (!countError && count !== null) {
         setFollowerCount(count);
+      }
+
+      // Fetch following count
+      if (profileData?.user_id) {
+          const { count: followingCountData, error: followingCountError } = await supabase
+            .from("follows")
+            .select("*", { count: 'exact', head: true })
+            .eq("follower_id", profileData.user_id);
+
+          if (!followingCountError && followingCountData !== null) {
+              setFollowingCount(followingCountData);
+          }
       }
 
       if (user) {
@@ -597,6 +611,10 @@ const ProducerProfile = () => {
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4 text-secondary" />
                       <span>{followerCount} {followerCount === 1 ? "Follower" : "Followers"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <UserCheck className="w-4 h-4 text-secondary" />
+                      <span>{followingCount} Following</span>
                     </div>
                   </div>
                   
