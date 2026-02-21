@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    let mounted = true; // Prevents state updates if the user closes tab mid-load
+    let mounted = true;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
@@ -169,6 +169,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       return;
     }
+
+    // 🔥 THE CIRCUIT BREAKER 🔥
+    // If the browser suspends the network request when waking a tab, this forces the app to render.
+    const circuitBreaker = window.setTimeout(() => {
+      if (mounted) {
+        console.warn("Auth initialization timed out due to backgrounding, forcing UI to load...");
+        setLoading(false);
+      }
+    }, 3500); // Wait 3.5 seconds before forcing a load
 
     const initSession = async () => {
       try {
@@ -187,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } finally {
         if (mounted) {
+          clearTimeout(circuitBreaker); // We finished successfully, turn off the alarm
           setLoading(false);
         }
       }
@@ -217,6 +227,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false; // Flag to prevent memory leaks when tab closes
+      clearTimeout(circuitBreaker);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
