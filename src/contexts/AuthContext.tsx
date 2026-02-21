@@ -73,7 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   ) => {
     if (!force && profileRef.current?.user_id === userId) return;
 
-    if (fetchingProfileRef.current[userId]) {
+    // 🔥 THE FIX: If force is true (auto-recovery), we MUST ignore this lock.
+    // The previous request in the ref is likely a dead/frozen browser process.
+    if (!force && fetchingProfileRef.current[userId]) {
       return fetchingProfileRef.current[userId]!;
     }
 
@@ -87,7 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) {
           console.error("Error fetching profile in ensureProfile:", error);
-          return; // Leaves profile as null so auto-recovery can retry it later
+          return;
         }
 
         if (data) {
@@ -227,15 +229,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // 2. 🔥 AUTO-RECOVERY FOR BACKGROUND TABS 🔥
-  // Heals the "Ghost State" when waking up the app
   useEffect(() => {
     const handleWakeUp = () => {
-      // Condition: User exists locally, UI forced a load, but profile network fetch failed
       if (user && !profile && !loading) {
-        console.log("Tab awakened: Fixing missing profile data...");
+        console.log("Tab awakened: Bypassing frozen locks and forcing profile fetch...");
+        // This will now successfully punch through the frozen request and pull your data!
         ensureProfile(user.id, user.user_metadata, true);
       }
-      // Silently ping Supabase to verify token hasn't expired while closed
       supabase.auth.getSession();
     };
 
