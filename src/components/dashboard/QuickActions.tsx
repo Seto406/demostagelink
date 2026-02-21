@@ -31,6 +31,7 @@ interface QuickActionsProps {
   shows: Show[];
   profileId: string;
   isTrialExpired: boolean;
+  pendingMemberCount?: number;
 }
 
 const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivElement, {
@@ -42,6 +43,7 @@ const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivEle
   disabled?: boolean;
   variant?: "default" | "primary";
   className?: string;
+  badge?: number;
   [key: string]: any;
 }>(({
   icon: Icon,
@@ -52,6 +54,7 @@ const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivEle
   disabled,
   variant = "default",
   className,
+  badge,
   ...props
 }, ref) => {
   const content = (
@@ -63,6 +66,13 @@ const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivEle
       {variant === "primary" && !disabled && (
         <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
       )}
+
+      {badge !== undefined && badge > 0 && (
+        <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+          {badge}
+        </div>
+      )}
+
       <div className={`p-3 rounded-full ${
         disabled
           ? "bg-muted text-muted-foreground"
@@ -124,6 +134,7 @@ export const QuickActions = ({
   shows,
   profileId,
   isTrialExpired,
+  ...props
 }: QuickActionsProps) => {
   const [exporting, setExporting] = useState(false);
 
@@ -229,6 +240,7 @@ export const QuickActions = ({
           label="Manage Ensemble"
           subtext="Add your cast and crew"
           onClick={onManageEnsemble}
+          badge={props.pendingMemberCount}
         />
 
         {/* Analyze Production */}

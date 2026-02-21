@@ -85,6 +85,7 @@ const Dashboard = () => {
   const [shows, setShows] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("approved");
   const analyticsRef = useRef<HTMLDivElement>(null);
+  const membersRef = useRef<HTMLDivElement>(null);
 
   // Linking State
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -477,6 +478,11 @@ const Dashboard = () => {
     analyticsRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleManageEnsemble = () => {
+    membersRef.current?.scrollIntoView({ behavior: "smooth" });
+    toast.info("Manage your team members and approvals here.");
+  };
+
   const handleRestartTour = async () => {
     if (!profile) return;
     const { error } = await supabase
@@ -572,12 +578,13 @@ const Dashboard = () => {
           {selectedGroupId && (
               <QuickActions
                   onPostShow={handlePostShow}
-                  onManageEnsemble={() => toast.info("Member management is available below in 'Member Applications'.")}
+                  onManageEnsemble={handleManageEnsemble}
                   onAnalyze={handleAnalyze}
                   onRestartTour={handleRestartTour}
                   shows={shows}
                   profileId={selectedGroupId}
                   isTrialExpired={false} // Assuming false for now or fetch from subscription
+                  pendingMemberCount={applications.length}
               />
           )}
       </div>
@@ -667,7 +674,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8">
+      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8" ref={membersRef}>
         <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
              <h2 className="font-serif font-bold text-lg text-muted-foreground">
                Member Applications
