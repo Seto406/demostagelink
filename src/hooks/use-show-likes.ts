@@ -75,16 +75,35 @@ export const useShowLikes = () => {
           description: "You've supported this production.",
         });
 
-        // Notify producer (if not self-like)
-        if (producerId && producerId !== user.id) {
-           await createNotification({
-             userId: producerId,
-             actorId: user.id,
-             type: 'like',
-             title: 'New Like',
-             message: 'Someone liked your show.',
-             link: `/show/${showId}`
-           });
+        // Fetch show details to get producer_id and title
+        const { data: showData, error: showError } = await supabase
+          .from('shows')
+          .select('producer_id, title')
+          .eq('id', showId)
+          .single();
+
+        if (showError || !showData) {
+          console.error('Error fetching show details for notification:', showError);
+        } else {
+          // Fetch current user's profile id
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error('Error fetching profile for notification:', profileError);
+          } else if (profileData) {
+            await createNotification({
+              userId: showData.producer_id,
+              actorId: profileData.id,
+              type: 'like',
+              title: 'New Like!',
+              message: `Someone liked your show: ${showData.title}`,
+              link: `/shows/${showId}`
+            });
+          }
         }
       }
     } catch (error) {

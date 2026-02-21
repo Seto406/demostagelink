@@ -17,6 +17,9 @@ export const createNotification = async ({
   message,
   link
 }: CreateNotificationParams) => {
+  // Don't notify users of their own actions
+  if (userId === actorId) return;
+
   try {
     const { error } = await supabase
       .from('notifications')
