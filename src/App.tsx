@@ -18,6 +18,7 @@ import { HealthCheckGate } from "@/components/health-check-gate";
 import { SystemStability } from "@/components/SystemStability";
 import ScrollToTop from "@/components/ui/scroll-to-top";
 import Navbar from "@/components/layout/Navbar";
+import { RoleBasedGuard } from "@/components/auth/RoleBasedGuard";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -91,11 +92,11 @@ const AppRoutes = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/dashboard/guests/:showId" element={<RequireAuth><GuestList /></RequireAuth>} />
-          <Route path="/dashboard/analytics" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/admin/dashboard" element={<AdminPanel />} />
-          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/dashboard" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><Dashboard /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard/guests/:showId" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><GuestList /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard/analytics" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><Dashboard /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/admin/dashboard" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/admin" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />
           {/* Legacy/Alias for show details (plural) */}
           <Route path="/shows/:id" element={<ShowDetailsPage />} />

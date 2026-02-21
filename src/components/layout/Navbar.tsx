@@ -224,7 +224,7 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
-                  {canAccessManagement && (
+                  {canAccessManagement && profile?.role === 'producer' && (
                     <div className="rounded-xl border border-secondary/20 bg-card/50 p-3 backdrop-blur-md">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Management</p>
                       <Link to="/dashboard" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
