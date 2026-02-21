@@ -374,7 +374,7 @@ END:VCALENDAR`;
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                 {/* Left Column - Poster */}
-                <div className="lg:col-span-3 flex justify-center lg:justify-end">
+                <div className="lg:col-span-4 flex justify-center lg:justify-end">
                     <div className="relative h-[300px] lg:h-[400px] w-auto rounded-xl overflow-hidden shadow-2xl border border-white/10 group bg-black/20">
                         {show.poster_url ? (
                             <>
@@ -399,7 +399,7 @@ END:VCALENDAR`;
                 </div>
 
                 {/* Right Column - Details */}
-                <div className="lg:col-span-9 space-y-6 text-white">
+                <div className="lg:col-span-8 space-y-6 text-white">
                     <div className="flex flex-wrap items-center gap-4">
                         <span className="px-3 py-1 bg-primary/20 text-primary-foreground text-xs font-bold uppercase tracking-widest rounded-full border border-primary/30">
                             {getNicheLabel(show.niche)}
@@ -592,8 +592,8 @@ END:VCALENDAR`;
       */}
       <div className="container mx-auto px-6 py-12 lg:py-16">
           <div className="grid lg:grid-cols-12 gap-12">
-               {/* Left Content Column (65%) */}
-               <div className="lg:col-span-8 space-y-12">
+               {/* Left Content Column (58%) */}
+               <div className="lg:col-span-7 space-y-12">
 
                    {/* About */}
                    <section>
@@ -656,8 +656,8 @@ END:VCALENDAR`;
                    </section>
                </div>
 
-               {/* Right Sidebar (35%) */}
-               <div className="lg:col-span-4 space-y-8">
+               {/* Right Sidebar (42%) */}
+               <div className="lg:col-span-5 space-y-8">
                     {/* Venue Map */}
                     {(show.venue || show.city) && (
                         <div className="bg-card border border-secondary/10 rounded-xl p-6 shadow-sm">
