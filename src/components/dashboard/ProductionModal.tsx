@@ -377,6 +377,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       // Invalidate queries to update Feed and Dashboard immediately
       await queryClient.invalidateQueries({ queryKey: ['approved-shows'] });
       await queryClient.invalidateQueries({ queryKey: ['producer-shows', profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ['productions'] });
+      await queryClient.invalidateQueries({ queryKey: ['shows'] });
 
       toast({
         title: "Submission Successful",
