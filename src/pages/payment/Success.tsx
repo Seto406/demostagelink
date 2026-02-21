@@ -6,6 +6,29 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGamification } from "@/hooks/useGamification";
+import { motion } from "framer-motion";
+
+const Checkmark = () => (
+  <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto relative">
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="40"
+      height="40"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="text-green-500"
+      initial={{ pathLength: 0, opacity: 0 }}
+      animate={{ pathLength: 1, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeInOut", delay: 0.2 }}
+    >
+      <motion.path d="M20 6 9 17l-5-5" />
+    </motion.svg>
+  </div>
+);
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -72,9 +95,7 @@ const PaymentSuccess = () => {
 
         {status === "success" && (
           <>
-            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-green-500" />
-            </div>
+            <Checkmark />
             <h2 className="text-2xl font-serif font-bold text-foreground">
                 {paymentType === "ticket" ? "Seat Secured!" : "Payment Successful!"}
             </h2>
@@ -82,7 +103,7 @@ const PaymentSuccess = () => {
 
             {paymentType === "ticket" ? (
                 <Button onClick={() => navigate("/profile")} className="w-full">
-                  View Digital Pass
+                  Go to My Pass
                 </Button>
             ) : (
                 <Button onClick={() => navigate("/settings")} className="w-full">
