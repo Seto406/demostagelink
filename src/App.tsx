@@ -92,9 +92,9 @@ const AppRoutes = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><Dashboard /></RoleBasedGuard></RequireAuth>} />
-          <Route path="/dashboard/guests/:showId" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><GuestList /></RoleBasedGuard></RequireAuth>} />
-          <Route path="/dashboard/analytics" element={<RequireAuth><RoleBasedGuard allowedRoles={['producer']}><Dashboard /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard" element={<RequireAuth><RoleBasedGuard><Dashboard /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard/guests/:showId" element={<RequireAuth><RoleBasedGuard><GuestList /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard/analytics" element={<RequireAuth><RoleBasedGuard><Dashboard /></RoleBasedGuard></RequireAuth>} />
           <Route path="/admin/dashboard" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
           <Route path="/show/:id" element={<ShowDetailsPage />} />

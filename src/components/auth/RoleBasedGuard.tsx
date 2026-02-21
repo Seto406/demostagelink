@@ -5,10 +5,10 @@ import { FullPageLoader } from "@/components/ui/branded-loader";
 
 interface RoleBasedGuardProps {
   children: ReactNode;
-  allowedRoles: string[];
+  allowedRoles?: string[];
 }
 
-export const RoleBasedGuard = ({ children, allowedRoles }: RoleBasedGuardProps) => {
+export const RoleBasedGuard = ({ children, allowedRoles = ['producer'] }: RoleBasedGuardProps) => {
   const { profile, loading } = useAuth();
 
   if (loading) {
