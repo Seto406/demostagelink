@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) {
           console.error("Error fetching profile in ensureProfile:", error);
-          return;
+          return; // Leaves profile as null so auto-recovery can retry it later
         }
 
         if (data) {
@@ -156,6 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(null);
   };
 
+  // 1. Initial Load & Listeners
   useEffect(() => {
     let mounted = true;
 
@@ -170,14 +171,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // 🔥 THE CIRCUIT BREAKER 🔥
-    // If the browser suspends the network request when waking a tab, this forces the app to render.
     const circuitBreaker = window.setTimeout(() => {
       if (mounted) {
         console.warn("Auth initialization timed out due to backgrounding, forcing UI to load...");
         setLoading(false);
       }
-    }, 3500); // Wait 3.5 seconds before forcing a load
+    }, 3500);
 
     const initSession = async () => {
       try {
@@ -190,22 +189,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Error initializing session:", error);
-        if (mounted) {
-          localStorage.clear();
-          await setAuthStateIfChanged(null);
-        }
       } finally {
         if (mounted) {
-          clearTimeout(circuitBreaker); // We finished successfully, turn off the alarm
+          clearTimeout(circuitBreaker);
           setLoading(false);
         }
       }
     };
 
-    // 1. Check current session
     initSession();
 
-    // 2. Listen for background changes cleanly
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, authSession) => {
@@ -226,12 +219,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => {
-      mounted = false; // Flag to prevent memory leaks when tab closes
+      mounted = false;
       clearTimeout(circuitBreaker);
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 2. 🔥 AUTO-RECOVERY FOR BACKGROUND TABS 🔥
+  // Heals the "Ghost State" when waking up the app
+  useEffect(() => {
+    const handleWakeUp = () => {
+      // Condition: User exists locally, UI forced a load, but profile network fetch failed
+      if (user && !profile && !loading) {
+        console.log("Tab awakened: Fixing missing profile data...");
+        ensureProfile(user.id, user.user_metadata, true);
+      }
+      // Silently ping Supabase to verify token hasn't expired while closed
+      supabase.auth.getSession();
+    };
+
+    window.addEventListener("focus", handleWakeUp);
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") handleWakeUp();
+    });
+
+    return () => {
+      window.removeEventListener("focus", handleWakeUp);
+      window.removeEventListener("visibilitychange", handleWakeUp);
+    };
+  }, [user, profile, loading]);
 
   const refreshProfile = async () => {
     if (user) {
