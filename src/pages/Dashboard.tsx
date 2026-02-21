@@ -1,5 +1,5 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,7 +8,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
+import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 type ManagedGroup = {
   id: string;
@@ -76,6 +80,12 @@ const Dashboard = () => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
   const [showToEdit, setShowToEdit] = useState<any>(null);
+
+  // New State
+  const [shows, setShows] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("approved");
+  const analyticsRef = useRef<HTMLDivElement>(null);
+  const membersRef = useRef<HTMLDivElement>(null);
 
   // Linking State
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -135,7 +145,21 @@ const Dashboard = () => {
         setCollabRequests([]);
         setUnlinkedMembers([]);
         setApplicantsByUserId({});
+        setShows([]);
         return;
+      }
+
+      // Fetch Shows
+      const { data: showsData, error: showsError } = await supabase
+        .from("shows")
+        .select("*")
+        .eq("producer_id", selectedGroupId)
+        .order("created_at", { ascending: false });
+
+      if (showsError) {
+        console.error("Error fetching shows:", showsError);
+      } else {
+        setShows(showsData || []);
       }
 
       // Fetch Member Applications
@@ -449,11 +473,42 @@ const Dashboard = () => {
     setIsUpdating(null);
   };
 
+  // Quick Action Handlers
+  const handleAnalyze = () => {
+    analyticsRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleManageEnsemble = () => {
+    membersRef.current?.scrollIntoView({ behavior: "smooth" });
+    toast.info("Manage your team members and approvals here.");
+  };
+
+  const handleRestartTour = async () => {
+    if (!profile) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ has_completed_tour: false })
+      .eq("id", profile.id);
+
+    if (!error) {
+      toast.success("Tour restarted! Refreshing page...");
+      window.location.reload();
+    } else {
+      toast.error("Failed to restart tour.");
+    }
+  };
+
+  const handlePostShow = () => {
+    setShowToEdit(null);
+    setShowProductionModal(true);
+  };
+
   if (loading || isLoading) {
     return <BrandedLoader size="lg" text="Loading management dashboard..." />;
   }
 
-  if (!canManage) {
+  // Ensure Role is Producer
+  if (profile?.role !== 'producer' && !canManage) {
     return (
       <div className="container mx-auto px-6 py-10">
         <div className="mx-auto max-w-2xl rounded-xl border border-secondary/20 bg-card/70 p-8 text-center backdrop-blur-md">
@@ -467,14 +522,26 @@ const Dashboard = () => {
   }
 
   const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
+  const approvedShows = shows.filter(s => s.status === 'approved');
+  const pendingShows = shows.filter(s => s.status === 'pending');
+  const rejectedShows = shows.filter(s => s.status === 'rejected');
+
+  const handleEditShow = (show: any) => {
+    setShowToEdit(show);
+    setShowProductionModal(true);
+  };
 
   return (
     <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
+      <div className="mb-8" ref={analyticsRef}>
+         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
+      </div>
+
       <div className="mb-6 rounded-xl border border-secondary/20 bg-card/70 p-5 backdrop-blur-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-serif font-bold text-foreground">My Dashboards</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Pending Approvals</p>
+            <p className="mt-1 text-sm text-muted-foreground">Manage your productions and team</p>
           </div>
 
           {selectedGroup && (
@@ -506,6 +573,44 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
+
+      <div className="mb-8">
+          {selectedGroupId && (
+              <QuickActions
+                  onPostShow={handlePostShow}
+                  onManageEnsemble={handleManageEnsemble}
+                  onAnalyze={handleAnalyze}
+                  onRestartTour={handleRestartTour}
+                  shows={shows}
+                  profileId={selectedGroupId}
+                  isTrialExpired={false} // Assuming false for now or fetch from subscription
+                  pendingMemberCount={applications.length}
+              />
+          )}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          <TabsList className="grid w-full grid-cols-3 bg-secondary/10 p-1 rounded-xl">
+              <TabsTrigger value="approved" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                  Approved Shows ({approvedShows.length})
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                  Pending Review ({pendingShows.length})
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
+                  Rejected / Drafts ({rejectedShows.length})
+              </TabsTrigger>
+          </TabsList>
+          <TabsContent value="approved" className="mt-4">
+              <ShowList items={approvedShows} emptyText="No active shows found. Post a new production to get started!" onEdit={handleEditShow} />
+          </TabsContent>
+          <TabsContent value="pending" className="mt-4">
+              <ShowList items={pendingShows} emptyText="No pending shows." onEdit={handleEditShow} />
+          </TabsContent>
+          <TabsContent value="rejected" className="mt-4">
+              <ShowList items={rejectedShows} emptyText="No rejected or draft shows." onEdit={handleEditShow} />
+          </TabsContent>
+      </Tabs>
 
       {/* Collaboration Requests Section */}
       {collabRequests.length > 0 && (
@@ -569,7 +674,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8">
+      <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md mb-8" ref={membersRef}>
         <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
              <h2 className="font-serif font-bold text-lg text-muted-foreground">
                Member Applications
@@ -751,5 +856,50 @@ const Dashboard = () => {
     </div>
   );
 };
+
+const ShowList = ({ items, emptyText, onEdit }: { items: any[], emptyText: string, onEdit: (show: any) => void }) => (
+    <div className="space-y-4">
+        {items.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-secondary/30 rounded-xl">
+                <p className="text-muted-foreground">{emptyText}</p>
+            </div>
+        ) : (
+            items.map((show) => (
+                <div key={show.id} className="bg-card border border-secondary/20 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
+                     <div className="w-16 h-24 bg-muted rounded overflow-hidden flex-shrink-0">
+                         {show.poster_url ? (
+                             <img src={show.poster_url} alt={show.title} className="w-full h-full object-cover" />
+                         ) : (
+                             <div className="w-full h-full flex items-center justify-center bg-secondary/10 text-xs text-muted-foreground">No Poster</div>
+                         )}
+                     </div>
+                     <div className="flex-1">
+                         <div className="flex items-center gap-2 mb-1">
+                             <h3 className="font-bold text-lg">{show.title}</h3>
+                             {show.status === 'rejected' && <Badge variant="destructive">Rejected</Badge>}
+                             {show.status === 'pending' && <Badge variant="secondary">Pending Review</Badge>}
+                         </div>
+                         <p className="text-sm text-muted-foreground">{show.date || "Date TBA"} • {show.venue || "Venue TBA"}</p>
+
+                         {show.status === 'rejected' && (
+                             <div className="mt-2 bg-destructive/10 border border-destructive/20 p-3 rounded-lg flex gap-2 items-start text-sm">
+                                 <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                                 <div className="text-destructive">
+                                     <span className="font-semibold">Rejection Reason:</span>
+                                     <p className="mt-1 text-xs opacity-90">
+                                         {show.admin_feedback || show.rejection_reason || "Your show submission was rejected. Please ensure all details comply with our content guidelines. Contact support if you believe this is a mistake."}
+                                     </p>
+                                 </div>
+                             </div>
+                         )}
+                     </div>
+                     <Button variant="outline" size="sm" onClick={() => onEdit(show)}>
+                         Edit
+                     </Button>
+                </div>
+            ))
+        )}
+    </div>
+);
 
 export default Dashboard;
