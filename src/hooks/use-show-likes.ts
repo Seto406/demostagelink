@@ -85,22 +85,23 @@ export const useShowLikes = () => {
         if (showError || !showData) {
           console.error('Error fetching show details for notification:', showError);
         } else {
-          // Fetch current user's profile id
+          // Fetch current user's profile id and name
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, username, group_name')
             .eq('user_id', user.id)
             .maybeSingle();
 
           if (profileError) {
             console.error('Error fetching profile for notification:', profileError);
           } else if (profileData) {
+            const actorName = profileData.group_name || profileData.username || 'Someone';
             await createNotification({
               userId: showData.producer_id,
               actorId: profileData.id,
               type: 'like',
               title: 'New Like!',
-              message: `Someone liked your show: ${showData.title}`,
+              message: `${actorName} liked your show: ${showData.title}`,
               link: `/shows/${showId}`
             });
           }
