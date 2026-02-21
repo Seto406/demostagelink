@@ -533,10 +533,6 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
-      <div className="mb-8" ref={analyticsRef}>
-         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
-      </div>
-
       <div className="mb-6 rounded-xl border border-secondary/20 bg-card/70 p-5 backdrop-blur-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -587,6 +583,10 @@ const Dashboard = () => {
                   pendingMemberCount={applications.length}
               />
           )}
+      </div>
+
+      <div className="mb-8" ref={analyticsRef}>
+         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
