@@ -199,7 +199,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
           .update({
             role_in_group: roleInGroup.trim() || null,
             avatar_url: avatarUrl,
-            user_id: linkedUserId
+            user_id: linkedUserId,
             member_name: memberName.trim(),
           })
           .eq("id", editingMember.id);

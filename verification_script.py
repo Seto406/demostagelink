@@ -1,47 +1,80 @@
-import os
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright
 
-def run(playwright):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
+def run():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
 
-    # 1. Verify Checkout Modal on Show Details Page
-    print("Navigating to show page...")
-    page.goto("http://localhost:8080/show/demo-msb")
+        # Test Desktop View
+        print("Testing Desktop View...")
+        page.set_viewport_size({"width": 1280, "height": 720})
+        page.goto("http://localhost:8080")
+        page.wait_for_selector("nav")
 
-    # Wait for page to load
-    page.wait_for_selector("h1")
-    print("Page loaded.")
+        # Verify Logo Image has aria-hidden
+        logo_imgs = page.locator("nav img[alt='']")
+        count = logo_imgs.count()
+        print(f"Found {count} logo images with alt=''")
 
-    # Click Reserve Now
-    print("Clicking Reserve Now...")
-    page.get_by_role("button", name="Reserve Now").click()
+        # Check if any have aria-hidden='true'
+        for i in range(count):
+            attr = logo_imgs.nth(i).get_attribute("aria-hidden")
+            print(f"Logo {i} aria-hidden: {attr}")
+            if attr != "true":
+                print("FAILURE: Logo image missing aria-hidden='true'")
 
-    # Wait for modal
-    page.wait_for_selector("text=Order Summary")
-    print("Modal opened.")
+        # Test Mobile View
+        print("\nTesting Mobile View...")
+        page.set_viewport_size({"width": 375, "height": 667})
 
-    # Verify disclaimer
-    expect(page.get_by_text("You are paying a")).to_be_visible()
-    expect(page.get_by_text("reservation fee now to secure your seat")).to_be_visible()
+        # Find mobile menu toggle button
+        # There might be two, but on mobile one is hidden.
+        # The visible one should be the one we interact with.
+        toggle_btn = page.locator("button[aria-label='Toggle menu']").first
 
-    # Verify price breakdown - use more specific selectors to avoid duplicates
-    # "Seat Commitment" row
-    seat_commitment_row = page.locator("div", has_text="Seat Commitment").first
-    expect(seat_commitment_row).to_contain_text("₱25.00")
+        # Check initial state
+        expanded = toggle_btn.get_attribute("aria-expanded")
+        controls = toggle_btn.get_attribute("aria-controls")
+        print(f"Toggle Button Initial: aria-expanded={expanded}, aria-controls={controls}")
 
-    # "Remaining Balance" row
-    balance_row = page.locator("div", has_text="Remaining Balance").first
-    expect(balance_row).to_contain_text("₱1,475.00")
+        if expanded != "false":
+            print("FAILURE: Initial aria-expanded should be 'false'")
 
-    # Take screenshot of modal
-    if not os.path.exists("verification"):
-        os.makedirs("verification")
-    page.screenshot(path="verification/checkout_modal.png")
-    print("Screenshot taken.")
+        # Click to open
+        toggle_btn.click()
+        page.wait_for_timeout(500) # Wait for animation/render
 
-    browser.close()
+        # Check state after click
+        expanded_after = toggle_btn.get_attribute("aria-expanded")
+        print(f"Toggle Button After Click: aria-expanded={expanded_after}")
 
-with sync_playwright() as playwright:
-    run(playwright)
+        if expanded_after != "true":
+            print("FAILURE: aria-expanded should be 'true' after click")
+
+        # Verify Mobile Menu Container
+        mobile_menu = page.locator("#mobile-menu")
+        if mobile_menu.is_visible():
+            print("Mobile menu is visible")
+            role = mobile_menu.get_attribute("role")
+            label = mobile_menu.get_attribute("aria-label")
+            modal = mobile_menu.get_attribute("aria-modal")
+
+            print(f"Mobile Menu Attributes: role={role}, aria-label={label}, aria-modal={modal}")
+
+            if role != "dialog":
+                print("FAILURE: Mobile menu missing role='dialog'")
+            if label != "Mobile menu":
+                print("FAILURE: Mobile menu missing aria-label='Mobile menu'")
+            if modal != "true":
+                print("FAILURE: Mobile menu missing aria-modal='true'")
+        else:
+            print("FAILURE: Mobile menu not found or not visible")
+
+        # Take screenshot
+        page.screenshot(path="verification_mobile_menu.png")
+        print("Screenshot saved to verification_mobile_menu.png")
+
+        browser.close()
+
+if __name__ == "__main__":
+    run()
