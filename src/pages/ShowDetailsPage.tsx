@@ -310,6 +310,12 @@ END:VCALENDAR`;
   };
 
   const proceedToPayment = async () => {
+    if (!user) {
+      toast.error("Please log in to purchase tickets");
+      navigate("/login");
+      return;
+    }
+
     if (!show || !show.price) return;
     setBuyingTicket(true);
     try {
@@ -319,9 +325,11 @@ END:VCALENDAR`;
           description: `Ticket for ${show.title}`,
           metadata: {
              type: "ticket",
-             show_id: show.id
+             show_id: show.id,
+             user_id: user.id
           },
           redirect_url: window.location.origin + "/payment/success",
+          cancel_url: window.location.origin + "/payment/cancel",
         },
       });
 

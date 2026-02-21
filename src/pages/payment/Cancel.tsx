@@ -15,9 +15,14 @@ const PaymentCancel = () => {
         <p className="text-muted-foreground">
           You have cancelled the payment process. No charges were made.
         </p>
-        <Button onClick={() => navigate("/settings")} className="w-full">
-          Return to Settings
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button onClick={() => navigate("/")} className="w-full">
+            Return Home
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/settings")} className="w-full">
+            Return to Settings
+          </Button>
+        </div>
       </div>
     </div>
   );
