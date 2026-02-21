@@ -1,6 +1,6 @@
 import { useState, forwardRef } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Users, Download, ExternalLink, Lock, AlertTriangle } from "lucide-react";
+import { Plus, Users, Download, ExternalLink, Lock, AlertTriangle, BarChart2, RotateCcw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,8 @@ interface Show {
 interface QuickActionsProps {
   onPostShow: () => void;
   onManageEnsemble: () => void;
+  onAnalyze: () => void;
+  onRestartTour: () => void;
   shows: Show[];
   profileId: string;
   isTrialExpired: boolean;
@@ -117,6 +119,8 @@ ActionCard.displayName = "ActionCard";
 export const QuickActions = ({
   onPostShow,
   onManageEnsemble,
+  onAnalyze,
+  onRestartTour,
   shows,
   profileId,
   isTrialExpired,
@@ -225,6 +229,22 @@ export const QuickActions = ({
           label="Manage Ensemble"
           subtext="Add your cast and crew"
           onClick={onManageEnsemble}
+        />
+
+        {/* Analyze Production */}
+        <ActionCard
+          icon={BarChart2}
+          label="Analyze Production"
+          subtext="Review detailed statistics"
+          onClick={onAnalyze}
+        />
+
+        {/* Restart Tour */}
+        <ActionCard
+          icon={RotateCcw}
+          label="Restart Tour"
+          subtext="Replay onboarding guide"
+          onClick={onRestartTour}
         />
 
         {/* Export Guest List */}
