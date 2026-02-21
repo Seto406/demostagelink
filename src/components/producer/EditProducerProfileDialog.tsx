@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Upload } from "lucide-react";
 
 interface TheaterGroup {
   id: string;
@@ -38,7 +38,12 @@ interface TheaterGroup {
 interface EditProducerProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  producer: any; // Using any for now to avoid importing the Producer interface from page
+  producer: {
+    group_name?: string | null;
+    description?: string | null;
+    group_logo_url?: string | null;
+    group_banner_url?: string | null;
+  } | null;
   theaterGroup: TheaterGroup | null;
   onSuccess: () => void;
 }
@@ -56,7 +61,9 @@ export const EditProducerProfileDialog = ({
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [initialValues, setInitialValues] = useState<{
     name: string;
@@ -115,6 +122,64 @@ export const EditProducerProfileDialog = ({
   const handleDiscard = () => {
     setShowDiscardAlert(false);
     onOpenChange(false);
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0 || !user) {
+        return;
+      }
+      setUploading(true);
+      const file = event.target.files[0];
+      const filePath = `${user.id}/logo.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('group-assets')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('group-assets')
+        .getPublicUrl(filePath);
+
+      // Add a timestamp to bust cache
+      const publicUrlWithTimestamp = `${publicUrl}?t=${new Date().getTime()}`;
+
+      setLogoUrl(publicUrlWithTimestamp);
+
+      // Update profiles immediately as per requirement
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ group_logo_url: publicUrlWithTimestamp })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Also update theater_groups if we have the ID
+      if (theaterGroup?.id) {
+          const { error: groupError } = await supabase
+            .from('theater_groups' as any)
+            .update({ logo_url: publicUrlWithTimestamp })
+            .eq('id', theaterGroup.id);
+
+          if (groupError) console.error("Error updating theater group logo:", groupError);
+      }
+
+      toast.success("Logo uploaded successfully!");
+
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast.error(error.message || "Failed to upload logo");
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -231,22 +296,51 @@ export const EditProducerProfileDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="logoUrl">Logo URL</Label>
-              <div className="flex gap-2">
-                  <Input
-                  id="logoUrl"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="bg-background border-secondary/30"
-                  />
-              </div>
-              {logoUrl && (
-                  <div className="mt-2 w-16 h-16 rounded-lg overflow-hidden border border-secondary/30 bg-muted flex items-center justify-center">
-                      <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              <Label htmlFor="logoUrl">Logo</Label>
+              <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-4">
+                      {logoUrl ? (
+                          <div className="w-20 h-20 rounded-full overflow-hidden border border-secondary/30 bg-muted flex-shrink-0">
+                              <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                          </div>
+                      ) : (
+                          <div className="w-20 h-20 rounded-full border border-secondary/30 bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground text-xs text-center p-2">
+                              No Logo
+                          </div>
+                      )}
+                      <div className="flex-1">
+                          <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              ref={fileInputRef}
+                              onChange={handleLogoUpload}
+                          />
+                          <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploading}
+                              className="w-full sm:w-auto"
+                          >
+                              {uploading ? (
+                                  <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Uploading...
+                                  </>
+                              ) : (
+                                  <>
+                                      <Upload className="w-4 h-4 mr-2" />
+                                      Upload Logo
+                                  </>
+                              )}
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-2">
+                              Recommended: Circular PNG, 400x400px.
+                          </p>
+                      </div>
                   </div>
-              )}
-              <p className="text-xs text-muted-foreground">Enter a direct link to your logo image.</p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -271,7 +365,7 @@ export const EditProducerProfileDialog = ({
             <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || uploading}>
               {saving ? (
                   <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
