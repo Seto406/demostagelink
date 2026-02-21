@@ -230,7 +230,7 @@ const ProducerProfile = () => {
               actorId: user.id,
               type: 'follow',
               title: 'New Follower',
-              message: `${profile?.username || 'Someone'} started following your group.`,
+              message: `${profile?.group_name || profile?.username || 'Someone'} started following your group.`,
             });
         }
     }
@@ -285,7 +285,7 @@ const ProducerProfile = () => {
         actorId: user.id,
         type: 'membership_application',
         title: 'New Member Application',
-        message: `${profile.username || 'Someone'} wants to join your group.`,
+        message: `${profile.group_name || profile.username || 'Someone'} wants to join your group.`,
         link: `/dashboard`
       });
 

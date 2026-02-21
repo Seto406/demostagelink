@@ -377,7 +377,7 @@ const Directory = () => {
         actorId: user.id,
         type: 'membership_application',
         title: 'New Member Application',
-        message: `${profile?.username || 'Someone'} wants to join your group.`,
+        message: `${profile?.group_name || profile?.username || 'Someone'} wants to join your group.`,
         link: `/dashboard/members`
       });
 
