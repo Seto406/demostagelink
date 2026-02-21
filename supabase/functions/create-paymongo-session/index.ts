@@ -33,7 +33,7 @@ serve(async (req) => {
     }
 
     // 2. Parse Request Body
-    const { amount, description, redirect_url, metadata } = await req.json();
+    const { amount, description, redirect_url, cancel_url, metadata } = await req.json();
 
     if (!amount) {
       throw new Error("Amount is required");
@@ -63,7 +63,7 @@ serve(async (req) => {
 
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
     const successUrl = redirect_url || "https://www.stagelink.show/payment/success";
-    const cancelUrl = "https://www.stagelink.show/payment/cancel"; // or receive from client
+    const cancelUrl = cancel_url || "https://www.stagelink.show/payment/cancel";
 
     const payload = {
       data: {

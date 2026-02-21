@@ -80,8 +80,9 @@ serve(async (req) => {
     const payment = payments[0];
 
     if (payment.status === "paid") {
+      const type = payment.description?.startsWith("Ticket") ? "ticket" : "subscription";
       return new Response(
-        JSON.stringify({ status: "paid", message: "Payment successful" }),
+        JSON.stringify({ status: "paid", message: "Payment successful", type }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -115,20 +116,8 @@ serve(async (req) => {
     }
 
     const session = paymongoData.data;
-    // status can be 'active' (unpaid) or 'expired' or 'paid'?
-    // Usually checkout session has `payments` array.
-    // If payment_intent status is 'succeeded'.
-    // API ref: Get Checkout Session. response.data.attributes.payments
 
     // Simplification: Check if payments array has a successful payment or status indicates success.
-    // However, looking at PayMongo docs, checkout session has `payment_intent` which has status `succeeded`.
-    // Or simpler: verify if `payments` list is not empty and has status `paid`.
-
-    // Let's check session.attributes.payment_intent.
-    // Actually, simple check:
-    const paymentStatus = session.attributes.payment_intent?.attributes?.status;
-    // Wait, payment_intent is expanded? Usually id.
-    // Let's rely on `payments` attribute.
     const paymentsList = session.attributes.payments || [];
     const successfulPayment = paymentsList.find((p: PayMongoPayment) => p.attributes.status === "paid");
 
@@ -199,7 +188,7 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ status: "paid", message: "Payment successful" }),
+        JSON.stringify({ status: "paid", message: "Payment successful", type: paymentType }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,

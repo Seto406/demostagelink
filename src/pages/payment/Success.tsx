@@ -13,6 +13,7 @@ const PaymentSuccess = () => {
   const { addXp } = useGamification();
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
+  const [paymentType, setPaymentType] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -23,7 +24,14 @@ const PaymentSuccess = () => {
 
         if (data.status === "paid") {
           setStatus("success");
-          setMessage("Payment successful! Your subscription is now active.");
+          setPaymentType(data.type);
+
+          if (data.type === "ticket") {
+             setMessage("You're all set! Your ticket has been confirmed.");
+          } else {
+             setMessage("Payment successful! Your subscription is now active.");
+          }
+
           // Award XP for payment
           try {
             await addXp(100);
@@ -31,8 +39,9 @@ const PaymentSuccess = () => {
             console.error("Failed to award XP:", xpError);
             // Non-blocking error
           }
-          // Invalidate subscription query to refresh status
+          // Invalidate queries to refresh status
           queryClient.invalidateQueries({ queryKey: ["subscription"] });
+          queryClient.invalidateQueries({ queryKey: ["tickets"] });
         } else if (data.status === "pending") {
           setStatus("processing");
           setMessage(data.message || "Payment is still processing. Please wait a moment.");
@@ -66,11 +75,20 @@ const PaymentSuccess = () => {
             <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <h2 className="text-2xl font-serif font-bold text-foreground">Payment Successful!</h2>
+            <h2 className="text-2xl font-serif font-bold text-foreground">
+                {paymentType === "ticket" ? "Seat Secured!" : "Payment Successful!"}
+            </h2>
             <p className="text-muted-foreground">{message}</p>
-            <Button onClick={() => navigate("/settings")} className="w-full">
-              Return to Settings
-            </Button>
+
+            {paymentType === "ticket" ? (
+                <Button onClick={() => navigate("/profile")} className="w-full">
+                  View Digital Pass
+                </Button>
+            ) : (
+                <Button onClick={() => navigate("/settings")} className="w-full">
+                  Return to Settings
+                </Button>
+            )}
           </>
         )}
 
