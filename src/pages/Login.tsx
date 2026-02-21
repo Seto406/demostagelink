@@ -54,7 +54,7 @@ const Login = () => {
           className="flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Home
+          Back to Landing Page
         </Link>
       </div>
 
