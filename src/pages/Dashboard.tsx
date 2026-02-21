@@ -563,17 +563,38 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
-                        {selectedGroup?.founded_year && (
+                        {selectedGroup?.founded_year ? (
                             <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
                                 <span>Est. {selectedGroup.founded_year}</span>
                             </div>
+                        ) : (
+                            <div className="flex items-center gap-1 opacity-50">
+                                <Calendar className="w-4 h-4" />
+                                <span>Year not set</span>
+                            </div>
                         )}
-                        {selectedGroup?.address && (
+
+                        {selectedGroup?.address ? (
                             <div className="flex items-center gap-1">
                                 <MapPin className="w-4 h-4" />
                                 <span>{selectedGroup.address}</span>
                             </div>
+                        ) : (
+                            <div className="flex items-center gap-1 opacity-50">
+                                <MapPin className="w-4 h-4" />
+                                <span>Location not set</span>
+                            </div>
+                        )}
+
+                        {(!selectedGroup?.founded_year || !selectedGroup?.address) && (
+                            <Button
+                                variant="link"
+                                className="h-auto p-0 text-xs text-primary underline-offset-4"
+                                onClick={() => setIsEditProfileOpen(true)}
+                            >
+                                Complete Profile
+                            </Button>
                         )}
                     </div>
 
