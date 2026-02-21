@@ -40,6 +40,12 @@ interface CastMember {
   role: string;
 }
 
+const METRO_MANILA_CITIES = [
+  "Manila", "Quezon City", "Caloocan", "Las Piñas", "Makati", "Malabon",
+  "Mandaluyong", "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay",
+  "Pasig", "San Juan", "Taguig", "Valenzuela", "Pateros"
+].sort();
+
 export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -56,8 +62,14 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
   const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
   const [genre, setGenre] = useState<string[]>([]);
   const [director, setDirector] = useState("");
-  const [duration, setDuration] = useState("");
-  const [tags, setTags] = useState("");
+
+  // Refactored Duration State
+  const [durationValue, setDurationValue] = useState("");
+  const [durationUnit, setDurationUnit] = useState("Hours");
+
+  // Refactored Tags State
+  const [tags, setTags] = useState<string[]>([]);
+
   const [cast, setCast] = useState<CastMember[]>([]);
   const [productionStatus, setProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
 
@@ -69,6 +81,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
   const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     if (showToEdit) {
       setTitle(showToEdit.title || "");
@@ -81,6 +94,43 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       setPrice(showToEdit.price ? String(showToEdit.price) : "");
       setProductionStatus(showToEdit.production_status || "ongoing");
       setPosterPreview(showToEdit.poster_url || null);
+
+      // Parse Duration
+      if (showToEdit.duration) {
+        const match = showToEdit.duration.match(/^(\d+(?:\.\d+)?)\s*(Hours?|Minutes?)$/i);
+        if (match) {
+          setDurationValue(match[1]);
+          const unit = match[2].toLowerCase();
+          if (unit.startsWith("minute")) setDurationUnit("Minutes");
+          else setDurationUnit("Hours");
+        } else {
+           // Fallback for unparseable strings: try to extract number, default to Hours
+           const val = parseFloat(showToEdit.duration);
+           if (!isNaN(val)) {
+             setDurationValue(String(val));
+             setDurationUnit("Hours");
+           }
+        }
+      } else {
+        setDurationValue("");
+        setDurationUnit("Hours");
+      }
+
+      // Handle tags (array or string fallback)
+      if (Array.isArray(showToEdit.tags)) {
+        setTags(showToEdit.tags);
+      } else if (typeof showToEdit.tags === 'string') {
+        // Fallback if legacy data is string
+        setTags(showToEdit.tags.split(',').map((t: string) => t.trim()).filter(Boolean));
+      } else {
+        setTags([]);
+      }
+
+      setGenre(showToEdit.genre ? showToEdit.genre.split(',').map((g: string) => g.trim()) : []);
+      setDirector(showToEdit.director || "");
+      setPaymentInstructions(showToEdit.seo_metadata?.payment_instructions || "");
+      setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
+
     } else {
       resetForm();
     }
@@ -99,8 +149,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
     setCollectBalanceOnsite(true);
     setGenre([]);
     setDirector("");
-    setDuration("");
-    setTags("");
+    setDurationValue("");
+    setDurationUnit("Hours");
+    setTags([]);
     setCast([]);
     setTempCastName("");
     setTempCastRole("");
@@ -218,6 +269,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
         posterUrl = publicUrl;
       }
 
+    const duration = durationValue ? `${durationValue} ${durationUnit}` : null;
+
     const payload = {
       title,
       description: description || null,
@@ -233,8 +286,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       collect_balance_onsite: collectBalanceOnsite,
       genre: genre.length > 0 ? genre.join(", ") : null,
       director: director || null,
-      duration: duration || null,
-      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : null,
+      duration,
+      tags: tags.length > 0 ? tags : null,
       cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
       seo_metadata: paymentInstructions ? { payment_instructions: paymentInstructions } : null,
     };
@@ -317,7 +370,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your show..."
                 className="bg-background border-secondary/30"
+                maxLength={2000}
               />
+              <div className="text-xs text-right text-muted-foreground">
+                {description.length} / 2000
+              </div>
             </div>
 
             <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-secondary/20">
@@ -340,13 +397,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                     <SelectTrigger className="bg-background border-secondary/30">
                       <SelectValue placeholder="Select city" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border-secondary/30">
-                      <SelectItem value="Mandaluyong">Mandaluyong</SelectItem>
-                      <SelectItem value="Taguig">Taguig</SelectItem>
-                      <SelectItem value="Manila">Manila</SelectItem>
-                      <SelectItem value="Quezon City">Quezon City</SelectItem>
-                      <SelectItem value="Makati">Makati</SelectItem>
-                      {/* Add more cities if needed */}
+                    <SelectContent className="bg-popover border-secondary/30 max-h-60">
+                      {METRO_MANILA_CITIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -371,7 +425,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                 onChange={(e) => setPaymentInstructions(e.target.value)}
                 placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'GCash QR at venue')"
                 className="bg-background border-secondary/30"
+                maxLength={500}
               />
+              <div className="text-xs text-right text-muted-foreground">
+                {paymentInstructions.length} / 500
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -483,14 +541,26 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration</Label>
-                <Input
-                  id="duration"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g. 2 hours"
-                  className="bg-background border-secondary/30"
-                />
+                <Label>Duration</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    value={durationValue}
+                    onChange={(e) => setDurationValue(e.target.value)}
+                    placeholder="Value"
+                    className="bg-background border-secondary/30 flex-1"
+                    min="0"
+                  />
+                  <Select value={durationUnit} onValueChange={setDurationUnit}>
+                    <SelectTrigger className="w-[120px] bg-background border-secondary/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Hours">Hours</SelectItem>
+                      <SelectItem value="Minutes">Minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -580,18 +650,18 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags">Tags (SEO)</Label>
-              <Input
-                id="tags"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="Comma-separated tags"
-                className="bg-background border-secondary/30"
+              <Label>Tags (SEO)</Label>
+              <TagInput
+                tags={tags}
+                setTags={setTags}
+                placeholder="Add tags..."
+                className="bg-background"
               />
             </div>
 
             <div className="space-y-2">
               <Label>Show Poster</Label>
+              <p className="text-xs text-muted-foreground mb-2">Portrait orientation (2:3 aspect ratio) recommended. Max size 5MB.</p>
               {posterPreview ? (
                 <div className="relative w-48 aspect-[2/3] rounded-lg overflow-hidden border border-secondary/30 bg-secondary/10">
                   <img src={posterPreview} alt="Poster" className="w-full h-full object-cover" />
