@@ -887,7 +887,7 @@ const ShowList = ({ items, emptyText, onEdit }: { items: any[], emptyText: strin
                                  <div className="text-destructive">
                                      <span className="font-semibold">Rejection Reason:</span>
                                      <p className="mt-1 text-xs opacity-90">
-                                         Your show submission was rejected. Please ensure all details comply with our content guidelines. Contact support if you believe this is a mistake.
+                                         {show.admin_feedback || show.rejection_reason || "Your show submission was rejected. Please ensure all details comply with our content guidelines. Contact support if you believe this is a mistake."}
                                      </p>
                                  </div>
                              </div>
