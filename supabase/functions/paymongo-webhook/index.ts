@@ -6,8 +6,163 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, paymongo-signature",
 };
 
+// Declare EdgeRuntime for TypeScript
+declare const EdgeRuntime: { waitUntil: (promise: Promise<any>) => void };
+
 function hexToUint8Array(hexString: string): Uint8Array {
   return new Uint8Array(hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
+}
+
+async function processWebhook(
+  checkoutId: string,
+  metadata: any,
+  paymongoPaymentId: string | undefined,
+  supabaseAdmin: any
+) {
+  try {
+    console.log(`[Background] Processing paid webhook for checkout ${checkoutId}`);
+
+    // 6. Idempotency Check: Check if a ticket already exists for this payment.
+    const { data: existingPaymentWithTicket, error: lookupError } = await supabaseAdmin
+        .from("payments")
+        .select("id, status, tickets(id)")
+        .eq("paymongo_checkout_id", checkoutId)
+        .maybeSingle();
+
+    if (lookupError) {
+        console.error("[Background] Error looking up payment:", lookupError);
+        return;
+    }
+
+    // Check if tickets array is populated
+    const existingTickets = existingPaymentWithTicket?.tickets;
+    if (existingTickets && Array.isArray(existingTickets) && existingTickets.length > 0) {
+         console.log("[Background] Ticket already issued. Skipping.");
+         return;
+    }
+
+    const showId = metadata.show_id;
+    const authUserId = metadata.user_id; // Auth ID
+
+    if (!showId || !authUserId) {
+        console.error("[Background] Missing metadata for ticket creation. Cannot proceed.");
+        return;
+    }
+
+    // 7. Atomic-ish Update: Update Payment Status FIRST
+    const updatePayload: any = {
+        status: "paid",
+        updated_at: new Date().toISOString()
+    };
+
+    if (paymongoPaymentId) {
+        updatePayload.paymongo_payment_id = paymongoPaymentId;
+    }
+
+    const { data: payment, error: paymentError } = await supabaseAdmin
+      .from("payments")
+      .update(updatePayload)
+      .eq("paymongo_checkout_id", checkoutId)
+      .select()
+      .single();
+
+    if (paymentError || !payment) {
+      console.error("[Background] Payment update failed or record not found:", paymentError);
+      return;
+    }
+
+    // 8. Look up Profile ID from Auth ID
+    console.log(`[Background] Looking up profile for Auth ID: ${authUserId}`);
+    const { data: profile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("user_id", authUserId)
+        .single();
+
+    if (profileError || !profile) {
+        console.error("[Background] Profile not found for user:", authUserId);
+        return;
+    }
+    console.log(`[Background] Found Profile ID: ${profile.id}`);
+
+    // 9. Create Ticket
+    console.log(`[Background] Creating ticket for Profile ID ${profile.id}, Show ID ${showId}`);
+    const { error: ticketError } = await supabaseAdmin
+        .from("tickets")
+        .insert({
+            user_id: profile.id, // Using Profile ID
+            show_id: showId,
+            status: "confirmed",
+            payment_id: payment.id,
+        });
+
+    if (ticketError) {
+        console.error("[Background] Ticket creation failed:", ticketError);
+        return;
+    }
+
+    console.log("[Background] Ticket created successfully.");
+
+    // 10. Notify Producer
+    try {
+        // Fetch Show Details (Producer ID and Title)
+        const { data: show, error: showError } = await supabaseAdmin
+            .from("shows")
+            .select("title, producer_id")
+            .eq("id", showId)
+            .single();
+
+        if (showError || !show) {
+             console.error("[Background] Failed to fetch show details for notification:", showError);
+        } else {
+             const producerId = show.producer_id;
+             const showTitle = show.title;
+
+             // Create Notification
+             const { error: notifError } = await supabaseAdmin
+                .from("notifications")
+                .insert({
+                    user_id: producerId,
+                    actor_id: profile.id, // Buyer
+                    type: "ticket_purchase",
+                    title: "New Reservation!",
+                    message: `A seat has been secured for ${showTitle}.`,
+                    link: "/dashboard",
+                    read: false
+                });
+
+             if (notifError) {
+                 console.error("[Background] Failed to create producer notification:", notifError);
+             } else {
+                 console.log(`[Background] Notification sent to producer ${producerId}`);
+             }
+
+             // Create Notification for Buyer
+             const { error: buyerNotifError } = await supabaseAdmin
+                .from("notifications")
+                .insert({
+                    user_id: profile.id, // Buyer
+                    actor_id: producerId, // Producer
+                    type: "ticket_purchase",
+                    title: "Seat Secured!",
+                    message: `Your pass for ${showTitle} is now in your profile.`,
+                    link: "/profile",
+                    read: false
+                });
+
+             if (buyerNotifError) {
+                 console.error("[Background] Failed to create buyer notification:", buyerNotifError);
+             } else {
+                 console.log(`[Background] Notification sent to buyer ${profile.id}`);
+             }
+        }
+
+    } catch (notifErr) {
+        console.error("[Background] Error in notification block:", notifErr);
+    }
+  } catch (err) {
+    console.error("[Background] Unexpected error in background process:", err);
+  }
 }
 
 serve(async (req) => {
@@ -97,175 +252,20 @@ serve(async (req) => {
     // Extract PayMongo Payment ID
     const paymongoPaymentId = sessionAttributes.payments?.[0]?.id;
 
-    console.log(`Processing paid webhook for checkout ${checkoutId}`);
-    console.log(`Metadata:`, metadata);
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // 6. Idempotency Check: Check if a ticket already exists for this payment.
-    // Query payments and join tickets.
-    const { data: existingPaymentWithTicket, error: lookupError } = await supabaseAdmin
-        .from("payments")
-        .select("id, status, tickets(id)")
-        .eq("paymongo_checkout_id", checkoutId)
-        .maybeSingle();
+    // Use EdgeRuntime.waitUntil to prevent timeout
+    const processingPromise = processWebhook(checkoutId, metadata, paymongoPaymentId, supabaseAdmin);
 
-    if (lookupError) {
-        console.error("Error looking up payment:", lookupError);
-        throw new Error("Database lookup failed");
-    }
-
-    // Check if tickets array is populated
-    const existingTickets = existingPaymentWithTicket?.tickets;
-    if (existingTickets && Array.isArray(existingTickets) && existingTickets.length > 0) {
-         console.log("Ticket already issued. Skipping.");
-         return new Response(JSON.stringify({ message: "Ticket already issued" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-    }
-
-    // If payment status is 'paid' but NO ticket, we proceed to ensure ticket is created.
-    // (This handles the case where payment update succeeded but ticket insert failed previously)
-
-    const showId = metadata.show_id;
-    const authUserId = metadata.user_id; // Auth ID
-
-    if (!showId || !authUserId) {
-        console.error("Missing metadata for ticket creation. Cannot proceed.");
-        return new Response(JSON.stringify({ error: "Missing metadata for ticket creation" }), {
-            status: 200, // Do not retry if data is missing
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-    }
-
-    // 7. Atomic-ish Update: Update Payment Status FIRST
-    const updatePayload: any = {
-        status: "paid",
-        updated_at: new Date().toISOString()
-    };
-
-    if (paymongoPaymentId) {
-        updatePayload.paymongo_payment_id = paymongoPaymentId;
-    }
-
-    const { data: payment, error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .update(updatePayload)
-      .eq("paymongo_checkout_id", checkoutId)
-      .select()
-      .single();
-
-    if (paymentError || !payment) {
-      console.error("Payment update failed or record not found:", paymentError);
-      // Return 500 to trigger retry (maybe transient DB error)
-      return new Response(JSON.stringify({ message: "Payment update failed" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
-    // 8. Look up Profile ID from Auth ID
-    console.log(`Looking up profile for Auth ID: ${authUserId}`);
-    const { data: profile, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("user_id", authUserId)
-        .single();
-
-    if (profileError || !profile) {
-        console.error("Profile not found for user:", authUserId);
-        // This is critical logic failure (user doesn't exist?), so maybe 200 to stop retry?
-        // Or 500 if transient? Assuming profile MUST exist.
-        return new Response(JSON.stringify({ error: "Profile not found" }), {
-            status: 200, // Stop retry
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-    }
-    console.log(`Found Profile ID: ${profile.id}`);
-
-    // 9. Create Ticket
-    console.log(`Creating ticket for Profile ID ${profile.id}, Show ID ${showId}`);
-    const { error: ticketError } = await supabaseAdmin
-        .from("tickets")
-        .insert({
-            user_id: profile.id, // Using Profile ID
-            show_id: showId,
-            status: "confirmed",
-            payment_id: payment.id,
-        });
-
-    if (ticketError) {
-        console.error("Ticket creation failed:", ticketError);
-        // Return 500 to trigger retry. Next retry will hit Idempotency Check (no tickets) -> Update Payment (success) -> Create Ticket.
-        return new Response(JSON.stringify({ error: "Ticket creation failed" }), {
-            status: 500, // Retry
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-    }
-
-    console.log("Ticket created successfully.");
-
-    // 10. Notify Producer
-    try {
-        // Fetch Show Details (Producer ID and Title)
-        const { data: show, error: showError } = await supabaseAdmin
-            .from("shows")
-            .select("title, producer_id")
-            .eq("id", showId)
-            .single();
-
-        if (showError || !show) {
-             console.error("Failed to fetch show details for notification:", showError);
-             // Do not fail the webhook, just log.
-        } else {
-             const producerId = show.producer_id;
-             const showTitle = show.title;
-
-             // Create Notification
-             const { error: notifError } = await supabaseAdmin
-                .from("notifications")
-                .insert({
-                    user_id: producerId,
-                    actor_id: profile.id, // Buyer
-                    type: "ticket_purchase",
-                    title: "New Reservation!",
-                    message: `A seat has been secured for ${showTitle}.`,
-                    link: "/dashboard",
-                    read: false
-                });
-
-             if (notifError) {
-                 console.error("Failed to create producer notification:", notifError);
-             } else {
-                 console.log(`Notification sent to producer ${producerId}`);
-             }
-
-             // Create Notification for Buyer
-             const { error: buyerNotifError } = await supabaseAdmin
-                .from("notifications")
-                .insert({
-                    user_id: profile.id, // Buyer
-                    actor_id: producerId, // Producer
-                    type: "ticket_purchase",
-                    title: "Seat Secured!",
-                    message: `Your pass for ${showTitle} is now in your profile.`,
-                    link: "/profile",
-                    read: false
-                });
-
-             if (buyerNotifError) {
-                 console.error("Failed to create buyer notification:", buyerNotifError);
-             } else {
-                 console.log(`Notification sent to buyer ${profile.id}`);
-             }
-        }
-
-    } catch (notifErr) {
-        console.error("Error in notification block:", notifErr);
+    if (typeof EdgeRuntime !== "undefined") {
+      EdgeRuntime.waitUntil(processingPromise);
+    } else {
+      // Fallback for local testing: await it so we can see logs/errors,
+      // even though it mimics the "slow" behavior locally.
+      await processingPromise;
     }
 
     return new Response(JSON.stringify({ status: "success" }), {

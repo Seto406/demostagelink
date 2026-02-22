@@ -33,6 +33,9 @@ serve(async (req) => {
     const amountInCents = Math.round(Number(amount) * 100);
     console.log(`Creating session for user ${user_id}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
 
+    // Determine Base URL
+    const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://www.stagelink.show";
+
     // Payload for PayMongo
     const payload = {
       data: {
@@ -46,10 +49,12 @@ serve(async (req) => {
               quantity: 1,
             },
           ],
-          payment_method_types: ["card", "gcash", "paymaya", "grab_pay"],
+          payment_method_types: ["qrph", "gcash", "paymaya"],
           send_email_receipt: true,
           show_description: true,
           show_line_items: true,
+          success_url: `${frontendUrl}/payment/success`,
+          cancel_url: `${frontendUrl}/payment/cancel`,
           metadata: {
             show_id,
             user_id, // Auth ID passed directly
@@ -79,9 +84,6 @@ serve(async (req) => {
     const checkoutId = checkoutSession.id;
 
     // Create Payment Record
-    // user_id passed in body is expected to be Auth ID.
-    // Based on migration 20260223000001_fix_payments_fk.sql, payments.user_id references profiles(user_id) which is Auth ID.
-    // payments.amount is stored in centavos.
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
