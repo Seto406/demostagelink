@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink } from "lucide-react";
 import {
@@ -69,6 +70,11 @@ type ApplicantProfile = {
   role?: string;
 };
 
+type Show = Database["public"]["Tables"]["shows"]["Row"] & {
+  admin_feedback?: string | null;
+  rejection_reason?: string | null;
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
@@ -82,10 +88,11 @@ const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
-  const [showToEdit, setShowToEdit] = useState<any>(null);
+  const [showToEdit, setShowToEdit] = useState<Show | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // New State
-  const [shows, setShows] = useState<any[]>([]);
+  const [shows, setShows] = useState<Show[]>([]);
   const [activeTab, setActiveTab] = useState("approved");
   const analyticsRef = useRef<HTMLDivElement>(null);
   const membersRef = useRef<HTMLDivElement>(null);
@@ -144,7 +151,7 @@ const Dashboard = () => {
     };
 
     fetchManagedGroups();
-  }, [profile]);
+  }, [profile, refreshKey]);
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -172,8 +179,8 @@ const Dashboard = () => {
 
       // Fetch Member Applications
       const { data: pendingApplications, error: applicationsError } = await supabase
-        .from("group_members" as never)
-        .select("id, user_id, group_id, created_at, status, role_in_group" as never)
+        .from("group_members")
+        .select("id, user_id, group_id, created_at, status, role_in_group")
         .eq("group_id", selectedGroupId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -186,7 +193,7 @@ const Dashboard = () => {
 
       // Fetch Collab Requests
       const { data: collabData, error: collabError } = await supabase
-        .from("collaboration_requests" as any)
+        .from("collaboration_requests")
         .select("*")
         .eq("receiver_id", selectedGroupId)
         .eq("status", "pending")
@@ -198,7 +205,7 @@ const Dashboard = () => {
 
       // Fetch Unlinked Members (Manual Entries)
       const { data: unlinkedData, error: unlinkedError } = await supabase
-        .from("group_members" as any)
+        .from("group_members")
         .select("id, status, role_in_group")
         .eq("group_id", selectedGroupId)
         .is("user_id", null);
@@ -256,8 +263,8 @@ const Dashboard = () => {
     setIsUpdating(applicationId);
 
     const { error: statusError } = await supabase
-      .from("group_members" as never)
-      .update({ status: "active" } as never)
+      .from("group_members")
+      .update({ status: "active" })
       .eq("id", applicationId)
       .eq("group_id", selectedGroupId);
 
@@ -338,8 +345,8 @@ const Dashboard = () => {
   const handleDecline = async (applicationId: string) => {
     setIsUpdating(applicationId);
     const { error } = await supabase
-      .from("group_members" as never)
-      .update({ status: "declined" } as never)
+      .from("group_members")
+      .update({ status: "declined" })
       .eq("id", applicationId);
 
     if (error) {
@@ -363,7 +370,7 @@ const Dashboard = () => {
 
     // 1. Insert into group_members
     const { error: insertError } = await supabase
-        .from("group_members" as any)
+        .from("group_members")
         .insert({
             user_id: request.sender_id,
             group_id: selectedGroupId,
@@ -382,7 +389,7 @@ const Dashboard = () => {
 
     // 2. Update request status
     const { error: updateError } = await supabase
-        .from("collaboration_requests" as any)
+        .from("collaboration_requests")
         .update({ status: 'accepted' })
         .eq('id', requestId);
 
@@ -421,7 +428,7 @@ const Dashboard = () => {
   const handleDeclineCollab = async (requestId: string) => {
     setIsUpdating(requestId);
     const { error } = await supabase
-      .from("collaboration_requests" as any)
+      .from("collaboration_requests")
       .update({ status: 'rejected' })
       .eq("id", requestId);
 
@@ -464,8 +471,8 @@ const Dashboard = () => {
 
     setIsUpdating(selectedUnlinkedMember.id);
     const { error } = await supabase
-      .from("group_members" as any)
-      .update({ user_id: foundUser.user_id } as any)
+      .from("group_members")
+      .update({ user_id: foundUser.user_id })
       .eq("id", selectedUnlinkedMember.id);
 
     if (error) {
@@ -520,7 +527,7 @@ const Dashboard = () => {
   const pendingShows = shows.filter(s => s.status === 'pending');
   const rejectedShows = shows.filter(s => s.status === 'rejected');
 
-  const handleEditShow = (show: any) => {
+  const handleEditShow = (show: Show) => {
     setShowToEdit(show);
     setShowProductionModal(true);
   };
@@ -530,11 +537,21 @@ const Dashboard = () => {
 
       {/* Zone 1: Brand Summary (Header) */}
       <div className="mb-8 grid gap-6 md:grid-cols-1">
-        <Card className="bg-card/70 backdrop-blur-md border-secondary/20">
-            <CardContent className="p-6">
+        <Card className="relative overflow-hidden border-secondary/20 bg-card/70 backdrop-blur-md">
+            {selectedGroup?.group_banner_url && (
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src={selectedGroup.group_banner_url}
+                        alt="Banner Background"
+                        className="w-full h-full object-cover opacity-20"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40" />
+                </div>
+            )}
+            <CardContent className="p-6 relative z-10">
             <div className="flex flex-col md:flex-row items-center gap-6">
                 {/* Logo */}
-                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-secondary/30 bg-muted flex-shrink-0">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-secondary/30 bg-muted flex-shrink-0 bg-background/50 backdrop-blur-sm">
                     {selectedGroup?.group_logo_url ? (
                         <img src={selectedGroup.group_logo_url} alt={selectedGroup.group_name || "Group Logo"} className="w-full h-full object-cover" />
                     ) : (
@@ -904,6 +921,7 @@ const Dashboard = () => {
         producer={selectedGroup}
         theaterGroup={null}
         onSuccess={() => {
+           setRefreshKey(prev => prev + 1);
            toast.success("Profile updated.");
         }}
       />
@@ -911,7 +929,7 @@ const Dashboard = () => {
   );
 };
 
-const ShowList = ({ items, emptyText, onEdit }: { items: any[], emptyText: string, onEdit: (show: any) => void }) => (
+const ShowList = ({ items, emptyText, onEdit }: { items: Show[], emptyText: string, onEdit: (show: Show) => void }) => (
     <div className="space-y-4">
         {items.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-secondary/30 rounded-xl">
