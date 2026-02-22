@@ -21,6 +21,4 @@ jobs:
         with:
           version: latest
 
-      - run: supabase functions deploy notify-new-show --project-ref $SUPABASE_PROJECT_ID
-      - run: supabase functions deploy create-paymongo-session --project-ref $SUPABASE_PROJECT_ID
-      - run: supabase functions deploy paymongo-webhook --project-ref $SUPABASE_PROJECT_ID
+      - run: supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
