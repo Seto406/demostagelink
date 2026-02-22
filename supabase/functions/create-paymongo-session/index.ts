@@ -15,7 +15,11 @@ serve(async (req) => {
     const { show_id, amount, user_id } = await req.json();
 
     if (!show_id || !amount || !user_id) {
-      throw new Error("Missing required fields: show_id, amount, or user_id");
+      console.error("Missing required fields:", { show_id, amount, user_id });
+      return new Response(JSON.stringify({ error: "Missing required fields: show_id, amount, or user_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabaseAdmin = createClient(
