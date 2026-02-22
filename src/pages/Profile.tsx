@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
 import { StarRating } from "@/components/ui/star-rating";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
+import { calculateReservationFee } from "@/lib/pricing";
 
 interface ProfileData {
   id: string;
@@ -46,6 +47,7 @@ interface TicketData {
     seo_metadata: Json | null;
     profiles: {
       group_name: string | null;
+      niche: string | null;
     } | null;
   } | null;
 }
@@ -137,11 +139,13 @@ const Profile = () => {
                 reservation_fee,
                 seo_metadata,
                 profiles (
-                  group_name
+                  group_name,
+                  niche
                 )
               )
             `)
-            .eq("user_id", profileId);
+            .eq("user_id", profileId)
+            .eq("status", "confirmed");
 
           if (!ticketsError && ticketsData) {
              // Cast to unknown first because 'shows' is array or object depending on relationship,
@@ -407,7 +411,7 @@ const Profile = () => {
                                 city={ticket.shows?.city}
                                 status={ticket.status || undefined}
                                 ticketPrice={ticket.shows?.price}
-                                reservationFee={ticket.shows?.reservation_fee}
+                                reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
                                 paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
                             />
                         ))}
