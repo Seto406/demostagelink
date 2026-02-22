@@ -59,7 +59,7 @@ serve(async (req) => {
     const { data: payments, error: paymentError } = await supabaseAdmin
       .from("payments")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1);
 

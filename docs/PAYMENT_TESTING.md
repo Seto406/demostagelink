@@ -20,3 +20,13 @@ StageLink uses PayMongo for payments. In the current test environment, you must 
 
 7. Click **Pay**.
 8. You should be redirected back to the `Payment Success` page and awarded 100 XP.
+
+## Webhook Configuration
+
+For payments to be fully processed (e.g., ticket generation, email notifications), the PayMongo Webhook must be configured in the PayMongo Dashboard.
+
+**Webhook URL:**
+`https://dssbduklgbmxezpjpuen.supabase.co/functions/v1/paymongo-webhook`
+
+**Events:**
+- `checkout_session.payment.paid`
