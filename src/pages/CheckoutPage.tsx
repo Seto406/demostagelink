@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -110,7 +110,7 @@ const CheckoutPage = () => {
       }
     } catch (error) {
       console.error("Purchase error:", error);
-      toast.error("Failed to initiate purchase. Please try again.");
+      toast.error("Unable to reach the payment gateway. Please try again in a moment.");
       setProcessing(false);
     }
   };
@@ -242,11 +242,14 @@ const CheckoutPage = () => {
                             disabled={processing}
                         >
                             {processing ? (
-                                "Processing..."
+                                <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    Processing...
+                                </>
                             ) : (
                                 <>
                                     <CreditCard className="w-5 h-5 mr-2" />
-                                    Pay {formatCurrency(reservationFee)} Now
+                                    Secure My Seat
                                 </>
                             )}
                         </Button>
