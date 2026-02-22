@@ -10,32 +10,67 @@ import {
 
 const faqs = [
   {
-    question: "What is StageLink?",
-    answer: "StageLink is a digital platform that connects audiences with local and university theater productions in Metro Manila. We help theater groups gain visibility and make it easier for audiences to discover live performances."
+    question: "What does StageLink do?",
+    answer: "StageLink is a visibility tool for theatre productions and groups. It helps producers share updates and showcase their shows while allowing audiences to discover productions, follow their favorite groups, and interact with shows all in one platform."
   },
   {
-    question: "Is StageLink free to use?",
-    answer: "Yes! Our Starter plan is completely free for theater groups. You can create a group profile, list your shows, and be included in our Theater Directory at no cost. We'll introduce premium features in the future for groups who want additional tools."
+    question: "How do I sign up?",
+    answer: (
+      <ul className="list-disc pl-5 space-y-2">
+        <li><strong>If you are a producer:</strong> Click "I’m a theater group" button. Fill out the signup form or use your Google account, then wait for email confirmation.</li>
+        <li><strong>If you are an audience member:</strong> Click "I’m an audience member" button. Fill out the signup form or sign in with Google, then wait for email confirmation.</li>
+        <li>Once signed up, you get a 1-month free Premium trial to explore full features.</li>
+      </ul>
+    )
   },
   {
-    question: "How do I register my theater group?",
-    answer: "Simply sign up for an account and request to become a Producer. You'll need to provide your group name and a link to your portfolio or social media. Once approved by our team, you can start adding your productions."
+    question: "Is StageLink free?",
+    answer: (
+      <ul className="list-disc pl-5 space-y-2">
+        <li><strong>Audiences:</strong> Free access to Premium features.</li>
+        <li><strong>Producers:</strong> 1-month free Premium trial included. After the trial, you can subscribe for P399/month to keep Premium features. If you don’t wish to subscribe, your account will continue as Basic (free tier) with limited visibility tools.</li>
+      </ul>
+    )
   },
   {
-    question: "How does the approval process work?",
-    answer: "All show submissions go through a quick review by our admin team to ensure quality listings. This helps maintain a curated directory that audiences can trust. Most submissions are reviewed within 24-48 hours."
+    question: "Who can use StageLink?",
+    answer: (
+      <ul className="list-disc pl-5 space-y-2">
+        <li><strong>Producers:</strong> Local, community, and university theatre groups within Metro Manila, with potential to expand reach in the future.</li>
+        <li><strong>Audiences:</strong> Theatre-goers, enthusiasts, and anyone interested in discovering productions and shows.</li>
+      </ul>
+    )
   },
   {
-    question: "Can audiences create accounts?",
-    answer: "Absolutely! Audiences can sign up to save their favorite shows, build a personal watchlist, and stay updated on upcoming productions from their favorite theater groups."
+    question: "How do producers benefit from StageLink?",
+    answer: (
+      <ul className="list-disc pl-5 space-y-2">
+        <li>Showcase productions and updates to followers and new audiences.</li>
+        <li>Gain automatic exposure through Suggested Groups, search filters, and engagement tools.</li>
+        <li>Track audience interest and interactions with your productions using analytics and dashboard insights.</li>
+        <li>Connect with other producers for collaborations.</li>
+      </ul>
+    )
   },
   {
-    question: "What areas does StageLink cover?",
-    answer: "We currently focus on Metro Manila, including cities like Manila, Quezon City, Makati, Pasay, Mandaluyong, and Taguig. We plan to expand to other regions in future phases."
+    question: "How do audiences benefit from StageLink?",
+    answer: (
+      <ul className="list-disc pl-5 space-y-2">
+        <li>Discover productions and theatre groups without needing prior knowledge.</li>
+        <li>Follow shows and groups, receive notifications, and add shows to personal calendars.</li>
+        <li>Comment, review, and rate productions to engage with the community.</li>
+        <li>Reserve seats or buy tickets directly for ticketed shows (Premium feature).</li>
+        <li>Explore local and university theatre groups in one place.</li>
+      </ul>
+    )
   },
   {
-    question: "How can I contact StageLink?",
-    answer: "You can reach us at connect.stagelink@gmail.com or follow us on Facebook, Instagram, TikTok, and X (Twitter) for updates and announcements."
+    question: "Can I use StageLink on mobile devices?",
+    answer: "Yes! StageLink is mobile-friendly and works on laptops, phones, and tablets."
+  },
+  {
+    question: "Does StageLink have an application?",
+    answer: "Currently, StageLink operates as a website, but in the future, it may evolve into a mobile app for both iOS and Android, allowing users to access all features on the go."
   }
 ];
 
