@@ -4,33 +4,61 @@ import crypto from 'crypto';
  * Verification Script for PayMongo Webhook
  *
  * This script simulates a PayMongo 'checkout_session.payment.paid' event sent to your local
- * Supabase Edge Function.
+ * Supabase Edge Function or the deployed cloud function.
  *
  * PREREQUISITES:
- * 1. You must have your Supabase Edge Functions running locally.
+ * 1. To test locally, you must have your Supabase Edge Functions running.
  *    Command: `supabase functions serve`
  *    Default URL: http://localhost:54321/functions/v1/paymongo-webhook
  *
- * 2. You must have a valid User ID (auth.users) and Show ID (public.shows) in your local database.
+ * 2. You must have a valid User ID (auth.users) and Show ID (public.shows) in your database.
  *    If these IDs are invalid, the webhook will return a 400 error (as per security logic).
  *
  * USAGE:
  * 1. Open a terminal.
  * 2. Run the script with Node.js:
- *    node scripts/test-paymongo-webhook.js
+ *    node scripts/test-paymongo-webhook.js [flags]
+ *
+ * FLAGS:
+ *   --live    Use the deployed cloud function URL (https://dssbduklgbmxezpjpuen.supabase.co/functions/v1/paymongo-webhook)
+ *   --help    Show this help message
  *
  * ENVIRONMENT VARIABLES (Optional):
  * You can override defaults using environment variables:
- * - WEBHOOK_URL: URL of the edge function (default: http://localhost:54321/functions/v1/paymongo-webhook)
- * - PAYMONGO_WEBHOOK_SECRET: The secret used to sign the payload (default: 'testing')
+ * - WEBHOOK_URL: URL of the edge function (overrides --live flag if both present, but typically one or the other)
+ * - PAYMONGO_WEBHOOK_SECRET: The secret used to sign the payload (default: 'testing' for local, MUST be set for live)
  * - MOCK_USER_ID: A valid UUID for an authenticated user.
  * - MOCK_SHOW_ID: A valid UUID for a show.
  *
- * Example:
- * MOCK_USER_ID="valid-uuid" MOCK_SHOW_ID="valid-uuid" node scripts/test-paymongo-webhook.js
+ * Example (Live Test):
+ * PAYMONGO_WEBHOOK_SECRET="your_live_secret" MOCK_USER_ID="valid-uuid" MOCK_SHOW_ID="valid-uuid" node scripts/test-paymongo-webhook.js --live
  */
 
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost:54321/functions/v1/paymongo-webhook';
+const args = process.argv.slice(2);
+if (args.includes('--help')) {
+  console.log(`
+Usage: node scripts/test-paymongo-webhook.js [options]
+
+Options:
+  --live       Target the live cloud environment.
+  --help       Show this help message.
+
+Environment Variables:
+  PAYMONGO_WEBHOOK_SECRET  (Required for live test)
+  MOCK_USER_ID             (Required for successful test)
+  MOCK_SHOW_ID             (Required for successful test)
+  WEBHOOK_URL              (Optional override)
+`);
+  process.exit(0);
+}
+
+const LIVE_URL = 'https://dssbduklgbmxezpjpuen.supabase.co/functions/v1/paymongo-webhook';
+const LOCAL_URL = 'http://localhost:54321/functions/v1/paymongo-webhook';
+
+const USE_LIVE = args.includes('--live');
+const DEFAULT_URL = USE_LIVE ? LIVE_URL : LOCAL_URL;
+
+const WEBHOOK_URL = process.env.WEBHOOK_URL || DEFAULT_URL;
 const PAYMONGO_WEBHOOK_SECRET = process.env.PAYMONGO_WEBHOOK_SECRET || 'testing';
 
 // Test Data
@@ -77,6 +105,12 @@ async function runTest() {
   console.log(`Mock Show ID: ${MOCK_SHOW_ID}`);
   console.log('Payload Preview:', JSON.stringify(payload, null, 2));
   console.log('-------------------------------------\n');
+
+  if (USE_LIVE && PAYMONGO_WEBHOOK_SECRET === 'testing') {
+      console.warn('⚠️  WARNING: You are targeting the LIVE environment but using the default secret "testing".');
+      console.warn('   This will likely fail signature verification (401).');
+      console.warn('   Set PAYMONGO_WEBHOOK_SECRET environment variable to your real webhook secret.\n');
+  }
 
   // Create Signature
   const timestamp = Math.floor(Date.now() / 1000);
