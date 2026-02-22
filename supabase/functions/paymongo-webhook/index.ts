@@ -95,6 +95,8 @@ serve(async (req) => {
     const session = payload.data.attributes.data.attributes;
     const metadata = session.metadata || {};
 
+    console.log("Metadata:", metadata);
+
     // Use Service Role to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -115,10 +117,16 @@ serve(async (req) => {
           });
     }
 
-    // 7. Update Payment Status
+    // 7. Update Payment Status & Save PayMongo Payment ID
+    const paymongoPaymentId = session.payments?.[0]?.id;
+
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from("payments")
-      .update({ status: "paid", updated_at: new Date() })
+      .update({
+        status: "paid",
+        updated_at: new Date(),
+        paymongo_payment_id: paymongoPaymentId
+      })
       .eq("paymongo_checkout_id", checkoutId)
       .select()
       .single();
@@ -127,7 +135,7 @@ serve(async (req) => {
       console.error("Payment not found or update failed for checkout ID:", checkoutId);
       return new Response(JSON.stringify({ message: "Payment record not found or update failed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 200, // Return 200 to prevent retry loops on bad data
       });
     }
 
@@ -135,46 +143,84 @@ serve(async (req) => {
     const authUserId = metadata.user_id;
 
     if (type === "ticket") {
-        // Task 1 specific logic:
-        // Metadata Extraction: show_id and user_id (auth user id)
-        // Profile Lookup: query profiles table where user_id = metadata.user_id
-
         const showId = metadata.show_id;
 
         if (!authUserId) {
             console.error("Missing user_id in metadata for ticket purchase");
-        } else {
-            const { data: profile, error: profileError } = await supabaseAdmin
-                .from("profiles")
-                .select("id")
-                .eq("user_id", authUserId)
-                .single();
+            return new Response(JSON.stringify({ error: "Missing user_id in metadata" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
 
-            if (profileError || !profile) {
-                console.error("Profile not found for auth user:", authUserId);
+        const { data: profile, error: profileError } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("user_id", authUserId)
+            .single();
+
+        if (profileError || !profile) {
+            console.error("Profile not found for auth user:", authUserId);
+            return new Response(JSON.stringify({ error: "Profile not found" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+        }
+
+        if (showId) {
+            // Insert Ticket
+            const { error: ticketError } = await supabaseAdmin
+            .from("tickets")
+            .insert({
+                user_id: profile.id, // Using the looked-up profile ID
+                show_id: showId,
+                status: "confirmed",
+                payment_id: payment.id,
+            });
+
+            if (ticketError) {
+                console.error("Ticket Insert Error:", ticketError);
             } else {
-                if (showId) {
-                  const { error: ticketError } = await supabaseAdmin
-                    .from("tickets")
-                    .insert({
-                      user_id: profile.id, // Using the looked-up profile ID
-                      show_id: showId,
-                      status: "confirmed",
-                      payment_id: payment.id,
-                    });
+                // Fetch Show details for notifications
+                const { data: show, error: showError } = await supabaseAdmin
+                    .from("shows")
+                    .select("title, producer_id")
+                    .eq("id", showId)
+                    .single();
 
-                  if (ticketError) {
-                    console.error("Ticket Insert Error:", ticketError);
-                  } else {
-                    // Trigger Email (fire and forget)
-                    supabaseAdmin.functions.invoke("send-ticket-confirmation", {
-                      body: { user_id: profile.id, show_id: showId },
+                if (show && !showError) {
+                    // Notify Producer
+                    if (show.producer_id) {
+                        await supabaseAdmin.from("notifications").insert({
+                            user_id: show.producer_id,
+                            type: "ticket_sale",
+                            title: "New Ticket Sold",
+                            message: `A new ticket was purchased for ${show.title}.`,
+                            link: `/dashboard/shows`
+                        });
+                    }
+
+                    // Notify Buyer
+                    await supabaseAdmin.from("notifications").insert({
+                        user_id: profile.id,
+                        type: "ticket_purchase",
+                        title: "Ticket Purchased",
+                        message: `You have successfully purchased a ticket for ${show.title}.`,
+                        link: `/shows/${showId}`
                     });
-                  }
-                } else {
-                    console.error("Missing show_id in metadata");
                 }
+
+                // Trigger Email (fire and forget)
+                supabaseAdmin.functions.invoke("send-ticket-confirmation", {
+                    body: { user_id: profile.id, show_id: showId },
+                });
             }
+        } else {
+            console.error("Missing show_id in metadata");
+            return new Response(JSON.stringify({ error: "Missing show_id" }), {
+                status: 400,
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
         }
     } else if (type === "subscription") {
        // Legacy/Other logic
