@@ -71,7 +71,7 @@ serve(async (req) => {
           line_items: [
             {
               currency: "PHP",
-              amount: Number(amount), // Ensure number
+              amount: Math.round(Number(amount)), // Ensure integer (cents)
               description: description || "Payment",
               name: "StageLink Payment",
               quantity: 1,
