@@ -97,6 +97,9 @@ serve(async (req) => {
     // Extract PayMongo Payment ID
     const paymongoPaymentId = sessionAttributes.payments?.[0]?.id;
 
+    console.log(`Processing paid webhook for checkout ${checkoutId}`);
+    console.log(`Metadata:`, metadata);
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -110,6 +113,7 @@ serve(async (req) => {
         .maybeSingle();
 
     if (existingPayment?.status === "paid") {
+         console.log("Payment already marked as paid. Skipping.");
          return new Response(JSON.stringify({ message: "Payment already processed" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
@@ -142,38 +146,41 @@ serve(async (req) => {
     }
 
     const showId = metadata.show_id;
-    const authUserId = metadata.user_id;
+    const authUserId = metadata.user_id; // Auth ID
 
     if (!showId || !authUserId) {
-        console.error("Missing metadata");
-        // We successfully updated payment but missing metadata prevents ticket creation.
-        // We return 200 to acknowledge webhook (payment is recorded paid), but log error.
+        console.error("Missing metadata for ticket creation. Cannot proceed.");
+        // Return 200 to acknowledge webhook (since payment is technically updated if found, though metadata missing is weird)
+        // But if payment was updated, we did our job partly. Ideally we want to fix the data.
         return new Response(JSON.stringify({ error: "Missing metadata for ticket creation" }), {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
 
-    // 8. Look up Profile ID
+    // 8. Look up Profile ID from Auth ID
+    console.log(`Looking up profile for Auth ID: ${authUserId}`);
     const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
         .select("id")
-        .eq("user_id", authUserId) // Looking up by Auth ID
+        .eq("user_id", authUserId)
         .single();
 
     if (profileError || !profile) {
         console.error("Profile not found for user:", authUserId);
         return new Response(JSON.stringify({ error: "Profile not found" }), {
-            status: 200, // Return 200 to stop retry, as profile missing is likely permanent
+            status: 200, // Stop retry
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
+    console.log(`Found Profile ID: ${profile.id}`);
 
     // 9. Create Ticket
+    console.log(`Creating ticket for Profile ID ${profile.id}, Show ID ${showId}`);
     const { error: ticketError } = await supabaseAdmin
         .from("tickets")
         .insert({
-            user_id: profile.id, // Profile ID
+            user_id: profile.id, // Using Profile ID
             show_id: showId,
             status: "confirmed",
             payment_id: payment.id,
@@ -182,10 +189,12 @@ serve(async (req) => {
     if (ticketError) {
         console.error("Ticket creation failed:", ticketError);
         return new Response(JSON.stringify({ error: "Ticket creation failed" }), {
-            status: 500, // Retry might fix transient DB issue
+            status: 500, // Retry
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
+
+    console.log("Ticket created successfully.");
 
     return new Response(JSON.stringify({ status: "success" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
