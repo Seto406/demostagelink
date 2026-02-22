@@ -118,6 +118,7 @@ serve(async (req) => {
     }
 
     // 7. Update Payment Status & Save PayMongo Payment ID
+    // Extract PayMongo Payment ID from the nested payments array
     const paymongoPaymentId = session.payments?.[0]?.id;
 
     const { data: payment, error: paymentError } = await supabaseAdmin
@@ -125,7 +126,7 @@ serve(async (req) => {
       .update({
         status: "paid",
         updated_at: new Date(),
-        paymongo_payment_id: paymongoPaymentId
+        paymongo_payment_id: paymongoPaymentId // Save the ID for reconciliation
       })
       .eq("paymongo_checkout_id", checkoutId)
       .select()
@@ -133,9 +134,11 @@ serve(async (req) => {
 
     if (paymentError || !payment) {
       console.error("Payment not found or update failed for checkout ID:", checkoutId);
+      // Return 200 to acknowledge webhook receipt even if our DB update fails (to stop retries),
+      // but log error for investigation.
       return new Response(JSON.stringify({ message: "Payment record not found or update failed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 to prevent retry loops on bad data
+        status: 200,
       });
     }
 
@@ -145,10 +148,11 @@ serve(async (req) => {
     if (type === "ticket") {
         const showId = metadata.show_id;
 
+        // Strict Profile Resolution
         if (!authUserId) {
             console.error("Missing user_id in metadata for ticket purchase");
             return new Response(JSON.stringify({ error: "Missing user_id in metadata" }), {
-              status: 400,
+              status: 400, // Explicit 400 as requested
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
         }
@@ -162,7 +166,7 @@ serve(async (req) => {
         if (profileError || !profile) {
             console.error("Profile not found for auth user:", authUserId);
             return new Response(JSON.stringify({ error: "Profile not found" }), {
-              status: 400,
+              status: 400, // Explicit 400 as requested
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
         }
@@ -191,9 +195,10 @@ serve(async (req) => {
                 if (show && !showError) {
                     // Notify Producer
                     if (show.producer_id) {
+                        // Assuming producer_id references a profile ID directly
                         await supabaseAdmin.from("notifications").insert({
                             user_id: show.producer_id,
-                            type: "ticket_sale",
+                            type: "ticket_sale", // Ensure this type is valid in DB constraint
                             title: "New Ticket Sold",
                             message: `A new ticket was purchased for ${show.title}.`,
                             link: `/dashboard/shows`
@@ -203,7 +208,7 @@ serve(async (req) => {
                     // Notify Buyer
                     await supabaseAdmin.from("notifications").insert({
                         user_id: profile.id,
-                        type: "ticket_purchase",
+                        type: "ticket_purchase", // Ensure this type is valid in DB constraint
                         title: "Ticket Purchased",
                         message: `You have successfully purchased a ticket for ${show.title}.`,
                         link: `/shows/${showId}`
