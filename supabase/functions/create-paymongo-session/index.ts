@@ -7,73 +7,38 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // 1. Authenticate User
-    const supabaseClient = createClient(
+    const { show_id, amount, user_id } = await req.json();
+
+    if (!show_id || !amount || !user_id) {
+      throw new Error("Missing required fields: show_id, amount, or user_id");
+    }
+
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
-
-    if (!user) {
-      throw new Error("Unauthorized");
-    }
-
-    // 2. Parse Request Body
-    const { amount, description, redirect_url, cancel_url, metadata } = await req.json();
-
-    if (!amount) {
-      throw new Error("Amount is required");
-    }
-
-    if (isNaN(Number(amount)) || Number(amount) <= 0) {
-      throw new Error("Amount must be a positive number");
-    }
-
-    if (description && typeof description !== "string") {
-      throw new Error("Description must be a string");
-    }
-
-    // 3. Create PayMongo Checkout Session
+    // Get Secret Key
     const secretKey = Deno.env.get("PAYMONGO_SECRET_KEY");
-    if (!secretKey) {
-      console.error("PAYMONGO_SECRET_KEY is missing");
-      throw new Error("Server configuration error");
-    }
-
-    // Verify key type for logging
-    if (secretKey.startsWith("sk_test_")) {
-      console.log("Using PayMongo Test Key - Safe for QA");
-    } else {
-      console.warn("Using PayMongo LIVE Key - Real money transaction!");
-    }
+    if (!secretKey) throw new Error("Missing PAYMONGO_SECRET_KEY");
 
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
-    const successUrl = redirect_url || "https://www.stagelink.show/payment/success";
-    const cancelUrl = cancel_url || "https://www.stagelink.show/payment/cancel";
 
+    // Payload for PayMongo
     const payload = {
       data: {
         attributes: {
           line_items: [
             {
               currency: "PHP",
-              amount: Math.round(Number(amount)), // Ensure integer (cents)
-              description: description || "Payment",
-              name: "StageLink Payment",
+              amount: Math.round(Number(amount)), // Amount in cents
+              description: "Ticket Purchase",
+              name: "Show Ticket",
               quantity: 1,
             },
           ],
@@ -81,15 +46,17 @@ serve(async (req) => {
           send_email_receipt: true,
           show_description: true,
           show_line_items: true,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-          description: description || "Payment",
-          metadata: metadata || {},
+          metadata: {
+            show_id,
+            user_id, // Auth ID
+            type: "ticket"
+          },
         },
       },
     };
 
-    const paymongoRes = await fetch("https://api.paymongo.com/v1/checkout_sessions", {
+    // Call PayMongo
+    const response = await fetch("https://api.paymongo.com/v1/checkout_sessions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -98,67 +65,41 @@ serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    const paymongoData = await paymongoRes.json();
-
-    if (paymongoData.errors) {
-      console.error("PayMongo Error:", paymongoData.errors);
-      throw new Error(paymongoData.errors[0]?.detail || "Failed to create payment session");
+    const data = await response.json();
+    if (data.errors) {
+      throw new Error(data.errors[0].detail);
     }
 
-    const checkoutSession = paymongoData.data;
+    const checkoutSession = data.data;
     const checkoutUrl = checkoutSession.attributes.checkout_url;
     const checkoutId = checkoutSession.id;
 
-    // 4. Record in Database (using Service Role to bypass RLS)
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // Fetch Profile ID
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error("Profile Fetch Error:", profileError);
-      throw new Error("Failed to find user profile");
-    }
-
+    // Create Payment Record
+    // user_id passed in body is expected to be Auth ID.
+    // Based on migration 20260223000001_fix_payments_fk.sql, payments.user_id references profiles(user_id) which is Auth ID.
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
-        user_id: profile.id,
+        user_id: user_id,
         paymongo_checkout_id: checkoutId,
-        amount: Number(amount),
+        amount: Number(amount), // Assuming input amount matches PayMongo expectation (cents)
         status: "pending",
-        description: description,
+        description: `Ticket for show ${show_id}`,
       });
 
     if (dbError) {
-      console.error("Database Insert Error:", dbError);
-      throw new Error("Failed to record payment");
+        console.error("Payment Insert Error", dbError);
+        throw new Error("Failed to initialize payment record: " + dbError.message);
     }
 
-    // 5. Return Checkout URL
-    return new Response(
-      JSON.stringify({ checkoutUrl }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify({ checkoutUrl }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (error) {
-    console.error("Function Error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      }
-    );
+     return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
