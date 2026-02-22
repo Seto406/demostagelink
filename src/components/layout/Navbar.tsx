@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -98,15 +99,22 @@ const Navbar = () => {
           <div className="flex h-full items-center justify-between">
             {/* Left Section: Mobile Hamburger + Desktop Logo */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <button
-                className="touch-target p-2 text-foreground md:hidden"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle menu"
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-menu"
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="touch-target p-2 text-foreground md:hidden"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle menu"
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls="mobile-menu"
+                  >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMobileMenuOpen ? "Close Menu" : "Open Menu"}</p>
+                </TooltipContent>
+              </Tooltip>
 
               <Link to={homePath} className="hidden md:flex items-center gap-2 sm:gap-3 group">
                 <img src={stageLinkLogo} alt="" className="h-8 w-auto sm:h-10" aria-hidden="true" />
@@ -150,36 +158,57 @@ const Navbar = () => {
             {/* Right Section: Actions + Desktop Hamburger */}
             <div className="flex items-center justify-end gap-1 sm:gap-2">
               {user && (
-                <Link to="/notifications" className="relative">
-                  <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
-                    <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/notifications" className="relative">
+                      <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
+                        <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
+                        {unreadCount > 0 && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notifications</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {user && (
-                <Link to="/profile">
-                  <Avatar className="h-9 w-9 border border-secondary/30">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt="Profile avatar" />
-                    <AvatarFallback className="bg-muted text-foreground">{profileInitial}</AvatarFallback>
-                  </Avatar>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/profile">
+                      <Avatar className="h-9 w-9 border border-secondary/30">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt="Profile avatar" />
+                        <AvatarFallback className="bg-muted text-foreground">{profileInitial}</AvatarFallback>
+                      </Avatar>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Your Profile</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
-              <button
-                className="touch-target p-2 text-foreground hidden md:block"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle menu"
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-menu"
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="touch-target p-2 text-foreground hidden md:block"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle menu"
+                    aria-expanded={isMobileMenuOpen}
+                    aria-controls="mobile-menu"
+                  >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMobileMenuOpen ? "Close Menu" : "Open Menu"}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>

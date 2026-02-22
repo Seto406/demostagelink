@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-25 - Dynamic Tooltip Content for Toggles
+**Learning:** Toggle buttons (like hamburger menus) require dynamic tooltip text to accurately reflect the action, unlike static links. Providing "Open" vs "Close" context improves clarity.
+**Action:** Use state variables in `TooltipContent` to switch labels based on component state (e.g., `isOpen ? "Close Menu" : "Open Menu"`).
