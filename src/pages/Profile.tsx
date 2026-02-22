@@ -13,6 +13,7 @@ import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
 import { StarRating } from "@/components/ui/star-rating";
+import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 
 interface ProfileData {
   id: string;
@@ -412,20 +413,16 @@ const Profile = () => {
                         ))}
                     </div>
                  ) : (
-                    <div className="text-center py-16 bg-gradient-to-br from-card/80 to-card/40 border border-secondary/20 rounded-2xl shadow-sm">
-                        <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <TicketIcon className="w-8 h-8 text-secondary" />
-                        </div>
-                        <h3 className="text-xl font-serif font-bold text-foreground mb-3">Your Ticket Wallet is Empty</h3>
-                        <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
-                            Discover your next theater experience and keep your passes here.
-                        </p>
+                    <PremiumEmptyState
+                      title="No passes yet"
+                      description="Explore shows to secure your seat!"
+                      icon={TicketIcon}
+                      action={
                         <Link to="/shows">
-                            <Button size="lg" className="font-medium px-8 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-shadow">
-                                Browse Shows
-                            </Button>
+                          <Button>Browse Shows</Button>
                         </Link>
-                    </div>
+                      }
+                    />
                  )}
                </TabsContent>
 
