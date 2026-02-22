@@ -29,6 +29,10 @@ serve(async (req) => {
 
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
 
+    // Convert amount to centavos (input is in Pesos)
+    const amountInCents = Math.round(Number(amount) * 100);
+    console.log(`Creating session for user ${user_id}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
+
     // Payload for PayMongo
     const payload = {
       data: {
@@ -36,7 +40,7 @@ serve(async (req) => {
           line_items: [
             {
               currency: "PHP",
-              amount: Math.round(Number(amount)), // Amount in cents
+              amount: amountInCents, // Amount in cents
               description: "Ticket Purchase",
               name: "Show Ticket",
               quantity: 1,
@@ -48,7 +52,7 @@ serve(async (req) => {
           show_line_items: true,
           metadata: {
             show_id,
-            user_id, // Auth ID
+            user_id, // Auth ID passed directly
             type: "ticket"
           },
         },
@@ -77,12 +81,13 @@ serve(async (req) => {
     // Create Payment Record
     // user_id passed in body is expected to be Auth ID.
     // Based on migration 20260223000001_fix_payments_fk.sql, payments.user_id references profiles(user_id) which is Auth ID.
+    // payments.amount is stored in centavos.
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
         user_id: user_id,
         paymongo_checkout_id: checkoutId,
-        amount: Number(amount), // Assuming input amount matches PayMongo expectation (cents)
+        amount: amountInCents,
         status: "pending",
         description: `Ticket for show ${show_id}`,
       });
@@ -97,8 +102,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
+     console.error("Error creating session:", error);
      return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
