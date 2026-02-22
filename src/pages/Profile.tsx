@@ -422,8 +422,8 @@ const Profile = () => {
                       description="Explore shows to secure your seat!"
                       icon={TicketIcon}
                       action={
-                        <Link to="/shows">
-                          <Button>Browse Shows</Button>
+                        <Link to="/directory">
+                          <Button>Find Shows</Button>
                         </Link>
                       }
                     />
