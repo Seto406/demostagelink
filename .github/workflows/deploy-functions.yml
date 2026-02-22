@@ -12,7 +12,7 @@ jobs:
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_PROJECT_ID: dssbduklgbmxezpjpuen
 
     steps:
       - uses: actions/checkout@v3
@@ -22,3 +22,5 @@ jobs:
           version: latest
 
       - run: supabase functions deploy notify-new-show --project-ref $SUPABASE_PROJECT_ID
+      - run: supabase functions deploy create-paymongo-session --project-ref $SUPABASE_PROJECT_ID
+      - run: supabase functions deploy paymongo-webhook --project-ref $SUPABASE_PROJECT_ID
