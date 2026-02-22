@@ -243,6 +243,25 @@ serve(async (req) => {
              } else {
                  console.log(`Notification sent to producer ${producerId}`);
              }
+
+             // Create Notification for Buyer
+             const { error: buyerNotifError } = await supabaseAdmin
+                .from("notifications")
+                .insert({
+                    user_id: profile.id, // Buyer
+                    actor_id: producerId, // Producer
+                    type: "ticket_purchase",
+                    title: "Seat Secured!",
+                    message: `Your pass for ${showTitle} is now in your profile.`,
+                    link: "/profile",
+                    read: false
+                });
+
+             if (buyerNotifError) {
+                 console.error("Failed to create buyer notification:", buyerNotifError);
+             } else {
+                 console.log(`Notification sent to buyer ${profile.id}`);
+             }
         }
 
     } catch (notifErr) {
