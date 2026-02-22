@@ -170,7 +170,7 @@ export const EditProducerProfileDialog = ({
           if (groupError) console.error("Error updating theater group logo:", groupError);
       }
 
-      toast.success("Logo uploaded successfully!");
+      toast.success("Brand identity updated! Your new logo is now live.");
 
     } catch (error) {
       console.error("Error uploading logo:", error);
@@ -228,7 +228,7 @@ export const EditProducerProfileDialog = ({
           if (groupError) console.error("Error updating theater group banner:", groupError);
       }
 
-      toast.success("Banner uploaded successfully!");
+      toast.success("Brand identity updated! Your new banner is now live.");
 
     } catch (error) {
       console.error("Error uploading banner:", error);
