@@ -95,7 +95,7 @@ const Profile = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      if (!profile) setLoading(true);
       let profileId = id;
 
       if (!profileId && currentUserProfile) {

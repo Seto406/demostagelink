@@ -120,7 +120,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchManagedGroups = async () => {
       if (!profile) return;
-      setIsLoading(true);
+      if (managedGroups.length === 0) setIsLoading(true);
 
       const { data: groups, error: groupsError } = await supabase
         .from("profiles")
