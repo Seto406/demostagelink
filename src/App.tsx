@@ -111,7 +111,7 @@ const AppRoutes = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
-          <Route path="/checkout/:showId" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+          <Route path="/checkout/:showId" element={<CheckoutPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
