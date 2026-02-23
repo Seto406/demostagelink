@@ -286,33 +286,6 @@ const Dashboard = () => {
       }
     }
 
-    const { data: userStatsRow, error: userStatsError } = await supabase
-      .from("user_stats" as never)
-      .select("xp" as never)
-      .eq("user_id", application.user_id as never)
-      .maybeSingle();
-
-    if (userStatsError) {
-      console.error("Error fetching user stats:", userStatsError);
-      toast.error("Member approved, but XP update failed.");
-      setIsUpdating(null);
-      return;
-    }
-
-    const currentXp = Number((userStatsRow as { xp?: number } | null)?.xp || 0);
-    const nextXp = currentXp + 50;
-    const nextLevel = Math.floor(nextXp / 100) + 1;
-
-    const { error: upsertStatsError } = await supabase
-      .from("user_stats" as never)
-      .upsert({ user_id: application.user_id, xp: nextXp, level: nextLevel } as never, { onConflict: "user_id" as never });
-
-    if (upsertStatsError) {
-      console.error("Error upserting user stats:", upsertStatsError);
-      toast.error("Member approved, but XP update failed.");
-      setIsUpdating(null);
-      return;
-    }
 
     const groupName = selectedGroup.group_name || "the group";
     const { error: notificationError } = await supabase
@@ -333,7 +306,7 @@ const Dashboard = () => {
     }
 
     setApplications((prev) => prev.filter((item) => item.id !== applicationId));
-    toast.success("Member approved and XP awarded.");
+    toast.success("Member approved.");
     setIsUpdating(null);
   };
 

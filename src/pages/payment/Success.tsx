@@ -5,7 +5,6 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
 import { XCircle, Clock, MapPin, Calendar, Ticket, Home, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGamification } from "@/hooks/useGamification";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 
@@ -22,7 +21,6 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const paymentRef = searchParams.get("ref");
   const queryClient = useQueryClient();
-  const { addXp } = useGamification();
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
   const [paymentType, setPaymentType] = useState<string | null>(null);
@@ -71,13 +69,6 @@ const PaymentSuccess = () => {
              setMessage("Payment successful! Your subscription is now active.");
           }
 
-          // Award XP for payment
-          try {
-            await addXp(100);
-          } catch (xpError) {
-            console.error("Failed to award XP:", xpError);
-            // Non-blocking error
-          }
           // Invalidate queries to refresh status
           queryClient.invalidateQueries({ queryKey: ["subscription"] });
           queryClient.invalidateQueries({ queryKey: ["tickets"] });
@@ -96,7 +87,7 @@ const PaymentSuccess = () => {
     };
 
     verifyPayment();
-  }, [queryClient, addXp, paymentRef]);
+  }, [queryClient, paymentRef]);
 
   const draw = {
     hidden: { pathLength: 0, opacity: 0 },

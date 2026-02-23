@@ -15,8 +15,6 @@ interface Profile {
   map_screenshot_url: string | null;
   created_at: string;
   username: string | null;
-  rank: string | null;
-  xp: number | null;
   avatar_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
