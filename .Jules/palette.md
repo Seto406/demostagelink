@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-15 - Standardizing Loading States
+**Learning:** Found that `Button` components often lack built-in loading states, leading to inconsistent implementations (e.g., changing text vs showing spinner).
+**Action:** Always check base UI components for `isLoading` props before implementing one-off loading logic in forms.
