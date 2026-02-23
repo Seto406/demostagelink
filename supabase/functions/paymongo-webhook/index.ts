@@ -15,11 +15,16 @@ function hexToUint8Array(hexString: string): Uint8Array {
 
 async function processWebhook(
   checkoutId: string,
-  metadata: any,
-  paymongoPaymentId: string | undefined,
+  sessionAttributes: any,
   supabaseAdmin: any
 ) {
   try {
+    const metadata = sessionAttributes.metadata || {};
+    const paymongoPaymentId = sessionAttributes.payments?.[0]?.id;
+    const billing = sessionAttributes.billing || {};
+    const customerEmail = billing.email;
+    const customerName = billing.name;
+
     console.log(`[Background] Processing paid webhook for checkout ${checkoutId}`);
 
     // 6. Idempotency Check: Check if a ticket already exists for this payment.
@@ -42,17 +47,19 @@ async function processWebhook(
     }
 
     const showId = metadata.show_id;
-    const authUserId = metadata.user_id; // Auth ID
+    const authUserId = metadata.user_id; // Auth ID (might be null/undefined for guests)
 
-    if (!showId || !authUserId) {
-        console.error("[Background] Missing metadata for ticket creation. Cannot proceed.");
+    if (!showId) {
+        console.error("[Background] Missing show_id for ticket creation. Cannot proceed.");
         return;
     }
 
     // 7. Atomic-ish Update: Update Payment Status FIRST
     const updatePayload: any = {
         status: "paid",
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        customer_email: customerEmail,
+        customer_name: customerName
     };
 
     if (paymongoPaymentId) {
@@ -71,30 +78,42 @@ async function processWebhook(
       return;
     }
 
-    // 8. Look up Profile ID from Auth ID
-    console.log(`[Background] Looking up profile for Auth ID: ${authUserId}`);
-    const { data: profile, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("user_id", authUserId)
-        .single();
+    let profileId: string | null = null;
 
-    if (profileError || !profile) {
-        console.error("[Background] Profile not found for user:", authUserId);
-        return;
+    // 8. Look up Profile ID from Auth ID (if present)
+    if (authUserId) {
+        console.log(`[Background] Looking up profile for Auth ID: ${authUserId}`);
+        const { data: profile, error: profileError } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("user_id", authUserId)
+            .maybeSingle();
+
+        if (profileError || !profile) {
+            console.error("[Background] Profile not found for user:", authUserId, ". Treating as guest ticket.");
+            // Fallback: profileId remains null
+        } else {
+            profileId = profile.id;
+            console.log(`[Background] Found Profile ID: ${profileId}`);
+        }
+    } else {
+        console.log("[Background] No user_id in metadata. Treating as guest ticket.");
     }
-    console.log(`[Background] Found Profile ID: ${profile.id}`);
 
     // 9. Create Ticket
-    console.log(`[Background] Creating ticket for Profile ID ${profile.id}, Show ID ${showId}`);
+    console.log(`[Background] Creating ticket for ${profileId ? 'Profile ID ' + profileId : 'Guest'}, Show ID ${showId}`);
+    const ticketPayload: any = {
+        show_id: showId,
+        status: "confirmed",
+        payment_id: payment.id,
+        user_id: profileId, // Can be null
+        customer_email: customerEmail,
+        customer_name: customerName
+    };
+
     const { error: ticketError } = await supabaseAdmin
         .from("tickets")
-        .insert({
-            user_id: profile.id, // Using Profile ID
-            show_id: showId,
-            status: "confirmed",
-            payment_id: payment.id,
-        });
+        .insert(ticketPayload);
 
     if (ticketError) {
         console.error("[Background] Ticket creation failed:", ticketError);
@@ -123,7 +142,7 @@ async function processWebhook(
                 .from("notifications")
                 .insert({
                     user_id: producerId,
-                    actor_id: profile.id, // Buyer
+                    actor_id: profileId, // Buyer (can be null)
                     type: "ticket_purchase",
                     title: "New Reservation!",
                     message: `A seat has been secured for ${showTitle}.`,
@@ -137,23 +156,25 @@ async function processWebhook(
                  console.log(`[Background] Notification sent to producer ${producerId}`);
              }
 
-             // Create Notification for Buyer
-             const { error: buyerNotifError } = await supabaseAdmin
-                .from("notifications")
-                .insert({
-                    user_id: profile.id, // Buyer
-                    actor_id: producerId, // Producer
-                    type: "ticket_purchase",
-                    title: "Seat Secured!",
-                    message: `Your pass for ${showTitle} is now in your profile.`,
-                    link: "/profile",
-                    read: false
-                });
+             // Create Notification for Buyer (ONLY IF REGISTERED USER)
+             if (profileId) {
+                 const { error: buyerNotifError } = await supabaseAdmin
+                    .from("notifications")
+                    .insert({
+                        user_id: profileId, // Buyer
+                        actor_id: producerId, // Producer
+                        type: "ticket_purchase",
+                        title: "Seat Secured!",
+                        message: `Your pass for ${showTitle} is now in your profile.`,
+                        link: "/profile",
+                        read: false
+                    });
 
-             if (buyerNotifError) {
-                 console.error("[Background] Failed to create buyer notification:", buyerNotifError);
-             } else {
-                 console.log(`[Background] Notification sent to buyer ${profile.id}`);
+                 if (buyerNotifError) {
+                     console.error("[Background] Failed to create buyer notification:", buyerNotifError);
+                 } else {
+                     console.log(`[Background] Notification sent to buyer ${profileId}`);
+                 }
              }
         }
 
@@ -247,10 +268,6 @@ serve(async (req) => {
 
     const checkoutId = payload.data.attributes.data.id;
     const sessionAttributes = payload.data.attributes.data.attributes;
-    const metadata = sessionAttributes.metadata || {};
-
-    // Extract PayMongo Payment ID
-    const paymongoPaymentId = sessionAttributes.payments?.[0]?.id;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -258,7 +275,7 @@ serve(async (req) => {
     );
 
     // Use EdgeRuntime.waitUntil to prevent timeout
-    const processingPromise = processWebhook(checkoutId, metadata, paymongoPaymentId, supabaseAdmin);
+    const processingPromise = processWebhook(checkoutId, sessionAttributes, supabaseAdmin);
 
     if (typeof EdgeRuntime !== "undefined") {
       EdgeRuntime.waitUntil(processingPromise);
