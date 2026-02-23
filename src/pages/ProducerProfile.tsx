@@ -881,6 +881,7 @@ const ProducerProfile = () => {
           open={showProductionModal}
           onOpenChange={setShowProductionModal}
           showToEdit={showToEdit}
+          onSuccess={handleEditSuccess}
         />
       )}
     </div>

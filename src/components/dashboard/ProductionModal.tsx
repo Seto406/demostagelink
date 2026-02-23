@@ -35,6 +35,7 @@ import { format } from "date-fns";
 interface ProductionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 interface CastMember {
@@ -58,7 +59,7 @@ const DAYS_OF_WEEK = [
   { label: "Su", value: "Sundays" },
 ];
 
-export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionModalProps & { showToEdit?: any }) {
+export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
 
@@ -414,6 +415,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
         title: "Submission Successful",
         description: "Your show has been submitted for review.",
       });
+
+      if (onSuccess) {
+        onSuccess();
+      }
 
       resetForm();
       onOpenChange(false);
