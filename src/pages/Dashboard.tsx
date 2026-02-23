@@ -1,6 +1,6 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -103,11 +103,6 @@ const Dashboard = () => {
   const [searchUsername, setSearchUsername] = useState("");
   const [foundUser, setFoundUser] = useState<ApplicantProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-
-  // Hard Lock: Immediate redirect for non-producers to prevent flicker
-  if (!loading && profile && profile.role !== 'producer') {
-    return <Navigate to="/feed" replace />;
-  }
 
   const canManage = useMemo(() => managedGroups.length > 0, [managedGroups.length]);
 
@@ -375,9 +370,7 @@ const Dashboard = () => {
             user_id: request.sender_id,
             group_id: selectedGroupId,
             role_in_group: 'producer',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            status: 'active'
         });
 
     if (insertError) {
@@ -517,6 +510,11 @@ const Dashboard = () => {
     setShowToEdit(null);
     setShowProductionModal(true);
   };
+
+  // Hard Lock: Immediate redirect for non-producers to prevent flicker
+  if (!loading && profile && profile.role !== 'producer') {
+    return <Navigate to="/feed" replace />;
+  }
 
   if (loading || isLoading) {
     return <BrandedLoader size="lg" text="Loading management dashboard..." />;
