@@ -547,9 +547,10 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
               <Button
                 type="submit"
                 className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base transition-all active:scale-[0.98]"
-                disabled={isSubmitting || (authMode === "signup" && (!passwordsMatch || !acceptsConsent))}
+                disabled={authMode === "signup" && (!passwordsMatch || !acceptsConsent)}
+                isLoading={isSubmitting}
               >
-                {isSubmitting ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
+                {authMode === "login" ? "Log In" : "Create Account"}
               </Button>
 
               <div className="relative my-6 flex items-center gap-4">
