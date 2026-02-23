@@ -1,5 +1,15 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, QrCode } from "lucide-react";
+import { Calendar, MapPin, QrCode, Download, Image, FileText } from "lucide-react";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DigitalPassProps {
   id: string; // show id
@@ -29,11 +39,84 @@ export const DigitalPass = ({
   reservationFee,
   paymentInstructions,
 }: DigitalPassProps) => {
+  const passRef = useRef<HTMLDivElement>(null);
   const paidAmount = reservationFee ?? 25;
   const balance = (ticketPrice && ticketPrice > 0) ? Math.max(0, ticketPrice - paidAmount) : 0;
+  // Use a unique but consistent ID for the file name.
+  // Using ticketId is good, but let's sanitize or shorten if needed.
+  // Assuming ticketId is a UUID, it's fine.
+
+  const handleDownloadImage = async () => {
+    if (passRef.current) {
+      try {
+        const canvas = await html2canvas(passRef.current, {
+            useCORS: true,
+            scale: 2, // Higher resolution
+            backgroundColor: null, // Transparent background if possible, though card has bg
+        });
+        const link = document.createElement("a");
+        link.download = `pass-${title.substring(0, 20).replace(/\s+/g, '-')}-${ticketId.slice(0, 8)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } catch (error) {
+        console.error("Error downloading image:", error);
+      }
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (passRef.current) {
+      try {
+        const canvas = await html2canvas(passRef.current, {
+            useCORS: true,
+            scale: 2
+        });
+        const imgData = canvas.toDataURL('image/png');
+
+        // Use pt units.
+        // Create PDF with dimensions matching the canvas (scaled down to screen size or keep high res)
+        // Actually, let's make the PDF size match the image size in points.
+        const imgWidth = canvas.width / 2; // dividing by scale to get approximate original logic size
+        const imgHeight = canvas.height / 2;
+
+        const pdf = new jsPDF({
+          orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height] // Use full canvas resolution size for the PDF page
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`pass-${title.substring(0, 20).replace(/\s+/g, '-')}-${ticketId.slice(0, 8)}.pdf`);
+      } catch (error) {
+        console.error("Error downloading PDF:", error);
+      }
+    }
+  };
+
   return (
     <div className="group relative w-full max-w-md mx-auto">
-      <div className="relative bg-card border border-secondary/30 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:border-secondary/50">
+      {/* Download Button */}
+      <div className="absolute top-2 right-2 z-30 print:hidden">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm border border-secondary/20 hover:bg-background/80 shadow-sm">
+                    <Download className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownloadImage} className="cursor-pointer">
+                    <Image className="mr-2 h-4 w-4" />
+                    <span>Download Image</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Download PDF</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+         </DropdownMenu>
+      </div>
+
+      <div ref={passRef} className="relative bg-card border border-secondary/30 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:border-secondary/50">
 
         {/* Ticket Header / Main Info */}
         <div className="flex flex-col sm:flex-row">
@@ -43,6 +126,7 @@ export const DigitalPass = ({
                     <img
                         src={posterUrl}
                         alt={title}
+                        crossOrigin="anonymous" // Try to request CORS
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 ) : (
