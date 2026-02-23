@@ -148,12 +148,12 @@ serve(async (req) => {
       throw new Error("Server configuration error");
     }
 
-    const authHeader = `Basic ${btoa(secretKey + ":")}`;
+    const paymongoAuthHeader = `Basic ${btoa(secretKey + ":")}`;
 
     const paymongoRes = await fetch(`https://api.paymongo.com/v1/checkout_sessions/${checkoutId}`, {
       method: "GET",
       headers: {
-        Authorization: authHeader,
+        Authorization: paymongoAuthHeader,
         "Content-Type": "application/json",
       },
     });
