@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,17 @@ type ApplicantProfile = {
   role?: string;
 };
 
+type Follower = {
+  id: string;
+  follower_id: string;
+  created_at: string;
+  profile?: {
+    id: string;
+    username: string | null;
+    avatar_url: string | null;
+  };
+};
+
 type Show = Database["public"]["Tables"]["shows"]["Row"] & {
   admin_feedback?: string | null;
   rejection_reason?: string | null;
@@ -94,6 +105,7 @@ const Dashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // New State
+  const [followers, setFollowers] = useState<Follower[]>([]);
   const [shows, setShows] = useState<Show[]>([]);
   const [activeTab, setActiveTab] = useState("approved");
   const analyticsRef = useRef<HTMLDivElement>(null);
@@ -213,6 +225,35 @@ const Dashboard = () => {
       if (unlinkedError) {
         console.error("Error loading unlinked members:", unlinkedError);
       }
+
+      // Fetch Followers
+      const { data: followsData, error: followsError } = await supabase
+        .from("follows" as any)
+        .select("id, follower_id, created_at")
+        .eq("following_id", selectedGroupId)
+        .order("created_at", { ascending: false });
+
+      if (followsError) {
+        console.error("Error fetching followers:", followsError);
+      }
+
+      const followerIds = followsData?.map((f: any) => f.follower_id) || [];
+
+      let followersWithProfiles: Follower[] = [];
+      if (followerIds.length > 0) {
+          const { data: followerProfiles } = await supabase
+            .from("profiles")
+            .select("id, user_id, username, avatar_url")
+            .in("user_id", followerIds);
+
+          followersWithProfiles = (followsData || []).map((f: any) => ({
+            id: f.id,
+            follower_id: f.follower_id,
+            created_at: f.created_at,
+            profile: followerProfiles?.find((p) => p.user_id === f.follower_id)
+          }));
+      }
+      setFollowers(followersWithProfiles);
 
       const apps = ((pendingApplications || []) as MembershipApplication[]).filter((app) => Boolean(app.user_id));
       setApplications(apps);
@@ -783,6 +824,58 @@ const Dashboard = () => {
                   </div>
                 );
               })
+            )}
+          </div>
+
+          {/* Followers Section */}
+          <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+            <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+                 <h2 className="font-serif font-bold text-lg text-muted-foreground flex items-center gap-2">
+                   <Users className="w-5 h-5" />
+                   Followers ({followers.length})
+                 </h2>
+            </div>
+            {followers.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground">
+                No followers yet. Share your profile to get started!
+              </div>
+            ) : (
+              followers.map((follower, index) => (
+                  <div
+                    key={follower.id}
+                    className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                      index < followers.length - 1 ? "border-b border-secondary/20" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-secondary/30">
+                        <AvatarImage src={follower.profile?.avatar_url || undefined} alt={follower.profile?.username || "Follower"} />
+                        <AvatarFallback>{(follower.profile?.username?.[0] || "F").toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-foreground">{follower.profile?.username || "Unknown User"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Followed {format(new Date(follower.created_at), "MMM d, yyyy")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                       {follower.profile?.id && (
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10"
+                           asChild
+                         >
+                           <Link to={`/profile/${follower.profile.id}`}>
+                             View Profile
+                           </Link>
+                         </Button>
+                       )}
+                    </div>
+                  </div>
+              ))
             )}
           </div>
 
