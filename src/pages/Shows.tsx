@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, forwardRef } from "react";
+import { useState, useEffect, useCallback, forwardRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -53,6 +53,13 @@ interface Show {
   title: string;
   description: string | null;
   date: string | null;
+  seo_metadata: {
+    schedule?: {
+      startDate: string;
+      endDate: string;
+      selectedDays: string[];
+    };
+  } | null;
   venue: string | null;
   city: string | null;
   niche: "local" | "university" | null;
@@ -145,21 +152,29 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               style={{ transform: "translateZ(30px)" }}
             >
               {/* Date Badge */}
-              {show.date && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="flex flex-col items-center bg-card/90 backdrop-blur-sm rounded-md shadow-lg overflow-hidden border border-secondary/20 min-w-[50px]"
-                >
-                  <div className="bg-secondary text-secondary-foreground text-[10px] uppercase font-bold px-1.5 py-0.5 w-full text-center tracking-wider">
-                    {new Date(show.date).toLocaleDateString("en-US", { month: "short" })}
-                  </div>
-                  <div className="text-foreground text-xl font-serif font-bold px-2 py-1 leading-none">
-                    {new Date(show.date).getDate()}
-                  </div>
-                </motion.div>
-              )}
+              {(() => {
+                const badgeDate = show.seo_metadata?.schedule?.startDate
+                  ? new Date(show.seo_metadata.schedule.startDate)
+                  : (show.date && !isNaN(new Date(show.date).getTime()) ? new Date(show.date) : null);
+
+                if (!badgeDate) return null;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex flex-col items-center bg-card/90 backdrop-blur-sm rounded-md shadow-lg overflow-hidden border border-secondary/20 min-w-[50px]"
+                  >
+                    <div className="bg-secondary text-secondary-foreground text-[10px] uppercase font-bold px-1.5 py-0.5 w-full text-center tracking-wider">
+                      {badgeDate.toLocaleDateString("en-US", { month: "short" })}
+                    </div>
+                    <div className="text-foreground text-xl font-serif font-bold px-2 py-1 leading-none">
+                      {badgeDate.getDate()}
+                    </div>
+                  </motion.div>
+                );
+              })()}
 
               {/* Niche Badge */}
               {(show.niche || show.genre) && (
@@ -238,14 +253,24 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                     {show.venue}
                   </span>
                 )}
-                {show.date && (
+                {(show.date || show.seo_metadata?.schedule) && (
                    <span className="flex items-center gap-1 text-xs font-medium text-white/90">
                      <Calendar className="w-3 h-3 text-secondary" />
-                     {new Date(show.date).toLocaleDateString("en-US", {
-                       month: "long",
-                       day: "numeric",
-                       year: "numeric"
-                     })}
+                     {(() => {
+                       if (show.seo_metadata?.schedule?.startDate) {
+                         const start = new Date(show.seo_metadata.schedule.startDate);
+                         const end = new Date(show.seo_metadata.schedule.endDate);
+                         return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+                       }
+                       if (show.date && !isNaN(new Date(show.date).getTime())) {
+                         return new Date(show.date).toLocaleDateString("en-US", {
+                           month: "long",
+                           day: "numeric",
+                           year: "numeric"
+                         });
+                       }
+                       return show.date;
+                     })()}
                    </span>
                 )}
               </div>
@@ -345,10 +370,20 @@ const ShowListItem = ({ show }: { show: Show }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1 mb-2">
-           {show.date && (
+           {(show.date || show.seo_metadata?.schedule) && (
               <span className="flex items-center gap-1">
                  <Calendar className="w-3 h-3 text-secondary/70" />
-                 {new Date(show.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                 {(() => {
+                   if (show.seo_metadata?.schedule?.startDate) {
+                     const start = new Date(show.seo_metadata.schedule.startDate);
+                     const end = new Date(show.seo_metadata.schedule.endDate);
+                     return `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+                   }
+                   if (show.date && !isNaN(new Date(show.date).getTime())) {
+                     return new Date(show.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                   }
+                   return show.date;
+                 })()}
               </span>
            )}
            {show.venue && (
@@ -392,7 +427,8 @@ const Shows = () => {
   const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
   const [selectedGenre, setSelectedGenre] = useState(searchParams.get("genre") || "All");
   const [dateFilter, setDateFilter] = useState(searchParams.get("date") || "");
-  const [shows, setShows] = useState<Show[]>([]);
+  const [allShows, setAllShows] = useState<Show[]>([]);
+  const [displayedShows, setDisplayedShows] = useState<Show[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -458,97 +494,158 @@ const Shows = () => {
     fetchFilterMetadata();
   }, []);
 
-  // Fetch function for shows
-  const fetchShows = useCallback(async (targetPage = 0, tab = activeTab) => {
-    // Treat targetPage 0 as a reset
+  // Fetch function for shows (Load all data once)
+  const fetchShows = useCallback(async (targetPage = 0) => {
+    // Treat targetPage 0 as a reset (reload all data)
     if (targetPage === 0) {
       setLoading(true);
-      setHasMore(true);
-    } else {
-      setLoadingMore(true);
-    }
+      setPage(0);
 
-    const from = targetPage * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-
-    let query = supabase
-      .from("shows")
-      .select(`
-        id,
-        title,
-        description,
-        date,
-        venue,
-        city,
-        niche,
-        genre,
-        ticket_link,
-        poster_url,
-        production_status,
-        producer_id:profiles!producer_id (
+      const { data, error } = await supabase
+        .from("shows")
+        .select(`
           id,
-          group_name,
-          avatar_url
-        )
-      `)
-      .eq("status", "approved")
-      .range(from, to);
+          title,
+          description,
+          date,
+          seo_metadata,
+          venue,
+          city,
+          niche,
+          genre,
+          ticket_link,
+          poster_url,
+          production_status,
+          producer_id:profiles!producer_id (
+            id,
+            group_name,
+            avatar_url
+          )
+        `)
+        .eq("status", "approved");
 
-    if (selectedCity !== "All") {
-      query = query.eq("city", selectedCity);
-    }
-
-    if (selectedGenre !== "All") {
-      const nicheValue = selectedGenre === "Local/Community" ? "local" : "university";
-      query = query.eq("niche", nicheValue);
-    }
-
-    if (dateFilter) {
-      query = query.gte("date", dateFilter);
-    }
-
-    // Apply tab logic
-    const today = new Date().toISOString().split('T')[0];
-    if (tab === 'upcoming') {
-      // Upcoming shows: Future dates (including today)
-      query = query.gte('date', today).order("date", { ascending: true });
-    } else if (tab === 'ongoing') {
-      // Ongoing shows: Started (date <= today) AND marked as ongoing
-      // This allows producers to keep a show "active" even after the premiere date
-      query = query.eq('production_status', 'ongoing').lte('date', today).order("date", { ascending: false });
-    } else {
-      // Past shows: Marked as completed
-      query = query.eq('production_status', 'completed').order("date", { ascending: false });
-    }
-
-    if (debouncedSearchQuery) {
-      query = query.or(`title.ilike.%${debouncedSearchQuery}%,description.ilike.%${debouncedSearchQuery}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Error fetching shows:", error);
-    } else {
-      const fetchedShows = data as Show[];
-
-      if (targetPage === 0) {
-        setShows(fetchedShows);
+      if (error) {
+        console.error("Error fetching shows:", error);
+        setAllShows([]);
       } else {
-        setShows((prev) => [...prev, ...fetchedShows]);
+        setAllShows(data as unknown as Show[]);
       }
-
-      setPage(targetPage);
-      setHasMore(fetchedShows.length === PAGE_SIZE);
+      setLoading(false);
+    } else {
+      // Just update page for client-side pagination
+      setLoadingMore(true);
+      // Simulate network delay for better UX
+      setTimeout(() => {
+        setPage(targetPage);
+        setLoadingMore(false);
+      }, 300);
     }
-    setLoading(false);
-    setLoadingMore(false);
-  }, [selectedCity, selectedGenre, dateFilter, debouncedSearchQuery, activeTab]);
+  }, []);
 
-  // Fetch approved shows (reset when filters change)
+  // Fetch approved shows on mount
   useEffect(() => {
     fetchShows(0);
   }, [fetchShows]);
+
+  // Client-side filtering and sorting
+  const filteredAllShows = useMemo(() => {
+    let result = [...allShows];
+
+    // 1. Text Search
+    if (debouncedSearchQuery) {
+      const lower = debouncedSearchQuery.toLowerCase();
+      result = result.filter((s) =>
+        s.title.toLowerCase().includes(lower) ||
+        (s.description && s.description.toLowerCase().includes(lower))
+      );
+    }
+
+    // 2. City Filter
+    if (selectedCity !== "All") {
+      result = result.filter((s) => s.city === selectedCity);
+    }
+
+    // 3. Genre/Niche Filter
+    if (selectedGenre !== "All") {
+      if (selectedGenre === "Local/Community") {
+        result = result.filter((s) => s.niche === "local");
+      } else if (selectedGenre === "University Theater") {
+        result = result.filter((s) => s.niche === "university");
+      } else {
+        result = result.filter((s) => s.genre === selectedGenre);
+      }
+    }
+
+    // 4. Tab Logic & Date Filter
+    const today = new Date().toISOString().split("T")[0];
+
+    result = result.filter((show) => {
+      let startDate = "";
+      let endDate = "";
+
+      if (show.seo_metadata?.schedule?.startDate) {
+        startDate = show.seo_metadata.schedule.startDate;
+        endDate = show.seo_metadata.schedule.endDate;
+      } else if (show.date && /^\d{4}-\d{2}-\d{2}$/.test(show.date)) {
+        startDate = show.date;
+        endDate = show.date;
+      }
+
+      // If we have a date filter (From Date), apply it
+      if (dateFilter) {
+          // Show should end on or after the filter date
+          const effectiveEndDate = endDate || startDate;
+          // If no dates, exclude from date filtering unless we want to keep legacy?
+          // Let's exclude for safety if strict date filter is on.
+          if (!effectiveEndDate || effectiveEndDate < dateFilter) return false;
+      }
+
+      if (!startDate) {
+        // Fallback for legacy shows without proper dates
+        // If status is explicitly ongoing, show in ongoing
+        if (activeTab === "ongoing" && show.production_status === "ongoing") return true;
+        if (activeTab === "past" && show.production_status === "completed") return true;
+        return false;
+      }
+
+      if (activeTab === "upcoming") return startDate > today;
+      if (activeTab === "ongoing") {
+        // Show in Ongoing if date range covers today
+        if (startDate <= today && endDate >= today) return true;
+        // OR if explicitly marked as ongoing and has started (even if end date passed)
+        if (show.production_status === "ongoing" && startDate <= today) return true;
+        return false;
+      }
+      if (activeTab === "past") {
+        // Don't show in Past if it's considered Ongoing
+        if (show.production_status === "ongoing" && startDate <= today) return false;
+        return endDate < today;
+      }
+      return false;
+    });
+
+    // Sorting
+    result.sort((a, b) => {
+      const getSortDate = (s: Show) =>
+        s.seo_metadata?.schedule?.startDate || s.date || "";
+      const da = getSortDate(a);
+      const db = getSortDate(b);
+
+      // Upcoming: ascending (soonest first)
+      if (activeTab === "upcoming") return da.localeCompare(db);
+      // Others: descending (newest/latest first)
+      return db.localeCompare(da);
+    });
+
+    return result;
+  }, [allShows, debouncedSearchQuery, selectedCity, selectedGenre, dateFilter, activeTab]);
+
+  // Update displayedShows based on pagination
+  useEffect(() => {
+    const count = (page + 1) * PAGE_SIZE;
+    setDisplayedShows(filteredAllShows.slice(0, count));
+    setHasMore(count < filteredAllShows.length);
+  }, [filteredAllShows, page]);
 
   // Handle Tab Change
   const handleTabChange = (value: string) => {
@@ -561,8 +658,8 @@ const Shows = () => {
     await fetchShows(0);
   };
 
-  // We use the raw shows array now as filtering is done server-side
-  const filteredShows = shows;
+  // We use the raw shows array now as filtering is done client-side
+  const filteredShows = displayedShows;
 
   const clearFilters = () => {
     setSelectedCity("All");
