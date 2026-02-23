@@ -195,22 +195,27 @@ serve(async (req) => {
              ticketData = existingTicket;
         } else if (showId) {
           // Insert Ticket
-          // Determine User ID (might be null for guest)
-          // payment.user_id should be correct if it was set during create-session
-          // But create-session sets it to null for guest.
+          // Determine Auth ID (might be null for guest)
+          const authUserId = payment.user_id || metadata.user_id || (user ? user.id : null);
+          let profileIdForTicket = null;
 
-          // We can also try to use the user found from Auth header if present,
-          // but better to stick to what's in the payment record or metadata.
-          const userIdForTicket = payment.user_id || metadata.user_id || (user ? user.id : null);
+          // Resolve Auth ID to Profile ID
+          if (authUserId) {
+             const { data: profile } = await supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .eq("user_id", authUserId)
+                .maybeSingle();
 
-          // Verify profile exists if user_id is not null?
-          // The database constraint might fail if user_id points to non-existent profile.
-          // But if it's null, it's fine.
+             if (profile) {
+                profileIdForTicket = profile.id;
+             }
+          }
 
           const { data: newTicket, error: ticketError } = await supabaseAdmin
             .from("tickets")
             .insert({
-              user_id: userIdForTicket,
+              user_id: profileIdForTicket, // Correct Profile ID (or null for guest)
               show_id: showId,
               status: "confirmed",
               payment_id: payment.id,
@@ -227,9 +232,9 @@ serve(async (req) => {
              // Trigger Email
              // Only if user exists? Or guest email?
              // send-ticket-confirmation function might depend on user_id.
-             if (userIdForTicket) {
+             if (authUserId) {
                 await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
-                  body: { user_id: userIdForTicket, show_id: showId },
+                  body: { user_id: authUserId, show_id: showId },
                 });
              }
           }
