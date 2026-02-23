@@ -94,9 +94,11 @@ const CheckoutPage = () => {
 
     setProcessing(true);
     try {
+      const reservationFee = show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.producer_id?.niche ?? null) : 25);
+
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
         body: {
-          amount: show.price * 100, // centavos
+          amount: Math.round(reservationFee * 100), // centavos
           description: `Ticket for ${show.title}`,
           metadata: {
              type: "ticket",
