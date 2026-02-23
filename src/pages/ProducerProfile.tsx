@@ -321,7 +321,7 @@ const ProducerProfile = () => {
         .from('collaboration_requests' as any)
         .select('id')
         .eq('sender_id', user.id)
-        .eq('receiver_id', producer.id)
+        .eq('receiver_id', producer.user_id)
         .eq('status', 'pending')
         .maybeSingle();
 
@@ -336,7 +336,7 @@ const ProducerProfile = () => {
         .from('collaboration_requests' as any)
         .insert([{
           sender_id: user.id,
-          receiver_id: producer.id,
+          receiver_id: producer.user_id,
           status: 'pending'
         }]);
 

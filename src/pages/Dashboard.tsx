@@ -190,7 +190,7 @@ const Dashboard = () => {
       const { data: collabData, error: collabError } = await supabase
         .from("collaboration_requests")
         .select("*")
-        .eq("receiver_id", selectedGroupId)
+        .eq("receiver_id", user?.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -242,7 +242,7 @@ const Dashboard = () => {
     };
 
     fetchApplications();
-  }, [selectedGroupId]);
+  }, [selectedGroupId, user]);
 
   const handleApproval = async (applicationId: string) => {
     if (!selectedGroupId) return;
