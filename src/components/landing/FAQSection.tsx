@@ -17,8 +17,8 @@ const faqs = [
     question: "How do I sign up?",
     answer: (
       <ul className="list-disc pl-5 space-y-2">
-        <li><strong>If you are a producer:</strong> Click "I’m a theater group" button. Fill out the signup form or use your Google account, then wait for email confirmation.</li>
-        <li><strong>If you are an audience member:</strong> Click "I’m an audience member" button. Fill out the signup form or sign in with Google, then wait for email confirmation.</li>
+        <li><strong>If you are a producer:</strong> Click I’m a theater group button. Fill out the signup form or use your Google account, then wait for email confirmation.</li>
+        <li><strong>If you are an audience member:</strong> Click I’m an audience member button. Fill out the signup form or sign in with Google, then wait for email confirmation.</li>
         <li>Once signed up, you get a 1-month free Premium trial to explore full features.</li>
       </ul>
     )
