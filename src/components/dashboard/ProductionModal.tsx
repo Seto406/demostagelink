@@ -578,7 +578,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
                 id="paymentInstructions"
                 value={paymentInstructions}
                 onChange={(e) => setPaymentInstructions(e.target.value)}
-                placeholder="Instructions for paying the balance (e.g., 'Bring exact change', 'QR Code at venue')"
+                placeholder="Instructions for paying the balance (e.g., 'Bring exact amount', 'QR Code at venue')"
                 className="bg-background border-secondary/30"
                 maxLength={500}
               />
