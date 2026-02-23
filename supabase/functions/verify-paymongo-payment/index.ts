@@ -201,7 +201,21 @@ serve(async (req) => {
 
           // We can also try to use the user found from Auth header if present,
           // but better to stick to what's in the payment record or metadata.
-          const userIdForTicket = payment.user_id || metadata.user_id || (user ? user.id : null);
+          const authUserId = payment.user_id || metadata.user_id || (user ? user.id : null);
+          let profileIdForTicket = null;
+
+          if (authUserId) {
+             // Resolve Auth ID to Profile ID because tickets table uses Profile ID
+             const { data: profile } = await supabaseAdmin
+                .from('profiles')
+                .select('id')
+                .eq('user_id', authUserId)
+                .maybeSingle();
+
+             if (profile) {
+                profileIdForTicket = profile.id;
+             }
+          }
 
           // Verify profile exists if user_id is not null?
           // The database constraint might fail if user_id points to non-existent profile.
@@ -210,7 +224,7 @@ serve(async (req) => {
           const { data: newTicket, error: ticketError } = await supabaseAdmin
             .from("tickets")
             .insert({
-              user_id: userIdForTicket,
+              user_id: profileIdForTicket,
               show_id: showId,
               status: "confirmed",
               payment_id: payment.id,
@@ -227,9 +241,9 @@ serve(async (req) => {
              // Trigger Email
              // Only if user exists? Or guest email?
              // send-ticket-confirmation function might depend on user_id.
-             if (userIdForTicket) {
+             if (authUserId) {
                 await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
-                  body: { user_id: userIdForTicket, show_id: showId },
+                  body: { user_id: authUserId, show_id: showId },
                 });
              }
           }
