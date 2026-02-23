@@ -51,16 +51,25 @@ const PaymentSuccess = () => {
                  // Fallback: Fetch ticket and show details if user is logged in
                  const { data: { user } } = await supabase.auth.getUser();
                  if (user) {
-                   const { data: ticket } = await supabase
-                     .from('tickets')
-                     .select('*, shows(*)')
+                   // Need to get Profile ID first as tickets table uses Profile ID
+                   const { data: profile } = await supabase
+                     .from('profiles')
+                     .select('id')
                      .eq('user_id', user.id)
-                     .order('created_at', { ascending: false })
-                     .limit(1)
-                     .maybeSingle(); // Changed to maybeSingle to handle empty results safely
+                     .maybeSingle();
 
-                   if (ticket && ticket.shows) {
-                     setShowDetails(ticket.shows as unknown as ShowDetails);
+                   if (profile) {
+                     const { data: ticket } = await supabase
+                       .from('tickets')
+                       .select('*, shows(*)')
+                       .eq('user_id', profile.id)
+                       .order('created_at', { ascending: false })
+                       .limit(1)
+                       .maybeSingle();
+
+                     if (ticket && ticket.shows) {
+                       setShowDetails(ticket.shows as unknown as ShowDetails);
+                     }
                    }
                  }
              }

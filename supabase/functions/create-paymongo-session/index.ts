@@ -34,6 +34,11 @@ serve(async (req) => {
             .eq("user_id", finalUserId)
             .maybeSingle();
 
+        if (error) {
+            console.error("Error fetching profile:", error);
+            throw new Error("Failed to verify user profile: " + error.message);
+        }
+
         if (!profile) {
             console.warn(`User ${finalUserId} provided but no profile found. Treating as Guest Checkout.`);
             finalUserId = null;

@@ -30,7 +30,7 @@ async function processWebhook(
     // 6. Idempotency Check: Check if a ticket already exists for this payment.
     const { data: existingPaymentWithTicket, error: lookupError } = await supabaseAdmin
         .from("payments")
-        .select("id, status, tickets(id)")
+        .select("id, status, user_id, tickets(id)")
         .eq("paymongo_checkout_id", checkoutId)
         .maybeSingle();
 
@@ -47,7 +47,13 @@ async function processWebhook(
     }
 
     const showId = metadata.show_id;
-    const authUserId = metadata.user_id; // Auth ID (might be null/undefined for guests)
+    let authUserId = metadata.user_id; // Auth ID (might be null/undefined for guests)
+
+    // Fallback: If metadata.user_id is missing, check the payment record itself
+    if (!authUserId && existingPaymentWithTicket && existingPaymentWithTicket.user_id) {
+         console.log(`[Background] Metadata missing user_id. Using payment.user_id: ${existingPaymentWithTicket.user_id}`);
+         authUserId = existingPaymentWithTicket.user_id;
+    }
 
     if (!showId) {
         console.error("[Background] Missing show_id for ticket creation. Cannot proceed.");
