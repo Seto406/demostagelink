@@ -83,6 +83,13 @@ const CheckoutPage = () => {
       return;
     }
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Session expired. Please log in again.");
+      navigate("/login", { state: { from: `/checkout/${showId}` } });
+      return;
+    }
+
     if (!show || !show.price) return;
 
     setProcessing(true);
@@ -98,6 +105,9 @@ const CheckoutPage = () => {
           },
           redirect_url: window.location.origin + "/payment/success",
           cancel_url: window.location.origin + "/payment/cancel",
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
