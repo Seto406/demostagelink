@@ -242,7 +242,7 @@ const Dashboard = () => {
     };
 
     fetchApplications();
-  }, [selectedGroupId, user]);
+  }, [selectedGroupId, user, refreshKey]);
 
   const handleApproval = async (applicationId: string) => {
     if (!selectedGroupId) return;
@@ -884,6 +884,7 @@ const Dashboard = () => {
           open={showProductionModal}
           onOpenChange={setShowProductionModal}
           showToEdit={showToEdit}
+          onSuccess={() => setRefreshKey(prev => prev + 1)}
         />
       )}
       <EditProducerProfileDialog
