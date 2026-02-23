@@ -310,7 +310,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       const { data: theaterGroup, error: groupError } = await supabase
         .from("theater_groups" as any)
         .select("id")
-        .eq("owner_id", user.id)
+        .eq("owner_id", profile.id)
         .maybeSingle();
 
       if (posterFile) {
