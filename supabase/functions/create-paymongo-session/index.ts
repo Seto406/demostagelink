@@ -28,12 +28,11 @@ serve(async (req) => {
     // Validate user_id if provided
     if (finalUserId) {
         // Check if the user has a profile. If not, treat as guest.
-        // We check profiles table because payments.user_id references profiles(user_id).
         const { data: profile, error } = await supabaseAdmin
             .from("profiles")
             .select("id")
             .eq("user_id", finalUserId)
-            .maybeSingle(); // Use maybeSingle to avoid error if not found
+            .maybeSingle();
 
         if (!profile) {
             console.warn(`User ${finalUserId} provided but no profile found. Treating as Guest Checkout.`);
@@ -41,15 +40,36 @@ serve(async (req) => {
         }
     }
 
+    // Convert amount to centavos (input is in Pesos)
+    const amountInCents = Math.round(Number(amount) * 100);
+    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
+
+    // 1. Create Payment Record (Initialized)
+    // We do this BEFORE calling PayMongo so we can pass the payment ID in the success_url
+    const { data: paymentRecord, error: dbError } = await supabaseAdmin
+      .from("payments")
+      .insert({
+        user_id: finalUserId, // can be null
+        paymongo_checkout_id: `PENDING_${crypto.randomUUID()}`, // Temporary ID to satisfy NOT NULL
+        amount: amountInCents,
+        status: "initialized",
+        description: `Ticket for show ${show_id}`,
+      })
+      .select("id")
+      .single();
+
+    if (dbError) {
+        console.error("Payment Insert Error", dbError);
+        throw new Error("Failed to initialize payment record: " + dbError.message);
+    }
+
+    const paymentRef = paymentRecord.id;
+
     // Get Secret Key
     const secretKey = Deno.env.get("PAYMONGO_SECRET_KEY");
     if (!secretKey) throw new Error("Missing PAYMONGO_SECRET_KEY");
 
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
-
-    // Convert amount to centavos (input is in Pesos)
-    const amountInCents = Math.round(Number(amount) * 100);
-    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
 
     // Determine Base URL
     const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://www.stagelink.show";
@@ -57,7 +77,8 @@ serve(async (req) => {
     // Prepare Metadata
     const metadata: any = {
         show_id,
-        type: "ticket"
+        type: "ticket",
+        payment_id: paymentRef // Store our internal ID in metadata too, just in case
     };
     if (finalUserId) {
         metadata.user_id = finalUserId;
@@ -82,7 +103,7 @@ serve(async (req) => {
           send_email_receipt: true,
           show_description: true,
           show_line_items: true,
-          success_url: `${frontendUrl}/payment/success`,
+          success_url: `${frontendUrl}/payment/success?ref=${paymentRef}`,
           cancel_url: `${frontendUrl}/payment/cancel`,
           metadata: metadata,
         },
@@ -101,6 +122,8 @@ serve(async (req) => {
 
     const data = await response.json();
     if (data.errors) {
+      // If PayMongo fails, we might want to mark the payment as failed or delete it?
+      // For now, leave it as 'initialized' (it will be abandoned)
       throw new Error(data.errors[0].detail);
     }
 
@@ -108,21 +131,23 @@ serve(async (req) => {
     const checkoutUrl = checkoutSession.attributes.checkout_url;
     const checkoutId = checkoutSession.id;
 
-    // Create Payment Record
-    // Note: user_id can be null now (thanks to migration)
-    const { error: dbError } = await supabaseAdmin
+    // 2. Update Payment Record with Real Checkout ID
+    const { error: updateError } = await supabaseAdmin
       .from("payments")
-      .insert({
-        user_id: finalUserId, // can be null
+      .update({
         paymongo_checkout_id: checkoutId,
-        amount: amountInCents,
-        status: "pending",
-        description: `Ticket for show ${show_id}`,
-      });
+        status: "pending"
+      })
+      .eq("id", paymentRef);
 
-    if (dbError) {
-        console.error("Payment Insert Error", dbError);
-        throw new Error("Failed to initialize payment record: " + dbError.message);
+    if (updateError) {
+       console.error("Failed to update payment with PayMongo ID:", updateError);
+       // We log it but don't fail the request because the user can still pay.
+       // The webhook might fail to find the payment if we don't update it?
+       // Actually, webhook looks up by `paymongo_checkout_id`.
+       // If this update fails, webhook won't find the payment!
+       // This is critical.
+       throw new Error("Database error updating payment reference");
     }
 
     return new Response(JSON.stringify({ checkoutUrl }), {

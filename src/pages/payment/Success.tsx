@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ interface ShowDetails {
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paymentRef = searchParams.get("ref");
   const queryClient = useQueryClient();
   const { addXp } = useGamification();
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
@@ -29,7 +31,10 @@ const PaymentSuccess = () => {
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("verify-paymongo-payment");
+        console.log("Verifying payment with ref:", paymentRef);
+        const { data, error } = await supabase.functions.invoke("verify-paymongo-payment", {
+          body: { ref: paymentRef }
+        });
 
         if (error) throw error;
 
@@ -40,20 +45,26 @@ const PaymentSuccess = () => {
           if (data.type === "ticket") {
              setMessage("You're all set! Your ticket has been confirmed.");
 
-             // Fetch ticket and show details
-             const { data: { user } } = await supabase.auth.getUser();
-             if (user) {
-               const { data: ticket } = await supabase
-                 .from('tickets')
-                 .select('*, shows(*)')
-                 .eq('user_id', user.id)
-                 .order('created_at', { ascending: false })
-                 .limit(1)
-                 .single();
+             // Use ticket details from response (works for Guest & Auth)
+             if (data.ticket && data.ticket.shows) {
+                console.log("Using ticket details from API response");
+                setShowDetails(data.ticket.shows as unknown as ShowDetails);
+             } else {
+                 // Fallback: Fetch ticket and show details if user is logged in
+                 const { data: { user } } = await supabase.auth.getUser();
+                 if (user) {
+                   const { data: ticket } = await supabase
+                     .from('tickets')
+                     .select('*, shows(*)')
+                     .eq('user_id', user.id)
+                     .order('created_at', { ascending: false })
+                     .limit(1)
+                     .maybeSingle(); // Changed to maybeSingle to handle empty results safely
 
-               if (ticket && ticket.shows) {
-                 setShowDetails(ticket.shows as unknown as ShowDetails);
-               }
+                   if (ticket && ticket.shows) {
+                     setShowDetails(ticket.shows as unknown as ShowDetails);
+                   }
+                 }
              }
 
           } else {
@@ -85,7 +96,7 @@ const PaymentSuccess = () => {
     };
 
     verifyPayment();
-  }, [queryClient, addXp]);
+  }, [queryClient, addXp, paymentRef]);
 
   const draw = {
     hidden: { pathLength: 0, opacity: 0 },
