@@ -12,16 +12,34 @@ serve(async (req) => {
   }
 
   try {
-    const { show_id, amount, user_id } = await req.json();
+    const { show_id, amount, user_id: requestUserId } = await req.json();
 
-    if (!show_id || !amount || !user_id) {
-      throw new Error("Missing required fields: show_id, amount, or user_id");
+    if (!show_id || !amount) {
+      throw new Error("Missing required fields: show_id or amount");
     }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    let finalUserId = requestUserId;
+
+    // Validate user_id if provided
+    if (finalUserId) {
+        // Check if the user has a profile. If not, treat as guest.
+        // We check profiles table because payments.user_id references profiles(user_id).
+        const { data: profile, error } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("user_id", finalUserId)
+            .maybeSingle(); // Use maybeSingle to avoid error if not found
+
+        if (!profile) {
+            console.warn(`User ${finalUserId} provided but no profile found. Treating as Guest Checkout.`);
+            finalUserId = null;
+        }
+    }
 
     // Get Secret Key
     const secretKey = Deno.env.get("PAYMONGO_SECRET_KEY");
@@ -31,10 +49,21 @@ serve(async (req) => {
 
     // Convert amount to centavos (input is in Pesos)
     const amountInCents = Math.round(Number(amount) * 100);
-    console.log(`Creating session for user ${user_id}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
+    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
 
     // Determine Base URL
     const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://www.stagelink.show";
+
+    // Prepare Metadata
+    const metadata: any = {
+        show_id,
+        type: "ticket"
+    };
+    if (finalUserId) {
+        metadata.user_id = finalUserId;
+    } else {
+        metadata.is_guest = "true";
+    }
 
     // Payload for PayMongo
     const payload = {
@@ -55,11 +84,7 @@ serve(async (req) => {
           show_line_items: true,
           success_url: `${frontendUrl}/payment/success`,
           cancel_url: `${frontendUrl}/payment/cancel`,
-          metadata: {
-            show_id,
-            user_id, // Auth ID passed directly
-            type: "ticket"
-          },
+          metadata: metadata,
         },
       },
     };
@@ -84,10 +109,11 @@ serve(async (req) => {
     const checkoutId = checkoutSession.id;
 
     // Create Payment Record
+    // Note: user_id can be null now (thanks to migration)
     const { error: dbError } = await supabaseAdmin
       .from("payments")
       .insert({
-        user_id: user_id,
+        user_id: finalUserId, // can be null
         paymongo_checkout_id: checkoutId,
         amount: amountInCents,
         status: "pending",
