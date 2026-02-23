@@ -365,9 +365,7 @@ const Directory = () => {
           group_id: group.id,
           member_name: profile?.username || 'Unknown User',
           role_in_group: 'member',
-          status: 'pending',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          status: 'pending'
         }]);
 
       if (error) throw error;

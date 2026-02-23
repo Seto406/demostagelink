@@ -287,9 +287,7 @@ const ProducerProfile = () => {
           group_id: producer.id,
           member_name: profile.username || 'Unknown User',
           status: 'pending',
-          role_in_group: 'member',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          role_in_group: 'member'
         }]);
 
       if (error) throw error;
