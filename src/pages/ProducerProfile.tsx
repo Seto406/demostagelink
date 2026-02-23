@@ -239,13 +239,15 @@ const ProducerProfile = () => {
             setFollowerCount(prev => prev + 1);
             toast.success("Following group");
 
-            await createNotification({
-              userId: producer.id,
-              actorId: user.id,
-              type: 'follow',
-              title: 'New Follower',
-              message: `${profile?.group_name || profile?.username || 'Someone'} started following your group.`,
-            });
+            if (profile?.id) {
+              await createNotification({
+                userId: producer.id,
+                actorId: profile.id,
+                type: 'follow',
+                title: 'New Follower',
+                message: `${profile?.group_name || profile?.username || 'Someone'} started following your group.`,
+              });
+            }
         }
     }
 
@@ -294,7 +296,7 @@ const ProducerProfile = () => {
 
       await createNotification({
         userId: producer.id,
-        actorId: user.id,
+        actorId: profile.id,
         type: 'membership_application',
         title: 'New Member Application',
         message: `${profile.group_name || profile.username || 'Someone'} wants to join your group.`,
@@ -341,6 +343,15 @@ const ProducerProfile = () => {
         }]);
 
       if (error) throw error;
+
+      await createNotification({
+        userId: producer.id,
+        actorId: profile.id,
+        type: 'collaboration_request',
+        title: 'New Collaboration Request',
+        message: `${profile.group_name || profile.username || 'Someone'} wants to collaborate with you.`,
+        link: `/dashboard`
+      });
 
       toast.success("Collaboration request sent successfully!");
     } catch (error: any) {
