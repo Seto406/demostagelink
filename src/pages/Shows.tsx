@@ -59,6 +59,7 @@ interface Show {
   poster_url: string | null;
   genre: string | null;
   ticket_link: string | null;
+  production_status: string | null;
   producer_id: {
     id: string;
     group_name: string | null;
@@ -395,7 +396,7 @@ const Shows = () => {
   const [loading, setLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>("upcoming");
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'ongoing' | 'past'>("upcoming");
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -483,6 +484,7 @@ const Shows = () => {
         genre,
         ticket_link,
         poster_url,
+        production_status,
         producer_id:profiles!producer_id (
           id,
           group_name,
@@ -508,9 +510,15 @@ const Shows = () => {
     // Apply tab logic
     const today = new Date().toISOString().split('T')[0];
     if (tab === 'upcoming') {
+      // Upcoming shows: Future dates (including today)
       query = query.gte('date', today).order("date", { ascending: true });
+    } else if (tab === 'ongoing') {
+      // Ongoing shows: Started (date <= today) AND marked as ongoing
+      // This allows producers to keep a show "active" even after the premiere date
+      query = query.eq('production_status', 'ongoing').lte('date', today).order("date", { ascending: false });
     } else {
-      query = query.lt('date', today).order("date", { ascending: false });
+      // Past shows: Marked as completed
+      query = query.eq('production_status', 'completed').order("date", { ascending: false });
     }
 
     if (debouncedSearchQuery) {
@@ -544,7 +552,7 @@ const Shows = () => {
 
   // Handle Tab Change
   const handleTabChange = (value: string) => {
-    const newTab = value as 'upcoming' | 'past';
+    const newTab = value as 'upcoming' | 'ongoing' | 'past';
     setActiveTab(newTab);
   };
 
@@ -572,6 +580,15 @@ const Shows = () => {
     !!dateFilter,
     !!searchQuery,
   ].filter(Boolean).length;
+
+  const getEmptyStateTitle = () => {
+    switch (activeTab) {
+      case 'upcoming': return "No Upcoming Productions";
+      case 'ongoing': return "No Ongoing Productions";
+      case 'past': return "No Past Productions";
+      default: return "No Productions Found";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -615,9 +632,10 @@ const Shows = () => {
             {/* Tabs */}
             <div className="flex justify-center mb-6">
               <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="grid w-[400px] grid-cols-2">
-                  <TabsTrigger value="upcoming">Upcoming Shows</TabsTrigger>
-                  <TabsTrigger value="past">Past Productions</TabsTrigger>
+                <TabsList className="grid w-full max-w-[600px] grid-cols-3">
+                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                  <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+                  <TabsTrigger value="past">Past</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -799,7 +817,7 @@ const Shows = () => {
           ) : filteredShows.length === 0 ? (
             <div className="max-w-md mx-auto py-12">
               <PremiumEmptyState
-                title={activeTab === 'upcoming' ? "No Upcoming Productions" : "No Past Productions"}
+                title={getEmptyStateTitle()}
                 description={`We couldn't find any ${activeTab} shows matching your current filters.`}
                 icon={Ticket}
                 action={
