@@ -107,7 +107,13 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
 
       // Parse Date
       const dateStr = showToEdit.date || "";
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      if (showToEdit.seo_metadata?.schedule) {
+        setScheduleType("multi");
+        setDate("");
+        setStartDate(showToEdit.seo_metadata.schedule.startDate);
+        setEndDate(showToEdit.seo_metadata.schedule.endDate);
+        setSelectedDays(showToEdit.seo_metadata.schedule.selectedDays);
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
         setScheduleType("single");
         setDate(dateStr);
         setStartDate("");
@@ -116,10 +122,28 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       } else {
         setScheduleType("multi");
         setDate("");
-        // Reset multi fields as parsing back from string is not reliable without structured data
-        setStartDate("");
-        setEndDate("");
-        setSelectedDays([]);
+
+        // Try parsing unstructured date
+        const match = dateStr.match(/^(.*), ([A-Za-z]{3} \d{1,2}) - ([A-Za-z]{3} \d{1,2})$/);
+        if (match) {
+          const daysStr = match[1];
+          const startStr = match[2];
+          const endStr = match[3];
+          const currentYear = new Date().getFullYear();
+          const parseDate = (str: string) => {
+            const d = new Date(`${str} ${currentYear}`);
+            return !isNaN(d.getTime()) ? format(d, "yyyy-MM-dd") : "";
+          };
+
+          setStartDate(parseDate(startStr));
+          setEndDate(parseDate(endStr));
+          setSelectedDays(daysStr.split(" & ").map((d: string) => d.trim()));
+        } else {
+          // Reset multi fields as parsing back from string is not reliable without structured data
+          setStartDate("");
+          setEndDate("");
+          setSelectedDays([]);
+        }
       }
 
       setVenue(showToEdit.venue || "");
@@ -278,7 +302,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
     }
 
     setUploading(true);
-    let posterUrl: string | null = null;
+    let finalPosterUrl: string | null = null;
 
     try {
       // Get the producer's theater group ID
@@ -302,7 +326,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
           .from("show-posters")
           .getPublicUrl(fileName);
 
-        posterUrl = publicUrl;
+        finalPosterUrl = publicUrl;
+      } else if (showToEdit && posterPreview === showToEdit.poster_url) {
+        finalPosterUrl = showToEdit.poster_url;
       }
 
     // Construct Duration String
@@ -343,7 +369,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       ticket_link: ticketLink || null,
       price: price ? parseFloat(price) : null,
       production_status: productionStatus,
-      poster_url: posterUrl || (showToEdit ? showToEdit.poster_url : null),
+      poster_url: finalPosterUrl,
       reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
       collect_balance_onsite: collectBalanceOnsite,
       genre: genre.length > 0 ? genre.join(", ") : null,
@@ -351,7 +377,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit }: ProductionMo
       duration,
       tags: tags.length > 0 ? tags : null,
       cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
-      seo_metadata: paymentInstructions ? { payment_instructions: paymentInstructions } : null,
+      seo_metadata: {
+        ...(showToEdit?.seo_metadata || {}),
+        payment_instructions: paymentInstructions || null,
+        schedule: scheduleType === "multi" ? { startDate, endDate, selectedDays } : null,
+      },
     };
 
     let query;
