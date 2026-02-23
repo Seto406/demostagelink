@@ -1,4 +1,4 @@
-import { Bookmark } from "lucide-react";
+import { Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -39,14 +39,14 @@ export const BookmarkButton = ({
         sizeClasses[size],
         className
       )}
-      aria-label={isFavorited ? "Remove from library" : "Add to library"}
+      aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
     >
       <motion.div
         initial={false}
         animate={isFavorited ? { scale: [1, 1.3, 1] } : { scale: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <Bookmark
+        <Star
           className={cn(
             iconSizes[size],
             "transition-colors",

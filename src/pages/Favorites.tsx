@@ -10,7 +10,7 @@ import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { CinematicEmptyState } from "@/components/ui/cinematic-empty-state";
 import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, MapPin, Bookmark } from "lucide-react";
+import { Calendar, MapPin, Star } from "lucide-react";
 
 interface Show {
   id: string;
@@ -96,7 +96,7 @@ const Favorites = () => {
             className="mb-8"
           >
             <div className="flex items-center gap-3 mb-2">
-              <Bookmark className="w-6 h-6 text-primary fill-primary" />
+              <Star className="w-6 h-6 text-primary fill-primary" />
               <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground">
                 Favorites
               </h1>
