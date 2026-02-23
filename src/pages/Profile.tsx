@@ -356,13 +356,15 @@ const Profile = () => {
 
            {/* Tabs Section */}
            <div>
-             <Tabs defaultValue="passes" className="w-full">
-               <TabsList className="grid w-full grid-cols-3 mb-6 bg-card border border-secondary/20 h-auto p-1">
-                 <TabsTrigger value="passes" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
-                    <TicketIcon className="w-4 h-4" />
-                    <span className="hidden sm:inline">My Passes</span>
-                    <span className="sm:hidden">Passes</span>
-                 </TabsTrigger>
+             <Tabs defaultValue={isOwnProfile ? "passes" : "following"} className="w-full">
+               <TabsList className={`grid w-full mb-6 bg-card border border-secondary/20 h-auto p-1 ${isOwnProfile ? "grid-cols-3" : "grid-cols-2"}`}>
+                 {isOwnProfile && (
+                   <TabsTrigger value="passes" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
+                      <TicketIcon className="w-4 h-4" />
+                      <span className="hidden sm:inline">My Passes</span>
+                      <span className="sm:hidden">Passes</span>
+                   </TabsTrigger>
+                 )}
                  <TabsTrigger value="following" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Users className="w-4 h-4" />
                     Following
