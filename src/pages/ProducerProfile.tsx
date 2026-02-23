@@ -803,7 +803,7 @@ const ProducerProfile = () => {
                                     <img
                                       src={show.poster_url}
                                       alt={show.title}
-                                      className="w-full h-full object-contain relative z-10"
+                                      className="w-full h-full object-contain relative z-10 rounded-xl"
                                     />
                                   </>
                                 ) : (
