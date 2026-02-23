@@ -25,3 +25,4 @@ jobs:
           supabase functions deploy --project-ref $SUPABASE_PROJECT_ID
           supabase functions deploy create-paymongo-session --no-verify-jwt --project-ref $SUPABASE_PROJECT_ID
           supabase functions deploy paymongo-webhook --no-verify-jwt --project-ref $SUPABASE_PROJECT_ID
+          supabase functions deploy verify-paymongo-payment --no-verify-jwt --project-ref $SUPABASE_PROJECT_ID
