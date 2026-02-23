@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck, Handshake } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,12 +55,24 @@ interface Show {
   producer?: any;
 }
 
+interface GroupMember {
+  id: string;
+  user_id: string;
+  role_in_group: string | null;
+  profile?: {
+    id: string;
+    username: string | null;
+    avatar_url: string | null;
+  };
+}
+
 const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
   const { user, profile, loading: authLoading } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
   const [theaterGroup, setTheaterGroup] = useState<TheaterGroup | null>(null);
   const [shows, setShows] = useState<Show[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
@@ -143,6 +156,32 @@ const ProducerProfile = () => {
         console.error("Error fetching shows:", showsError);
       } else {
         setShows(showsData as Show[]);
+      }
+
+      // Fetch Active Members
+      const { data: membersData, error: membersError } = await supabase
+        .from("group_members")
+        .select("id, user_id, role_in_group")
+        .eq("group_id", id)
+        .eq("status", "active")
+        .not("user_id", "is", null);
+
+      if (membersError) {
+        console.error("Error fetching members:", membersError);
+      } else if (membersData && membersData.length > 0) {
+        const userIds = membersData.map(m => m.user_id);
+        const { data: memberProfiles, error: memberProfilesError } = await supabase
+          .from("profiles")
+          .select("id, user_id, username, avatar_url")
+          .in("user_id", userIds);
+
+        if (!memberProfilesError && memberProfiles) {
+           const membersWithProfiles = membersData.map(member => ({
+             ...member,
+             profile: memberProfiles.find(p => p.user_id === member.user_id)
+           }));
+           setMembers(membersWithProfiles);
+        }
       }
 
       const { count, error: countError } = await supabase
@@ -687,6 +726,43 @@ const ProducerProfile = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {members.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="mb-12"
+            >
+              <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
+                Ensemble
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {members.map((member) => (
+                  <Link
+                    key={member.id}
+                    to={member.profile ? `/profile/${member.profile.id}` : '#'}
+                    className={`block bg-card border border-secondary/20 rounded-xl p-4 transition-all ${member.profile ? 'hover:border-secondary/50 hover:bg-secondary/5' : 'cursor-default opacity-80'}`}
+                  >
+                     <div className="flex items-center gap-3">
+                       <Avatar className="w-10 h-10 border border-secondary/30">
+                         <AvatarImage src={member.profile?.avatar_url || undefined} />
+                         <AvatarFallback>{member.profile?.username?.[0]?.toUpperCase() || "M"}</AvatarFallback>
+                       </Avatar>
+                       <div className="overflow-hidden">
+                         <p className="font-medium text-sm text-foreground truncate">
+                           {member.profile?.username || "Unknown Member"}
+                         </p>
+                         <p className="text-xs text-muted-foreground capitalize truncate">
+                           {member.role_in_group || "Member"}
+                         </p>
+                       </div>
+                     </div>
+                  </Link>
+                ))}
               </div>
             </motion.div>
           )}

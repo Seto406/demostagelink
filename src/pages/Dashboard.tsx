@@ -1,6 +1,6 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ type CollaborationRequest = {
 };
 
 type ApplicantProfile = {
+  id: string;
   user_id: string;
   username: string | null;
   avatar_url: string | null;
@@ -81,6 +82,7 @@ const Dashboard = () => {
   const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [activeMembers, setActiveMembers] = useState<MembershipApplication[]>([]);
   const [collabRequests, setCollabRequests] = useState<CollaborationRequest[]>([]);
   const [unlinkedMembers, setUnlinkedMembers] = useState<UnlinkedMember[]>([]);
   const [applicantsByUserId, setApplicantsByUserId] = useState<Record<string, ApplicantProfile>>({});
@@ -173,18 +175,21 @@ const Dashboard = () => {
       }
 
       // Fetch Member Applications
-      const { data: pendingApplications, error: applicationsError } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from("group_members")
         .select("id, user_id, group_id, created_at, status, role_in_group")
         .eq("group_id", selectedGroupId)
-        .eq("status", "pending")
+        .in("status", ["pending", "active"])
         .order("created_at", { ascending: false });
 
-      if (applicationsError) {
-        console.error("Error loading membership applications:", applicationsError);
-        toast.error("Failed to load pending approvals.");
+      if (memberError) {
+        console.error("Error loading group members:", memberError);
+        toast.error("Failed to load members.");
         return;
       }
+
+      const pendingApplications = memberData?.filter(m => m.status === 'pending') || [];
+      const activeMembersData = memberData?.filter(m => m.status === 'active') || [];
 
       // Fetch Collab Requests
       const { data: collabData, error: collabError } = await supabase
@@ -212,15 +217,19 @@ const Dashboard = () => {
       const apps = ((pendingApplications || []) as MembershipApplication[]).filter((app) => Boolean(app.user_id));
       setApplications(apps);
 
+      const active = ((activeMembersData || []) as MembershipApplication[]).filter((m) => Boolean(m.user_id));
+      setActiveMembers(active);
+
       const collabs = (collabData || []) as CollaborationRequest[];
       setCollabRequests(collabs);
 
       setUnlinkedMembers((unlinkedData || []) as UnlinkedMember[]);
 
-      // Collect IDs from both sources
+      // Collect IDs from all sources
       const appUserIds = apps.map((app) => app.user_id).filter(Boolean);
+      const activeUserIds = active.map((m) => m.user_id).filter(Boolean);
       const collabUserIds = collabs.map((r) => r.sender_id).filter(Boolean);
-      const allUserIds = Array.from(new Set([...appUserIds, ...collabUserIds]));
+      const allUserIds = Array.from(new Set([...appUserIds, ...activeUserIds, ...collabUserIds]));
 
       if (allUserIds.length === 0) {
         setApplicantsByUserId({});
@@ -229,7 +238,7 @@ const Dashboard = () => {
 
       const { data: applicantProfiles, error: applicantError } = await supabase
         .from("profiles")
-        .select("user_id, username, avatar_url, group_name, role")
+        .select("id, user_id, username, avatar_url, group_name, role")
         .in("user_id", allUserIds);
 
       if (applicantError) {
@@ -306,6 +315,7 @@ const Dashboard = () => {
     }
 
     setApplications((prev) => prev.filter((item) => item.id !== applicationId));
+    setActiveMembers((prev) => [...prev, { ...application, status: 'active' }]);
     toast.success("Member approved.");
     setIsUpdating(null);
   };
@@ -769,6 +779,64 @@ const Dashboard = () => {
                       >
                         <X className="mr-1 h-4 w-4" /> Decline
                       </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Active Members Section */}
+          <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md">
+            <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
+                 <h2 className="font-serif font-bold text-lg text-muted-foreground">
+                   Active Members
+                 </h2>
+            </div>
+            {activeMembers.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground">
+                No active members yet.
+              </div>
+            ) : (
+              activeMembers.map((member, index) => {
+                const profile = applicantsByUserId[member.user_id];
+                const name = profile?.username || member.role_in_group || "Member";
+                const initial = name.charAt(0).toUpperCase();
+
+                return (
+                  <div
+                    key={member.id}
+                    className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
+                      index < activeMembers.length - 1 ? "border-b border-secondary/20" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-secondary/30">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt={`${name} avatar`} />
+                        <AvatarFallback>{initial}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-foreground">{name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {member.role_in_group || "Member"}
+                          {member.role_in_group === 'producer' && " (Producer)"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                       {profile?.id && (
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10"
+                           asChild
+                         >
+                           <Link to={`/profile/${profile.id}`}>
+                             View Profile
+                           </Link>
+                         </Button>
+                       )}
                     </div>
                   </div>
                 );
