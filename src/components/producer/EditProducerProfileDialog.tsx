@@ -275,8 +275,7 @@ export const EditProducerProfileDialog = ({
         description: description.trim() || null,
         logo_url: logoUrl.trim() || null,
         banner_url: bannerUrl.trim() || null,
-        owner_id: user.id,
-        updated_at: new Date().toISOString()
+        owner_id: user.id
       };
 
       if (groupId) {
