@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StarRating } from "@/components/ui/star-rating";
 import { useAuth } from "@/contexts/AuthContext";
-import { useGamification } from "@/hooks/useGamification";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -17,7 +16,6 @@ interface ReviewFormProps {
 
 export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewFormProps) => {
   const { user, profile } = useAuth();
-  const { addXp } = useGamification();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,13 +55,6 @@ export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewForm
       toast.success("Review submitted", {
         description: "Thank you for your feedback!",
       });
-
-      // Award XP for review
-      try {
-        await addXp(50);
-      } catch (e) {
-        console.error("Failed to add XP", e);
-      }
 
       // Send notification to show producer
       try {
