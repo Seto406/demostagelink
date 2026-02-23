@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.paymongo-webhook]
 verify_jwt = false
+
+[functions.verify-paymongo-payment]
+verify_jwt = false
