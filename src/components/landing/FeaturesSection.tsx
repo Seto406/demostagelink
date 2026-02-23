@@ -42,7 +42,7 @@ const features = [
   },
   {
     icon: Heart,
-    title: "Favorites only",
+    title: "Favorites Only",
     description: "Audiences can save shows they're interested in and build a personal theater watchlist for easy access.",
     color: "bg-pink-500"
   },
