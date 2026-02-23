@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, Menu, X, Settings, Bookmark, User, Ticket, Bell, Film, Users, House, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, Settings, Star, User, Ticket, Bell, Film, Users, House, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 
@@ -23,7 +23,7 @@ const Navbar = () => {
         ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
-        { path: "/favorites", label: "Favorites", icon: Bookmark, matchPath: "/favorites" },
+        { path: "/favorites", label: "Favorites", icon: Star, matchPath: "/favorites" },
       ]
     : [
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
@@ -255,7 +255,7 @@ const Navbar = () => {
                   </Link>
                   <Link to="/favorites" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-center rounded-xl font-sans">
-                      <Bookmark className="mr-2 h-4 w-4" />
+                      <Star className="mr-2 h-4 w-4" />
                       Favorites
                     </Button>
                   </Link>

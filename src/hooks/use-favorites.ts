@@ -70,7 +70,7 @@ export const useFavorites = () => {
         if (error) throw error;
         
         toast({
-          title: "Bookmarked",
+          title: "Added to Favorites",
           description: "Show saved to your library.",
         });
       }
