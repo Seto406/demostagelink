@@ -77,19 +77,6 @@ const CheckoutPage = () => {
   }, [showId, navigate]);
 
   const handlePayment = async () => {
-    if (!user) {
-      toast.error("Please log in to purchase tickets");
-      navigate("/login", { state: { from: `/checkout/${showId}` } });
-      return;
-    }
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error("Session expired. Please log in again.");
-      navigate("/login", { state: { from: `/checkout/${showId}` } });
-      return;
-    }
-
     if (!show || !show.price) return;
 
     setProcessing(true);
@@ -98,18 +85,17 @@ const CheckoutPage = () => {
 
       const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
         body: {
+          show_id: show.id,
+          user_id: user?.id,
           amount: Math.round(reservationFee * 100), // centavos
           description: `Ticket for ${show.title}`,
           metadata: {
              type: "ticket",
              show_id: show.id,
-             user_id: user.id
+             user_id: user?.id
           },
           redirect_url: window.location.origin + "/payment/success",
           cancel_url: window.location.origin + "/payment/cancel",
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
         },
       });
 

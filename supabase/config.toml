@@ -2,3 +2,9 @@ project_id = "dssbduklgbmxezpjpuen"
 
 [functions.send-show-notification]
 verify_jwt = true
+
+[functions.create-paymongo-session]
+verify_jwt = false
+
+[functions.paymongo-webhook]
+verify_jwt = false
