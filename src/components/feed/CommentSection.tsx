@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import { Send, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { createNotification } from "@/lib/notifications";
 
 interface Comment {
   id: string;
@@ -26,7 +27,7 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({ showId }: CommentSectionProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
@@ -119,6 +120,29 @@ export function CommentSection({ showId }: CommentSectionProps) {
         title: "Comment added",
         description: "Your comment has been posted.",
       });
+
+      // Send notification to show producer
+      try {
+        const { data: showData } = await supabase
+          .from("shows")
+          .select("producer_id, title")
+          .eq("id", showId)
+          .single();
+
+        if (showData && profile?.id && showData.producer_id !== profile.id) {
+          const actorName = profile.group_name || profile.username || "Someone";
+          await createNotification({
+            userId: showData.producer_id,
+            actorId: profile.id,
+            type: "comment",
+            title: "New Comment",
+            message: `${actorName} commented on your show: ${showData.title}`,
+            link: `/show/${showId}`,
+          });
+        }
+      } catch (e) {
+        console.error("Error creating notification", e);
+      }
     } catch (error) {
       toast({
         title: "Error",

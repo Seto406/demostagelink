@@ -7,6 +7,7 @@ import { useGamification } from "@/hooks/useGamification";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { createNotification } from "@/lib/notifications";
 
 interface ReviewFormProps {
   showId: string;
@@ -62,6 +63,29 @@ export const ReviewForm = ({ showId, onReviewSubmitted, isUpcoming }: ReviewForm
         await addXp(50);
       } catch (e) {
         console.error("Failed to add XP", e);
+      }
+
+      // Send notification to show producer
+      try {
+        const { data: showData } = await supabase
+          .from("shows")
+          .select("producer_id, title")
+          .eq("id", showId)
+          .single();
+
+        if (showData && profile && showData.producer_id !== profile.id) {
+          const actorName = profile.group_name || profile.username || "Someone";
+          await createNotification({
+            userId: showData.producer_id,
+            actorId: profile.id,
+            type: "review",
+            title: "New Review",
+            message: `${actorName} reviewed your show: ${showData.title}`,
+            link: `/show/${showId}`,
+          });
+        }
+      } catch (e) {
+        console.error("Error creating notification", e);
       }
 
       setRating(5);
