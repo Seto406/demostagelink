@@ -102,7 +102,7 @@ serve(async (req) => {
     const fetchTicketDetails = async (paymentId: string) => {
         const { data: ticket, error } = await supabaseAdmin
             .from('tickets')
-            .select('*, shows(*)')
+            .select('*, shows(*, profiles(group_name, niche), theater_groups(name))')
             .eq('payment_id', paymentId)
             .maybeSingle();
         return ticket;
@@ -138,7 +138,7 @@ serve(async (req) => {
                         .from("tickets")
                         .update({ user_id: profile.id })
                         .eq("id", ticketData.id)
-                        .select('*, shows(*)')
+                        .select('*, shows(*, profiles(group_name, niche), theater_groups(name))')
                         .single();
 
                      if (!claimError && updatedTicket) {
@@ -268,7 +268,7 @@ serve(async (req) => {
                     .from("tickets")
                     .update({ user_id: profileIdForTicket })
                     .eq("id", existingTicket.id)
-                    .select('*, shows(*)')
+                    .select('*, shows(*, profiles(group_name, niche), theater_groups(name))')
                     .single();
 
                   if (!claimError && updatedTicket) {
@@ -292,7 +292,7 @@ serve(async (req) => {
               customer_email: session.attributes.billing?.email, // Save email/name from PayMongo
               customer_name: session.attributes.billing?.name
             })
-            .select('*, shows(*)')
+            .select('*, shows(*, profiles(group_name, niche), theater_groups(name))')
             .single();
 
           if (ticketError) {
