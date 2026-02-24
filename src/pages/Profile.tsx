@@ -101,6 +101,15 @@ const Profile = () => {
       }
 
       if (profileId) {
+        // Attempt to claim guest tickets if this is the user's own profile
+        if (isOwnProfile) {
+          try {
+            await supabase.functions.invoke('claim-tickets');
+          } catch (err) {
+            console.error("Failed to claim guest tickets:", err);
+          }
+        }
+
         // Fetch Profile
         const { data: profileData } = await supabase
           .from("profiles")

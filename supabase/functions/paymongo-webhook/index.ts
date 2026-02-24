@@ -185,6 +185,30 @@ async function processWebhook(
 
     console.log("[Background] Ticket created successfully.");
 
+    // Send Ticket Confirmation Email
+    const emailToSend = customerEmail;
+    const nameToSend = customerName;
+
+    if (authUserId || emailToSend) {
+        console.log(`[Background] Sending ticket confirmation to user ${authUserId || 'guest'} (email: ${emailToSend})`);
+        const { error: invokeError } = await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
+          body: {
+            user_id: authUserId,
+            show_id: showId,
+            email: emailToSend,
+            name: nameToSend
+          },
+        });
+
+        if (invokeError) {
+            console.error("[Background] Failed to invoke send-ticket-confirmation:", invokeError);
+        } else {
+            console.log("[Background] Ticket confirmation email request sent.");
+        }
+    } else {
+         console.warn("[Background] Skipping email confirmation: No user_id or email found.");
+    }
+
     // 10. Notify Producer
     try {
         // Fetch Show Details (Producer ID and Title)

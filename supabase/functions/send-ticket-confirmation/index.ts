@@ -17,20 +17,34 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { user_id, show_id } = await req.json();
+    const { user_id, show_id, email: inputEmail, name } = await req.json();
 
-    if (!user_id || !show_id) {
-      throw new Error("Missing user_id or show_id");
+    if (!show_id) {
+      throw new Error("Missing show_id");
+    }
+
+    if (!user_id && !inputEmail) {
+      throw new Error("Missing user_id or email");
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    let email = inputEmail;
 
-    // 1. Fetch User Email
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(user_id);
-    if (userError || !userData?.user?.email) {
-      throw new Error("User not found or has no email");
+    // 1. Resolve Email
+    if (!email && user_id) {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(user_id);
+        if (userError || !userData?.user?.email) {
+          console.error("Error fetching user:", userError);
+          throw new Error("User not found or has no email");
+        }
+        email = userData.user.email;
     }
-    const email = userData.user.email;
+
+    if (!email) {
+        throw new Error("Could not resolve email address");
+    }
+
+    console.log(`Sending ticket confirmation to ${email} for show ${show_id}`);
 
     // 2. Fetch Show Details
     const { data: show, error: showError } = await supabase
@@ -40,6 +54,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (showError || !show) {
+      console.error("Error fetching show:", showError);
       throw new Error("Show not found");
     }
 
@@ -67,7 +82,9 @@ const handler = async (req: Request): Promise<Response> => {
           <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #333; margin-bottom: 10px;">You're Going to the Show! 🎟️</h1>
-              <p style="color: #666; font-size: 16px;">Your ticket has been confirmed.</p>
+              <p style="color: #666; font-size: 16px;">
+                ${name ? `Hi ${name}, ` : ''}Your ticket has been confirmed.
+              </p>
             </div>
 
             <div style="background-color: #f9fafb; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #e5e7eb;">
@@ -107,6 +124,8 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Resend Error:", emailData);
       throw new Error("Failed to send email");
     }
+
+    console.log("Email sent successfully:", emailData.id);
 
     return new Response(JSON.stringify({ success: true, id: emailData.id }), {
       status: 200,
