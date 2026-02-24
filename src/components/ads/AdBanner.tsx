@@ -1,5 +1,29 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Component, ErrorInfo } from "react";
 import { cn } from "@/lib/utils";
+
+class AdSenseErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("AdSense Error caught by boundary:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Fallback UI or return null to hide the ad
+      return null;
+    }
+
+    return this.props.children;
+  }
+}
 
 interface AdBannerProps {
   format: "horizontal" | "vertical" | "box";
@@ -61,14 +85,16 @@ export const AdBanner = ({
     // For AdSense, we usually let it handle dimensions via adFormat="auto",
     // but we can enforce container width.
     return (
-      <div className={cn("overflow-hidden flex justify-center my-6", className)}>
-         <ins className="adsbygoogle"
-              style={{ display: 'block', width: '100%' }}
-              data-ad-client={adClient}
-              data-ad-slot={adSlot}
-              data-ad-format={adFormat}
-              data-full-width-responsive={fullWidthResponsive ? "true" : "false"}></ins>
-      </div>
+      <AdSenseErrorBoundary>
+        <div className={cn("overflow-hidden flex justify-center my-6", className)}>
+          <ins className="adsbygoogle"
+                style={{ display: 'block', width: '100%' }}
+                data-ad-client={adClient}
+                data-ad-slot={adSlot}
+                data-ad-format={adFormat}
+                data-full-width-responsive={fullWidthResponsive ? "true" : "false"}></ins>
+        </div>
+      </AdSenseErrorBoundary>
     );
   }
 

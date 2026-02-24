@@ -200,34 +200,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Floating particles - disabled on reduced motion */}
         {!shouldReduceMotion && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {[...Array(15)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-1 h-1 rounded-full"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  background: i % 3 === 0
-                    ? "rgba(212, 175, 55, 0.4)"
-                    : "rgba(139, 0, 0, 0.3)",
-                  willChange: "transform, opacity",
-                }}
-                animate={{
-                  y: [0, -100, 0],
-                  x: [0, Math.random() * 50 - 25, 0],
-                  opacity: [0, 0.8, 0],
-                  scale: [0, 1.5, 0],
-                }}
-                transition={{
-                  duration: 8 + Math.random() * 8,
-                  repeat: Infinity,
-                  delay: Math.random() * 10,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
+          <FloatingParticles />
         )}
 
         {/* Fireflies - slightly brighter, small, random movement */}
@@ -247,32 +220,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
         {/* Stage dust particles - disabled on reduced motion */}
         {!shouldReduceMotion && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Reduced from 8 to 5 */}
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={`dust-${i}`}
-                className="absolute w-2 h-2 rounded-full bg-secondary/10"
-                style={{
-                  left: `${10 + Math.random() * 80}%`,
-                  top: `${Math.random() * 100}%`,
-                  filter: "blur(1px)",
-                  willChange: "transform, opacity",
-                }}
-                animate={{
-                  y: [0, -200, 0],
-                  x: [0, Math.random() * 100 - 50, 0],
-                  opacity: [0, 0.4, 0],
-                }}
-                transition={{
-                  duration: 15 + Math.random() * 10,
-                  repeat: Infinity,
-                  delay: Math.random() * 15,
-                  ease: "easeInOut",
-                }}
-              />
-            ))}
-          </div>
+          <StageDustParticles />
         )}
 
         {/* Cursor Spotlight - Desktop only and not reduced motion */}
@@ -542,6 +490,95 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 
       {/* Content */}
       {children}
+    </div>
+  );
+};
+
+const FloatingParticles = () => {
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setParticles([...Array(15)].map((_, i) => ({
+      id: i,
+      style: {
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        background: i % 3 === 0
+          ? "rgba(212, 175, 55, 0.4)"
+          : "rgba(139, 0, 0, 0.3)",
+        willChange: "transform, opacity",
+      },
+      animate: {
+        y: [0, -100, 0],
+        x: [0, Math.random() * 50 - 25, 0],
+        opacity: [0, 0.8, 0],
+        scale: [0, 1.5, 0],
+      },
+      transition: {
+        duration: 8 + Math.random() * 8,
+        repeat: Infinity,
+        delay: Math.random() * 10,
+        ease: "easeInOut",
+      }
+    })));
+  }, []);
+
+  if (particles.length === 0) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-1 h-1 rounded-full"
+          style={p.style}
+          animate={p.animate}
+          transition={p.transition}
+        />
+      ))}
+    </div>
+  );
+};
+
+const StageDustParticles = () => {
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setParticles([...Array(5)].map((_, i) => ({
+      id: i,
+      style: {
+        left: `${10 + Math.random() * 80}%`,
+        top: `${Math.random() * 100}%`,
+        filter: "blur(1px)",
+        willChange: "transform, opacity",
+      },
+      animate: {
+        y: [0, -200, 0],
+        x: [0, Math.random() * 100 - 50, 0],
+        opacity: [0, 0.4, 0],
+      },
+      transition: {
+        duration: 15 + Math.random() * 10,
+        repeat: Infinity,
+        delay: Math.random() * 15,
+        ease: "easeInOut",
+      }
+    })));
+  }, []);
+
+  if (particles.length === 0) return null;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-2 h-2 rounded-full bg-secondary/10"
+          style={p.style}
+          animate={p.animate}
+          transition={p.transition}
+        />
+      ))}
     </div>
   );
 };
