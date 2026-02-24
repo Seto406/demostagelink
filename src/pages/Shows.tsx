@@ -120,6 +120,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   style={{ backgroundImage: `url(${posterUrl})` }}
                 />
                 <motion.img
+                  loading="lazy"
                   src={posterUrl}
                   alt={show.title}
                   className="relative w-full h-full object-contain z-10 transition-transform duration-500 group-hover:scale-105"

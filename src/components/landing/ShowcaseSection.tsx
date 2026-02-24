@@ -71,6 +71,7 @@ const ShowcaseSection = () => {
               className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg border border-secondary/20 hover:border-secondary/50 transition-all group"
             >
               <img
+                loading="lazy"
                 src={poster}
                 alt="Theater production poster"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -90,6 +91,7 @@ const ShowcaseSection = () => {
               className="flex-shrink-0 w-48 h-72 rounded-2xl overflow-hidden shadow-lg border border-secondary/20 hover:border-secondary/50 transition-all group"
             >
               <img
+                loading="lazy"
                 src={poster}
                 alt="Theater production poster"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
