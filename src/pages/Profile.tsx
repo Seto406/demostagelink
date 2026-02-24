@@ -15,6 +15,7 @@ import { DigitalPass } from "@/components/profile/DigitalPass";
 import { StarRating } from "@/components/ui/star-rating";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { calculateReservationFee } from "@/lib/pricing";
+import { toast } from "sonner";
 
 interface ProfileData {
   id: string;
@@ -107,6 +108,7 @@ const Profile = () => {
             await supabase.functions.invoke('claim-tickets');
           } catch (err) {
             console.error("Failed to claim guest tickets:", err);
+            // Optional: toast.error("Could not sync guest purchases.");
           }
         }
 
@@ -154,7 +156,10 @@ const Profile = () => {
             .eq("user_id", profileId)
             .eq("status", "confirmed");
 
-          if (!ticketsError && ticketsData) {
+          if (ticketsError) {
+             console.error("Error fetching tickets:", ticketsError);
+             toast.error("Failed to load your passes.");
+          } else if (ticketsData) {
              // Cast to unknown first because 'shows' is array or object depending on relationship,
              // but here it's singular foreign key.
              setTickets(ticketsData as unknown as TicketData[]);
@@ -179,12 +184,16 @@ const Profile = () => {
                 `)
                 .eq("follower_id", profileData.user_id);
 
-              if (!followsError && followsData) {
+              if (followsError) {
+                console.error("Error fetching follows:", followsError);
+                toast.error("Failed to load following list.");
+              } else if (followsData) {
                 setFollowing(followsData as unknown as FollowData[]);
               }
             }
           } catch (e) {
-            console.log("Could not fetch follows", e);
+            console.error("Could not fetch follows", e);
+            toast.error("Failed to load following list.");
           }
 
           // Fetch Reviews
@@ -205,11 +214,15 @@ const Profile = () => {
               .eq("user_id", profileId)
               .order("created_at", { ascending: false });
 
-            if (!reviewsError && reviewsData) {
+            if (reviewsError) {
+              console.error("Error fetching reviews:", reviewsError);
+              toast.error("Failed to load reviews.");
+            } else if (reviewsData) {
               setReviews(reviewsData as unknown as ReviewData[]);
             }
           } catch (e) {
-             console.log("Could not fetch reviews", e);
+             console.error("Could not fetch reviews", e);
+             toast.error("Failed to load reviews.");
           }
         }
       }

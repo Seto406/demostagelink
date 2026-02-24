@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasInitialized = useRef(false);
 
-  const fetchProfile = async (userId: string, userMetadata?: any) => {
+  const fetchProfile = useCallback(async (userId: string, userMetadata?: any) => {
     try {
       // Wrapped in strict 5s timeout to prevent infinite hangs
       const fetchResponse = await withTimeout(
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.warn("Profile fetch/create aborted or timed out:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -198,17 +198,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id, user.user_metadata);
     }
-  };
+  }, [user, fetchProfile]);
 
-  const updateProfileState = (updates: Partial<Profile>) => {
+  const updateProfileState = useCallback((updates: Partial<Profile>) => {
     setProfile((prev) => (prev ? { ...prev, ...updates } : null));
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
+  const signUp = useCallback(async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
     const { error } = await supabase.auth.signUp({
       email,
@@ -219,14 +219,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     return { error };
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -235,9 +235,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
     return { error };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // 🔥 OPTIMISTIC LOGOUT: We immediately clear the UI state here, line 1.
     // The user will instantly see they are logged out without waiting for the server.
     setUser(null);
@@ -250,7 +250,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.warn("Sign out background sync delayed/failed", error);
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -262,8 +262,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = profile?.role === "admin";
 
+  const value = useMemo(() => ({
+    user,
+    session,
+    profile,
+    loading,
+    isAdmin,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    refreshProfile,
+    updateProfileState
+  }), [user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState]);
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

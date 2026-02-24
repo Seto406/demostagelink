@@ -160,7 +160,9 @@ const Dashboard = () => {
     };
 
     fetchManagedGroups();
-  }, [profile, refreshKey]);
+    // Use profile.user_id to prevent re-runs on every profile object change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.user_id, refreshKey]);
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -227,14 +229,21 @@ const Dashboard = () => {
       }
 
       // Fetch Followers
-      const { data: followsData, error: followsError } = await supabase
-        .from("follows" as any)
-        .select("id, follower_id, created_at")
-        .eq("following_id", selectedGroupId)
-        .order("created_at", { ascending: false });
+      let followsData = null;
+      try {
+          const { data, error: followsError } = await supabase
+            .from("follows" as any)
+            .select("id, follower_id, created_at")
+            .eq("following_id", selectedGroupId)
+            .order("created_at", { ascending: false });
 
-      if (followsError) {
-        console.error("Error fetching followers:", followsError);
+          if (followsError) {
+            console.error("Error fetching followers:", followsError);
+          } else {
+            followsData = data;
+          }
+      } catch (e) {
+          console.error("Unexpected error fetching followers:", e);
       }
 
       const followerIds = followsData?.map((f: any) => f.follower_id) || [];
