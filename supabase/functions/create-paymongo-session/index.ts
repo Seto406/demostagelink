@@ -12,21 +12,61 @@ serve(async (req) => {
   }
 
   try {
-    const { show_id, price, user_id: requestUserId } = await req.json();
+    const { show_id, user_id: requestUserId } = await req.json();
 
-    if (!show_id || !price) {
-      throw new Error("Missing required fields: show_id or price");
-    }
-
-    // Strict validation: Minimum amount is ₱20.00
-    if (Number(price) < 20) {
-      throw new Error("Invalid transaction: Minimum amount is ₱20.00");
+    if (!show_id) {
+      throw new Error("Missing required field: show_id");
     }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Fetch Show Details & Producer Niche
+    // Using !producer_id hint if the relation is ambiguous, or standard join if straightforward.
+    // Based on CheckoutPage, it seems explicit.
+    const { data: show, error: showError } = await supabaseAdmin
+        .from("shows")
+        .select(`
+            id,
+            title,
+            price,
+            reservation_fee,
+            producer_id,
+            profiles:producer_id ( niche )
+        `)
+        .eq("id", show_id)
+        .single();
+
+    if (showError || !show) {
+        console.error("Error fetching show:", showError);
+        throw new Error("Show not found or invalid.");
+    }
+
+    // Server-Side Price Calculation
+    let fee = 0;
+
+    if (show.reservation_fee) {
+        fee = Number(show.reservation_fee);
+    } else {
+        // Access nested profile data safely
+        // The type returned for profiles might be an array or object depending on relation type (one-to-one or one-to-many)
+        // Since producer_id is a foreign key to profiles.id (one-to-one/many-to-one), it should be a single object.
+        const producerProfile = Array.isArray(show.profiles) ? show.profiles[0] : show.profiles;
+        const niche = producerProfile?.niche;
+        const showPrice = Number(show.price || 0);
+
+        if (niche === 'university' || niche === 'local') {
+            fee = 25;
+        } else {
+            fee = showPrice * 0.10;
+        }
+    }
+
+    // Enforce Minimum
+    fee = Math.max(20, fee);
+    const amountInCents = Math.round(fee * 100);
 
     let finalUserId = requestUserId;
 
@@ -50,9 +90,7 @@ serve(async (req) => {
         }
     }
 
-    // Convert amount to centavos (input is in Pesos)
-    const amountInCents = Math.round(Number(price) * 100);
-    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${price} PHP -> ${amountInCents} cents`);
+    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show.title}, amount ${fee} PHP -> ${amountInCents} cents`);
 
     // 1. Create Payment Record (Initialized)
     // We do this BEFORE calling PayMongo so we can pass the payment ID in the success_url
@@ -63,7 +101,7 @@ serve(async (req) => {
         paymongo_checkout_id: `PENDING_${crypto.randomUUID()}`, // Temporary ID to satisfy NOT NULL
         amount: amountInCents,
         status: "initialized",
-        description: `Ticket for show ${show_id}`,
+        description: `Ticket for show ${show.title}`,
       })
       .select("id")
       .single();
@@ -108,12 +146,12 @@ serve(async (req) => {
             {
               currency: "PHP",
               amount: amountInCents, // Amount in cents
-              description: "Ticket Purchase",
+              description: `Ticket for ${show.title}`,
               name: "Show Ticket",
               quantity: 1,
             },
           ],
-          payment_method_types: ["qrph", "gcash", "paymaya"],
+          payment_method_types: ["qrph", "gcash", "paymaya", "card", "grab_pay"], // Added card/grab_pay per memory
           send_email_receipt: true,
           show_description: true,
           show_line_items: true,
