@@ -53,29 +53,23 @@ const PaymentSuccess = () => {
                 console.log("Using ticket details from API response");
                 setShowDetails(data.ticket.shows as unknown as ShowDetails);
              } else {
-                 // Fallback: Fetch ticket and show details if user is logged in
-                 const { data: { user } } = await supabase.auth.getUser();
-                 if (user) {
-                   // Need to get Profile ID first as tickets table uses Profile ID
-                   const { data: profile } = await supabase
-                     .from('profiles')
-                     .select('id')
-                     .eq('user_id', user.id)
-                     .maybeSingle();
-
-                   if (profile) {
+                 // Fallback: Fetch ticket specifically by paymentRef.
+                 // This prevents showing an old ticket if the new one isn't ready or user is a guest.
+                 if (paymentRef) {
+                     console.log("Fetching ticket by payment reference...");
                      const { data: ticket } = await supabase
                        .from('tickets')
                        .select('*, shows(*)')
-                       .eq('user_id', profile.id)
-                       .order('created_at', { ascending: false })
-                       .limit(1)
+                       .eq('payment_id', paymentRef)
                        .maybeSingle();
 
                      if (ticket && ticket.shows) {
                        setShowDetails(ticket.shows as unknown as ShowDetails);
+                     } else {
+                         // Ticket not found yet (maybe webhook is slow?)
+                         console.warn("Ticket not found for confirmed payment.");
+                         setMessage("Payment confirmed! Your ticket is being generated and will appear in your profile shortly.");
                      }
-                   }
                  }
              }
 
