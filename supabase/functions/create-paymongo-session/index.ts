@@ -12,10 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    const { show_id, amount, user_id: requestUserId } = await req.json();
+    const { show_id, price, user_id: requestUserId } = await req.json();
 
-    if (!show_id || !amount) {
-      throw new Error("Missing required fields: show_id or amount");
+    if (!show_id || !price) {
+      throw new Error("Missing required fields: show_id or price");
+    }
+
+    // Strict validation: Minimum amount is ₱20.00
+    if (Number(price) < 20) {
+      throw new Error("Invalid transaction: Minimum amount is ₱20.00");
     }
 
     const supabaseAdmin = createClient(
@@ -46,8 +51,8 @@ serve(async (req) => {
     }
 
     // Convert amount to centavos (input is in Pesos)
-    const amountInCents = Math.round(Number(amount) * 100);
-    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${amount} PHP -> ${amountInCents} cents`);
+    const amountInCents = Math.round(Number(price) * 100);
+    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${price} PHP -> ${amountInCents} cents`);
 
     // 1. Create Payment Record (Initialized)
     // We do this BEFORE calling PayMongo so we can pass the payment ID in the success_url
