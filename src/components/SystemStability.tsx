@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { cleanupStorage } from '@/lib/cleanupStorage';
+import { toast } from "sonner";
 
 export const SystemStability = () => {
   useEffect(() => {
@@ -33,8 +34,14 @@ export const SystemStability = () => {
             }
           }
 
-          // Reload the page to load new assets
-          window.location.reload();
+          // Show Toast and delay reload
+          toast.success("Update available!", {
+            description: "Refreshing the page in 3 seconds to apply the latest features...",
+          });
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
         } else if (!localVersion && serverVersion) {
            // First time load or version not set, just set it
            localStorage.setItem('app_version', serverVersion);
