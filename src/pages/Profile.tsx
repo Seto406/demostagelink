@@ -105,10 +105,12 @@ const Profile = () => {
         // Attempt to claim guest tickets if this is the user's own profile
         if (isOwnProfile && user) {
           try {
-            await supabase.functions.invoke('claim-tickets');
+            const { error: claimError } = await supabase.functions.invoke('claim-tickets');
+            if (claimError) {
+              console.error("Background sync failed: Failed to claim guest tickets.", claimError);
+            }
           } catch (err) {
             console.error("Failed to claim guest tickets:", err);
-            // Optional: toast.error("Could not sync guest purchases.");
           }
         }
 
