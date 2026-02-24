@@ -3,18 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
-import { XCircle, Clock, MapPin, Calendar, Ticket, Home, ArrowRight } from "lucide-react";
+import { XCircle, Clock, Ticket, Home, ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-
-interface ShowDetails {
-  title: string;
-  date: string | null;
-  venue: string | null;
-  poster_url: string | null;
-  show_time: string | null;
-}
+import { DigitalPass } from "@/components/profile/DigitalPass";
+import { calculateReservationFee } from "@/lib/pricing";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -24,7 +17,7 @@ const PaymentSuccess = () => {
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
   const [paymentType, setPaymentType] = useState<string | null>(null);
-  const [showDetails, setShowDetails] = useState<ShowDetails | null>(null);
+  const [ticketData, setTicketData] = useState<any | null>(null);
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -49,9 +42,9 @@ const PaymentSuccess = () => {
              setMessage("You're all set! Your ticket has been confirmed.");
 
              // Use ticket details from response (works for Guest & Auth)
-             if (data.ticket && data.ticket.shows) {
+             if (data.ticket) {
                 console.log("Using ticket details from API response");
-                setShowDetails(data.ticket.shows as unknown as ShowDetails);
+                setTicketData(data.ticket);
              } else {
                  // Fallback: Fetch ticket specifically by paymentRef.
                  // This prevents showing an old ticket if the new one isn't ready or user is a guest.
@@ -59,12 +52,12 @@ const PaymentSuccess = () => {
                      console.log("Fetching ticket by payment reference...");
                      const { data: ticket } = await supabase
                        .from('tickets')
-                       .select('*, shows(*)')
+                       .select('*, shows(*, profiles(group_name, niche), theater_groups(name))')
                        .eq('payment_id', paymentRef)
                        .maybeSingle();
 
-                     if (ticket && ticket.shows) {
-                       setShowDetails(ticket.shows as unknown as ShowDetails);
+                     if (ticket) {
+                       setTicketData(ticket);
                      } else {
                          // Ticket not found yet (maybe webhook is slow?)
                          console.warn("Ticket not found for confirmed payment.");
@@ -175,54 +168,35 @@ const PaymentSuccess = () => {
               <p className="text-muted-foreground">{message}</p>
             </div>
 
-            {paymentType === "ticket" && showDetails && (
+            {paymentType === "ticket" && ticketData && ticketData.shows ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="bg-secondary/10 rounded-xl overflow-hidden border border-secondary/20 text-left"
+                className="w-full text-left"
               >
-                 <div className="flex gap-4 p-4">
-                    {showDetails.poster_url && (
-                        <div className="w-20 h-28 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-                            <img
-                                src={showDetails.poster_url}
-                                alt={showDetails.title}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                    )}
-                    <div className="flex-1 space-y-2 py-1">
-                        <h3 className="font-bold text-lg leading-tight line-clamp-2">{showDetails.title}</h3>
-
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            {(showDetails.date || showDetails.show_time) && (
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-primary" />
-                                    <span>
-                                        {showDetails.date ? format(new Date(showDetails.date), 'MMM d, yyyy') : ''}
-                                        {showDetails.date && showDetails.show_time ? ' • ' : ''}
-                                        {showDetails.show_time ? format(new Date(`2000-01-01T${showDetails.show_time}`), 'h:mm a') : ''}
-                                    </span>
-                                </div>
-                            )}
-                            {showDetails.venue && (
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-primary" />
-                                    <span className="line-clamp-1">{showDetails.venue}</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                 </div>
+                  <DigitalPass
+                    id={ticketData.shows.id}
+                    title={ticketData.shows.title}
+                    groupName={ticketData.shows.profiles?.group_name || ticketData.shows.theater_groups?.name || "StageLink Show"}
+                    posterUrl={ticketData.shows.poster_url}
+                    date={ticketData.shows.date}
+                    venue={ticketData.shows.venue}
+                    city={ticketData.shows.city}
+                    status={ticketData.status}
+                    ticketId={ticketData.id}
+                    ticketPrice={ticketData.shows.price}
+                    reservationFee={ticketData.shows.reservation_fee ?? calculateReservationFee(ticketData.shows.price || 0, ticketData.shows.profiles?.niche || null)}
+                    paymentInstructions={(ticketData.shows.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                />
               </motion.div>
-            )}
+            ) : null}
 
             <div className="flex flex-col gap-3 pt-4">
               {paymentType === "ticket" ? (
                   <Button onClick={() => navigate("/profile")} className="w-full h-12 text-base font-semibold group">
                     <Ticket className="mr-2 w-5 h-5" />
-                    View My Digital Pass
+                    View My Passes in Profile
                     <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
               ) : (
