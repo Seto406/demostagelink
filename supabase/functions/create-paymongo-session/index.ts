@@ -12,7 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { show_id, user_id: requestUserId } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { show_id, user_id: requestUserId } = body;
 
     if (!show_id) {
       throw new Error("Missing required field: show_id");
@@ -34,6 +44,7 @@ serve(async (req) => {
             price,
             reservation_fee,
             producer_id,
+            status,
             profiles:producer_id ( niche )
         `)
         .eq("id", show_id)
@@ -42,6 +53,10 @@ serve(async (req) => {
     if (showError || !show) {
         console.error("Error fetching show:", showError);
         throw new Error("Show not found or invalid.");
+    }
+
+    if (show.status !== "approved") {
+      throw new Error("Show is not available for purchase.");
     }
 
     // Server-Side Price Calculation
@@ -66,6 +81,9 @@ serve(async (req) => {
 
     // Enforce Minimum
     fee = Math.max(20, fee);
+    // Ensure reservation fee does not exceed ticket price
+    fee = Math.min(fee, showPrice);
+
     const amountInCents = Math.round(fee * 100);
 
     let finalUserId = requestUserId;

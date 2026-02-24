@@ -26,6 +26,9 @@ export function calculateReservationFee(price: number, niche: string | null): nu
     fee = Math.round(price * 0.10);
   }
 
+  // Enforce Minimum Fee of 20 PHP
+  fee = Math.max(20, fee);
+
   // Ensure reservation fee does not exceed ticket price
   return Math.min(fee, price);
 }
