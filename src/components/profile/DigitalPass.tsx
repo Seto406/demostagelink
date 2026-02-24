@@ -35,6 +35,7 @@ export const DigitalPass = ({
   venue,
   city,
   status,
+  ticketId,
   ticketPrice,
   reservationFee,
   paymentInstructions,
