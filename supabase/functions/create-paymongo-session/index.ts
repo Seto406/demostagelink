@@ -12,21 +12,78 @@ serve(async (req) => {
   }
 
   try {
-    const { show_id, price, user_id: requestUserId } = await req.json();
+    const { show_id, user_id: requestUserId } = await req.json();
 
-    if (!show_id || !price) {
-      throw new Error("Missing required fields: show_id or price");
-    }
-
-    // Strict validation: Minimum amount is ₱20.00
-    if (Number(price) < 20) {
-      throw new Error("Invalid transaction: Minimum amount is ₱20.00");
+    if (!show_id) {
+      throw new Error("Missing required field: show_id");
     }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Fetch Show Details (Price and Niche)
+    // We need to know the producer's niche to calculate fees correctly if reservation_fee is not set
+    const { data: show, error: showError } = await supabaseAdmin
+      .from("shows")
+      .select(`
+        id,
+        price,
+        reservation_fee,
+        producer_id:profiles!producer_id (
+          niche
+        )
+      `)
+      .eq("id", show_id)
+      .single();
+
+    if (showError || !show) {
+       console.error("Error fetching show details:", showError);
+       throw new Error("Show not found or invalid configuration");
+    }
+
+    // Server-Side Price Calculation
+    let finalPrice = 0;
+    const dbPrice = Number(show.price || 0);
+    const reservationFee = show.reservation_fee ? Number(show.reservation_fee) : null;
+
+    // Logic mirrors src/lib/pricing.ts
+    // Priority: Explicit Reservation Fee > Calculated Fee
+    if (reservationFee !== null && reservationFee > 0) {
+        finalPrice = reservationFee;
+    } else if (dbPrice > 0) {
+         // Access the nested profile data safely
+         // Supabase returns the relation as an object or array. Since it's a FK to a single profile, it should be an object.
+         // Casting to any to avoid TS errors in Deno editor context
+         const producerProfile = show.producer_id as any;
+         const producerNiche = producerProfile?.niche;
+
+         let calculatedFee = 0;
+
+         if (producerNiche === "university" || producerNiche === "local") {
+             calculatedFee = 25;
+         } else {
+             // Default logic for other niches (Professional/Commercial): 10% of ticket price
+             calculatedFee = Math.round(dbPrice * 0.10);
+         }
+
+         // Ensure reservation fee does not exceed ticket price
+         calculatedFee = Math.min(calculatedFee, dbPrice);
+         finalPrice = calculatedFee;
+    } else {
+        // If price is 0 and no reservation fee, we can't charge.
+        // But maybe we should default to 25 if it's a "free" show but needs reservation?
+        // The frontend defaults to 25 if pricing logic returns something weird?
+        // CheckoutPage logic: `show.reservation_fee ?? (show.price ? calculate... : 25)`
+        // So if show.price is 0/null, it defaults to 25.
+        finalPrice = 25;
+    }
+
+    // Strict validation: Minimum amount is ₱20.00
+    if (finalPrice < 20) {
+      throw new Error(`Invalid transaction amount: ₱${finalPrice}. Minimum amount is ₱20.00`);
+    }
 
     let finalUserId = requestUserId;
 
@@ -51,8 +108,8 @@ serve(async (req) => {
     }
 
     // Convert amount to centavos (input is in Pesos)
-    const amountInCents = Math.round(Number(price) * 100);
-    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${price} PHP -> ${amountInCents} cents`);
+    const amountInCents = Math.round(finalPrice * 100);
+    console.log(`Creating session for user ${finalUserId || "GUEST"}, show ${show_id}, amount ${finalPrice} PHP -> ${amountInCents} cents`);
 
     // 1. Create Payment Record (Initialized)
     // We do this BEFORE calling PayMongo so we can pass the payment ID in the success_url

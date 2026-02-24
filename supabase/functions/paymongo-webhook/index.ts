@@ -279,16 +279,26 @@ serve(async (req) => {
   }
 
   try {
+    // ------------------------------------------------------------------------
+    // SECURITY: Webhook Signature Verification
+    // Implement HMAC-SHA256 verification using PAYMONGO_WEBHOOK_SECRET
+    // ------------------------------------------------------------------------
+
     const signatureHeader = req.headers.get("paymongo-signature");
     const secret = Deno.env.get("PAYMONGO_WEBHOOK_SECRET");
 
     if (!secret) {
       console.error("PAYMONGO_WEBHOOK_SECRET is not set");
+      // Server error, but from client perspective it's unauthorized to access if not configured?
+      // Actually 500 is better here but usually we don't want to expose config errors.
       throw new Error("Server configuration error");
     }
 
     if (!signatureHeader) {
-      throw new Error("Missing signature header");
+      return new Response(JSON.stringify({ error: "Missing signature header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 1. Get raw body for verification
@@ -310,7 +320,10 @@ serve(async (req) => {
     const signatureToVerify = liveSignature || testSignature;
 
     if (!timestamp || !signatureToVerify) {
-      throw new Error("Invalid signature header format");
+       return new Response(JSON.stringify({ error: "Invalid signature header format" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 3. Construct signed payload
@@ -342,6 +355,10 @@ serve(async (req) => {
       });
     }
 
+    // ------------------------------------------------------------------------
+    // PROCESSING
+    // ------------------------------------------------------------------------
+
     // 5. Parse JSON
     const payload = JSON.parse(rawBody);
     const eventType = payload.data.attributes.type;
@@ -364,13 +381,9 @@ serve(async (req) => {
 
     if (resourceType === 'checkout_session') {
         checkoutId = data.id;
-        // Assuming the payments array contains payment objects with IDs
         paymongoPaymentId = attributes.payments?.[0]?.id || null;
     } else if (resourceType === 'payment') {
         paymongoPaymentId = data.id;
-        // Try to get checkout ID from attributes if available (not standard but possible)
-        // Or if PayMongo passes it in metadata?
-        // Otherwise, rely on metadata.payment_id to find the record
         checkoutId = attributes.checkout_id || null;
     } else {
         console.warn(`[Background] Unknown resource type: ${resourceType}. Proceeding with metadata extraction.`);
