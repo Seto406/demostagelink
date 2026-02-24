@@ -102,7 +102,7 @@ const Profile = () => {
 
       if (profileId) {
         // Attempt to claim guest tickets if this is the user's own profile
-        if (isOwnProfile) {
+        if (isOwnProfile && user) {
           try {
             await supabase.functions.invoke('claim-tickets');
           } catch (err) {
