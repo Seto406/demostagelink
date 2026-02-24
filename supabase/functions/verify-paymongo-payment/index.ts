@@ -111,50 +111,72 @@ serve(async (req) => {
     if (payment.status === "paid") {
       const type = payment.description?.startsWith("Ticket") ? "ticket" : "subscription";
       let ticketData = null;
+
       if (type === "ticket") {
           ticketData = await fetchTicketDetails(payment.id);
 
-          // Fix for Race Condition: If payment is already marked "paid" (e.g. by webhook),
-          // but the ticket is still a guest ticket (user_id is null) AND the current user is logged in,
-          // claim the ticket now.
-          if (ticketData && !ticketData.user_id && user) {
-            console.log(`[Verify] Payment already paid. Checking if guest ticket ${ticketData.id} needs claiming for user ${user.id}`);
-             const { data: profile } = await supabaseAdmin
-                .from("profiles")
-                .select("id")
-                .eq("user_id", user.id)
-                .maybeSingle();
+          if (!ticketData) {
+              console.warn("[Verify] Payment is paid but ticket is missing. Attempting recovery via PayMongo check.");
+              // Fall through to the rest of the function (PayMongo check & Ticket Insert)
+              // Instead of returning here.
+          } else {
+              // Ticket exists. Perform claim logic if needed.
+              // Fix for Race Condition: If payment is already marked "paid" (e.g. by webhook),
+              // but the ticket is still a guest ticket (user_id is null) AND the current user is logged in,
+              // claim the ticket now.
+              if (!ticketData.user_id && user) {
+                console.log(`[Verify] Payment already paid. Checking if guest ticket ${ticketData.id} needs claiming for user ${user.id}`);
+                 const { data: profile } = await supabaseAdmin
+                    .from("profiles")
+                    .select("id")
+                    .eq("user_id", user.id)
+                    .maybeSingle();
 
-             if (profile) {
-                 console.log(`[Verify] Claiming ticket ${ticketData.id} for profile ${profile.id}`);
-                 const { data: updatedTicket, error: claimError } = await supabaseAdmin
-                    .from("tickets")
-                    .update({ user_id: profile.id })
-                    .eq("id", ticketData.id)
-                    .select('*, shows(*)')
-                    .single();
+                 if (profile) {
+                     console.log(`[Verify] Claiming ticket ${ticketData.id} for profile ${profile.id}`);
+                     const { data: updatedTicket, error: claimError } = await supabaseAdmin
+                        .from("tickets")
+                        .update({ user_id: profile.id })
+                        .eq("id", ticketData.id)
+                        .select('*, shows(*)')
+                        .single();
 
-                 if (!claimError && updatedTicket) {
-                     ticketData = updatedTicket;
-                 } else if (claimError) {
-                     console.error("[Verify] Failed to claim ticket:", claimError);
+                     if (!claimError && updatedTicket) {
+                         ticketData = updatedTicket;
+                     } else if (claimError) {
+                         console.error("[Verify] Failed to claim ticket:", claimError);
+                     }
                  }
-             }
-          }
-      }
+              }
 
-      return new Response(
-        JSON.stringify({
-            status: "paid",
-            message: "Payment successful",
-            type,
-            ticket: ticketData // Return ticket details for Guest UI
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+              return new Response(
+                JSON.stringify({
+                    status: "paid",
+                    message: "Payment successful",
+                    type,
+                    ticket: ticketData // Return ticket details for Guest UI
+                }),
+                {
+                  headers: { ...corsHeaders, "Content-Type": "application/json" },
+                  status: 200,
+                }
+              );
+          }
+      } else {
+          // Subscription logic (assume exists if paid)
+          return new Response(
+            JSON.stringify({
+                status: "paid",
+                message: "Payment successful",
+                type,
+                ticket: null
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+      }
     }
 
     const checkoutId = payment.paymongo_checkout_id;
