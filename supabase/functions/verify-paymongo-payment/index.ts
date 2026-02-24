@@ -190,17 +190,12 @@ serve(async (req) => {
         // CHECK IDEMPOTENCY: Does a ticket already exist for this payment?
         const existingTicket = await fetchTicketDetails(payment.id);
 
-        if (existingTicket) {
-             console.log("Ticket already exists, skipping creation.");
-             ticketData = existingTicket;
-        } else if (showId) {
-          // Insert Ticket
-          // Determine Auth ID (might be null for guest)
-          const authUserId = payment.user_id || metadata.user_id || (user ? user.id : null);
-          let profileIdForTicket = null;
+        // Determine Auth ID (might be null for guest)
+        const authUserId = payment.user_id || metadata.user_id || (user ? user.id : null);
+        let profileIdForTicket = null;
 
-          // Resolve Auth ID to Profile ID
-          if (authUserId) {
+        // Resolve Auth ID to Profile ID
+        if (authUserId) {
              const { data: profile } = await supabaseAdmin
                 .from("profiles")
                 .select("id")
@@ -210,8 +205,33 @@ serve(async (req) => {
              if (profile) {
                 profileIdForTicket = profile.id;
              }
-          }
+        }
 
+        if (existingTicket) {
+             console.log("Ticket already exists.");
+             // CLAIM TICKET LOGIC:
+             // If the ticket exists but has no user_id (guest ticket), AND we have a valid profileIdForTicket (logged in user),
+             // then we update the ticket to belong to this user.
+             if (!existingTicket.user_id && profileIdForTicket) {
+                  console.log(`Claiming guest ticket ${existingTicket.id} for profile ${profileIdForTicket}`);
+                  const { data: updatedTicket, error: claimError } = await supabaseAdmin
+                    .from("tickets")
+                    .update({ user_id: profileIdForTicket })
+                    .eq("id", existingTicket.id)
+                    .select('*, shows(*)')
+                    .single();
+
+                  if (!claimError && updatedTicket) {
+                      ticketData = updatedTicket;
+                  } else {
+                      console.error("Failed to claim ticket:", claimError);
+                      ticketData = existingTicket;
+                  }
+             } else {
+                  ticketData = existingTicket;
+             }
+        } else if (showId) {
+          // Insert Ticket
           const { data: newTicket, error: ticketError } = await supabaseAdmin
             .from("tickets")
             .insert({
