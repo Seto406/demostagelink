@@ -77,7 +77,11 @@ serve(async (req) => {
     const authHeader = `Basic ${btoa(secretKey + ":")}`;
 
     // Determine Base URL
-    const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://www.stagelink.show";
+    const envFrontendUrl = Deno.env.get("FRONTEND_URL");
+    if (!envFrontendUrl) {
+      console.warn("⚠️ WARNING: FRONTEND_URL is not set in environment variables. Defaulting to https://www.stagelink.show");
+    }
+    const frontendUrl = envFrontendUrl ?? "https://www.stagelink.show";
 
     // Prepare Metadata
     const metadata: any = {
