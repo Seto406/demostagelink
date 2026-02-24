@@ -87,7 +87,7 @@ const CheckoutPage = () => {
         body: {
           show_id: show.id,
           user_id: user?.id,
-          amount: Math.round(reservationFee * 100), // centavos
+          price: reservationFee,
           description: `Ticket for ${show.title}`,
           metadata: {
              type: "ticket",
