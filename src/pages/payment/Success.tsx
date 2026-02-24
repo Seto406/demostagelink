@@ -27,12 +27,17 @@ const PaymentSuccess = () => {
   const [showDetails, setShowDetails] = useState<ShowDetails | null>(null);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let isMounted = true;
+
     const verifyPayment = async () => {
       try {
         console.log("Verifying payment with ref:", paymentRef);
         const { data, error } = await supabase.functions.invoke("verify-paymongo-payment", {
           body: { ref: paymentRef }
         });
+
+        if (!isMounted) return;
 
         if (error) throw error;
 
@@ -84,11 +89,14 @@ const PaymentSuccess = () => {
         } else if (data.status === "pending") {
           setStatus("processing");
           setMessage(data.message || "Payment is still processing. Please wait a moment.");
+          // Retry after delay
+          timeoutId = setTimeout(verifyPayment, 3000);
         } else {
           setStatus("failed");
           setMessage(data.message || "Payment verification failed.");
         }
       } catch (error) {
+        if (!isMounted) return;
         console.error("Verification error:", error);
         setStatus("failed");
         setMessage("Could not verify payment. Please contact support if you were charged.");
@@ -96,6 +104,11 @@ const PaymentSuccess = () => {
     };
 
     verifyPayment();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [queryClient, paymentRef]);
 
   const draw = {
