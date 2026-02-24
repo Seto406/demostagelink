@@ -247,6 +247,15 @@ serve(async (req) => {
 
           if (ticketError) {
             console.error("Ticket Insert Error:", ticketError);
+            // Race condition check: If insert failed, maybe webhook already inserted it?
+            // Try fetching again by payment_id
+            const existingRetry = await fetchTicketDetails(payment.id);
+            if (existingRetry) {
+                console.log("Found ticket on retry (race condition handled).");
+                ticketData = existingRetry;
+            } else {
+                console.error("Failed to insert ticket and failed to find it on retry.");
+            }
           } else {
              ticketData = newTicket;
              // Trigger Email
