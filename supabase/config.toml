@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.verify-paymongo-payment]
 verify_jwt = false
+
+[functions.claim-tickets]
+verify_jwt = false

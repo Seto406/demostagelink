@@ -26,9 +26,14 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
     if (userError || !user || !user.email) {
-      throw new Error("Unauthorized");
+      console.log("No authenticated user found. Guest access - skipping claim.");
+      return new Response(JSON.stringify({ success: true, claimed: 0, message: "Guest access" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
+    // Initialize Admin client with SERVICE_ROLE_KEY for privileged database operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
