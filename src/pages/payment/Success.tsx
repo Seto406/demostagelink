@@ -60,8 +60,20 @@ const PaymentSuccess = () => {
                        setTicketData(ticket);
                      } else {
                          // Ticket not found yet (maybe webhook is slow?)
-                         console.warn("Ticket not found for confirmed payment.");
-                         setMessage("Payment confirmed! Your ticket is being generated and will appear in your profile shortly.");
+                         console.warn("Ticket not found for confirmed payment. Attempting fallback claim...");
+
+                         // Try to claim/create ticket via Edge Function
+                         const { data: claimData, error: claimError } = await supabase.functions.invoke('claim-tickets', {
+                            body: { ref: paymentRef }
+                         });
+
+                         if (!claimError && claimData?.ticket) {
+                            console.log("Ticket claimed/created successfully via Edge Function");
+                            setTicketData(claimData.ticket);
+                         } else {
+                            console.error("Failed to claim ticket via Edge Function:", claimError);
+                            setMessage("Payment confirmed! Your ticket is being generated and will appear in your profile shortly.");
+                         }
                      }
                  }
              }
