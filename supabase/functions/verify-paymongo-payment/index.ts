@@ -260,11 +260,25 @@ serve(async (req) => {
              ticketData = newTicket;
              // Trigger Email
              // Only if user exists? Or guest email?
-             // send-ticket-confirmation function might depend on user_id.
-             if (authUserId) {
-                await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
-                  body: { user_id: authUserId, show_id: showId },
+             const emailToSend = session.attributes.billing?.email;
+             const nameToSend = session.attributes.billing?.name;
+
+             if (authUserId || emailToSend) {
+                console.log(`Sending ticket confirmation to user ${authUserId || 'guest'} (email: ${emailToSend})`);
+                const { error: invokeError } = await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
+                  body: {
+                    user_id: authUserId,
+                    show_id: showId,
+                    email: emailToSend,
+                    name: nameToSend
+                  },
                 });
+
+                if (invokeError) {
+                    console.error("Failed to invoke send-ticket-confirmation:", invokeError);
+                }
+             } else {
+                 console.warn("Skipping email confirmation: No user_id or email found.");
              }
           }
         }
