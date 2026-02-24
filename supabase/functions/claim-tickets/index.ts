@@ -18,7 +18,8 @@ serve(async (req) => {
     // Body might be empty
   }
 
-  const { ref } = body;
+  // Robustly extract payment reference
+  const ref = body.ref || body.payment_intent_id || body.session_id;
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -31,6 +32,15 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
+    // Check if Guest AND No Ref (Validation as requested)
+    if (!user && !ref) {
+       console.error("Missing payment reference for guest checkout claim.");
+       return new Response(JSON.stringify({ error: "Missing payment reference (ref, payment_intent_id, or session_id)" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, // Explicitly return 400 for bad guest requests
+       });
+    }
+
     // Initialize Admin client with SERVICE_ROLE_KEY for privileged database operations
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -40,12 +50,22 @@ serve(async (req) => {
     if (ref) {
       console.log(`Processing claim for payment ref: ${ref}`);
 
-      // 1. Fetch Payment
-      const { data: payment, error: paymentError } = await supabaseAdmin
+      // 1. Fetch Payment (Robust Lookup)
+      let paymentQuery = supabaseAdmin
         .from("payments")
-        .select("*")
-        .eq("id", ref)
-        .maybeSingle();
+        .select("*");
+
+      // Determine if ref is UUID or PayMongo ID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+
+      if (isUUID) {
+         paymentQuery = paymentQuery.eq("id", ref);
+      } else {
+         console.log(`Reference ${ref} is not a UUID, assuming PayMongo Checkout ID`);
+         paymentQuery = paymentQuery.eq("paymongo_checkout_id", ref);
+      }
+
+      const { data: payment, error: paymentError } = await paymentQuery.maybeSingle();
 
       if (paymentError || !payment) {
         console.error("Payment fetch error:", paymentError);
@@ -124,6 +144,7 @@ serve(async (req) => {
         if (!showId) throw new Error("Metadata missing show_id");
 
         // Insert Ticket
+        // Explicitly ensuring customer_email and customer_name are used
         const { data: newTicket, error: insertError } = await supabaseAdmin
           .from("tickets")
           .insert({
@@ -151,12 +172,15 @@ serve(async (req) => {
 
     } else {
       // Legacy Flow: Claim by Email (No ref provided)
+      // NOTE: We already validated !user && !ref above, so if we are here, user MUST be present.
+
       if (userError || !user || !user.email) {
-        console.log("No authenticated user found. Guest access - skipping legacy claim.");
-        return new Response(JSON.stringify({ success: true, claimed: 0, message: "Guest access" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+          // This should ideally not be reached due to earlier check, but kept for safety.
+          console.log("Unexpected state: No ref and no user in legacy flow.");
+           return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 401,
+          });
       }
 
       // Get Profile ID
