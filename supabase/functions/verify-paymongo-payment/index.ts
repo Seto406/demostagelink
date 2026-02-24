@@ -113,6 +113,34 @@ serve(async (req) => {
       let ticketData = null;
       if (type === "ticket") {
           ticketData = await fetchTicketDetails(payment.id);
+
+          // Fix for Race Condition: If payment is already marked "paid" (e.g. by webhook),
+          // but the ticket is still a guest ticket (user_id is null) AND the current user is logged in,
+          // claim the ticket now.
+          if (ticketData && !ticketData.user_id && user) {
+            console.log(`[Verify] Payment already paid. Checking if guest ticket ${ticketData.id} needs claiming for user ${user.id}`);
+             const { data: profile } = await supabaseAdmin
+                .from("profiles")
+                .select("id")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+             if (profile) {
+                 console.log(`[Verify] Claiming ticket ${ticketData.id} for profile ${profile.id}`);
+                 const { data: updatedTicket, error: claimError } = await supabaseAdmin
+                    .from("tickets")
+                    .update({ user_id: profile.id })
+                    .eq("id", ticketData.id)
+                    .select('*, shows(*)')
+                    .single();
+
+                 if (!claimError && updatedTicket) {
+                     ticketData = updatedTicket;
+                 } else if (claimError) {
+                     console.error("[Verify] Failed to claim ticket:", claimError);
+                 }
+             }
+          }
       }
 
       return new Response(
