@@ -28,6 +28,7 @@ export const TicketCard = ({
   index = 0,
   isFallback = false,
 }: TicketCardProps) => {
+  // Verified lazy loading implementation
   const CardWrapper = isFallback ? "div" : Link;
   const wrapperProps = isFallback ? {} : { to: `/show/${id}` };
 
