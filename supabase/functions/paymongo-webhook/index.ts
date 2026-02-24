@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,50 +7,101 @@ const corsHeaders = {
 };
 
 // Declare EdgeRuntime for TypeScript
-declare const EdgeRuntime: { waitUntil: (promise: Promise<any>) => void };
+declare const EdgeRuntime: { waitUntil: (promise: Promise<unknown>) => void };
+
+interface WebhookMetadata {
+    payment_id?: string;
+    show_id?: string;
+    user_id?: string;
+    type?: string;
+    [key: string]: unknown;
+}
+
+interface WebhookBilling {
+    email?: string;
+    name?: string;
+    phone?: string;
+    address?: unknown;
+}
+
+interface PaymentUpdatePayload {
+    status: string;
+    updated_at: string;
+    customer_email?: string;
+    customer_name?: string;
+    paymongo_payment_id?: string;
+    paymongo_checkout_id?: string;
+}
+
+interface TicketInsertPayload {
+    show_id: string;
+    status: string;
+    payment_id: string;
+    user_id: string | null;
+    customer_email?: string;
+    customer_name?: string;
+}
 
 function hexToUint8Array(hexString: string): Uint8Array {
   return new Uint8Array(hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
 }
 
 async function processWebhook(
-  checkoutId: string,
-  sessionAttributes: any,
-  supabaseAdmin: any
+  checkoutId: string | null,
+  paymongoPaymentId: string | null,
+  metadata: WebhookMetadata,
+  billing: WebhookBilling,
+  supabaseAdmin: SupabaseClient
 ) {
   try {
-    const metadata = sessionAttributes.metadata || {};
-    const paymongoPaymentId = sessionAttributes.payments?.[0]?.id;
-    const billing = sessionAttributes.billing || {};
-    const customerEmail = billing.email;
-    const customerName = billing.name;
+    const customerEmail = billing?.email;
+    const customerName = billing?.name;
+    const paymentRefId = metadata?.payment_id;
 
-    console.log(`[Background] Processing paid webhook for checkout ${checkoutId}`);
+    console.log(`[Background] Processing paid webhook. Checkout ID: ${checkoutId}, Payment ID: ${paymongoPaymentId}, Ref ID: ${paymentRefId}`);
 
-    // 6. Idempotency Check: Check if a ticket already exists for this payment.
-    const { data: existingPaymentWithTicket, error: lookupError } = await supabaseAdmin
+    // 6. Identify Payment Record
+    // Priority:
+    // 1. metadata.payment_id (Our internal UUID)
+    // 2. checkoutId (PayMongo Checkout Session ID)
+
+    let query = supabaseAdmin
         .from("payments")
-        .select("id, status, user_id, tickets(id)")
-        .eq("paymongo_checkout_id", checkoutId)
-        .maybeSingle();
+        .select("id, status, user_id, tickets(id)");
+
+    if (paymentRefId) {
+        query = query.eq("id", paymentRefId);
+    } else if (checkoutId) {
+        query = query.eq("paymongo_checkout_id", checkoutId);
+    } else {
+        console.error("[Background] Unable to identify payment record. Missing payment_id in metadata and checkout_id.");
+        return;
+    }
+
+    const { data: existingPaymentWithTicket, error: lookupError } = await query.maybeSingle();
 
     if (lookupError) {
         console.error("[Background] Error looking up payment:", lookupError);
         return;
     }
 
-    // Check if tickets array is populated
-    const existingTickets = existingPaymentWithTicket?.tickets;
+    if (!existingPaymentWithTicket) {
+        console.error(`[Background] Payment record not found. Ref: ${paymentRefId}, Checkout ID: ${checkoutId}`);
+        return;
+    }
+
+    // Check if tickets array is populated (Idempotency)
+    const existingTickets = existingPaymentWithTicket.tickets;
     if (existingTickets && Array.isArray(existingTickets) && existingTickets.length > 0) {
          console.log("[Background] Ticket already issued. Skipping.");
          return;
     }
 
-    const showId = metadata.show_id;
-    let authUserId = metadata.user_id; // Auth ID (might be null/undefined for guests)
+    const showId = metadata?.show_id;
+    let authUserId = metadata?.user_id; // Auth ID (might be null/undefined for guests)
 
     // Fallback: If metadata.user_id is missing, check the payment record itself
-    if (!authUserId && existingPaymentWithTicket && existingPaymentWithTicket.user_id) {
+    if (!authUserId && existingPaymentWithTicket.user_id) {
          console.log(`[Background] Metadata missing user_id. Using payment.user_id: ${existingPaymentWithTicket.user_id}`);
          authUserId = existingPaymentWithTicket.user_id;
     }
@@ -61,7 +112,7 @@ async function processWebhook(
     }
 
     // 7. Atomic-ish Update: Update Payment Status FIRST
-    const updatePayload: any = {
+    const updatePayload: PaymentUpdatePayload = {
         status: "paid",
         updated_at: new Date().toISOString(),
         customer_email: customerEmail,
@@ -72,15 +123,21 @@ async function processWebhook(
         updatePayload.paymongo_payment_id = paymongoPaymentId;
     }
 
+    // If we found by ID but checkout ID was missing/different in DB, update it?
+    // (Only if we have a valid checkoutId from webhook)
+    if (checkoutId) {
+         updatePayload.paymongo_checkout_id = checkoutId;
+    }
+
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from("payments")
       .update(updatePayload)
-      .eq("paymongo_checkout_id", checkoutId)
+      .eq("id", existingPaymentWithTicket.id) // Update by ID which we found
       .select()
       .single();
 
     if (paymentError || !payment) {
-      console.error("[Background] Payment update failed or record not found:", paymentError);
+      console.error("[Background] Payment update failed:", paymentError);
       return;
     }
 
@@ -108,7 +165,7 @@ async function processWebhook(
 
     // 9. Create Ticket
     console.log(`[Background] Creating ticket for ${profileId ? 'Profile ID ' + profileId : 'Guest'}, Show ID ${showId}`);
-    const ticketPayload: any = {
+    const ticketPayload: TicketInsertPayload = {
         show_id: showId,
         status: "confirmed",
         payment_id: payment.id,
@@ -272,8 +329,28 @@ serve(async (req) => {
       });
     }
 
-    const checkoutId = payload.data.attributes.data.id;
-    const sessionAttributes = payload.data.attributes.data.attributes;
+    const data = payload.data.attributes.data;
+    const resourceType = data.type;
+    const attributes = data.attributes;
+    const metadata: WebhookMetadata = attributes.metadata || {};
+    const billing: WebhookBilling = attributes.billing || {};
+
+    let checkoutId: string | null = null;
+    let paymongoPaymentId: string | null = null;
+
+    if (resourceType === 'checkout_session') {
+        checkoutId = data.id;
+        // Assuming the payments array contains payment objects with IDs
+        paymongoPaymentId = attributes.payments?.[0]?.id || null;
+    } else if (resourceType === 'payment') {
+        paymongoPaymentId = data.id;
+        // Try to get checkout ID from attributes if available (not standard but possible)
+        // Or if PayMongo passes it in metadata?
+        // Otherwise, rely on metadata.payment_id to find the record
+        checkoutId = attributes.checkout_id || null;
+    } else {
+        console.warn(`[Background] Unknown resource type: ${resourceType}. Proceeding with metadata extraction.`);
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -281,13 +358,11 @@ serve(async (req) => {
     );
 
     // Use EdgeRuntime.waitUntil to prevent timeout
-    const processingPromise = processWebhook(checkoutId, sessionAttributes, supabaseAdmin);
+    const processingPromise = processWebhook(checkoutId, paymongoPaymentId, metadata, billing, supabaseAdmin);
 
     if (typeof EdgeRuntime !== "undefined") {
       EdgeRuntime.waitUntil(processingPromise);
     } else {
-      // Fallback for local testing: await it so we can see logs/errors,
-      // even though it mimics the "slow" behavior locally.
       await processingPromise;
     }
 
@@ -299,7 +374,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Webhook Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
