@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -154,6 +154,12 @@ const AdminPanel = () => {
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [adminSecurityKey, setAdminSecurityKey] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   // Redirect if not logged in or not an admin
   useEffect(() => {
@@ -198,6 +204,8 @@ const AdminPanel = () => {
         supabase.from("shows").select("id", { count: "exact" }).eq("status", "rejected").is("deleted_at", null),
       ]);
 
+      if (!mounted.current) return;
+
       setStats({
         totalUsers: usersRes.count || 0,
         totalShows: showsRes.count || 0,
@@ -209,6 +217,7 @@ const AdminPanel = () => {
         rejectedShows: rejectedRes.count || 0,
       });
     } catch (error) {
+      if (!mounted.current) return;
       console.error("Error fetching stats:", error);
       toast({
         title: "Error",
@@ -260,6 +269,8 @@ const AdminPanel = () => {
       .order("created_at", { ascending: false })
       .range(start, end);
 
+    if (!mounted.current) return;
+
     if (error) {
       console.error("Error fetching shows:", error);
       toast({
@@ -290,6 +301,8 @@ const AdminPanel = () => {
       // The RPC returns { users: [...], total_count: number }
       const result = data as { users: UserProfile[], total_count: number };
 
+      if (!mounted.current) return;
+
       if (result && result.users) {
         setUsers(result.users);
         setTotalUserCount(Number(result.total_count));
@@ -298,6 +311,7 @@ const AdminPanel = () => {
         setTotalUserCount(0);
       }
     } catch (error) {
+      if (!mounted.current) return;
       console.error("Error fetching users:", error);
       toast({
         title: "Error",
@@ -305,7 +319,7 @@ const AdminPanel = () => {
         variant: "destructive",
       });
     } finally {
-      setLoadingUsers(false);
+      if (mounted.current) setLoadingUsers(false);
     }
   }, [currentPage]);
 
@@ -323,6 +337,7 @@ const AdminPanel = () => {
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
+    if (!mounted.current) return;
     if (error) {
       console.error("Error fetching producer requests:", error);
     } else {
@@ -519,13 +534,22 @@ const AdminPanel = () => {
       console.error("Error updating request:", requestError);
     } else {
       // Send email
-      await supabase.functions.invoke("send-producer-status-email", {
+      const { error: emailError } = await supabase.functions.invoke("send-producer-status-email", {
         body: {
           user_id: request.user_id,
           status: "approved",
           group_name: request.group_name,
         },
       });
+
+      if (emailError) {
+        console.error("Failed to send approval email:", emailError);
+        toast({
+          title: "Email Delivery Failed",
+          description: "Producer approved, but email notification failed.",
+          variant: "destructive",
+        });
+      }
     }
 
     toast({
@@ -554,13 +578,22 @@ const AdminPanel = () => {
       });
     } else {
       // Send email
-      await supabase.functions.invoke("send-producer-status-email", {
+      const { error: emailError } = await supabase.functions.invoke("send-producer-status-email", {
         body: {
           user_id: request.user_id,
           status: "rejected",
           group_name: request.group_name,
         },
       });
+
+      if (emailError) {
+        console.error("Failed to send rejection email:", emailError);
+        toast({
+          title: "Email Delivery Failed",
+          description: "Request rejected, but email notification failed.",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Request Rejected",

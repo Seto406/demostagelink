@@ -302,6 +302,15 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       return;
     }
 
+    if (price && parseFloat(price) < 0) {
+      toast({
+        title: "Invalid Price",
+        description: "Price cannot be negative.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploading(true);
     let finalPosterUrl: string | null = null;
 

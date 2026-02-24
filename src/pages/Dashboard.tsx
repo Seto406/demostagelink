@@ -127,6 +127,8 @@ const Dashboard = () => {
   }, [loading, user, navigate]);
 
   useEffect(() => {
+    let aborted = false;
+
     const fetchManagedGroups = async () => {
       if (!profile) return;
       if (managedGroups.length === 0) setIsLoading(true);
@@ -136,6 +138,8 @@ const Dashboard = () => {
         .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description, founded_year, address")
         .eq("user_id", profile.user_id)
         .not("group_name", "is", null);
+
+      if (aborted) return;
 
       if (groupsError) {
         console.error("Error fetching managed groups:", groupsError);
@@ -160,18 +164,24 @@ const Dashboard = () => {
     };
 
     fetchManagedGroups();
+
+    return () => { aborted = true; };
     // Use profile.user_id to prevent re-runs on every profile object change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.user_id, refreshKey]);
 
   useEffect(() => {
+    let aborted = false;
+
     const fetchApplications = async () => {
       if (!selectedGroupId) {
-        setApplications([]);
-        setCollabRequests([]);
-        setUnlinkedMembers([]);
-        setApplicantsByUserId({});
-        setShows([]);
+        if (!aborted) {
+          setApplications([]);
+          setCollabRequests([]);
+          setUnlinkedMembers([]);
+          setApplicantsByUserId({});
+          setShows([]);
+        }
         return;
       }
 
@@ -182,8 +192,11 @@ const Dashboard = () => {
         .eq("producer_id", selectedGroupId)
         .order("created_at", { ascending: false });
 
+      if (aborted) return;
+
       if (showsError) {
         console.error("Error fetching shows:", showsError);
+        toast.error("Failed to load shows.");
       } else {
         setShows(showsData || []);
       }
@@ -195,6 +208,8 @@ const Dashboard = () => {
         .eq("group_id", selectedGroupId)
         .in("status", ["pending", "active"])
         .order("created_at", { ascending: false });
+
+      if (aborted) return;
 
       if (memberError) {
         console.error("Error loading group members:", memberError);
@@ -213,8 +228,11 @@ const Dashboard = () => {
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
+      if (aborted) return;
+
       if (collabError) {
         console.error("Error loading collab requests:", collabError);
+        toast.error("Failed to load collaboration requests.");
       }
 
       // Fetch Unlinked Members (Manual Entries)
@@ -224,8 +242,11 @@ const Dashboard = () => {
         .eq("group_id", selectedGroupId)
         .is("user_id", null);
 
+      if (aborted) return;
+
       if (unlinkedError) {
         console.error("Error loading unlinked members:", unlinkedError);
+        toast.error("Failed to load unlinked members.");
       }
 
       // Fetch Followers
@@ -237,13 +258,17 @@ const Dashboard = () => {
             .eq("following_id", selectedGroupId)
             .order("created_at", { ascending: false });
 
+          if (aborted) return;
+
           if (followsError) {
             console.error("Error fetching followers:", followsError);
+            toast.error("Failed to load followers.");
           } else {
             followsData = data;
           }
       } catch (e) {
           console.error("Unexpected error fetching followers:", e);
+          toast.error("An unexpected error occurred loading followers.");
       }
 
       const followerIds = followsData?.map((f: any) => f.follower_id) || [];
@@ -254,6 +279,8 @@ const Dashboard = () => {
             .from("profiles")
             .select("id, user_id, username, avatar_url")
             .in("user_id", followerIds);
+
+          if (aborted) return;
 
           followersWithProfiles = (followsData || []).map((f: any) => ({
             id: f.id,
@@ -291,8 +318,11 @@ const Dashboard = () => {
         .select("id, user_id, username, avatar_url, group_name, role")
         .in("user_id", allUserIds);
 
+      if (aborted) return;
+
       if (applicantError) {
         console.error("Error loading applicant profiles:", applicantError);
+        toast.error("Failed to load applicant profiles.");
         return;
       }
 
@@ -301,6 +331,8 @@ const Dashboard = () => {
     };
 
     fetchApplications();
+
+    return () => { aborted = true; };
   }, [selectedGroupId, user, refreshKey]);
 
   const handleApproval = async (applicationId: string) => {
