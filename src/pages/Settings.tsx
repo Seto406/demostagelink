@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Users,
   Eye,
-  EyeOff
+  EyeOff,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +44,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useTour } from "@/contexts/TourContext";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, isAdmin } = useAuth();
   const { isPro, startTrial, isCheckingOut, isLoading: subLoading, daysLeft } = useSubscription();
+  const { startTour } = useTour();
   
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
@@ -422,6 +425,48 @@ const Settings = () => {
                 </div>
               </div>
             </motion.section>
+
+            {/* App Experience (Restart Tour) - Audience Only */}
+            {isAudience && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28 }}
+                className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-blue-500/10">
+                    <RotateCcw className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <h2 className="text-xl font-serif font-semibold text-foreground">
+                    App Experience
+                  </h2>
+                </div>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      startTour();
+                      navigate("/feed");
+                      toast({
+                        title: "Tour Restarted",
+                        description: "Welcome back to the tour!",
+                      });
+                    }}
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-background/50 hover:bg-background/80 border border-secondary/10 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <RotateCcw className="w-5 h-5 text-muted-foreground" />
+                      <div className="text-left">
+                        <p className="text-foreground font-medium">Restart Tour</p>
+                        <p className="text-sm text-muted-foreground">View the app walkthrough again</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </button>
+                </div>
+              </motion.section>
+            )}
 
             {/* Security */}
             <motion.section
