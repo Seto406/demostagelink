@@ -134,7 +134,7 @@ const UserFeed = () => {
         `)
         .eq("status", "approved")
         .order("is_premium", { ascending: false })
-        .order("production_status", { ascending: false })
+        .order("production_status", { ascending: true })
         .order("date", { ascending: true })
         .range(from, to);
 
