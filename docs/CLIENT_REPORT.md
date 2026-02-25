@@ -16,7 +16,7 @@ This release establishes the core infrastructure, ensuring a secure, user-friend
 ### For Your Audience
 *   **Unified Discovery**: Audiences can now browse a comprehensive directory of shows and theater groups in one place.
 *   **City-Based Search**: Users can filter productions by location (e.g., Manila, Quezon City, Makati), making it easier to find local entertainment.
-*   **Personalization**: New "Favorites" and "Watchlist" features allow users to curate their own theater experience.
+*   **Personalization**: New "Favorites" feature allows users to curate their own theater experience.
 *   **Seamless Ticket Purchasing**: Integrated links direct users straight to official ticket selling pages.
 
 ### For Theater Producers

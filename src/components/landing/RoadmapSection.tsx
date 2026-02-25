@@ -15,7 +15,7 @@ const phases = [
       "Ticket link integration",
       "Team member showcase",
       "City-based discovery",
-      "Favorites & watchlist"
+      "Favorites"
     ]
   },
   {
