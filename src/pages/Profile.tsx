@@ -152,7 +152,7 @@ const Profile = () => {
                   group_logo_url
                 )
               `)
-              .eq('user_id', profileId)
+              .eq('user_id', profileData.user_id)
               .eq('status', 'active');
 
             if (membersData && membersData.length > 0) {
