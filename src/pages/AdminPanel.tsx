@@ -40,7 +40,9 @@ import {
   Megaphone,
   CheckCircle,
   Mail,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  CreditCard
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +52,8 @@ import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { InvitationHub } from "@/components/admin/InvitationHub";
+import { PaymentSettings } from "@/components/admin/PaymentSettings";
+import { PaymentApprovals } from "@/components/admin/PaymentApprovals";
 import {
   Pagination,
   PaginationContent,
@@ -838,6 +842,17 @@ const AdminPanel = () => {
               {sidebarOpen && <span>User Management</span>}
             </button>
             <button
+              onClick={() => setActiveTab("payments")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "payments"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <CreditCard className="w-5 h-5" />
+              {sidebarOpen && <span>Payment Approvals</span>}
+            </button>
+            <button
               onClick={() => setActiveTab("invitations")}
               className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
                 activeTab === "invitations"
@@ -847,6 +862,17 @@ const AdminPanel = () => {
             >
               <Mail className="w-5 h-5" />
               {sidebarOpen && <span>Invitations</span>}
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "settings"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              {sidebarOpen && <span>Payment Settings</span>}
             </button>
           </nav>
 
@@ -891,7 +917,7 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl text-foreground">
-              {activeTab === "shows" ? "Show Approvals" : activeTab === "users" ? "User Management" : "Invitations"}
+              {activeTab === "shows" ? "Show Approvals" : activeTab === "users" ? "User Management" : activeTab === "payments" ? "Payment Approvals" : activeTab === "settings" ? "Payment Settings" : "Invitations"}
             </h1>
             <Button
               variant="outline"
@@ -960,7 +986,11 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {activeTab === "invitations" ? (
+          {activeTab === "settings" ? (
+            <PaymentSettings />
+          ) : activeTab === "payments" ? (
+            <PaymentApprovals />
+          ) : activeTab === "invitations" ? (
             <InvitationHub />
           ) : activeTab === "shows" ? (
             <motion.div

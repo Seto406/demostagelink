@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { motion } from "framer-motion";
-import { HelpCircle, Lock, BarChart3 } from "lucide-react";
+import { HelpCircle, Lock, BarChart3, AlertTriangle } from "lucide-react";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
@@ -36,6 +36,7 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
   const [stats, setStats] = useState({ views: 0, clicks: 0, ctr: 0 });
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (!isPro) {
@@ -44,16 +45,13 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
     }
 
     try {
-      // Use RPC function for server-side aggregation
-      // This is much faster than fetching thousands of rows to the client
+      // 1. Fetch Analytics RPC
       const { data, error } = await supabase.rpc('get_analytics_summary', { target_group_id: profileId });
 
       if (error) throw error;
 
       if (data) {
         const result = data as unknown as AnalyticsSummary;
-
-        // Ensure safe access to properties with defaults to prevent crashes (e.g. undefined.toFixed)
         setStats({
           views: result.views || 0,
           clicks: result.clicks || 0,
@@ -78,8 +76,18 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
 
         setChartData(formattedChartData);
       }
+
+      // 2. Fetch Pending Tickets Count (Manual Payments)
+      const { count: pendingTickets } = await supabase
+        .from('tickets')
+        .select('id, shows!inner(producer_id)', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('shows.producer_id', profileId);
+
+      setPendingCount(pendingTickets || 0);
+
     } catch (error) {
-      // Safe Mode: Default to 0 on error (including 404/No Data) and suppress console error
+      // Safe Mode
       setStats({ views: 0, clicks: 0, ctr: 0 });
       setChartData([]);
     } finally {
@@ -147,7 +155,8 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
     return <div className="h-96 flex items-center justify-center"><BrandedLoader /></div>;
   }
 
-  const hasData = stats.views > 0 || stats.clicks > 0 || stats.ctr > 0;
+  // Check if we have data or if there are pending tickets (which is relevant data!)
+  const hasData = stats.views > 0 || stats.clicks > 0 || stats.ctr > 0 || pendingCount > 0;
 
   if (!hasData) {
     return (
@@ -163,25 +172,13 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
 
         {/* Ghost Content */}
         <div className="p-6 opacity-10 filter blur-sm select-none pointer-events-none grayscale">
+          {/* ... same ghost content ... */}
           <div className="grid md:grid-cols-3 gap-6 mb-6">
-             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
-                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
-                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
-             </div>
-             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
-                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
-                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
-             </div>
-             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4">
-                <div className="h-4 w-1/2 bg-secondary/40 rounded"></div>
-                <div className="h-8 w-1/3 bg-secondary/40 rounded"></div>
-             </div>
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4"></div>
+             <div className="h-24 bg-secondary/20 rounded-xl border border-secondary/30 flex flex-col justify-between p-4"></div>
           </div>
-          <div className="h-64 bg-secondary/20 rounded-xl border border-secondary/30 flex items-end justify-between p-8 gap-4">
-             {[40, 60, 30, 80, 50, 70, 45].map((h, i) => (
-               <div key={i} className="w-full bg-secondary/40 rounded-t-sm" style={{ height: `${h}%` }}></div>
-             ))}
-          </div>
+          <div className="h-64 bg-secondary/20 rounded-xl border border-secondary/30 flex items-end justify-between p-8 gap-4"></div>
         </div>
       </Card>
     );
@@ -194,6 +191,23 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
+      {pendingCount > 0 && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                  <div className="bg-yellow-500/20 p-2 rounded-full">
+                      <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                  </div>
+                  <div>
+                      <p className="font-semibold text-foreground">Pending Ticket Verifications</p>
+                      <p className="text-sm text-muted-foreground">
+                          You have {pendingCount} ticket{pendingCount !== 1 && 's'} awaiting admin payment approval.
+                      </p>
+                  </div>
+              </div>
+              {/* Optional: Link to a detailed view if we had one for producers, but for now it's just visibility */}
+          </div>
+      )}
+
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="bg-card border-secondary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
-import { XCircle, Clock, Ticket, Home, ArrowRight } from "lucide-react";
+import { XCircle, Clock, Ticket, Home, ArrowRight, CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { DigitalPass } from "@/components/profile/DigitalPass";
@@ -13,6 +13,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const paymentRef = searchParams.get("ref");
+  const isManual = searchParams.get("manual") === "true";
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<"verifying" | "success" | "failed" | "processing">("verifying");
   const [message, setMessage] = useState("Verifying your payment...");
@@ -22,6 +23,13 @@ const PaymentSuccess = () => {
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
+
+    if (isManual) {
+        setStatus("success");
+        setPaymentType("ticket");
+        setMessage("Your payment proof has been submitted for review. You will receive an email once approved.");
+        return;
+    }
 
     const verifyPayment = async () => {
       try {
@@ -47,7 +55,6 @@ const PaymentSuccess = () => {
                 setTicketData(data.ticket);
              } else {
                  // Fallback: Fetch ticket specifically by paymentRef.
-                 // This prevents showing an old ticket if the new one isn't ready or user is a guest.
                  if (paymentRef) {
                      console.log("Fetching ticket by payment reference...");
                      const { data: ticket } = await supabase
@@ -102,13 +109,18 @@ const PaymentSuccess = () => {
       }
     };
 
-    verifyPayment();
+    if (paymentRef) {
+        verifyPayment();
+    } else if (!isManual) {
+        // No ref and not manual? Maybe arrived here by mistake or back button
+        navigate("/feed");
+    }
 
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [queryClient, paymentRef]);
+  }, [queryClient, paymentRef, isManual, navigate]);
 
   const draw = {
     hidden: { pathLength: 0, opacity: 0 },
@@ -154,58 +166,79 @@ const PaymentSuccess = () => {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                />
-               <motion.svg
-                  viewBox="0 0 50 50"
-                  className="w-16 h-16 text-green-500 relative z-10"
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <motion.path
-                    d="M14 26 L22 34 L36 18"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="transparent"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    variants={draw}
-                    custom={0}
-                  />
-                </motion.svg>
+               {isManual ? (
+                   <div className="relative z-10 bg-green-500 rounded-full p-4">
+                       <CheckCircle className="w-10 h-10 text-white" />
+                   </div>
+               ) : (
+                   <motion.svg
+                      viewBox="0 0 50 50"
+                      className="w-16 h-16 text-green-500 relative z-10"
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <motion.path
+                        d="M14 26 L22 34 L36 18"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="transparent"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        variants={draw}
+                        custom={0}
+                      />
+                    </motion.svg>
+               )}
             </div>
 
             <div className="space-y-2">
               <h2 className="text-3xl font-serif font-bold text-foreground">
-                  {paymentType === "ticket" ? "Booking Confirmed!" : "Payment Successful!"}
+                  {isManual ? "Payment Submitted" : (paymentType === "ticket" ? "Booking Confirmed!" : "Payment Successful!")}
               </h2>
               <p className="text-muted-foreground">{message}</p>
             </div>
 
-            {paymentType === "ticket" && ticketData && ticketData.shows ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="w-full text-left"
-              >
-                  <DigitalPass
-                    id={ticketData.shows.id}
-                    title={ticketData.shows.title}
-                    groupName={ticketData.shows.profiles?.group_name || ticketData.shows.theater_groups?.name || "StageLink Show"}
-                    posterUrl={ticketData.shows.poster_url}
-                    date={ticketData.shows.date}
-                    venue={ticketData.shows.venue}
-                    city={ticketData.shows.city}
-                    status={ticketData.status}
-                    ticketId={ticketData.id}
-                    ticketPrice={ticketData.shows.price}
-                    reservationFee={ticketData.shows.reservation_fee ?? calculateReservationFee(ticketData.shows.price || 0, ticketData.shows.profiles?.niche || null)}
-                    paymentInstructions={(ticketData.shows.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
-                />
-              </motion.div>
-            ) : null}
+            {isManual ? (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl text-yellow-600 dark:text-yellow-400 text-left">
+                    <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="font-semibold text-sm">Pending Admin Review</p>
+                            <p className="text-xs opacity-90 mt-1">
+                                Your proof of payment has been received. Our team will verify it within 24-48 hours.
+                                Once approved, your ticket will be sent to your email.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                paymentType === "ticket" && ticketData && ticketData.shows ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="w-full text-left"
+                  >
+                      <DigitalPass
+                        id={ticketData.shows.id}
+                        title={ticketData.shows.title}
+                        groupName={ticketData.shows.profiles?.group_name || ticketData.shows.theater_groups?.name || "StageLink Show"}
+                        posterUrl={ticketData.shows.poster_url}
+                        date={ticketData.shows.date}
+                        venue={ticketData.shows.venue}
+                        city={ticketData.shows.city}
+                        status={ticketData.status}
+                        ticketId={ticketData.id}
+                        ticketPrice={ticketData.shows.price}
+                        reservationFee={ticketData.shows.reservation_fee ?? calculateReservationFee(ticketData.shows.price || 0, ticketData.shows.profiles?.niche || null)}
+                        paymentInstructions={(ticketData.shows.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                    />
+                  </motion.div>
+                ) : null
+            )}
 
             <div className="flex flex-col gap-3 pt-4">
-              {paymentType === "ticket" ? (
+              {paymentType === "ticket" || isManual ? (
                   <Button onClick={() => navigate("/profile")} className="w-full h-12 text-base font-semibold group">
                     <Ticket className="mr-2 w-5 h-5" />
                     View My Passes in Profile

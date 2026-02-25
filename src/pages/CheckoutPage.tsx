@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket, Upload, Loader2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateReservationFee } from "@/lib/pricing";
@@ -19,6 +21,13 @@ const CheckoutPage = () => {
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+
+  // Manual Payment State
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -73,9 +82,21 @@ const CheckoutPage = () => {
       setLoading(false);
     };
 
+    const fetchQr = async () => {
+        const { data } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'payment_qr_code_url')
+            .maybeSingle();
+        if (data) setQrCodeUrl(data.value);
+    };
+
     fetchShow();
+    fetchQr();
   }, [showId, navigate]);
 
+  /*
+  // PayMongo Payment Handler (Hidden for now)
   const handlePayment = async () => {
     if (!show || !show.price) return;
 
@@ -110,6 +131,65 @@ const CheckoutPage = () => {
       console.error("Purchase error:", error);
       toast.error("Failed to initiate purchase. Please try again.");
       setProcessing(false);
+    }
+  };
+  */
+
+  const handleManualSubmit = async () => {
+    if (!show || !show.price) return;
+
+    if (!proofFile) {
+        toast.error("Please upload a proof of payment (screenshot).");
+        return;
+    }
+
+    if (!user && (!guestName || !guestEmail)) {
+        toast.error("Please provide your name and email.");
+        return;
+    }
+
+    setProcessing(true);
+    setUploading(true);
+
+    try {
+        // 1. Upload Proof
+        const fileExt = proofFile.name.split(".").pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('payment_proofs').upload(fileName, proofFile);
+
+        if (uploadError) throw uploadError;
+
+        // 2. Generate Signed URL for Edge Function / Email (Valid for 7 days)
+        const { data: signedData, error: signError } = await supabase.storage.from('payment_proofs').createSignedUrl(fileName, 60 * 60 * 24 * 7);
+
+        if (signError) throw signError;
+        const proofUrl = signedData.signedUrl;
+
+        // 3. Call Create Payment Function
+        const reservationFee = show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.producer_id?.niche ?? null) : 25);
+
+        const { error: funcError } = await supabase.functions.invoke("create-manual-payment", {
+            body: {
+                show_id: show.id,
+                user_id: user?.id,
+                price: reservationFee,
+                proof_url: proofUrl,
+                guest_email: user?.email || guestEmail,
+                guest_name: guestName
+            }
+        });
+
+        if (funcError) throw funcError;
+
+        toast.success("Payment submitted for review!");
+        navigate("/payment/success?manual=true");
+
+    } catch (error) {
+        console.error("Manual Payment Error:", error);
+        toast.error("Failed to submit payment. Please try again.");
+    } finally {
+        setProcessing(false);
+        setUploading(false);
     }
   };
 
@@ -198,7 +278,7 @@ const CheckoutPage = () => {
                  <div className="bg-secondary/5 border border-secondary/10 rounded-xl p-4 text-sm text-muted-foreground">
                     <p className="flex gap-2">
                         <Lock className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
-                        Your transaction is secured. We use PayMongo for secure payment processing.
+                        Your transaction is secured. Manual review ensures payment verification.
                     </p>
                 </div>
             </div>
@@ -208,7 +288,7 @@ const CheckoutPage = () => {
                 <Card className="border-secondary/20 bg-card h-full">
                     <CardHeader>
                         <CardTitle className="font-serif">Payment Details</CardTitle>
-                        <CardDescription>Review cost breakdown</CardDescription>
+                        <CardDescription>Scan QR Code & Upload Proof</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-3">
@@ -227,8 +307,68 @@ const CheckoutPage = () => {
                             </div>
                         </div>
 
+                        {/* Manual Payment UI */}
+                        <div className="space-y-6 pt-4 border-t border-border">
+                            {/* QR Code Display */}
+                            <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-secondary/20">
+                                {qrCodeUrl ? (
+                                    <img
+                                        src={qrCodeUrl}
+                                        alt="Payment QR Code"
+                                        className="max-w-[200px] h-auto object-contain"
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center text-muted-foreground py-8">
+                                        <QrCode className="w-12 h-12 mb-2 opacity-50" />
+                                        <p className="text-xs">No QR Code Available</p>
+                                    </div>
+                                )}
+                                <p className="text-xs text-center text-muted-foreground mt-2">
+                                    Scan to pay {formatCurrency(reservationFee)}
+                                </p>
+                            </div>
+
+                            {/* Guest Form */}
+                            {!user && (
+                                <div className="space-y-4">
+                                    <div className="grid w-full gap-1.5">
+                                        <Label htmlFor="guestName">Full Name</Label>
+                                        <Input
+                                            id="guestName"
+                                            placeholder="Enter your name"
+                                            value={guestName}
+                                            onChange={(e) => setGuestName(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="grid w-full gap-1.5">
+                                        <Label htmlFor="guestEmail">Email Address</Label>
+                                        <Input
+                                            id="guestEmail"
+                                            type="email"
+                                            placeholder="Enter your email"
+                                            value={guestEmail}
+                                            onChange={(e) => setGuestEmail(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* File Upload */}
+                            <div className="grid w-full gap-1.5">
+                                <Label htmlFor="proof">Proof of Payment (Screenshot)</Label>
+                                <Input
+                                    id="proof"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                                    className="cursor-pointer"
+                                />
+                                <p className="text-xs text-muted-foreground">Upload a screenshot of your successful transfer.</p>
+                            </div>
+                        </div>
+
                          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-xs text-yellow-600 dark:text-yellow-400">
-                            <strong>Note:</strong> You are paying a <u>{formatCurrency(reservationFee)}</u> reservation fee now to secure your seat. The remaining balance of {formatCurrency(remainingBalance)} will be collected at the venue.
+                            <strong>Note:</strong> You are paying a <u>{formatCurrency(reservationFee)}</u> reservation fee now. Your ticket will be issued after admin verification (usually within 24h).
                         </div>
 
                     </CardContent>
@@ -236,15 +376,18 @@ const CheckoutPage = () => {
                         <Button
                             className="w-full text-lg h-12"
                             size="lg"
-                            onClick={handlePayment}
-                            disabled={processing}
+                            onClick={handleManualSubmit}
+                            disabled={processing || !proofFile || (!user && (!guestName || !guestEmail))}
                         >
                             {processing ? (
-                                "Processing..."
+                                <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    {uploading ? "Uploading Proof..." : "Submitting..."}
+                                </>
                             ) : (
                                 <>
                                     <CreditCard className="w-5 h-5 mr-2" />
-                                    Pay {formatCurrency(reservationFee)} Now
+                                    Submit Payment Proof
                                 </>
                             )}
                         </Button>
