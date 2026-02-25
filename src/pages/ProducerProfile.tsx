@@ -358,41 +358,17 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
-      const { data: existingRequest, error: fetchError } = await supabase
-        .from('collaboration_requests' as any)
-        .select('id')
-        .eq('sender_id', user.id)
-        .eq('receiver_id', producer.user_id)
-        .eq('status', 'pending')
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (existingRequest) {
-        toast.info("You already have a pending collaboration request.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from('collaboration_requests' as any)
-        .insert([{
-          sender_id: user.id,
-          receiver_id: producer.user_id,
-          status: 'pending'
-        }]);
+      const { data, error } = await supabase.functions.invoke('send-collab-proposal', {
+        body: { recipient_profile_id: producer.id }
+      });
 
       if (error) throw error;
 
-      await createNotification({
-        userId: producer.id,
-        actorId: profile.id,
-        type: 'collaboration_request',
-        title: 'New Collaboration Request',
-        message: `${profile.group_name || profile.username || 'Someone'} wants to collaborate with you.`,
-        link: `/dashboard`
-      });
-
-      toast.success("Collaboration request sent successfully!");
+      if (data?.error) {
+        toast.error(data.error);
+      } else if (data?.success) {
+        toast.success(data.message || "Collaboration request sent successfully!");
+      }
     } catch (error: any) {
       console.error("Error sending collaboration request:", error);
       toast.error(error.message || "Failed to send request");
