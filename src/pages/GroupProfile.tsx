@@ -1,10 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Users, Calendar, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Users, Calendar, ExternalLink, UserPlus } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Group logos
 import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
@@ -173,6 +174,7 @@ const GroupProfile = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="bg-card border border-secondary/20 rounded-xl p-8 md:p-12 mb-8"
+            data-tour="profile-header"
           >
             <div className="flex flex-col md:flex-row items-start gap-8">
               {/* Logo */}
@@ -220,10 +222,56 @@ const GroupProfile = () => {
                   {group.group_name}
                 </h1>
 
-                <p className="text-muted-foreground leading-relaxed">
-                  {group.description}
-                </p>
+                <div className="flex items-center justify-between w-full">
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                    {group.description}
+                  </p>
+                  <Button variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 hidden md:flex" data-tour="profile-follow">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Follow
+                  </Button>
+                </div>
               </div>
+            </div>
+          </motion.div>
+
+          {/* Location Placeholder (For Tour) */}
+          <motion.div
+            className="mb-8 p-6 bg-card border border-secondary/20 rounded-xl"
+            data-tour="profile-location"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+               <MapPin className="w-5 h-5 text-secondary" />
+               <h2 className="font-serif text-xl text-foreground">Location</h2>
+            </div>
+            <div className="w-full h-48 bg-muted/30 rounded-lg flex items-center justify-center border border-dashed border-secondary/30">
+               <span className="text-muted-foreground flex items-center gap-2">
+                 <MapPin className="w-4 h-4" />
+                 Map View ({group.city})
+               </span>
+            </div>
+          </motion.div>
+
+          {/* Ensemble Placeholder (For Tour) */}
+          <motion.div
+             className="mb-8"
+             data-tour="profile-ensemble"
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          >
+            <h2 className="font-serif text-2xl text-foreground mb-6">Ensemble</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               {[1,2,3,4].map(i => (
+                 <div key={i} className="flex items-center gap-3 p-3 bg-card border border-secondary/20 rounded-lg">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>M{i}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">Member {i}</p>
+                      <p className="text-xs text-muted-foreground">Actor</p>
+                    </div>
+                 </div>
+               ))}
             </div>
           </motion.div>
 
@@ -272,13 +320,14 @@ const GroupProfile = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-8 bg-card border border-secondary/20 rounded-xl p-8 text-center"
+            data-tour="profile-show-card"
           >
             <h2 className="font-serif text-2xl text-foreground mb-4">Upcoming Shows</h2>
             <p className="text-muted-foreground mb-6">
               No shows announced yet. Check back soon for {group.group_name}'s upcoming productions.
             </p>
             <Link to="/shows">
-              <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
+              <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/10" data-tour="profile-ticket-btn">
                 Browse All Shows
               </Button>
             </Link>

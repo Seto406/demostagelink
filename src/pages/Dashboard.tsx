@@ -268,6 +268,7 @@ const Dashboard = () => {
       // Fetch Followers
       let followsData = null;
       try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data, error: followsError } = await supabase
             .from("follows" as any)
             .select("id, follower_id, created_at")
@@ -287,6 +288,7 @@ const Dashboard = () => {
           toast.error("An unexpected error occurred loading followers.");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const followerIds = followsData?.map((f: any) => f.follower_id) || [];
 
       let followersWithProfiles: Follower[] = [];
@@ -298,6 +300,7 @@ const Dashboard = () => {
 
           if (aborted) return;
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           followersWithProfiles = (followsData || []).map((f: any) => ({
             id: f.id,
             follower_id: f.follower_id,
@@ -749,7 +752,7 @@ const Dashboard = () => {
       </div>
 
       {/* Zone 2: Stats */}
-      <div className="mb-8" ref={analyticsRef}>
+      <div className="mb-8" ref={analyticsRef} data-tour="dashboard-analytics">
          {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={isPro} onUpsell={() => {
              setUpsellContext({ featureName: "Analytics", description: "Detailed analytics are available on the Premium plan." });
              setUpsellOpen(true);
@@ -771,7 +774,7 @@ const Dashboard = () => {
               />
           )}
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="dashboard-tabs">
               <TabsList className="grid w-full grid-cols-3 bg-secondary/10 p-1 rounded-xl">
                   <TabsTrigger value="approved" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
                       Approved Shows ({approvedShows.length})

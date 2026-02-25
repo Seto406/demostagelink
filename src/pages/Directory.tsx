@@ -459,6 +459,7 @@ const Directory = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mb-12 space-y-6"
+            data-tour="directory-filters"
           >
             {/* Search */}
             <div className="relative max-w-md mx-auto">
@@ -667,6 +668,7 @@ const Directory = () => {
                                       size="sm"
                                       variant="outline"
                                       className="w-full"
+                                      data-tour={index === 0 ? "directory-join-btn" : undefined}
                                       onClick={(e) => handleJoinRequest(e, group)}
                                       disabled={joiningGroupId === group.id}
                                   >
