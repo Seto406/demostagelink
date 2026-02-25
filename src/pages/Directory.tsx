@@ -336,6 +336,21 @@ const Directory = () => {
 
     setJoiningGroupId(group.id);
     try {
+      // Check for total existing memberships (active or pending)
+      const { count: membershipCount, error: countError } = await supabase
+        .from('group_members' as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .in('status', ['active', 'pending']);
+
+      if (countError) throw countError;
+
+      if (membershipCount && membershipCount >= 2) {
+        toast.error("You can only join up to 2 theater groups.");
+        setJoiningGroupId(null);
+        return;
+      }
+
       // Check for existing membership/application
       const { data: existingMember, error: fetchError } = await supabase
         .from('group_members' as any)
