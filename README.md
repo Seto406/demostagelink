@@ -53,7 +53,7 @@ Built by [La Creneurs](https://www.stagelink.show) — because every performance
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 18+ and pnpm
 - Supabase project (auto-configured via Lovable Cloud)
 
 ### Local Development
@@ -64,10 +64,10 @@ git clone <YOUR_GIT_URL>
 cd stagelink
 
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 ### Environment Variables
