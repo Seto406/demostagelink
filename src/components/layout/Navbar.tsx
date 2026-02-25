@@ -118,8 +118,8 @@ const Navbar = () => {
               </Link>
 
               {/* Desktop Search Bar */}
-              <div className="hidden md:block w-full max-w-[280px] lg:max-w-sm ml-4">
-                <SearchBar />
+              <div className="hidden lg:block w-full max-w-[280px] lg:max-w-sm ml-4">
+                <SearchBar variant="desktop" />
               </div>
             </div>
 
@@ -157,8 +157,8 @@ const Navbar = () => {
             {/* Right Section: Actions + Desktop Hamburger */}
             <div className="flex items-center justify-end gap-1 sm:gap-2">
               {/* Mobile Search Icon */}
-              <div className="md:hidden">
-                <SearchBar />
+              <div className="lg:hidden">
+                <SearchBar variant="mobile" />
               </div>
 
               {user && (
