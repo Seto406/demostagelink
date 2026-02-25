@@ -51,7 +51,19 @@ serve(async (req) => {
     }
     const amountInCents = Math.round(fee * 100);
 
-    // 2. Insert Payment
+    // 2. Lookup Profile ID if user is logged in
+    let profileId = null;
+    if (user_id) {
+        const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .eq("user_id", user_id)
+            .maybeSingle();
+        if (profile) profileId = profile.id;
+    }
+
+    // 3. Insert Payment
+    // Note: payments.user_id references profiles(user_id) which matches auth.uid()
     const { data: payment, error: paymentError } = await supabaseAdmin
       .from("payments")
       .insert({
@@ -67,13 +79,17 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (paymentError) throw paymentError;
+    if (paymentError) {
+        console.error("Payment Insert Error:", paymentError);
+        throw paymentError;
+    }
 
-    // 3. Insert Ticket (Pending)
+    // 4. Insert Ticket (Pending)
+    // Note: tickets.user_id references profiles(id)
     const { data: ticket, error: ticketError } = await supabaseAdmin
       .from("tickets")
       .insert({
-        user_id: user_id || null,
+        user_id: profileId, // Use Profile ID, or null for guest
         show_id: show.id,
         status: "pending", // Pending approval
         payment_id: payment.id,
@@ -83,7 +99,10 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (ticketError) throw ticketError;
+    if (ticketError) {
+        console.error("Ticket Insert Error:", ticketError);
+        throw ticketError;
+    }
 
     // 4. Send Email to Admin
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
