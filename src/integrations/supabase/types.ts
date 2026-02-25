@@ -651,6 +651,7 @@ export type Database = {
           description: string | null
           director: string | null
           duration: string | null
+          external_links: Json
           genre: string | null
           id: string
           niche: Database["public"]["Enums"]["niche_type"] | null
@@ -679,6 +680,7 @@ export type Database = {
           description?: string | null
           director?: string | null
           duration?: string | null
+          external_links?: Json
           genre?: string | null
           id?: string
           niche?: Database["public"]["Enums"]["niche_type"] | null
