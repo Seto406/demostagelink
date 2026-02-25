@@ -13,7 +13,7 @@ Built by [La Creneurs](https://www.stagelink.show) — because every performance
 #### For Audiences
 - 🔍 **Theater Directory** — Browse and discover local & university theater groups
 - 📍 **City-Based Discovery** — Find shows in Manila, Quezon City, Makati, and more
-- ❤️ **Favorites & Watchlist** — Save shows you're interested in
+- ❤️ **Favorites** — Save shows you're interested in
 - 🎫 **Show Details** — View production info, venue, dates, and ticket links
 - 👥 **Group Profiles** — Explore theater group history, team members, and social links
 
@@ -107,7 +107,7 @@ supabase/
 - Ticket link integration
 - Team member showcase
 - City-based discovery
-- Favorites & watchlist
+- Favorites
 
 ### Phase 2: Growth ✅ (Released Q1 2026)
 - Real-time analytics dashboard

@@ -363,7 +363,7 @@ export function FeedPost({ show }: FeedPostProps) {
                             const willFavorite = !isFavorited(show.id);
                             toggleFavorite(show.id);
                             toast({
-                                title: willFavorite ? "Saved to Watchlist" : "Removed from Watchlist",
+                                title: willFavorite ? "Added to Favorites" : "Removed from Favorites",
                                 description: willFavorite ? "This show has been added to your favorites." : "This show has been removed from your favorites.",
                             });
                         }}

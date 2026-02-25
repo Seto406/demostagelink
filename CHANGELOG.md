@@ -19,7 +19,7 @@ First public release of StageLink — a digital platform connecting audiences wi
 - **Show Listings Management** — Producers can create, edit, and manage theater productions
 - **Theater Directory** — Browse and discover local & university theater groups
 - **City-Based Discovery** — Find shows by location (Manila, Quezon City, Makati, Pasay, etc.)
-- **Favorites & Watchlist** — Audiences can save shows they're interested in
+- **Favorites** — Audiences can save shows they're interested in
 - **Ticket Link Integration** — Direct links to ticket purchase pages
 - **Group Profiles** — Dedicated pages for theater groups with history and social links
 - **Team Member Showcase** — Display cast and crew with roles and photos
