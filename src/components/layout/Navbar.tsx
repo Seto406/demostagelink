@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Shield, Menu, X, Settings, Star, User, Ticket, Bell, Film, Users, House, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
+import { SearchBar } from "@/components/search/SearchBar";
 
 const Navbar = () => {
   const location = useLocation();
@@ -85,7 +86,8 @@ const Navbar = () => {
   };
 
   const homePath = user ? "/feed" : "/";
-  const profileInitial = profile?.display_name?.trim()?.charAt(0)?.toUpperCase() || "U";
+  const displayName = profile?.group_name || profile?.username || "User";
+  const profileInitial = displayName.trim().charAt(0).toUpperCase();
 
   return (
     <>
@@ -114,6 +116,11 @@ const Navbar = () => {
                   Stage<span className="text-secondary">Link</span>
                 </span>
               </Link>
+
+              {/* Desktop Search Bar */}
+              <div className="hidden md:block w-full max-w-[280px] lg:max-w-sm ml-4">
+                <SearchBar />
+              </div>
             </div>
 
             {/* Center Section: Mobile Logo + Desktop Nav */}
@@ -149,6 +156,11 @@ const Navbar = () => {
 
             {/* Right Section: Actions + Desktop Hamburger */}
             <div className="flex items-center justify-end gap-1 sm:gap-2">
+              {/* Mobile Search Icon */}
+              <div className="md:hidden">
+                <SearchBar />
+              </div>
+
               {user && (
                 <Link to="/notifications" className="relative">
                   <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">

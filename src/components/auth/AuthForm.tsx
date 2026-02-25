@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { FloatingInput } from "@/components/ui/floating-input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { shakeVariants } from "@/hooks/use-shake";
@@ -78,6 +79,9 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
   const [userType, setUserType] = useState<UserType>(null);
   const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [firstName, setFirstName] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -90,6 +94,33 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
   // Password match validation
   const passwordsMatch = password === confirmPassword && password.length > 0;
   const showMatchIndicator = authMode === "signup" && confirmPassword.length > 0;
+
+  // Check username availability
+  useEffect(() => {
+    const checkUsername = async () => {
+      if (!username || username.length < 3) {
+        if (username.length > 0) setUsernameError("Username too short");
+        else setUsernameError("");
+        return;
+      }
+
+      setIsCheckingUsername(true);
+      const { count } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('username', username);
+
+      if (count && count > 0) {
+        setUsernameError("Username is already taken");
+      } else {
+        setUsernameError("");
+      }
+      setIsCheckingUsername(false);
+    };
+
+    const timer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   // Password strength
   const passwordStrength = useMemo(() => calculatePasswordStrength(password), [password]);
@@ -152,6 +183,17 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
           return;
         }
 
+        if (!username.trim() || usernameError) {
+          toast({
+            title: "Error",
+            description: usernameError || "Please enter a valid username",
+            variant: "destructive",
+          });
+          triggerShake();
+          setIsSubmitting(false);
+          return;
+        }
+
         // Validate password meets requirements
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.isValid) {
@@ -187,7 +229,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
           return;
         }
 
-        const { error } = await signUp(email, password, userType, firstName);
+        const { error } = await signUp(email, password, userType, firstName, username);
         if (error) {
           triggerShake();
           toast({
@@ -369,14 +411,39 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {authMode === "signup" && (
-                <FloatingInput
-                  id="firstName"
-                  type="text"
-                  label="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
+                <>
+                  <FloatingInput
+                    id="firstName"
+                    type="text"
+                    label="First Name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                  <div>
+                    <FloatingInput
+                      id="username"
+                      type="text"
+                      label="Username"
+                      value={username}
+                      onChange={(e) => {
+                         // Force lowercase and alphanumeric
+                         const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                         setUsername(val);
+                      }}
+                      required
+                    />
+                    <div className="h-5 mt-1 pl-1">
+                      {usernameError ? (
+                        <p className="text-xs text-red-500">{usernameError}</p>
+                      ) : isCheckingUsername ? (
+                        <p className="text-xs text-muted-foreground">Checking...</p>
+                      ) : username ? (
+                         <p className="text-xs text-green-500 flex items-center gap-1"><Check className="w-3 h-3" /> Available</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
               )}
 
               <FloatingInput

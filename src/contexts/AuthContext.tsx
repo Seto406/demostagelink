@@ -30,7 +30,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, role: "audience" | "producer", firstName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, role: "audience" | "producer", firstName: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -85,6 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           user_id: userId,
           role,
           avatar_url: userMetadata?.avatar_url || null,
+          username: userMetadata?.username || null,
         }]).select().single() as unknown as Promise<any>
       );
 
@@ -208,14 +209,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile((prev) => (prev ? { ...prev, ...updates } : null));
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, role: "audience" | "producer", firstName: string) => {
+  const signUp = useCallback(async (email: string, password: string, role: "audience" | "producer", firstName: string, username: string) => {
     const redirectUrl = `${window.location.origin}/verify-email`;
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { role, first_name: firstName },
+        data: { role, first_name: firstName, username },
       },
     });
     return { error };
