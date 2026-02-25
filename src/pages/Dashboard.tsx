@@ -560,14 +560,18 @@ const Dashboard = () => {
 
   const handleRestartTour = async () => {
     if (!profile) return;
+
+    // Clear the local storage key so the tour shows up again
+    localStorage.removeItem("stagelink_has_seen_tour");
+
     const { error } = await supabase
       .from("profiles")
       .update({ has_completed_tour: false })
       .eq("id", profile.id);
 
     if (!error) {
-      toast.success("Tour restarted! Refreshing page...");
-      window.location.reload();
+      toast.success("Tour restarted! Redirecting to feed...");
+      navigate("/feed");
     } else {
       toast.error("Failed to restart tour.");
     }
