@@ -213,30 +213,55 @@ const Profile = () => {
 
           // Fetch Followers
           try {
-            const { data: followersData, error: followersError, count } = await supabase
+            // First fetch the raw follows relationships
+            const { data: followsData, error: followsError, count } = await supabase
               .from("follows")
-              .select(`
-                id,
-                follower_id,
-                profiles!follows_follower_id_fkey (
-                  id,
-                  username,
-                  group_name,
-                  avatar_url,
-                  role,
-                  niche
-                )
-              `, { count: 'exact' })
+              .select("id, follower_id", { count: 'exact' })
               .eq("following_id", profileId);
 
-            if (followersError) {
-              console.error("Error fetching followers:", followersError);
+            if (followsError) {
+              console.error("Error fetching followers:", followsError);
               toast.error("Failed to load followers.");
-            } else {
-              if (followersData) {
-                setFollowers(followersData as unknown as FollowerData[]);
-              }
+            } else if (followsData && followsData.length > 0) {
               setFollowerCount(count || 0);
+
+              const followerIds = followsData.map(f => f.follower_id);
+
+              // Then fetch the profiles for these followers
+              // We check both id (Profile UUID) and user_id (Auth ID) to handle schema ambiguity
+              const { data: profilesData, error: profilesError } = await supabase
+                .from("profiles")
+                .select("id, username, group_name, avatar_url, role, niche, user_id")
+                .or(`id.in.(${followerIds.join(',')}),user_id.in.(${followerIds.join(',')})`);
+
+              if (profilesError) {
+                console.error("Error fetching follower profiles:", profilesError);
+              } else if (profilesData) {
+                // Map the follows back to their profiles
+                const mappedFollowers = followsData.map(follow => {
+                  const profile = profilesData.find(p =>
+                    p.id === follow.follower_id || p.user_id === follow.follower_id
+                  );
+
+                  return {
+                    id: follow.id,
+                    follower_id: follow.follower_id,
+                    profiles: profile ? {
+                      id: profile.id,
+                      username: profile.username,
+                      group_name: profile.group_name,
+                      avatar_url: profile.avatar_url,
+                      role: profile.role,
+                      niche: profile.niche
+                    } : null
+                  };
+                }).filter(f => f.profiles !== null); // Filter out any that couldn't be resolved
+
+                setFollowers(mappedFollowers as unknown as FollowerData[]);
+              }
+            } else {
+              setFollowers([]);
+              setFollowerCount(0);
             }
           } catch (e) {
             console.error("Could not fetch followers", e);
@@ -288,27 +313,52 @@ const Profile = () => {
 
           // Fetch Following
           try {
-            if (profileData.user_id) {
-              const { data: followsData, error: followsError } = await supabase
-                .from("follows")
-                .select(`
-                  id,
-                  following_id,
-                  profiles!follows_following_id_fkey (
-                    id,
-                    group_name,
-                    avatar_url,
-                    niche
-                  )
-                `)
-                .eq("follower_id", profileData.user_id);
+            // Check both Profile ID and Auth ID for follower_id to handle schema ambiguity
+            // Note: profiles.id is guaranteed to be a valid UUID. profileData.user_id is guaranteed to be a valid UUID (Auth ID).
+            const queryIds = [profileId];
+            if (profileData.user_id && profileData.user_id !== profileId) {
+              queryIds.push(profileData.user_id);
+            }
 
-              if (followsError) {
-                console.error("Error fetching follows:", followsError);
-                toast.error("Failed to load following list.");
-              } else if (followsData) {
-                setFollowing(followsData as unknown as FollowData[]);
+            const { data: followsData, error: followsError } = await supabase
+              .from("follows")
+              .select("id, following_id")
+              .in("follower_id", queryIds);
+
+            if (followsError) {
+              console.error("Error fetching follows:", followsError);
+              toast.error("Failed to load following list.");
+            } else if (followsData && followsData.length > 0) {
+              const followingIds = followsData.map(f => f.following_id);
+
+              // Fetch profiles for the people being followed
+              // These are definitely Profile UUIDs because following_id references profiles.id
+              const { data: profilesData, error: profilesError } = await supabase
+                .from("profiles")
+                .select("id, group_name, avatar_url, niche")
+                .in("id", followingIds);
+
+              if (profilesError) {
+                console.error("Error fetching following profiles:", profilesError);
+              } else if (profilesData) {
+                const mappedFollowing = followsData.map(follow => {
+                  const profile = profilesData.find(p => p.id === follow.following_id);
+                  return {
+                    id: follow.id,
+                    following_id: follow.following_id,
+                    profiles: profile ? {
+                      id: profile.id,
+                      group_name: profile.group_name,
+                      avatar_url: profile.avatar_url,
+                      niche: profile.niche
+                    } : null
+                  };
+                }).filter(f => f.profiles !== null);
+
+                setFollowing(mappedFollowing as unknown as FollowData[]);
               }
+            } else {
+              setFollowing([]);
             }
           } catch (e) {
             console.error("Could not fetch follows", e);
