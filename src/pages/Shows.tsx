@@ -8,6 +8,8 @@ import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Sha
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
@@ -67,6 +69,7 @@ interface Show {
   genre: string | null;
   ticket_link: string | null;
   production_status: string | null;
+  is_premium?: boolean;
   producer_id: {
     id: string;
     group_name: string | null;
@@ -104,7 +107,10 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
     >
       <TiltCard tiltAmount={10} glareEnabled={true} scale={1.02}>
         <div
-          className="block bg-card rounded-xl overflow-hidden group relative flex flex-col h-full"
+          className={cn(
+            "block bg-card rounded-xl overflow-hidden group relative flex flex-col h-full",
+            show.is_premium && "border border-primary/50 shadow-[0_0_20px_hsl(43_72%_52%/0.15)] ring-1 ring-primary/30"
+          )}
           style={{ transformStyle: "preserve-3d" }}
         >
           <Link to={`/shows/${show.id}`} className="absolute inset-0 z-10">
@@ -152,6 +158,19 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               className="absolute top-3 right-3 z-30 flex flex-col items-end gap-2 pointer-events-none"
               style={{ transform: "translateZ(30px)" }}
             >
+              {/* Premium Badge */}
+              {show.is_premium && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="z-40"
+                >
+                   <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] uppercase tracking-wider shadow-md animate-pulse-glow mb-1">
+                       Featured
+                   </Badge>
+                </motion.div>
+              )}
+
               {/* Date Badge */}
               {(() => {
                 const badgeDate = show.seo_metadata?.schedule?.startDate
@@ -339,7 +358,10 @@ const ShowListItem = ({ show }: { show: Show }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group"
+      className={cn(
+        "flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group",
+        show.is_premium && "border-primary/50 shadow-[0_0_15px_hsl(43_72%_52%/0.1)] ring-1 ring-primary/20 bg-gradient-to-r from-primary/5 to-transparent"
+      )}
     >
       {/* Thumbnail */}
       <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 overflow-hidden">
@@ -365,8 +387,13 @@ const ShowListItem = ({ show }: { show: Show }) => {
       {/* Info */}
       <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors">
+          <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors flex items-center gap-2">
             {show.title}
+            {show.is_premium && (
+                <Badge variant="secondary" className="bg-primary/20 text-primary text-[10px] px-1.5 py-0 border-primary/20 h-5 whitespace-nowrap shadow-[0_0_8px_hsl(43_72%_52%/0.3)] animate-pulse-glow">
+                    Featured
+                </Badge>
+            )}
           </h3>
         </div>
 
@@ -517,13 +544,15 @@ const Shows = () => {
           ticket_link,
           poster_url,
           production_status,
+          is_premium,
           producer_id:profiles!producer_id (
             id,
             group_name,
             avatar_url
           )
         `)
-        .eq("status", "approved");
+        .eq("status", "approved")
+        .order("is_premium", { ascending: false });
 
       if (error) {
         console.error("Error fetching shows:", error);
@@ -627,6 +656,11 @@ const Shows = () => {
 
     // Sorting
     result.sort((a, b) => {
+      // Prioritize Premium Shows
+      if (a.is_premium !== b.is_premium) {
+        return a.is_premium ? -1 : 1;
+      }
+
       const getSortDate = (s: Show) =>
         s.seo_metadata?.schedule?.startDate || s.date || "";
       const da = getSortDate(a);

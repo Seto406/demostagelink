@@ -50,6 +50,7 @@ export interface FeedShow {
   city: string | null;
   poster_url: string | null;
   status?: string;
+  is_premium?: boolean;
   created_at?: string;
   ticket_link?: string | null;
   producer_id?: {
@@ -121,6 +122,7 @@ const UserFeed = () => {
           city,
           poster_url,
           status,
+          is_premium,
           created_at,
           price,
           producer_id:profiles!producer_id (
@@ -131,6 +133,7 @@ const UserFeed = () => {
           )
         `)
         .eq("status", "approved")
+        .order("is_premium", { ascending: false })
         .order("production_status", { ascending: false })
         .order("date", { ascending: true })
         .range(from, to);

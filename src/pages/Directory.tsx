@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 // Group logos
 import artistangArtletsLogo from "@/assets/groups/artistang-artlets.png";
@@ -38,6 +40,7 @@ interface TheaterGroup {
   city?: string;
   logo?: string;
   address?: string | null;
+  is_premium?: boolean;
 }
 
 // Demo theater groups for display when no real data
@@ -66,7 +69,10 @@ const DirectoryListItem = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      className="flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group"
+      className={cn(
+        "flex h-[120px] bg-card border border-secondary/20 rounded-xl overflow-hidden hover:border-secondary/50 transition-colors group",
+        group.is_premium && "border-primary/50 shadow-[0_0_15px_hsl(43_72%_52%/0.1)] ring-1 ring-primary/20 bg-gradient-to-r from-primary/5 to-transparent"
+      )}
     >
       {/* Logo */}
       <div className="w-[80px] sm:w-[100px] h-full relative shrink-0 bg-black/5 p-2 flex items-center justify-center">
@@ -92,8 +98,13 @@ const DirectoryListItem = ({
       {/* Info */}
       <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0">
         <div className="flex items-start justify-between gap-2">
-            <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors">
+            <h3 className="font-serif font-bold text-base sm:text-lg text-foreground truncate group-hover:text-secondary transition-colors flex items-center gap-2">
                 {group.group_name}
+                {group.is_premium && (
+                    <Badge variant="secondary" className="bg-primary/20 text-primary text-[10px] px-1.5 py-0 border-primary/20 h-5 whitespace-nowrap shadow-[0_0_8px_hsl(43_72%_52%/0.3)] animate-pulse-glow">
+                        Featured
+                    </Badge>
+                )}
             </h3>
         </div>
 
@@ -251,9 +262,11 @@ const Directory = () => {
     try {
         let query = supabase
             .from("profiles")
-            .select("id, group_name, description, niche, address, group_logo_url")
+            .select("id, group_name, description, niche, address, group_logo_url, is_premium")
             .eq("role", "producer")
-            .not("group_name", "is", null);
+            .not("group_name", "is", null)
+            .order("is_premium", { ascending: false })
+            .order("group_name", { ascending: true });
 
         // Server-side filtering
         if (debouncedSearchQuery) {
@@ -597,7 +610,17 @@ const Directory = () => {
                           </p>
                         </Link>
                       ) : (
-                        <div className="block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col">
+                        <div className={cn(
+                          "block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col relative",
+                          group.is_premium && "border-primary/50 shadow-[0_0_20px_hsl(43_72%_52%/0.15)] ring-1 ring-primary/30"
+                        )}>
+                          {group.is_premium && (
+                             <div className="absolute top-3 right-3 z-10">
+                                <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] uppercase tracking-wider shadow-md animate-pulse-glow">
+                                    Featured
+                                </Badge>
+                             </div>
+                          )}
                           <Link
                             to={`/producer/${group.id}`}
                             className="block p-6 flex-1"
