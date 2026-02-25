@@ -38,7 +38,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
-import { TourGuide } from "@/components/onboarding/TourGuide";
+import { useTour } from "@/contexts/TourContext";
 
 // Interface for Feed Shows (includes joined data)
 export interface FeedShow {
@@ -83,6 +83,7 @@ const UserFeed = () => {
   const { user, profile, loading } = useAuth();
   const extendedProfile = profile as unknown as ExtendedProfile;
   const { isPro } = useSubscription();
+  const { startTour } = useTour();
   const [producerRequestModal, setProducerRequestModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -180,6 +181,20 @@ const UserFeed = () => {
     },
   });
 
+  // Start Tour Effect
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("stagelink_has_seen_tour");
+    if (!loading && !hasSeenTour && suggestedProducers.length > 0) {
+      // Save a target producer for the tour (fallback for non-producers)
+      localStorage.setItem("stagelink_tour_target_producer", suggestedProducers[0].id);
+
+      const timer = setTimeout(() => {
+        startTour();
+      }, 2000); // Slight delay to ensure UI is ready
+      return () => clearTimeout(timer);
+    }
+  }, [loading, suggestedProducers, startTour]);
+
   // Infinite scroll intersection observer
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -240,8 +255,9 @@ const UserFeed = () => {
           ) : (
             <div className="grid grid-cols-1 gap-6 w-full">
               {shows.map((show, index) => (
-                <div key={show.id}>
+                <div key={show.id} data-tour={index === 0 ? "feed-post" : undefined}>
                   <FeedPost show={show} />
+                  {index === 0 && <div data-tour="feed-interaction" className="sr-only">Interaction Target</div>}
                   {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
                 </div>
               ))}
@@ -253,7 +269,7 @@ const UserFeed = () => {
         </main>
 
         {/* Sidebar (Right) */}
-        <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit">
+        <aside className="hidden lg:block w-[300px] shrink-0 space-y-6 sticky top-24 h-fit" data-tour="sidebar-suggestions">
           {/* Group Suggestions */}
           <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
             <CardHeader className="pb-3">
@@ -353,7 +369,6 @@ const UserFeed = () => {
         </DialogContent>
       </Dialog>
 
-      <TourGuide />
     </div>
   );
 };

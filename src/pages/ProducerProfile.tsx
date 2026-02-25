@@ -52,6 +52,7 @@ interface Show {
   city: string | null;
   poster_url: string | null;
   production_status: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   producer?: any;
 }
 
@@ -99,6 +100,7 @@ const ProducerProfile = () => {
 
       trackEvent('profile_view', id);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: groupData, error: groupError } = await supabase
         .from("theater_groups" as any)
         .select("*")
@@ -112,6 +114,7 @@ const ProducerProfile = () => {
       }
 
       if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: applicationData } = await supabase
           .from("group_members" as any)
           .select("status")
@@ -121,6 +124,7 @@ const ProducerProfile = () => {
 
         if (applicationData) {
           setHasApplied(true);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setApplicationStatus((applicationData as any).status);
         }
       }
@@ -509,7 +513,7 @@ const ProducerProfile = () => {
               ← Back to Directory
             </Link>
             
-            <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl">
+            <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl" data-tour="profile-header">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-secondary/30">
                   {displayLogo ? (
@@ -557,6 +561,7 @@ const ProducerProfile = () => {
                         disabled={followLoading}
                         variant={isFollowing ? "outline" : "default"}
                         className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
+                        data-tour="profile-follow"
                       >
                         {followLoading ? (
                             "Processing..."
@@ -679,6 +684,7 @@ const ProducerProfile = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="mb-12"
+              data-tour="profile-location"
             >
               <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                 Location
@@ -712,6 +718,7 @@ const ProducerProfile = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.15 }}
               className="mb-12"
+              data-tour="profile-ensemble"
             >
               <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                 Ensemble
@@ -768,10 +775,12 @@ const ProducerProfile = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: index * 0.1 }}
+                            data-tour={index === 0 ? "profile-show-card" : undefined}
                           >
                             <Link
                               to={`/show/${show.id}`}
                               className="block bg-card border border-secondary/20 overflow-hidden group hover:border-secondary/50 transition-all duration-300"
+                              data-tour={index === 0 ? "profile-ticket-btn" : undefined}
                             >
                               <div className="aspect-[3/2] relative overflow-hidden rounded-xl bg-black/5">
                                 {show.poster_url ? (

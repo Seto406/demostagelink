@@ -762,7 +762,7 @@ const Shows = () => {
             className="mb-8 sm:mb-12 space-y-4 sm:space-y-6"
           >
             {/* Tabs */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6" data-tour="shows-tabs">
               <Tabs value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="grid w-full max-w-[600px] grid-cols-3">
                   <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
@@ -774,7 +774,7 @@ const Shows = () => {
 
             {/* Search and Advanced Toggle */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto items-center">
-              <div className="relative flex-1 w-full">
+              <div className="relative flex-1 w-full" data-tour="shows-search">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search for shows, venues, or genres..."

@@ -6,11 +6,13 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { TourProvider } from "@/contexts/TourContext";
 import { ThemeProvider } from "next-themes";
 import { useEffect, Suspense, lazy, ReactNode } from "react";
 import { EnhancedToastProvider, setToastHandler, useEnhancedToast } from "@/components/ui/enhanced-toast";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 import { CinematicBackground } from "@/components/ui/cinematic-background";
+import { GlobalTour } from "@/components/onboarding/GlobalTour";
 import PageTransition from "@/components/ui/page-transition";
 import IdleTimerProvider from "@/providers/IdleTimerProvider";
 import { FullPageLoader } from "@/components/ui/branded-loader";
@@ -129,6 +131,7 @@ const AppLayout = () => {
 
   return (
     <>
+      <GlobalTour />
       {!loading && !isLoginPage && <Navbar />}
       <main className={!loading && !isLoginPage ? "pt-[72px]" : undefined}>
         <AppRoutes />
@@ -150,13 +153,15 @@ const App = () => (
             <BrowserRouter>
               <AuthProvider>
                 <NotificationProvider>
-                  <IdleTimerProvider>
-                    <HealthCheckGate>
-                      <AppLayout />
-                    </HealthCheckGate>
-                    <MobileBottomNav />
-                    <ScrollToTop />
-                  </IdleTimerProvider>
+                  <TourProvider>
+                    <IdleTimerProvider>
+                      <HealthCheckGate>
+                        <AppLayout />
+                      </HealthCheckGate>
+                      <MobileBottomNav />
+                      <ScrollToTop />
+                    </IdleTimerProvider>
+                  </TourProvider>
                 </NotificationProvider>
               </AuthProvider>
             </BrowserRouter>
