@@ -42,7 +42,8 @@ import {
   Mail,
   ExternalLink,
   Settings,
-  CreditCard
+  CreditCard,
+  Bell
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -484,6 +485,33 @@ const AdminPanel = () => {
       });
     } finally {
       setBroadcastLoading(false);
+    }
+  };
+
+  const handleSendReminder = async (showId: string, showTitle: string) => {
+    toast({
+      title: "Sending Reminder...",
+      description: `Initiating reminder for "${showTitle}".`,
+    });
+
+    try {
+      const { data, error } = await supabase.functions.invoke("send-show-reminder", {
+        body: { showId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Reminder Sent",
+        description: `Successfully processed reminders for "${showTitle}".`,
+      });
+    } catch (error) {
+      console.error("Reminder failed:", error);
+      toast({
+        title: "Reminder Failed",
+        description: "Failed to send reminders.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1173,15 +1201,26 @@ const AdminPanel = () => {
                                     </>
                                   )}
                                   {show.status === "approved" && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setConfirmAction({ type: "broadcast", show })}
-                                      className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
-                                      title="Broadcast to Audience"
-                                    >
-                                      <Megaphone className="w-4 h-4" />
-                                    </Button>
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setConfirmAction({ type: "broadcast", show })}
+                                        className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                        title="Broadcast to Audience"
+                                      >
+                                        <Megaphone className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleSendReminder(show.id, show.title)}
+                                        className="h-8 w-8 p-0 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10"
+                                        title="Send Reminder"
+                                      >
+                                        <Bell className="w-4 h-4" />
+                                      </Button>
+                                    </>
                                   )}
                                   {show.status !== "pending" && (
                                     <Button
