@@ -61,6 +61,7 @@ interface Show {
       endDate: string;
       selectedDays: string[];
     };
+    hype_message?: string;
   } | null;
   venue: string | null;
   city: string | null;
@@ -141,17 +142,17 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
-            {/* Social Proof Badge - DEMO ONLY */}
-            {/* TODO: Replace with actual real-time count */}
-            <div className="absolute top-12 left-3 z-20 pointer-events-none">
-               <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center gap-1.5 shadow-lg">
-                  <span className="text-xs">🔥</span>
-                  <span className="text-[10px] font-medium text-white/90 font-sans tracking-wide">
-                    {/* DEMO_ONLY */}
-                    12 People Reserved Recently
-                  </span>
-               </div>
-            </div>
+            {/* Social Proof Badge / Hype Message */}
+            {show.seo_metadata?.hype_message && (
+              <div className="absolute top-12 left-3 z-20 pointer-events-none">
+                 <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
+                    <span className="text-xs">🔥</span>
+                    <span className="text-[10px] font-medium text-white/90 font-sans tracking-wide">
+                      {show.seo_metadata.hype_message}
+                    </span>
+                 </div>
+              </div>
+            )}
 
             {/* Right side badges container */}
             <div
