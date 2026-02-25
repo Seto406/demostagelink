@@ -32,6 +32,7 @@ export interface ShowDetails {
     founded_year: number | null;
     niche: "local" | "university" | null;
     avatar_url?: string | null;
+    group_logo_url?: string | null;
   } | null;
   theater_group?: {
     id: string;

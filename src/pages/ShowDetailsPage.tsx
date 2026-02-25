@@ -62,7 +62,9 @@ const ShowDetailsPage = () => {
             username,
             description,
             founded_year,
-            niche
+            niche,
+            group_logo_url,
+            avatar_url
           ),
           theater_group:theater_groups!theater_group_id (
             id,
@@ -397,8 +399,12 @@ END:VCALENDAR`;
                     {(show.theater_group || show.producer_id) && (
                         <div className="flex items-center gap-3 text-white/90">
                             <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center overflow-hidden border border-white/20">
-                                {show.theater_group?.logo_url ? (
-                                    <img src={show.theater_group.logo_url} alt={show.theater_group.name} className="w-full h-full object-cover" />
+                                {(show.theater_group?.logo_url || show.producer_id?.group_logo_url || show.producer_id?.avatar_url) ? (
+                                    <img
+                                        src={show.theater_group?.logo_url || show.producer_id?.group_logo_url || show.producer_id?.avatar_url || ""}
+                                        alt={show.theater_group?.name || show.producer_id?.group_name || show.producer_id?.username || "Producer Logo"}
+                                        className="w-full h-full object-cover"
+                                    />
                                 ) : (
                                     <Users className="w-5 h-5 text-white/70" />
                                 )}
@@ -670,8 +676,12 @@ END:VCALENDAR`;
                             </h3>
                             <div className="flex items-center gap-4 mb-4">
                                 <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-secondary/20">
-                                    {show.theater_group?.logo_url ? (
-                                        <img src={show.theater_group.logo_url} alt={show.theater_group.name} className="w-full h-full object-cover" />
+                                    {(show.theater_group?.logo_url || show.producer_id?.group_logo_url || show.producer_id?.avatar_url) ? (
+                                        <img
+                                            src={show.theater_group?.logo_url || show.producer_id?.group_logo_url || show.producer_id?.avatar_url || ""}
+                                            alt={show.theater_group?.name || show.producer_id?.group_name || show.producer_id?.username || "Producer Logo"}
+                                            className="w-full h-full object-cover"
+                                        />
                                     ) : (
                                         "🎭"
                                     )}
