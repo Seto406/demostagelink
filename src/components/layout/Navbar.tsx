@@ -25,10 +25,7 @@ const Navbar = () => {
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
         { path: "/favorites", label: "Favorites", icon: Star, matchPath: "/favorites" },
       ]
-    : [
-        { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
-        { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
-      ];
+    : [];
 
   const mobileNavLinks = user
     ? [
@@ -168,6 +165,17 @@ const Navbar = () => {
                     <AvatarImage src={profile?.avatar_url || undefined} alt="Profile avatar" />
                     <AvatarFallback className="bg-muted text-foreground">{profileInitial}</AvatarFallback>
                   </Avatar>
+                </Link>
+              )}
+
+              {!user && (
+                <Link to="/login" className="hidden md:block">
+                  <Button
+                    variant="default"
+                    className="rounded-xl bg-secondary font-sans text-secondary-foreground hover:bg-secondary/90"
+                  >
+                    Enter the Stage
+                  </Button>
                 </Link>
               )}
 

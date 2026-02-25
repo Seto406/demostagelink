@@ -23,7 +23,7 @@ const plans = [
       "Team member showcase",
       "Included in Theater Directory",
       "City-based discovery",
-      "Audience favorites & watchlist"
+      "Audience favorites"
     ],
     cta: "Get Started",
     popular: false,
@@ -39,13 +39,13 @@ const plans = [
     features: [
       "Everything in Free, plus:",
       "Real-time analytics dashboard",
-      "Email & SMS notifications",
-      "Priority search placement",
-      "Featured productions badge",
+      "In-app, Email & SMS notifications",
       "Rich media gallery",
-      "Audience engagement insights"
+      "Audience engagement insights",
+      "Priority search placement",
+      "Featured productions badge"
     ],
-    cta: "Join Waitlist",
+    cta: "Contact Us",
     popular: true,
     comingSoon: false,
     link: "mailto:connect.stagelink@gmail.com?subject=Join Pro Producer Waitlist",
