@@ -252,14 +252,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 text-center">
-        <p className="text-lg font-semibold text-foreground">System Updating...</p>
-      </div>
-    );
-  }
-
   const isAdmin = profile?.role === "admin";
 
   const value = useMemo(() => ({
@@ -275,6 +267,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refreshProfile,
     updateProfileState
   }), [user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 text-center">
+        <p className="text-lg font-semibold text-foreground">System Updating...</p>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
