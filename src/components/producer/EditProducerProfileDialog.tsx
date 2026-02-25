@@ -259,10 +259,12 @@ export const EditProducerProfileDialog = ({
 
       if (!groupId) {
          // Check if exists in DB even if not passed in prop (double check)
+         // Use limit(1) to handle potential duplicates gracefully without error
          const { data: existing } = await supabase
             .from('theater_groups')
             .select('id')
             .eq('owner_id', user.id)
+            .limit(1)
             .maybeSingle();
 
          if (existing) {
@@ -309,9 +311,15 @@ export const EditProducerProfileDialog = ({
       toast.success("Profile updated successfully");
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast.error((error as Error).message || "Failed to update profile");
+      // Handle conflict errors (409 Conflict or 23505 Unique Violation)
+      if (error?.status === 409 || error?.code === '23505') {
+        toast.error("A conflict occurred. A theater group may already exist for this account.");
+      } else {
+        toast.error(error?.message || error?.error_description || "Failed to update profile");
+      }
     } finally {
       setSaving(false);
     }
