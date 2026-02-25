@@ -21,6 +21,7 @@ export const createNotification = async ({
   if (userId === actorId) return;
 
   try {
+    // Try to insert with actor_id first
     const { error } = await supabase
       .from('notifications')
       .insert({
@@ -34,6 +35,29 @@ export const createNotification = async ({
       } as any); // Type assertion needed until types are updated
 
     if (error) {
+      // If the error is about the missing actor_id column, retry without it
+      if (error.message?.includes('column "actor_id" of relation "notifications" does not exist') ||
+          error.code === '42703') { // Postgres error code for undefined column
+        console.warn('actor_id column missing in notifications table, retrying without it...');
+
+        const { error: retryError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            type,
+            title,
+            message,
+            link,
+            read: false
+          });
+
+        if (retryError) {
+          console.error('Error creating notification (retry):', retryError);
+          throw retryError;
+        }
+        return;
+      }
+
       console.error('Error creating notification:', error);
       throw error;
     }
