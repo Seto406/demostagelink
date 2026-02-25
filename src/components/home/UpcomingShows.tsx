@@ -24,6 +24,7 @@ interface Show {
   date: string | null;
   city: string | null;
   niche: "local" | "university" | null;
+  is_premium?: boolean;
   profiles: {
     group_name: string | null;
   } | null;
@@ -80,12 +81,14 @@ const UpcomingShows = () => {
           date,
           city,
           niche,
+          is_premium,
           profiles:producer_id (
             group_name
           )
         `
         )
         .eq("status", "approved")
+        .order("is_premium", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(6);
 
@@ -175,6 +178,7 @@ const UpcomingShows = () => {
                       niche={show.niche}
                       index={index}
                       isFallback={false}
+                      isPremium={show.is_premium}
                     />
                   </StaggerItem>
                 ))}

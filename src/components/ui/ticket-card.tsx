@@ -14,6 +14,7 @@ interface TicketCardProps {
   niche?: "local" | "university" | null;
   index?: number;
   isFallback?: boolean;
+  isPremium?: boolean;
 }
 
 export const TicketCard = ({
@@ -27,6 +28,7 @@ export const TicketCard = ({
   niche,
   index = 0,
   isFallback = false,
+  isPremium = false,
 }: TicketCardProps) => {
   // Verified lazy loading implementation
   const CardWrapper = isFallback ? "div" : Link;
@@ -44,7 +46,10 @@ export const TicketCard = ({
       <CardWrapper {...wrapperProps} className="block">
         <div className="relative">
           {/* Main ticket body */}
-          <div className="relative bg-card border border-secondary/30 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_40px_hsl(0_100%_25%/0.3)]">
+          <div className={cn(
+            "relative bg-card border border-secondary/30 overflow-hidden transition-all duration-500 group-hover:border-secondary group-hover:shadow-[0_0_40px_hsl(0_100%_25%/0.3)]",
+            isPremium && "border-primary/50 shadow-[0_0_25px_hsl(43_72%_52%/0.15)] ring-1 ring-primary/30 bg-gradient-to-br from-primary/5 to-transparent"
+          )}>
             {/* Velvet texture overlay */}
             <div 
               className="absolute inset-0 pointer-events-none opacity-[0.03] z-10"
@@ -72,14 +77,19 @@ export const TicketCard = ({
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
-              {/* Niche badge */}
-              {niche && (
-                <div className="absolute top-3 right-3 z-20">
+              {/* Niche & Premium badges */}
+              <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 items-end">
+                {isPremium && (
+                  <span className="px-2 py-1 text-[10px] uppercase tracking-wider font-bold bg-primary text-primary-foreground shadow-sm rounded-sm backdrop-blur-sm border border-primary/20 animate-pulse-slow">
+                    Featured
+                  </span>
+                )}
+                {niche && (
                   <span className="px-2 py-1 text-[10px] uppercase tracking-wider bg-secondary/20 border border-secondary/40 text-secondary backdrop-blur-sm">
                     {niche === "university" ? "University" : "Local"}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Spotlight effect on hover */}
               <motion.div

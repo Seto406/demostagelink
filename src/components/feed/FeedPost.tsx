@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { LikeButton } from "@/components/ui/like-button";
+import { Badge } from "@/components/ui/badge";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useShowLikes } from "@/hooks/use-show-likes";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { CommentSection } from "@/components/feed/CommentSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ export interface FeedPostProps {
     price?: number | null;
     ticket_link?: string | null;
     status?: string;
+    is_premium?: boolean;
     producer_id?: {
       group_name: string | null;
       id: string;
@@ -63,6 +65,7 @@ export function FeedPost({ show }: FeedPostProps) {
   const isProducerOrAdmin = !loading && user && (user.id === show.producer_id?.id || profile?.role === 'admin');
   const producerName = show.producer_id?.group_name || "Unknown Group";
   const producerAvatar = show.producer_id?.group_logo_url;
+  const isPremium = show.is_premium;
   const initials = producerName
     .split(" ")
     .map((n) => n[0])
@@ -185,12 +188,18 @@ export function FeedPost({ show }: FeedPostProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm overflow-hidden hover:border-secondary/40 transition-colors">
+      <Card className={cn(
+        "border-secondary/20 bg-card/50 backdrop-blur-sm overflow-hidden hover:border-secondary/40 transition-colors",
+        isPremium && "border-primary/50 shadow-[0_0_20px_hsl(43_72%_52%/0.1)] ring-1 ring-primary/30"
+      )}>
         {/* Header */}
         <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
           <div className="flex items-center gap-3">
             <Link to={`/group/${show.producer_id?.id}`} className="hover:opacity-80 transition-opacity">
-              <Avatar className="h-10 w-10 border border-secondary/30">
+              <Avatar className={cn(
+                  "h-10 w-10 border border-secondary/30",
+                  isPremium && "border-primary/50 ring-2 ring-primary/20"
+              )}>
                 <AvatarImage src={producerAvatar || undefined} alt={producerName} />
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">{initials}</AvatarFallback>
               </Avatar>
@@ -200,6 +209,11 @@ export function FeedPost({ show }: FeedPostProps) {
                 <Link to={`/group/${show.producer_id?.id}`} className="font-semibold text-sm hover:underline">
                   {producerName}
                 </Link>
+                {isPremium && (
+                    <Badge variant="secondary" className="ml-1 bg-primary/20 text-primary hover:bg-primary/30 text-[9px] px-1.5 py-0 border-primary/20 h-4 shadow-[0_0_8px_hsl(43_72%_52%/0.3)] animate-pulse-glow">
+                        PRO
+                    </Badge>
+                )}
                 <span className="text-muted-foreground text-sm">posted a new show</span>
               </div>
               <span className="text-xs text-muted-foreground">{timeAgo}</span>
