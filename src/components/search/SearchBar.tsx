@@ -19,8 +19,13 @@ interface SearchResult {
   group_name: string | null;
 }
 
-export const SearchBar = () => {
-  const isMobile = useIsMobile();
+interface SearchBarProps {
+  variant?: 'mobile' | 'desktop';
+}
+
+export const SearchBar = ({ variant }: SearchBarProps) => {
+  const isMobileScreen = useIsMobile();
+  const isMobile = variant === 'mobile' || (variant === undefined && isMobileScreen);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
@@ -91,7 +96,7 @@ export const SearchBar = () => {
           variant="ghost"
           size="icon"
           onClick={() => setOpen(true)}
-          className="text-foreground/80 hover:text-foreground md:hidden"
+          className="text-foreground/80 hover:text-foreground"
         >
           <Search className="h-5 w-5" />
           <span className="sr-only">Search</span>
@@ -156,7 +161,7 @@ export const SearchBar = () => {
 
   // Desktop Version
   return (
-    <div className="relative w-full max-w-sm hidden md:block group">
+    <div className="relative w-full max-w-sm group">
       <Command
         shouldFilter={false} // We handle filtering server-side
         className="rounded-xl border border-secondary/20 bg-muted/30 focus-within:bg-background focus-within:shadow-lg focus-within:ring-1 focus-within:ring-secondary/30 transition-all overflow-visible z-50"
