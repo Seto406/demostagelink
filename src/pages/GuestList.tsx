@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BrandedLoader } from "@/components/ui/branded-loader";
-import { ArrowLeft, Download, Users } from "lucide-react";
+import { ArrowLeft, Download, Users, QrCode, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Guest {
   id: string;
   status: string;
   payment_id: string | null;
   created_at: string;
+  checked_in_at: string | null;
+  access_code: string | null;
   user_id: string;
   profiles: {
     username: string | null;
@@ -29,6 +33,8 @@ interface Show {
   id: string;
   title: string;
   producer_id: string;
+  show_time: string | null;
+  venue: string | null;
 }
 
 const GuestList = () => {
@@ -42,7 +48,7 @@ const GuestList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shows')
-        .select('id, title, producer_id')
+        .select('id, title, producer_id, show_time, venue')
         .eq('id', showId)
         .single();
 
@@ -63,6 +69,8 @@ const GuestList = () => {
           status,
           payment_id,
           created_at,
+          checked_in_at,
+          access_code,
           user_id,
           profiles:user_id (
             username,
@@ -102,13 +110,15 @@ const GuestList = () => {
       return;
     }
 
-    const headers = ["Guest Name", "Ticket ID", "Status", "Payment ID", "Purchase Date"];
+    const headers = ["Guest Name", "Ticket ID", "Access Code", "Status", "Checked In At", "Payment ID", "Purchase Date"];
     const csvContent = [
       headers.join(","),
       ...guests.map(guest => [
         `"${guest.profiles?.username || guest.profiles?.group_name || 'Guest'}"`,
         guest.id,
+        guest.access_code || "",
         guest.status,
+        guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleString() : "",
         guest.payment_id || "N/A",
         new Date(guest.created_at).toLocaleDateString()
       ].join(","))
@@ -118,10 +128,56 @@ const GuestList = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `${show?.title || 'Show'}_GuestList.csv`);
+    link.setAttribute("download", `${show?.title.replace(/[^a-z0-9]/gi, '_') || 'Show'}_GuestList.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleExportPDF = () => {
+    if (!guests || guests.length === 0 || !show) {
+      toast({ description: "No data to export." });
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFontSize(18);
+    doc.text(show.title, 14, 22);
+    doc.setFontSize(12);
+    doc.text(`Guest List`, 14, 30);
+    if (show.show_time) {
+        doc.text(new Date(show.show_time).toLocaleString(), 14, 38);
+    }
+
+    // Stats
+    const total = guests.length;
+    const checkedIn = guests.filter(g => g.status === 'used' || g.checked_in_at).length;
+    const confirmed = guests.filter(g => g.status === 'confirmed').length;
+
+    doc.setFontSize(10);
+    doc.text(`Total: ${total} | Checked In: ${checkedIn} | Confirmed: ${confirmed}`, 14, 46);
+
+    const tableColumn = ["Guest Name", "Access Code", "Status", "Checked In", "Ticket ID"];
+    const tableRows = guests.map(guest => [
+        guest.profiles?.username || guest.profiles?.group_name || 'Guest',
+        guest.access_code || '-',
+        guest.status.toUpperCase(),
+        guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleTimeString() : '-',
+        guest.id.substring(0, 8) + '...'
+    ]);
+
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 55,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [0, 0, 0] }
+    });
+
+    doc.save(`${show.title.replace(/[^a-z0-9]/gi, '_')}_GuestList.pdf`);
   };
 
   if (authLoading || showLoading || guestsLoading) {
@@ -152,10 +208,20 @@ const GuestList = () => {
             </p>
           </div>
 
-          <Button onClick={handleExportCSV} variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate(`/dashboard/scan/${showId}`)} className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                <QrCode className="w-4 h-4 mr-2" />
+                Scan Tickets
+            </Button>
+            <Button onClick={handleExportPDF} variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
+                <FileText className="w-4 h-4 mr-2" />
+                PDF
+            </Button>
+            <Button onClick={handleExportCSV} variant="outline" className="border-secondary text-secondary hover:bg-secondary/10">
+                <Download className="w-4 h-4 mr-2" />
+                CSV
+            </Button>
+          </div>
         </div>
 
         <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm">
@@ -172,8 +238,9 @@ const GuestList = () => {
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Guest Name</TableHead>
+                      <TableHead>Access Code</TableHead>
                       <TableHead>Ticket Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Payment ID</TableHead>
+                      <TableHead>Checked In</TableHead>
                       <TableHead className="text-right">Purchase Date</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -185,22 +252,32 @@ const GuestList = () => {
                              <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary text-xs">
                                 {(guest.profiles?.username?.[0] || 'G').toUpperCase()}
                              </div>
-                             {guest.profiles?.username || guest.profiles?.group_name || 'Guest'}
+                             <div>
+                                 <div>{guest.profiles?.username || guest.profiles?.group_name || 'Guest'}</div>
+                                 <div className="text-[10px] text-muted-foreground">{guest.id.substring(0,8)}...</div>
+                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {guest.access_code ? (
+                              <span className="bg-muted px-2 py-1 rounded border border-secondary/10">{guest.access_code}</span>
+                          ) : '-'}
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs uppercase border ${
                             guest.status === 'confirmed' || guest.status === 'paid'
                               ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                              : guest.status === 'used'
+                              ? 'bg-muted text-muted-foreground border-muted-foreground/20'
                               : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                           }`}>
                             {guest.status}
                           </span>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">
-                          {guest.payment_id || '-'}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleTimeString() : '-'}
                         </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
+                        <TableCell className="text-right text-muted-foreground text-xs">
                           {new Date(guest.created_at).toLocaleDateString()}
                         </TableCell>
                       </TableRow>

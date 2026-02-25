@@ -31,6 +31,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const GuestList = lazy(() => import("./pages/GuestList"));
+const Scanner = lazy(() => import("./pages/Scanner"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const ShowDetailsPage = lazy(() => import("./pages/ShowDetailsPage"));
 const ProducerProfile = lazy(() => import("./pages/ProducerProfile"));
@@ -94,6 +95,7 @@ const AppRoutes = () => {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<RequireAuth><RoleBasedGuard><Dashboard /></RoleBasedGuard></RequireAuth>} />
           <Route path="/dashboard/guests/:showId" element={<RequireAuth><RoleBasedGuard><GuestList /></RoleBasedGuard></RequireAuth>} />
+          <Route path="/dashboard/scan/:showId" element={<RequireAuth><RoleBasedGuard><Scanner /></RoleBasedGuard></RequireAuth>} />
           <Route path="/dashboard/analytics" element={<RequireAuth><RoleBasedGuard><Dashboard /></RoleBasedGuard></RequireAuth>} />
           <Route path="/admin/dashboard" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
           <Route path="/admin" element={<RequireAuth><RoleBasedGuard allowedRoles={['admin']}><AdminPanel /></RoleBasedGuard></RequireAuth>} />
