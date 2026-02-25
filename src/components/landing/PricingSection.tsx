@@ -39,9 +39,11 @@ const plans = [
     features: [
       "Everything in Free, plus:",
       "Real-time analytics dashboard",
-      "In-app & Email notifications",
+      "In-app, Email & SMS notifications",
       "Rich media gallery",
-      "Audience engagement insights"
+      "Audience engagement insights",
+      "Priority search placement",
+      "Featured productions badge"
     ],
     cta: "Contact Us",
     popular: true,
