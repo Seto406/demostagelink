@@ -48,7 +48,7 @@ export function PaymentApprovals() {
         .from("payments")
         .select(`
           *,
-          profiles:user_id (username, email),
+          profiles (username, email),
           tickets:tickets!payment_id (
             customer_name,
             customer_email,

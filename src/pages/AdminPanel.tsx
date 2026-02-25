@@ -314,7 +314,7 @@ const AdminPanel = () => {
 
     try {
       const { data, error } = await supabase.rpc('get_admin_user_list', {
-        page: currentPage,
+        page_number: currentPage,
         page_size: ITEMS_PER_PAGE
       });
 

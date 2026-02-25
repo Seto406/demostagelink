@@ -876,7 +876,7 @@ export type Database = {
       }
       get_admin_user_list: {
         Args: {
-          page: number
+          page_number: number
           page_size: number
           search_query?: string
           role_filter?: string
