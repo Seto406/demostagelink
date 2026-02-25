@@ -47,7 +47,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, isAdmin } = useAuth();
-  const { isPro, initiateCheckout, isCheckingOut, isLoading: subLoading } = useSubscription();
+  const { isPro, startTrial, isCheckingOut, isLoading: subLoading, daysLeft } = useSubscription();
   
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
@@ -301,20 +301,20 @@ const Settings = () => {
                       </p>
                       {isPro && (
                         <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 text-xs font-bold uppercase tracking-wider">
-                          Active
+                          {daysLeft > 0 ? `${daysLeft} Days Left` : "Active"}
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {isPro
                         ? "You have access to all premium features."
-                        : "Upgrade to unlock advanced analytics and more."}
+                        : "Start your 30-day free trial to unlock advanced analytics and more."}
                     </p>
                   </div>
 
                   {!isPro ? (
                     <Button
-                      onClick={() => initiateCheckout()}
+                      onClick={() => startTrial()}
                       disabled={isCheckingOut || subLoading}
                       className="bg-purple-600 hover:bg-purple-700 text-white min-w-[140px]"
                     >
@@ -323,14 +323,14 @@ const Settings = () => {
                       ) : (
                         <>
                           <Zap className="w-4 h-4 mr-2 fill-current" />
-                          Upgrade Pro
+                          Start 30-Day Free Trial
                         </>
                       )}
                     </Button>
                   ) : (
                     <Button variant="outline" disabled className="text-green-500 border-green-500/20 bg-green-500/10">
                       <Check className="w-4 h-4 mr-2" />
-                      Pro Active
+                      Trial Active
                     </Button>
                   )}
                 </div>

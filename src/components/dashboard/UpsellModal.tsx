@@ -18,10 +18,10 @@ export const UpsellModal = ({
   title,
   description
 }: UpsellModalProps) => {
-  const { initiateCheckout, isCheckingOut } = useSubscription();
+  const { startTrial, isCheckingOut } = useSubscription();
 
   const displayTitle = title || (featureName ? `Unlock ${featureName} with Premium` : "Unlock the Full StageLink Experience");
-  const displayDescription = description || "Upgrade to Pro for ₱399/mo to access advanced analytics and cast networking.";
+  const displayDescription = description || "Start your 30-day free trial to access advanced analytics and cast networking.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,10 +63,10 @@ export const UpsellModal = ({
           <Button
             size="lg"
             className="w-full sm:w-auto font-semibold text-lg px-8"
-            onClick={initiateCheckout}
+            onClick={startTrial}
             disabled={isCheckingOut}
           >
-            {isCheckingOut ? "Loading..." : "Start 30-Day Free Trial"}
+            {isCheckingOut ? "Starting Trial..." : "Start 30-Day Free Trial"}
           </Button>
         </DialogFooter>
       </DialogContent>

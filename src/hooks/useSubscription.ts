@@ -3,14 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { SUBSCRIPTION_PRICE_CENTS } from "@/config/pricing";
 
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  const { data: subscription, isLoading } = useQuery({
+  const { data: subscription, isLoading, refetch } = useQuery({
     queryKey: ["subscription", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -26,35 +25,38 @@ export const useSubscription = () => {
     enabled: !!user,
   });
 
-  const initiateCheckout = async () => {
+  const startTrial = async () => {
     if (!user) return;
     setIsCheckingOut(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-paymongo-session", {
-        body: {
-          amount: SUBSCRIPTION_PRICE_CENTS,
-          description: "StageLink Pro Subscription",
-          redirect_url: window.location.origin + "/payment/success",
-        },
-      });
+      const { data, error } = await supabase.functions.invoke("start-trial");
 
       if (error) {
-        console.error("Supabase Function Error:", error);
+        console.error("Start Trial Error:", error);
         throw error;
       }
 
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        console.error("Missing checkoutUrl in response:", data);
-        throw new Error("No checkout URL returned from payment provider");
+      if (data?.message === "Subscription already active") {
+         toast({
+            title: "Already Active",
+            description: "You already have an active subscription.",
+         });
+         return;
       }
+
+      toast({
+        title: "Trial Started!",
+        description: "You now have 30 days of Pro access.",
+      });
+
+      await refetch();
+
     } catch (error) {
-      console.error("Checkout error:", error);
+      console.error("Trial start error:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
       toast({
-        title: "Checkout Failed",
-        description: `Could not initiate payment: ${errorMessage}`,
+        title: "Failed to Start Trial",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -64,11 +66,23 @@ export const useSubscription = () => {
 
   const isPro = subscription?.status === 'active' || subscription?.status === 'trialing';
 
+  // Calculate days left
+  let daysLeft = 0;
+  if (subscription?.current_period_end) {
+      const end = new Date(subscription.current_period_end);
+      const now = new Date();
+      if (end > now) {
+          const diffTime = Math.abs(end.getTime() - now.getTime());
+          daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+  }
+
   return {
     subscription,
     isLoading,
     isPro,
-    initiateCheckout,
+    startTrial,
     isCheckingOut,
+    daysLeft,
   };
 };
