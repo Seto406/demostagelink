@@ -38,6 +38,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { dummyShows as importedDummyShows } from "@/data/dummyShows";
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
+import { TourGuide } from "@/components/onboarding/TourGuide";
 
 // Interface for Feed Shows (includes joined data)
 export interface FeedShow {
@@ -348,6 +349,8 @@ const UserFeed = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <TourGuide />
     </div>
   );
 };
