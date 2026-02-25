@@ -78,6 +78,10 @@ interface Show {
   producer_id: string;
   poster_url: string | null;
   deleted_at: string | null;
+  seo_metadata: {
+    schedule?: any;
+    hype_message?: string;
+  } | null;
   profiles?: {
     group_name: string | null;
   };
@@ -131,6 +135,10 @@ const AdminPanel = () => {
   const [detailsModal, setDetailsModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject" | "broadcast"; show: Show } | null>(null);
   const [broadcastLoading, setBroadcastLoading] = useState(false);
+
+  // Hype Message State
+  const [hypeMessage, setHypeMessage] = useState("");
+  const [savingHype, setSavingHype] = useState(false);
 
   // User management state
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -273,6 +281,7 @@ const AdminPanel = () => {
         producer_id,
         poster_url,
         deleted_at,
+        seo_metadata,
         profiles:producer_id (
           group_name
         )
@@ -711,7 +720,48 @@ const AdminPanel = () => {
 
   const openDetails = (show: Show) => {
     setSelectedShow(show);
+    setHypeMessage(show.seo_metadata?.hype_message || "");
     setDetailsModal(true);
+  };
+
+  const handleSaveHype = async () => {
+    if (!selectedShow) return;
+    setSavingHype(true);
+
+    try {
+      const currentMetadata = selectedShow.seo_metadata || {};
+      const newMetadata = {
+        ...currentMetadata,
+        hype_message: hypeMessage
+      };
+
+      const { error } = await supabase
+        .from("shows")
+        .update({ seo_metadata: newMetadata })
+        .eq("id", selectedShow.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Hype Message Updated",
+        description: "The promotional message has been updated successfully.",
+      });
+
+      // Update local state
+      const updatedShow = { ...selectedShow, seo_metadata: newMetadata };
+      setSelectedShow(updatedShow);
+      setShows(shows.map(s => s.id === selectedShow.id ? updatedShow : s));
+
+    } catch (error) {
+      console.error("Error updating hype message:", error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update hype message.",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingHype(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -1665,6 +1715,33 @@ const AdminPanel = () => {
                 <p className="text-foreground">
                   {new Date(selectedShow.created_at).toLocaleString()}
                 </p>
+              </div>
+
+              {/* Hype Message Section (Admin Only Feature) */}
+              <div className="pt-4 border-t border-secondary/20">
+                 <label className="text-sm font-medium text-foreground mb-2 block flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-yellow-500" />
+                    Promotional Hype Message
+                 </label>
+                 <div className="flex gap-2">
+                    <Input
+                       placeholder="e.g. Selling Fast! 🔥"
+                       value={hypeMessage}
+                       onChange={(e) => setHypeMessage(e.target.value)}
+                       className="bg-background border-secondary/30"
+                    />
+                    <Button
+                       onClick={handleSaveHype}
+                       disabled={savingHype}
+                       size="sm"
+                       className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                    >
+                       {savingHype ? "Saving..." : "Save"}
+                    </Button>
+                 </div>
+                 <p className="text-[10px] text-muted-foreground mt-1">
+                    This message will appear as a badge on the show card. Leave empty to remove.
+                 </p>
               </div>
 
               {selectedShow.status === "pending" && (
