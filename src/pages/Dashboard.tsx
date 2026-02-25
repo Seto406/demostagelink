@@ -93,7 +93,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading } = useAuth();
-  const { isPro } = useSubscription();
+  const { isPro, isLoading: isSubscriptionLoading } = useSubscription();
   const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
@@ -130,11 +130,11 @@ const Dashboard = () => {
 
   // Route Guard for Analytics
   useEffect(() => {
-    if (location.pathname === '/dashboard/analytics' && !loading && !isPro) {
+    if (location.pathname === '/dashboard/analytics' && !loading && !isSubscriptionLoading && !isPro) {
       toast.error("Advanced analytics are a Premium feature.");
       navigate('/dashboard', { replace: true });
     }
-  }, [location.pathname, isPro, loading, navigate]);
+  }, [location.pathname, isPro, loading, isSubscriptionLoading, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
