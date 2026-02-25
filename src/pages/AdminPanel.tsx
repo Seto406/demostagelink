@@ -40,7 +40,8 @@ import {
   Megaphone,
   CheckCircle,
   Mail,
-  ExternalLink
+  ExternalLink,
+  BarChart as BarChartIcon
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,6 +51,7 @@ import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { InvitationHub } from "@/components/admin/InvitationHub";
+import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
 import {
   Pagination,
   PaginationContent,
@@ -122,9 +124,13 @@ const AdminPanel = () => {
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
+  const [producerFilter, setProducerFilter] = useState<string | null>(null);
+  const [producerFilterName, setProducerFilterName] = useState<string | null>(null);
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject" | "broadcast"; show: Show } | null>(null);
+  const [resetShowConfirm, setResetShowConfirm] = useState<Show | null>(null);
+  const [deleteShowConfirm, setDeleteShowConfirm] = useState<Show | null>(null);
   const [broadcastLoading, setBroadcastLoading] = useState(false);
 
   // User management state
@@ -254,6 +260,11 @@ const AdminPanel = () => {
         )
       `, { count: "exact" });
 
+    // Handle producer filter
+    if (producerFilter) {
+      query = query.eq("producer_id", producerFilter);
+    }
+
     // Handle deleted filter differently
     if (filterStatus === "deleted") {
       query = query.not("deleted_at", "is", null);
@@ -283,7 +294,7 @@ const AdminPanel = () => {
       if (count !== null) setTotalShowsCount(count);
     }
     setLoadingShows(false);
-  }, [filterStatus, currentShowsPage]);
+  }, [filterStatus, currentShowsPage, producerFilter]);
 
   // Fetch all users
   const fetchUsers = useCallback(async () => {
@@ -607,26 +618,58 @@ const AdminPanel = () => {
     }
   };
 
-  // Soft delete show
-  const handleSoftDeleteShow = async (showId: string) => {
-    const { error } = await supabase
-      .from("shows")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", showId);
+  const handleResetShow = async (showId: string) => {
+    try {
+      const { error } = await supabase
+        .from("shows")
+        .update({ status: "pending" })
+        .eq("id", showId);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Status Reset",
+        description: "Show status has been reset to pending.",
+      });
+      fetchShows();
+      fetchStats();
+    } catch (error) {
+      console.error("Error resetting show:", error);
       toast({
         title: "Error",
-        description: "Failed to delete production.",
+        description: "Failed to reset show status.",
         variant: "destructive",
       });
-    } else {
+    } finally {
+      setResetShowConfirm(null);
+    }
+  };
+
+  // Soft delete show
+  const handleSoftDeleteShow = async (showId: string) => {
+    try {
+      const { error } = await supabase
+        .from("shows")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", showId);
+
+      if (error) throw error;
+
       toast({
         title: "Production Deleted",
         description: "Production has been moved to trash. You can restore it later.",
       });
       fetchShows();
       fetchStats();
+    } catch (error) {
+      console.error("Error deleting show:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete production.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteShowConfirm(null);
     }
   };
 
@@ -655,6 +698,20 @@ const AdminPanel = () => {
 
   const handleFilterChange = (status: FilterStatus) => {
     setFilterStatus(status);
+    setCurrentShowsPage(1);
+  };
+
+  const handleProducerFilter = (producerId: string, producerName: string) => {
+    setProducerFilter(producerId);
+    setProducerFilterName(producerName);
+    setFilterStatus("all");
+    setActiveTab("shows");
+    setCurrentShowsPage(1);
+  };
+
+  const clearProducerFilter = () => {
+    setProducerFilter(null);
+    setProducerFilterName(null);
     setCurrentShowsPage(1);
   };
 
@@ -848,6 +905,17 @@ const AdminPanel = () => {
               <Mail className="w-5 h-5" />
               {sidebarOpen && <span>Invitations</span>}
             </button>
+            <button
+              onClick={() => setActiveTab("analytics")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "analytics"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <BarChartIcon className="w-5 h-5" />
+              {sidebarOpen && <span>Analytics</span>}
+            </button>
           </nav>
 
           {/* Admin badge */}
@@ -891,7 +959,9 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl text-foreground">
-              {activeTab === "shows" ? "Show Approvals" : activeTab === "users" ? "User Management" : "Invitations"}
+              {activeTab === "shows" ? "Show Approvals" :
+               activeTab === "users" ? "User Management" :
+               activeTab === "invitations" ? "Invitations" : "Analytics"}
             </h1>
             <Button
               variant="outline"
@@ -960,7 +1030,9 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {activeTab === "invitations" ? (
+          {activeTab === "analytics" ? (
+            <AnalyticsTab stats={stats} />
+          ) : activeTab === "invitations" ? (
             <InvitationHub />
           ) : activeTab === "shows" ? (
             <motion.div
@@ -969,6 +1041,22 @@ const AdminPanel = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
+              {/* Producer Filter Banner */}
+              {producerFilter && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Theater className="w-5 h-5 text-primary" />
+                    <span className="text-foreground">
+                      Filtering productions by <strong>{producerFilterName}</strong>
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={clearProducerFilter} className="hover:bg-primary/20">
+                    <X className="w-4 h-4 mr-2" />
+                    Clear Filter
+                  </Button>
+                </div>
+              )}
+
               {/* Show Filter Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <button
@@ -1138,13 +1226,7 @@ const AdminPanel = () => {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => {
-                                        supabase
-                                          .from("shows")
-                                          .update({ status: "pending" })
-                                          .eq("id", show.id)
-                                          .then(() => fetchShows());
-                                      }}
+                                      onClick={() => setResetShowConfirm(show)}
                                       className="text-xs text-muted-foreground hover:text-foreground"
                                     >
                                       Reset
@@ -1154,7 +1236,7 @@ const AdminPanel = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleSoftDeleteShow(show.id)}
+                                    onClick={() => setDeleteShowConfirm(show)}
                                     className="h-8 w-8 p-0 text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
                                     title="Delete Show"
                                   >
@@ -1384,6 +1466,18 @@ const AdminPanel = () => {
                           <td className="p-4">
                             {userProfile.role !== "admin" && (
                               <div className="flex items-center gap-2">
+                                {userProfile.role === "producer" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleProducerFilter(userProfile.id!, userProfile.group_name || "Unknown Group")}
+                                    className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                    title="View Productions"
+                                  >
+                                    <Theater className="w-4 h-4 mr-1" />
+                                    Shows
+                                  </Button>
+                                )}
                                 {userProfile.role === "audience" ? (
                                   <Button
                                     variant="ghost"
@@ -1655,6 +1749,45 @@ const AdminPanel = () => {
                   : confirmAction?.type === "reject"
                     ? "Reject"
                     : "Broadcast"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Confirmation Dialog */}
+      <AlertDialog open={!!resetShowConfirm} onOpenChange={(open) => !open && setResetShowConfirm(null)}>
+        <AlertDialogContent className="bg-card border-secondary/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">Reset Show Status?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reset "{resetShowConfirm?.title}" to Pending? It will be removed from the public feed until approved again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => resetShowConfirm && handleResetShow(resetShowConfirm.id)}>
+              Reset to Pending
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteShowConfirm} onOpenChange={(open) => !open && setDeleteShowConfirm(null)}>
+        <AlertDialogContent className="bg-card border-secondary/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-destructive">Delete Show?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteShowConfirm?.title}"? This will move it to the trash. You can restore it later from the Deleted filter.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteShowConfirm && handleSoftDeleteShow(deleteShowConfirm.id)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
