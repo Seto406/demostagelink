@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +29,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { venues } from "@/data/venues";
 import { Json } from "@/integrations/supabase/types";
 import { calculateReservationFee } from "@/lib/pricing";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "./UpsellModal";
@@ -45,21 +44,54 @@ interface CastMember {
   role: string;
 }
 
+interface ScheduleSlot {
+  date: string;
+  time: string;
+}
+
 const METRO_MANILA_CITIES = [
   "Manila", "Quezon City", "Caloocan", "Las Piñas", "Makati", "Malabon",
   "Mandaluyong", "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay",
   "Pasig", "San Juan", "Taguig", "Valenzuela", "Pateros"
 ].sort();
 
-const DAYS_OF_WEEK = [
-  { label: "M", value: "Mondays" },
-  { label: "T", value: "Tuesdays" },
-  { label: "W", value: "Wednesdays" },
-  { label: "Th", value: "Thursdays" },
-  { label: "F", value: "Fridays" },
-  { label: "S", value: "Saturdays" },
-  { label: "Su", value: "Sundays" },
-];
+// Helper function to safely parse YYYY-MM-DD as local date
+const parseDateLocal = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+};
+
+// Helper function to convert legacy range format to slots
+const convertRangeToSlots = (start: string, end: string, selectedDays: string[]): ScheduleSlot[] => {
+    const slots: ScheduleSlot[] = [];
+    const startDate = parseDateLocal(start);
+    const endDate = parseDateLocal(end);
+    const dayMap: { [key: string]: number } = {
+        "Sundays": 0, "Mondays": 1, "Tuesdays": 2, "Wednesdays": 3,
+        "Thursdays": 4, "Fridays": 5, "Saturdays": 6
+    };
+
+    const targetDays = selectedDays.map(d => dayMap[d]).filter(d => d !== undefined);
+
+    // Safety check to prevent infinite loops if dates are invalid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
+        return [{ date: start || "", time: "" }];
+    }
+
+    // Limit the loop to avoid performance issues (e.g. max 365 days)
+    let safetyCounter = 0;
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        if (safetyCounter++ > 365) break;
+        if (targetDays.includes(d.getDay())) {
+            slots.push({
+                date: format(d, "yyyy-MM-dd"),
+                time: ""
+            });
+        }
+    }
+    return slots.length > 0 ? slots : [{ date: start, time: "" }];
+};
 
 export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
@@ -70,18 +102,13 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  // Schedule State
-  const [scheduleType, setScheduleType] = useState<"single" | "multi">("single");
-  const [date, setDate] = useState(""); // For single date
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  // Schedule State (New List Format)
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ date: "", time: "" }]);
 
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState<"local" | "university">("local");
   const [externalLinks, setExternalLinks] = useState<string[]>([""]);
-  // Keep ticketLink synced with externalLinks[0] for now if needed, but primary source is externalLinks
   const [price, setPrice] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState("");
   const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
@@ -114,45 +141,31 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setTitle(showToEdit.title || "");
       setDescription(showToEdit.description || "");
 
-      // Parse Date
-      const dateStr = showToEdit.date || "";
-      if (showToEdit.seo_metadata?.schedule) {
-        setScheduleType("multi");
-        setDate("");
-        setStartDate(showToEdit.seo_metadata.schedule.startDate);
-        setEndDate(showToEdit.seo_metadata.schedule.endDate);
-        setSelectedDays(showToEdit.seo_metadata.schedule.selectedDays);
-      } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        setScheduleType("single");
-        setDate(dateStr);
-        setStartDate("");
-        setEndDate("");
-        setSelectedDays([]);
+      // Parse Schedule
+      const scheduleData = showToEdit.seo_metadata?.schedule;
+
+      if (Array.isArray(scheduleData)) {
+          // New format: direct assignment
+          setScheduleSlots(scheduleData);
+      } else if (scheduleData && typeof scheduleData === 'object' && scheduleData.startDate) {
+          // Legacy format: Convert range to slots
+          const convertedSlots = convertRangeToSlots(
+              scheduleData.startDate,
+              scheduleData.endDate,
+              scheduleData.selectedDays || []
+          );
+          setScheduleSlots(convertedSlots);
       } else {
-        setScheduleType("multi");
-        setDate("");
-
-        // Try parsing unstructured date
-        const match = dateStr.match(/^(.*), ([A-Za-z]{3} \d{1,2}) - ([A-Za-z]{3} \d{1,2})$/);
-        if (match) {
-          const daysStr = match[1];
-          const startStr = match[2];
-          const endStr = match[3];
-          const currentYear = new Date().getFullYear();
-          const parseDate = (str: string) => {
-            const d = new Date(`${str} ${currentYear}`);
-            return !isNaN(d.getTime()) ? format(d, "yyyy-MM-dd") : "";
-          };
-
-          setStartDate(parseDate(startStr));
-          setEndDate(parseDate(endStr));
-          setSelectedDays(daysStr.split(" & ").map((d: string) => d.trim()));
-        } else {
-          // Reset multi fields as parsing back from string is not reliable without structured data
-          setStartDate("");
-          setEndDate("");
-          setSelectedDays([]);
-        }
+          // Fallback to main date column
+          const dateStr = showToEdit.date || "";
+          // Check if dateStr looks like a single date "yyyy-MM-dd"
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+               setScheduleSlots([{ date: dateStr, time: showToEdit.show_time || "" }]);
+          } else {
+              // Try to parse text date or just default
+              // Reset to empty if unstructured
+               setScheduleSlots([{ date: "", time: showToEdit.show_time || "" }]);
+          }
       }
 
       setVenue(showToEdit.venue || "");
@@ -205,11 +218,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setScheduleType("single");
-    setDate("");
-    setStartDate("");
-    setEndDate("");
-    setSelectedDays([]);
+    setScheduleSlots([{ date: "", time: "" }]);
     setVenue("");
     setCity("");
     setNiche("local");
@@ -313,6 +322,24 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setExternalLinks([...externalLinks, ""]);
   };
 
+  // Schedule Handlers
+  const handleSlotChange = (index: number, field: keyof ScheduleSlot, value: string) => {
+      const newSlots = [...scheduleSlots];
+      newSlots[index] = { ...newSlots[index], [field]: value };
+      setScheduleSlots(newSlots);
+  };
+
+  const addSlot = () => {
+      setScheduleSlots([...scheduleSlots, { date: "", time: "" }]);
+  };
+
+  const removeSlot = (index: number) => {
+      if (scheduleSlots.length > 1) {
+          setScheduleSlots(scheduleSlots.filter((_, i) => i !== index));
+      }
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile || !user) return;
@@ -320,13 +347,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     const errors: string[] = [];
     if (!title) errors.push("Title");
 
-    // Validate Date based on schedule type
-    if (scheduleType === "single" && !date) errors.push("Show Date");
-    if (scheduleType === "multi") {
-      if (!startDate) errors.push("Start Date");
-      if (!endDate) errors.push("End Date");
-      if (selectedDays.length === 0) errors.push("Show Days");
-    }
+    // Validate Schedule
+    const hasValidSlot = scheduleSlots.some(s => s.date);
+    if (!hasValidSlot) errors.push("At least one Show Date");
 
     if (!venue) errors.push("Venue");
     if (!city) errors.push("City");
@@ -391,21 +414,32 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     }
     if (!duration) duration = null;
 
-    // Construct Date String
-    let dateString: string | null = null;
-    if (scheduleType === "single") {
-      dateString = date;
-    } else {
-      const start = format(new Date(startDate), "MMM d");
-      const end = format(new Date(endDate), "MMM d");
+    // Filter out empty slots
+    const validSlots = scheduleSlots.filter(s => s.date);
 
-      // Sort selected days according to DAYS_OF_WEEK order
-      const sortedDays = DAYS_OF_WEEK
-        .filter(d => selectedDays.includes(d.value))
-        .map(d => d.value);
+    // Sort slots by date
+    validSlots.sort((a, b) => parseDateLocal(a.date).getTime() - parseDateLocal(b.date).getTime());
 
-      const daysStr = sortedDays.join(" & ");
-      dateString = `${daysStr}, ${start} - ${end}`;
+    // Construct Display Date String (comma separated)
+    const dateStrings = validSlots.map(s => format(parseDateLocal(s.date), "MMM d"));
+    // Remove duplicates for the summary
+    const uniqueDates = Array.from(new Set(dateStrings));
+    const displayDateString = uniqueDates.join(", ");
+
+    // Construct Display Time String
+    // If all times are the same, use that. Otherwise "Various Times"
+    const uniqueTimes = Array.from(new Set(validSlots.map(s => s.time).filter(Boolean)));
+    let displayTimeString = "";
+
+    if (uniqueTimes.length === 1) {
+        // Convert 24h to 12h
+        const [h, m] = uniqueTimes[0].split(":");
+        const d = new Date();
+        d.setHours(parseInt(h));
+        d.setMinutes(parseInt(m));
+        displayTimeString = format(d, "h:mm a");
+    } else if (uniqueTimes.length > 1) {
+        displayTimeString = "Various Times";
     }
 
     const validLinks = externalLinks.filter(l => l.trim() !== "");
@@ -413,7 +447,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     const payload = {
       title,
       description: description || null,
-      date: dateString,
+      date: displayDateString,
+      show_time: displayTimeString || null,
       venue: venue || null,
       city: city || null,
       niche,
@@ -432,7 +467,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       seo_metadata: {
         ...(showToEdit?.seo_metadata || {}),
         payment_instructions: paymentInstructions || null,
-        schedule: scheduleType === "multi" ? { startDate, endDate, selectedDays } : null,
+        schedule: validSlots, // Save the full array of slots
       },
     };
 
@@ -531,100 +566,79 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
             <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-secondary/20">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                   <CalendarIcon className="w-4 h-4" /> Location & Schedule
+                   <CalendarIcon className="w-4 h-4" /> Schedule
                 </p>
-                <ToggleGroup type="single" value={scheduleType} onValueChange={(val) => val && setScheduleType(val as "single" | "multi")}>
-                   <ToggleGroupItem value="single" size="sm" aria-label="Single Date" className="h-7 text-xs">Single Date</ToggleGroupItem>
-                   <ToggleGroupItem value="multi" size="sm" aria-label="Multi-Date" className="h-7 text-xs">Schedule</ToggleGroupItem>
-                </ToggleGroup>
               </div>
 
-              {scheduleType === "single" ? (
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
-                       <Input
-                         id="date"
-                         type="date"
-                         value={date}
-                         onChange={(e) => setDate(e.target.value)}
-                         className="bg-background border-secondary/30"
-                         required
-                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Select value={city} onValueChange={setCity}>
-                        <SelectTrigger className="bg-background border-secondary/30">
-                          <SelectValue placeholder="Select city" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-secondary/30 max-h-60">
-                          {METRO_MANILA_CITIES.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                 </div>
-              ) : (
-                 <div className="space-y-4">
-                     <div className="space-y-2">
-                       <Label>Show Days <span className="text-destructive">*</span></Label>
-                       <ToggleGroup type="multiple" value={selectedDays} onValueChange={setSelectedDays} className="justify-start flex-wrap gap-2">
-                          {DAYS_OF_WEEK.map(day => (
-                             <ToggleGroupItem key={day.value} value={day.value} className="w-8 h-8 p-0 rounded-full data-[state=on]:bg-primary data-[state=on]:text-primary-foreground" aria-label={day.value}>
-                                {day.label}
-                             </ToggleGroupItem>
-                          ))}
-                       </ToggleGroup>
-                     </div>
-                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <Label>Start Date <span className="text-destructive">*</span></Label>
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-background border-secondary/30"
-                                required
-                            />
-                         </div>
-                         <div className="space-y-2">
-                            <Label>End Date <span className="text-destructive">*</span></Label>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-background border-secondary/30"
-                                required
-                            />
-                         </div>
-                     </div>
-                     <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Select value={city} onValueChange={setCity}>
-                        <SelectTrigger className="bg-background border-secondary/30">
-                          <SelectValue placeholder="Select city" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-secondary/30 max-h-60">
-                          {METRO_MANILA_CITIES.map((c) => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                 </div>
-              )}
+              <div className="space-y-3">
+                  {scheduleSlots.map((slot, index) => (
+                      <div key={index} className="flex gap-2 items-end">
+                           <div className="space-y-1 flex-1">
+                               <Label className="text-xs">Date</Label>
+                               <Input
+                                  type="date"
+                                  value={slot.date}
+                                  onChange={(e) => handleSlotChange(index, 'date', e.target.value)}
+                                  className="bg-background border-secondary/30"
+                                  required={index === 0}
+                               />
+                           </div>
+                           <div className="space-y-1 w-32">
+                               <Label className="text-xs">Time</Label>
+                               <Input
+                                  type="time"
+                                  value={slot.time}
+                                  onChange={(e) => handleSlotChange(index, 'time', e.target.value)}
+                                  className="bg-background border-secondary/30"
+                               />
+                           </div>
+                           <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeSlot(index)}
+                                disabled={scheduleSlots.length === 1}
+                                className="text-destructive hover:bg-destructive/10 mb-[2px]"
+                           >
+                               <Trash2 className="w-4 h-4" />
+                           </Button>
+                      </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addSlot}
+                    className="text-xs w-full mt-2"
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Add another date
+                  </Button>
+              </div>
 
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="venue">Venue <span className="text-destructive">*</span></Label>
-                <CreatableSelect
-                  options={venues}
-                  value={venue}
-                  onChange={setVenue}
-                  placeholder="Select or type venue"
-                  className="bg-background border-secondary/30"
-                />
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-secondary/10">
+                   <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Select value={city} onValueChange={setCity}>
+                        <SelectTrigger className="bg-background border-secondary/30">
+                          <SelectValue placeholder="Select city" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-secondary/30 max-h-60">
+                          {METRO_MANILA_CITIES.map((c) => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="venue">Venue *</Label>
+                        <CreatableSelect
+                        options={venues}
+                        value={venue}
+                        onChange={setVenue}
+                        placeholder="Select or type venue"
+                        className="bg-background border-secondary/30"
+                        />
+                    </div>
               </div>
             </div>
 
