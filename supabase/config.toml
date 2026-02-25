@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.invite-user]
 verify_jwt = false
+
+[functions.create-manual-payment]
+verify_jwt = false
+
+[functions.approve-manual-payment]
+verify_jwt = false
