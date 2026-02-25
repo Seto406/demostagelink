@@ -62,7 +62,7 @@ export const useSubscription = () => {
     }
   };
 
-  const isPro = true; // FORCE PRO FOR TESTING
+  const isPro = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   return {
     subscription,
