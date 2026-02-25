@@ -429,13 +429,15 @@ const Dashboard = () => {
     setIsUpdating(requestId);
 
     // 1. Insert into group_members
+    const sender = applicantsByUserId[request.sender_id];
     const { error: insertError } = await supabase
         .from("group_members")
         .insert({
             user_id: request.sender_id,
             group_id: selectedGroupId,
             role_in_group: 'producer',
-            status: 'active'
+            status: 'active',
+            member_name: sender?.username || "Collaborator"
         });
 
     if (insertError) {

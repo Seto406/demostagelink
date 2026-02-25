@@ -85,8 +85,8 @@ const ShowDetailsPage = () => {
         const showData = {
           ...data,
           cast_members: (data.cast_members as unknown) as CastMember[] | null
-        };
-        setShow(showData as ShowDetails);
+        } as unknown as ShowDetails;
+        setShow(showData);
         // Update page title for shareability
         document.title = `${data.title} | StageLink`;
       }

@@ -78,7 +78,7 @@ const CheckoutPage = () => {
           ...data,
           cast_members: (data.cast_members as unknown) as CastMember[] | null
       };
-      setShow(showData as ShowDetails);
+      setShow(showData as unknown as ShowDetails);
       setLoading(false);
     };
 

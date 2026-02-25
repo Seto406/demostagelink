@@ -52,6 +52,149 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          invited_at: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          invited_at?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          invited_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          show_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          show_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          show_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       badges: {
         Row: {
           created_at: string
@@ -196,6 +339,7 @@ export type Database = {
           id: string
           member_name: string
           role_in_group: string | null
+          status: string
           updated_at: string
           user_id: string | null
         }
@@ -206,6 +350,7 @@ export type Database = {
           id?: string
           member_name: string
           role_in_group?: string | null
+          status?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -216,6 +361,7 @@ export type Database = {
           id?: string
           member_name?: string
           role_in_group?: string | null
+          status?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -592,6 +738,8 @@ export type Database = {
       }
       tickets: {
         Row: {
+          access_code: string | null
+          checked_in_at: string | null
           created_at: string
           id: string
           show_id: string
@@ -601,6 +749,8 @@ export type Database = {
           payment_id: string | null
         }
         Insert: {
+          access_code?: string | null
+          checked_in_at?: string | null
           created_at?: string
           id?: string
           show_id: string
@@ -610,6 +760,8 @@ export type Database = {
           payment_id?: string | null
         }
         Update: {
+          access_code?: string | null
+          checked_in_at?: string | null
           created_at?: string
           id?: string
           show_id?: string
@@ -676,6 +828,21 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -696,10 +863,31 @@ export type Database = {
         }[]
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      get_admin_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_revenue: number
+          active_shows: number
+          total_users: number
+          pending_approvals: number
+        }
+      }
+      get_admin_user_list: {
+        Args: {
+          page: number
+          page_size: number
+          search_query?: string
+          role_filter?: string
+        }
+        Returns: {
+          users: Json[]
+          total_count: number
+        }
+      }
     }
     Enums: {
       niche_type: "local" | "university"
-      show_status: "pending" | "approved" | "rejected"
+      show_status: "pending" | "approved" | "rejected" | "archived"
       user_role: "audience" | "producer" | "admin"
     }
     CompositeTypes: {

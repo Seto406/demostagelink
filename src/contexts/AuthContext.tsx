@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Wrapped in strict 5s timeout to prevent infinite hangs
       const fetchResponse = await withTimeout(
-        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle()
+        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle() as unknown as Promise<any>
       );
 
       if (fetchResponse.data) {
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           user_id: userId,
           role,
           avatar_url: userMetadata?.avatar_url || null,
-        }]).select().single()
+        }]).select().single() as unknown as Promise<any>
       );
 
       if (createResponse.data) {
