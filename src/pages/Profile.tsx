@@ -16,6 +16,7 @@ import { StarRating } from "@/components/ui/star-rating";
 import { PremiumEmptyState } from "@/components/ui/premium-empty-state";
 import { calculateReservationFee } from "@/lib/pricing";
 import { toast } from "sonner";
+import { GroupMemberBadge, ShowCredit } from "@/components/profile/GroupMemberBadge";
 
 interface ProfileData {
   id: string;
@@ -74,6 +75,15 @@ interface ReviewData {
   } | null;
 }
 
+interface GroupMembership {
+  id: string;
+  group_id: string;
+  group_name: string;
+  group_logo_url: string | null;
+  role_in_group: string;
+  credits: ShowCredit[];
+}
+
 const Profile = () => {
   const { id } = useParams<{ id: string }>();
   const { user, profile: currentUserProfile } = useAuth();
@@ -86,6 +96,7 @@ const Profile = () => {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [following, setFollowing] = useState<FollowData[]>([]);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const [memberships, setMemberships] = useState<GroupMembership[]>([]);
   const [followerCount, setFollowerCount] = useState(0);
   const [counts, setCounts] = useState({ passes: 0, following: 0, reviews: 0, followers: 0 });
 
@@ -123,6 +134,66 @@ const Profile = () => {
 
         if (profileData) {
           setProfile(profileData as unknown as ProfileData);
+
+          // Fetch Group Memberships if not a producer
+          if (profileData.role === 'audience') {
+            const { data: membersData } = await supabase
+              .from('group_members' as any)
+              .select(`
+                id,
+                group_id,
+                role_in_group,
+                member_name,
+                profiles:group_id (
+                  id,
+                  group_name,
+                  group_logo_url
+                )
+              `)
+              .eq('user_id', profileId)
+              .eq('status', 'active');
+
+            if (membersData && membersData.length > 0) {
+              const membershipsWithCredits = await Promise.all(membersData.map(async (m: any) => {
+                const groupId = m.group_id || m.profiles?.id;
+                // Fetch approved shows for this group
+                const { data: showsData } = await supabase
+                  .from('shows')
+                  .select('id, title, poster_url, cast_members')
+                  .eq('producer_id', groupId)
+                  .eq('status', 'approved');
+
+                // Determine the name to match against credits
+                const memberName = m.member_name || profileData.username;
+
+                // Filter shows where the user is credited
+                const credits = (showsData || []).filter((show: any) => {
+                  const cast = show.cast_members as any[] || [];
+                  // Check if cast contains memberName (case insensitive)
+                  return cast.some((c: any) => c.name?.toLowerCase() === memberName?.toLowerCase());
+                }).map((show: any) => {
+                  const role = (show.cast_members as any[]).find((c: any) => c.name?.toLowerCase() === memberName?.toLowerCase())?.role || 'Cast';
+                  return {
+                    id: show.id,
+                    title: show.title,
+                    poster_url: show.poster_url,
+                    role: role
+                  };
+                });
+
+                return {
+                  id: m.id,
+                  group_id: groupId,
+                  group_name: m.profiles?.group_name || 'Unknown Group',
+                  group_logo_url: m.profiles?.group_logo_url,
+                  role_in_group: m.role_in_group || 'Member',
+                  credits: credits
+                };
+              }));
+
+              setMemberships(membershipsWithCredits.slice(0, 2)); // Limit to 2 for display safety
+            }
+          }
 
           // Fetch Followers Count
           const { count } = await supabase
@@ -292,14 +363,39 @@ const Profile = () => {
                  <h1 className="text-3xl font-serif font-bold text-foreground">
                    {displayName}
                  </h1>
-                 <span className={`px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center w-fit mx-auto md:mx-0 ${
-                   profile.role === 'producer'
-                     ? 'bg-secondary/10 text-secondary border-secondary/20'
-                     : 'bg-primary/10 text-primary border-primary/20'
-                 }`}>
-                   {profile.role === 'producer' ? 'Producer Account' : 'Audience Member'}
-                 </span>
+
+                 {/* Role / Memberships Display */}
+                 {profile.role === 'producer' ? (
+                   <span className="px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center w-fit mx-auto md:mx-0 bg-secondary/10 text-secondary border-secondary/20">
+                     Producer Account
+                   </span>
+                 ) : memberships.length > 0 ? (
+                   // Render badges for memberships instead of "Audience Member"
+                   <div className="hidden">
+                      {/* Hidden here because we will render them below the name for better layout */}
+                   </div>
+                 ) : (
+                   <span className="px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center w-fit mx-auto md:mx-0 bg-primary/10 text-primary border-primary/20">
+                     Audience Member
+                   </span>
+                 )}
                </div>
+
+               {/* Group Memberships Area */}
+               {!isProducer && memberships.length > 0 && (
+                 <div className="flex flex-col gap-2 mt-2 mb-4 justify-center md:justify-start items-center md:items-start">
+                   {memberships.map((membership) => (
+                     <GroupMemberBadge
+                       key={membership.id}
+                       groupId={membership.group_id}
+                       groupName={membership.group_name}
+                       groupLogoUrl={membership.group_logo_url}
+                       memberRole={membership.role_in_group}
+                       shows={membership.credits}
+                     />
+                   ))}
+                 </div>
+               )}
 
                {profile.role === "producer" && profile.producer_role && (
                  <p className="text-lg text-muted-foreground font-medium mb-2 text-center md:text-left">
