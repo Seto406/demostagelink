@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck } from "lucide-react";
+import { createNotification } from "@/lib/notifications";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
@@ -62,6 +63,8 @@ interface FollowData {
     group_name: string | null;
     avatar_url: string | null;
     niche: string | null;
+    role: "audience" | "producer" | "admin";
+    username: string | null;
   } | null;
 }
 
@@ -115,6 +118,8 @@ const Profile = () => {
   const [memberships, setMemberships] = useState<GroupMembership[]>([]);
   const [followerCount, setFollowerCount] = useState(0);
   const [counts, setCounts] = useState({ passes: 0, following: 0, reviews: 0, followers: 0 });
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Check if viewing own profile
   const isOwnProfile = !id || (currentUserProfile && id === currentUserProfile.id);
@@ -150,6 +155,18 @@ const Profile = () => {
 
         if (profileData) {
           setProfile(profileData as unknown as ProfileData);
+
+          // Check follow status
+          if (user && !isOwnProfile) {
+            const { data: followData } = await supabase
+              .from("follows")
+              .select("id")
+              .eq("follower_id", user.id)
+              .eq("following_id", profileId)
+              .maybeSingle();
+
+            if (followData) setIsFollowing(true);
+          }
 
           // Fetch Group Memberships if not a producer
           if (profileData.role === 'audience') {
@@ -335,7 +352,7 @@ const Profile = () => {
               // These are definitely Profile UUIDs because following_id references profiles.id
               const { data: profilesData, error: profilesError } = await supabase
                 .from("profiles")
-                .select("id, group_name, avatar_url, niche")
+                .select("id, group_name, avatar_url, niche, role, username")
                 .in("id", followingIds);
 
               if (profilesError) {
@@ -350,7 +367,9 @@ const Profile = () => {
                       id: profile.id,
                       group_name: profile.group_name,
                       avatar_url: profile.avatar_url,
-                      niche: profile.niche
+                      niche: profile.niche,
+                      role: profile.role,
+                      username: profile.username
                     } : null
                   };
                 }).filter(f => f.profiles !== null);
@@ -430,6 +449,59 @@ const Profile = () => {
       return showDate <= now;
   });
 
+  const handleFollow = async () => {
+    if (!user) {
+        toast.error("Please login to follow this user");
+        return;
+    }
+    if (!profile) return;
+
+    setFollowLoading(true);
+
+    if (isFollowing) {
+        const { error } = await supabase
+            .from("follows")
+            .delete()
+            .eq("follower_id", user.id)
+            .eq("following_id", profile.id);
+
+        if (error) {
+            console.error("Error unfollowing:", error);
+            toast.error("Failed to unfollow");
+        } else {
+            setIsFollowing(false);
+            setFollowerCount(prev => Math.max(0, prev - 1));
+            toast.success("Unfollowed user");
+        }
+    } else {
+        const { error } = await supabase
+            .from("follows")
+            .insert({
+                follower_id: user.id,
+                following_id: profile.id
+            });
+
+        if (error) {
+            console.error("Error following:", error);
+            toast.error("Failed to follow user");
+        } else {
+            setIsFollowing(true);
+            setFollowerCount(prev => prev + 1);
+            toast.success("Following user");
+
+            if (currentUserProfile) {
+              await createNotification({
+                userId: profile.user_id, // Auth ID for notifications
+                actorId: currentUserProfile.id, // Profile ID for actor
+                type: 'follow',
+                title: 'New Follower',
+                message: `${currentUserProfile.group_name || currentUserProfile.username || 'Someone'} started following you.`,
+              });
+            }
+        }
+    }
+    setFollowLoading(false);
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-background">
@@ -578,6 +650,29 @@ const Profile = () => {
                      </Button>
                    </>
                  )}
+                 {!isOwnProfile && user && (
+                     <Button
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        variant={isFollowing ? "outline" : "default"}
+                        size="sm"
+                        className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
+                      >
+                        {followLoading ? (
+                            "Processing..."
+                        ) : isFollowing ? (
+                            <>
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Following
+                            </>
+                        ) : (
+                            <>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Follow
+                            </>
+                        )}
+                      </Button>
+                 )}
                  {isProducer && (
                    <Link to={`/producer/${profile.id}`}>
                       <Button variant="default" size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
@@ -702,25 +797,32 @@ const Profile = () => {
                <TabsContent value="following" className="mt-0">
                  {following.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {following.map((follow) => (
-                            <Link to={`/producer/${follow.following_id}`} key={follow.id}>
-                                <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-secondary/10 hover:border-secondary/30 transition-all hover:bg-secondary/5">
-                                    <Avatar className="w-12 h-12 border border-secondary/20">
-                                        <AvatarImage src={follow.profiles?.avatar_url || undefined} />
-                                        <AvatarFallback>{follow.profiles?.group_name?.[0] || "?"}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h4 className="font-medium text-foreground line-clamp-1">{follow.profiles?.group_name}</h4>
-                                        {follow.profiles?.niche && (
-                                            <span className="text-xs text-muted-foreground capitalize flex items-center gap-1">
-                                                <MapPin className="w-3 h-3" />
-                                                {follow.profiles.niche}
-                                            </span>
-                                        )}
+                        {following.map((follow) => {
+                            const displayName = follow.profiles?.group_name || follow.profiles?.username || "Anonymous";
+                            const link = follow.profiles?.role === 'producer'
+                              ? `/producer/${follow.following_id}`
+                              : `/profile/${follow.following_id}`;
+
+                            return (
+                                <Link to={link} key={follow.id}>
+                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-secondary/10 hover:border-secondary/30 transition-all hover:bg-secondary/5">
+                                        <Avatar className="w-12 h-12 border border-secondary/20">
+                                            <AvatarImage src={follow.profiles?.avatar_url || undefined} />
+                                            <AvatarFallback>{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h4 className="font-medium text-foreground line-clamp-1">{displayName}</h4>
+                                            {follow.profiles?.niche && (
+                                                <span className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {follow.profiles.niche}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
+                                </Link>
+                            );
+                        })}
                     </div>
                  ) : (
                     <div className="text-center py-12 bg-card/50 border border-secondary/10 rounded-2xl">
