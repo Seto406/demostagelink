@@ -188,8 +188,27 @@ const AdminPanel = () => {
       const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
 
       if (!statsError && statsData) {
-        setStats(statsData as Stats);
-        return;
+        // Map snake_case to camelCase and fill missing fields with defaults
+        const mappedStats: Stats = {
+          totalUsers: statsData.total_users || 0,
+          totalShows: 0, // Not returned by RPC yet?
+          activeProducers: 0,
+          pendingRequests: statsData.pending_approvals || 0,
+          activeShows: statsData.active_shows || 0,
+          totalRevenue: statsData.total_revenue || 0,
+          deletedShows: 0,
+          pendingShows: 0,
+          approvedShows: 0,
+          rejectedShows: 0
+        } as unknown as Stats;
+
+        // Since the RPC might not return everything yet, we might want to still do parallel fetch if data is incomplete
+        // But for now let's just use what we have and maybe fetch others?
+        // Actually the RPC seems to return a subset.
+        // Let's just fallback to parallel fetch if RPC is not comprehensive enough or update Stats type.
+        // For now, I will comment out the RPC usage to rely on parallel fetch which works for all fields.
+        // setStats(mappedStats);
+        // return;
       }
 
       if (statsError) {
@@ -295,7 +314,7 @@ const AdminPanel = () => {
 
     try {
       const { data, error } = await supabase.rpc('get_admin_user_list', {
-        page_number: currentPage,
+        page: currentPage,
         page_size: ITEMS_PER_PAGE
       });
 
@@ -303,7 +322,7 @@ const AdminPanel = () => {
 
       // Parse the response from RPC (JSON)
       // The RPC returns { users: [...], total_count: number }
-      const result = data as { users: UserProfile[], total_count: number };
+      const result = data as unknown as { users: UserProfile[], total_count: number };
 
       if (!mounted.current) return;
 

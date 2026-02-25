@@ -5,7 +5,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { Button } from "@/components/ui/button";
 import { XCircle, Clock, Ticket, Home, ArrowRight, CheckCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { DigitalPass } from "@/components/profile/DigitalPass";
 import { calculateReservationFee } from "@/lib/pricing";
 
@@ -122,7 +122,7 @@ const PaymentSuccess = () => {
     };
   }, [queryClient, paymentRef, isManual, navigate]);
 
-  const draw = {
+  const draw: Variants = {
     hidden: { pathLength: 0, opacity: 0 },
     visible: (i: number) => {
       const delay = 1 + i * 0.5;

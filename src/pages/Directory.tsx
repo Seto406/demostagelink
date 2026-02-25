@@ -362,11 +362,11 @@ const Directory = () => {
       if (fetchError) throw fetchError;
 
       if (existingMember) {
-        if (existingMember.status === 'pending') {
+        if ((existingMember as any).status === 'pending') {
           toast.info("You already have a pending application.");
           setJoiningGroupId(null);
           return;
-        } else if (existingMember.status === 'active') {
+        } else if ((existingMember as any).status === 'active') {
           toast.info("You are already a member of this group.");
           setJoiningGroupId(null);
           return;

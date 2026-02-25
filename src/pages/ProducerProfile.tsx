@@ -108,7 +108,7 @@ const ProducerProfile = () => {
       if (groupError) {
         console.error("Error fetching theater group:", groupError);
       } else {
-        setTheaterGroup(groupData);
+        setTheaterGroup(groupData as unknown as TheaterGroup | null);
       }
 
       if (user) {
@@ -121,7 +121,7 @@ const ProducerProfile = () => {
 
         if (applicationData) {
           setHasApplied(true);
-          setApplicationStatus(applicationData.status);
+          setApplicationStatus((applicationData as any).status);
         }
       }
 
@@ -145,7 +145,7 @@ const ProducerProfile = () => {
         .order("date", { ascending: false });
 
       if (groupData) {
-         query = query.or(`producer_id.eq.${id},theater_group_id.eq.${groupData.id}`);
+         query = query.or(`producer_id.eq.${id},theater_group_id.eq.${(groupData as any).id}`);
       } else {
          query = query.eq("producer_id", id);
       }
@@ -308,12 +308,12 @@ const ProducerProfile = () => {
       if (fetchError) throw fetchError;
 
       if (existingMember) {
-        if (existingMember.status === 'pending') {
+        if ((existingMember as any).status === 'pending') {
           toast.info("You already have a pending application.");
           setHasApplied(true);
           setApplicationStatus('pending');
           return;
-        } else if (existingMember.status === 'active') {
+        } else if ((existingMember as any).status === 'active') {
           toast.info("You are already a member of this group.");
           setHasApplied(true);
           setApplicationStatus('active');
