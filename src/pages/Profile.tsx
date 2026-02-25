@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock } from "lucide-react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DigitalPass } from "@/components/profile/DigitalPass";
@@ -35,11 +35,13 @@ interface TicketData {
   id: string;
   show_id: string;
   status: string | null;
+  access_code: string | null;
   shows: {
     id: string;
     title: string;
     poster_url: string | null;
-    date: string | null;
+    date: string | null; // This is actually 'show_time' in DB usually, aliased or assumed 'date'
+    show_time?: string | null; // Adding optional field if query returns it directly
     venue: string | null;
     city: string | null;
     price: number | null;
@@ -204,19 +206,21 @@ const Profile = () => {
           setFollowerCount(count || 0);
 
           // Fetch Tickets (Passes)
+          // We fetch all non-cancelled tickets. Separation logic happens in render or state processing.
           const { data: ticketsData, error: ticketsError } = await supabase
             .from("tickets")
             .select(`
               id,
               show_id,
               status,
+              access_code,
               shows (
                 id,
                 title,
                 poster_url,
-                date,
+                show_time,
                 venue,
-                city,
+                ticket_link,
                 price,
                 reservation_fee,
                 seo_metadata,
@@ -227,21 +231,25 @@ const Profile = () => {
               )
             `)
             .eq("user_id", profileId)
-            .eq("status", "confirmed");
+            .neq("status", "cancelled"); // Filter out cancelled
 
           if (ticketsError) {
              console.error("Error fetching tickets:", ticketsError);
              toast.error("Failed to load your passes.");
           } else if (ticketsData) {
-             // Cast to unknown first because 'shows' is array or object depending on relationship,
-             // but here it's singular foreign key.
-             setTickets(ticketsData as unknown as TicketData[]);
+             // Map shows.show_time to date property to match interface
+             const mappedTickets = ticketsData.map((t: any) => ({
+                 ...t,
+                 shows: t.shows ? {
+                     ...t.shows,
+                     date: t.shows.show_time // Alias show_time to date
+                 } : null
+             }));
+             setTickets(mappedTickets as unknown as TicketData[]);
           }
 
           // Fetch Following
-          // Try-catch block in case 'follows' table doesn't exist yet or permissions issue
           try {
-            // We need the auth.users.id (profileData.user_id) to find who they are following
             if (profileData.user_id) {
               const { data: followsData, error: followsError } = await supabase
                 .from("follows")
@@ -302,6 +310,7 @@ const Profile = () => {
       setLoading(false);
     };
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, currentUserProfile]);
 
   // Update counts when data changes
@@ -313,6 +322,25 @@ const Profile = () => {
       followers: followerCount,
     });
   }, [tickets, following, reviews, followerCount]);
+
+  // Ticket Filtering Logic
+  const now = new Date();
+  const upcomingTickets = tickets.filter(t => {
+      if (t.status === 'used') return false;
+      if (!t.shows?.date) return true; // Keep if no date
+      const showDate = new Date(t.shows.date);
+      // Keep if show is in future or today (until midnight?)
+      // Actually simpler: if show hasn't happened yet.
+      return showDate > now;
+  });
+
+  const historyTickets = tickets.filter(t => {
+      // Includes USED tickets AND missed tickets (past date)
+      if (t.status === 'used') return true;
+      if (!t.shows?.date) return false;
+      const showDate = new Date(t.shows.date);
+      return showDate <= now;
+  });
 
 
   if (loading) return (
@@ -496,38 +524,87 @@ const Profile = () => {
                </TabsList>
 
                <TabsContent value="passes" className="mt-0">
-                 {tickets.length > 0 ? (
-                    <div className="grid gap-6">
-                        {tickets.map((ticket) => (
-                            <DigitalPass
-                                key={ticket.id}
-                                ticketId={ticket.id}
-                                id={ticket.shows?.id || ""}
-                                title={ticket.shows?.title || "Unknown Show"}
-                                groupName={ticket.shows?.profiles?.group_name || "Unknown Group"}
-                                posterUrl={ticket.shows?.poster_url}
-                                date={ticket.shows?.date}
-                                venue={ticket.shows?.venue}
-                                city={ticket.shows?.city}
-                                status={ticket.status || undefined}
-                                ticketPrice={ticket.shows?.price}
-                                reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
-                                paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                 {/* Pass Tabs: Upcoming vs History */}
+                 <Tabs defaultValue="upcoming" className="w-full">
+                     <div className="flex items-center justify-between mb-4">
+                         <h3 className="text-lg font-serif font-semibold text-foreground">Your Tickets</h3>
+                         <TabsList className="bg-card border border-secondary/10 h-9 p-1">
+                             <TabsTrigger value="upcoming" className="text-xs px-3 h-7 data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary">
+                                Upcoming ({upcomingTickets.length})
+                             </TabsTrigger>
+                             <TabsTrigger value="history" className="text-xs px-3 h-7 data-[state=active]:bg-secondary/20 data-[state=active]:text-secondary">
+                                History ({historyTickets.length})
+                             </TabsTrigger>
+                         </TabsList>
+                     </div>
+
+                     <TabsContent value="upcoming" className="mt-0 space-y-6">
+                        {upcomingTickets.length > 0 ? (
+                            <div className="grid gap-6">
+                                {upcomingTickets.map((ticket) => (
+                                    <DigitalPass
+                                        key={ticket.id}
+                                        ticketId={ticket.id}
+                                        id={ticket.shows?.id || ""}
+                                        title={ticket.shows?.title || "Unknown Show"}
+                                        groupName={ticket.shows?.profiles?.group_name || "Unknown Group"}
+                                        posterUrl={ticket.shows?.poster_url}
+                                        date={ticket.shows?.date}
+                                        venue={ticket.shows?.venue}
+                                        city={ticket.shows?.city}
+                                        status={ticket.status || undefined}
+                                        accessCode={ticket.access_code}
+                                        ticketPrice={ticket.shows?.price}
+                                        reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
+                                        paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <PremiumEmptyState
+                                title="No upcoming shows"
+                                description="Browse the directory to find your next theater experience."
+                                icon={TicketIcon}
+                                action={
+                                    <Link to="/directory">
+                                        <Button>Find Shows</Button>
+                                    </Link>
+                                }
                             />
-                        ))}
-                    </div>
-                 ) : (
-                    <PremiumEmptyState
-                      title="No passes yet"
-                      description="Explore shows to secure your seat!"
-                      icon={TicketIcon}
-                      action={
-                        <Link to="/directory">
-                          <Button>Find Shows</Button>
-                        </Link>
-                      }
-                    />
-                 )}
+                        )}
+                     </TabsContent>
+
+                     <TabsContent value="history" className="mt-0">
+                        {historyTickets.length > 0 ? (
+                             <div className="grid gap-6">
+                                {historyTickets.map((ticket) => (
+                                    <DigitalPass
+                                        key={ticket.id}
+                                        ticketId={ticket.id}
+                                        id={ticket.shows?.id || ""}
+                                        title={ticket.shows?.title || "Unknown Show"}
+                                        groupName={ticket.shows?.profiles?.group_name || "Unknown Group"}
+                                        posterUrl={ticket.shows?.poster_url}
+                                        date={ticket.shows?.date}
+                                        venue={ticket.shows?.venue}
+                                        city={ticket.shows?.city}
+                                        status={ticket.status || undefined}
+                                        accessCode={ticket.access_code}
+                                        ticketPrice={ticket.shows?.price}
+                                        reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
+                                        paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                                    />
+                                ))}
+                             </div>
+                        ) : (
+                             <div className="text-center py-12 bg-card/50 border border-secondary/10 rounded-xl">
+                                <History className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                                <h3 className="text-lg font-medium text-foreground mb-2">No History Yet</h3>
+                                <p className="text-muted-foreground">Past tickets will appear here.</p>
+                             </div>
+                        )}
+                     </TabsContent>
+                 </Tabs>
                </TabsContent>
 
                <TabsContent value="following" className="mt-0">

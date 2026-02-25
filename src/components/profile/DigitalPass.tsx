@@ -1,8 +1,9 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, QrCode, Download, Image, FileText } from "lucide-react";
+import { Calendar, MapPin, Download, Image, FileText, CheckCircle2 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import QRCode from "react-qr-code";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,8 +20,9 @@ interface DigitalPassProps {
   date?: string | null;
   venue?: string | null;
   city?: string | null;
-  status?: string; // e.g., "confirmed", "pending"
+  status?: string; // e.g., "confirmed", "pending", "used"
   ticketId: string;
+  accessCode?: string | null;
   ticketPrice?: number | null;
   reservationFee?: number | null;
   paymentInstructions?: string | null;
@@ -36,6 +38,7 @@ export const DigitalPass = ({
   city,
   status,
   ticketId,
+  accessCode,
   ticketPrice,
   reservationFee,
   paymentInstructions,
@@ -43,9 +46,8 @@ export const DigitalPass = ({
   const passRef = useRef<HTMLDivElement>(null);
   const paidAmount = reservationFee ?? 25;
   const balance = (ticketPrice && ticketPrice > 0) ? Math.max(0, ticketPrice - paidAmount) : 0;
-  // Use a unique but consistent ID for the file name.
-  // Using ticketId is good, but let's sanitize or shorten if needed.
-  // Assuming ticketId is a UUID, it's fine.
+
+  const isUsed = status === 'used';
 
   const handleDownloadImage = async () => {
     if (passRef.current) {
@@ -53,10 +55,10 @@ export const DigitalPass = ({
         const canvas = await html2canvas(passRef.current, {
             useCORS: true,
             scale: 2, // Higher resolution
-            backgroundColor: null, // Transparent background if possible, though card has bg
+            backgroundColor: null,
         });
         const link = document.createElement("a");
-        link.download = `pass-${title.substring(0, 20).replace(/\s+/g, '-')}-${ticketId.slice(0, 8)}.png`;
+        link.download = `pass-${title.substring(0, 20).replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${ticketId.slice(0, 8)}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
       } catch (error) {
@@ -75,19 +77,14 @@ export const DigitalPass = ({
         const imgData = canvas.toDataURL('image/png');
 
         // Use pt units.
-        // Create PDF with dimensions matching the canvas (scaled down to screen size or keep high res)
-        // Actually, let's make the PDF size match the image size in points.
-        const imgWidth = canvas.width / 2; // dividing by scale to get approximate original logic size
-        const imgHeight = canvas.height / 2;
-
         const pdf = new jsPDF({
-          orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
           unit: 'px',
-          format: [canvas.width, canvas.height] // Use full canvas resolution size for the PDF page
+          format: [canvas.width, canvas.height]
         });
 
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`pass-${title.substring(0, 20).replace(/\s+/g, '-')}-${ticketId.slice(0, 8)}.pdf`);
+        pdf.save(`pass-${title.substring(0, 20).replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${ticketId.slice(0, 8)}.pdf`);
       } catch (error) {
         console.error("Error downloading PDF:", error);
       }
@@ -117,7 +114,7 @@ export const DigitalPass = ({
          </DropdownMenu>
       </div>
 
-      <div ref={passRef} className="relative bg-card border border-secondary/30 rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:border-secondary/50">
+      <div ref={passRef} className={`relative bg-card border rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl ${isUsed ? 'border-muted grayscale-[0.5] opacity-80' : 'border-secondary/30 hover:border-secondary/50'}`}>
 
         {/* Ticket Header / Main Info */}
         <div className="flex flex-col sm:flex-row">
@@ -137,6 +134,15 @@ export const DigitalPass = ({
                 )}
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent sm:bg-gradient-to-r sm:from-transparent sm:via-transparent sm:to-black/10" />
+
+                {isUsed && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                        <div className="bg-background/90 text-foreground px-4 py-2 rounded-full border border-secondary/50 font-bold uppercase tracking-wider text-sm flex items-center gap-2 shadow-xl transform -rotate-12">
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            Used
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Content Section (Right/Bottom) */}
@@ -149,6 +155,10 @@ export const DigitalPass = ({
                         {status === 'confirmed' || status === 'paid' ? (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
                             Confirmed
+                          </span>
+                        ) : status === 'used' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-muted-foreground/20">
+                            Used
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
@@ -187,18 +197,32 @@ export const DigitalPass = ({
                 <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex-1">
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT VENUE</p>
-                            <p className="text-lg text-foreground font-bold leading-tight">
-                                ₱{balance.toFixed(2)}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                                Present at venue to pay balance.
-                            </p>
+                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT VENUE</p>
+                             <p className="text-lg text-foreground font-bold leading-tight">
+                                 ₱{balance.toFixed(2)}
+                             </p>
+                             <p className="text-[10px] text-muted-foreground mt-1">
+                                 Present at venue.
+                             </p>
                         </div>
 
-                        {/* QR Code Placeholder */}
-                        <div className="bg-white p-1.5 rounded-md shrink-0 border border-secondary/20">
-                            <QrCode className="w-12 h-12 text-black" />
+                        {/* QR Code */}
+                        <div className="flex flex-col items-center gap-1">
+                             <div className="bg-white p-2 rounded-md shrink-0 border border-secondary/20 shadow-sm">
+                                 <div style={{ height: "auto", margin: "0 auto", maxWidth: 64, width: "100%" }}>
+                                    <QRCode
+                                        size={256}
+                                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        value={ticketId}
+                                        viewBox={`0 0 256 256`}
+                                    />
+                                 </div>
+                             </div>
+                             {accessCode && (
+                                <span className="text-[10px] font-mono font-bold tracking-widest text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded border border-secondary/10">
+                                    {accessCode}
+                                </span>
+                             )}
                         </div>
                     </div>
                     {paymentInstructions && (
