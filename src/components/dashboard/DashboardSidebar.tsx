@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { LayoutDashboard, Film, User, Users, LogOut, X, Lock } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Film, User, Users, LogOut, X, Lock, BarChart2 } from "lucide-react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import {
   Tooltip,
@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-export type DashboardTab = "dashboard" | "shows" | "profile" | "members";
+export type DashboardTab = "dashboard" | "shows" | "profile" | "members" | "analytics";
 
 const SidebarTooltip = ({
   children,
@@ -49,6 +49,8 @@ export const DashboardSidebar = ({
   isPro = false,
   onUpsell,
 }: DashboardSidebarProps) => {
+  const navigate = useNavigate();
+
   return (
     <aside
       className={`fixed lg:static inset-y-0 left-0 z-50 bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
@@ -89,6 +91,36 @@ export const DashboardSidebar = ({
             >
               <LayoutDashboard className="w-5 h-5" />
               {sidebarOpen && <span>Dashboard</span>}
+            </button>
+          </SidebarTooltip>
+
+          <SidebarTooltip content="Analytics" visible={!sidebarOpen}>
+            <button
+              onClick={() => {
+                if (!isPro) {
+                  onUpsell?.();
+                  return;
+                }
+                navigate("/dashboard/analytics");
+              }}
+              aria-label="Analytics"
+              className={`w-full relative flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "analytics"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/10"
+              }`}
+            >
+              <BarChart2 className="w-5 h-5" />
+              {sidebarOpen ? (
+                <>
+                  <span>Analytics</span>
+                  {!isPro && <Lock className="w-4 h-4 ml-auto" />}
+                </>
+              ) : (
+                !isPro && (
+                  <Lock className="absolute top-2 right-2 w-3 h-3 text-muted-foreground/70" />
+                )
+              )}
             </button>
           </SidebarTooltip>
 

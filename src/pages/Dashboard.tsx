@@ -1,6 +1,6 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useNavigate, Navigate, Link, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpsellModal } from "@/components/dashboard/UpsellModal";
 
 type ManagedGroup = {
   id: string;
@@ -89,7 +91,9 @@ type Show = Database["public"]["Tables"]["shows"]["Row"] & {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, loading } = useAuth();
+  const { isPro } = useSubscription();
   const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [applications, setApplications] = useState<MembershipApplication[]>([]);
@@ -118,7 +122,19 @@ const Dashboard = () => {
   const [foundUser, setFoundUser] = useState<ApplicantProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Upsell State
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const [upsellContext, setUpsellContext] = useState<{ featureName?: string; description?: string }>({});
+
   const canManage = useMemo(() => managedGroups.length > 0, [managedGroups.length]);
+
+  // Route Guard for Analytics
+  useEffect(() => {
+    if (location.pathname === '/dashboard/analytics' && !loading && !isPro) {
+      toast.error("Advanced analytics are a Premium feature.");
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location.pathname, isPro, loading, navigate]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -582,6 +598,15 @@ const Dashboard = () => {
     setShowProductionModal(true);
   };
 
+  const handleGuestList = (showId: string) => {
+    if (!isPro) {
+        setUpsellContext({ featureName: "Guest List", description: "Accessing guest lists requires a Premium subscription." });
+        setUpsellOpen(true);
+        return;
+    }
+    navigate(`/dashboard/guests/${showId}`);
+  };
+
   // Hard Lock: Immediate redirect for non-producers to prevent flicker
   if (!loading && profile && profile.role !== 'producer') {
     return <Navigate to="/feed" replace />;
@@ -589,6 +614,21 @@ const Dashboard = () => {
 
   if (loading || isLoading) {
     return <BrandedLoader size="lg" text="Loading management dashboard..." />;
+  }
+
+  // Analytics View
+  if (location.pathname === '/dashboard/analytics' && isPro && selectedGroupId) {
+    return (
+        <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
+             <div className="mb-6 flex items-center justify-between">
+                 <h1 className="text-3xl font-serif font-bold">Analytics Dashboard</h1>
+                 <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                     Back to Overview
+                 </Button>
+             </div>
+             <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />
+        </div>
+    );
   }
 
   const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
@@ -710,7 +750,10 @@ const Dashboard = () => {
 
       {/* Zone 2: Stats */}
       <div className="mb-8" ref={analyticsRef}>
-         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={true} />}
+         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={isPro} onUpsell={() => {
+             setUpsellContext({ featureName: "Analytics", description: "Detailed analytics are available on the Premium plan." });
+             setUpsellOpen(true);
+         }} />}
       </div>
 
       {/* Zone 3: Management */}
@@ -741,13 +784,28 @@ const Dashboard = () => {
                   </TabsTrigger>
               </TabsList>
               <TabsContent value="approved" className="mt-4">
-                  <ShowList items={approvedShows} emptyText="No active shows found. Post a new production to get started!" onEdit={handleEditShow} />
+                  <ShowList
+                    items={approvedShows}
+                    emptyText="No active shows found. Post a new production to get started!"
+                    onEdit={handleEditShow}
+                    onGuestList={handleGuestList}
+                  />
               </TabsContent>
               <TabsContent value="pending" className="mt-4">
-                  <ShowList items={pendingShows} emptyText="No pending shows." onEdit={handleEditShow} />
+                  <ShowList
+                    items={pendingShows}
+                    emptyText="No pending shows."
+                    onEdit={handleEditShow}
+                    onGuestList={handleGuestList}
+                  />
               </TabsContent>
               <TabsContent value="rejected" className="mt-4">
-                  <ShowList items={rejectedShows} emptyText="No rejected or draft shows." onEdit={handleEditShow} />
+                  <ShowList
+                    items={rejectedShows}
+                    emptyText="No rejected or draft shows."
+                    onEdit={handleEditShow}
+                    onGuestList={handleGuestList}
+                  />
               </TabsContent>
           </Tabs>
 
@@ -1105,11 +1163,17 @@ const Dashboard = () => {
            toast.success("Profile updated.");
         }}
       />
+      <UpsellModal
+        open={upsellOpen}
+        onOpenChange={setUpsellOpen}
+        featureName={upsellContext.featureName}
+        description={upsellContext.description}
+      />
     </div>
   );
 };
 
-const ShowList = ({ items, emptyText, onEdit }: { items: Show[], emptyText: string, onEdit: (show: Show) => void }) => (
+const ShowList = ({ items, emptyText, onEdit, onGuestList }: { items: Show[], emptyText: string, onEdit: (show: Show) => void, onGuestList: (showId: string) => void }) => (
     <div className="space-y-4">
         {items.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-secondary/30 rounded-xl">
@@ -1145,9 +1209,16 @@ const ShowList = ({ items, emptyText, onEdit }: { items: Show[], emptyText: stri
                              </div>
                          )}
                      </div>
-                     <Button variant="outline" size="sm" onClick={() => onEdit(show)}>
-                         Edit
-                     </Button>
+                     <div className="flex flex-col gap-2 items-end">
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => onGuestList(show.id)}>
+                                <Users className="w-4 h-4 mr-2" /> Guest List
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => onEdit(show)}>
+                                Edit
+                            </Button>
+                        </div>
+                     </div>
                 </div>
             ))
         )}

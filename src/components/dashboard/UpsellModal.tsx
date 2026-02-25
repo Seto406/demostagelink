@@ -6,10 +6,22 @@ import { useSubscription } from "@/hooks/useSubscription";
 interface UpsellModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  featureName?: string;
+  title?: string;
+  description?: string;
 }
 
-export const UpsellModal = ({ open, onOpenChange }: UpsellModalProps) => {
+export const UpsellModal = ({
+  open,
+  onOpenChange,
+  featureName,
+  title,
+  description
+}: UpsellModalProps) => {
   const { initiateCheckout, isCheckingOut } = useSubscription();
+
+  const displayTitle = title || (featureName ? `Unlock ${featureName} with Premium` : "Unlock the Full StageLink Experience");
+  const displayDescription = description || "Upgrade to Pro for ₱399/mo to access advanced analytics and cast networking.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -19,10 +31,10 @@ export const UpsellModal = ({ open, onOpenChange }: UpsellModalProps) => {
             <Star className="w-8 h-8 text-primary fill-primary" />
           </div>
           <DialogTitle className="text-center font-serif text-2xl">
-            Unlock the Full StageLink Experience
+            {displayTitle}
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground mt-2">
-            Upgrade to Pro for ₱399/mo to access advanced analytics and cast networking.
+            {displayDescription}
           </DialogDescription>
         </DialogHeader>
 

@@ -24,13 +24,15 @@ import { CreatableSelect } from "@/components/ui/creatable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { toast } from "@/hooks/use-toast";
-import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon } from "lucide-react";
+import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
 import { Json } from "@/integrations/supabase/types";
 import { calculateReservationFee } from "@/lib/pricing";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from "date-fns";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpsellModal } from "./UpsellModal";
 
 interface ProductionModalProps {
   open: boolean;
@@ -61,6 +63,7 @@ const DAYS_OF_WEEK = [
 
 export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: any }) {
   const { user, profile } = useAuth();
+  const { isPro } = useSubscription();
   const queryClient = useQueryClient();
 
   // Basic Details
@@ -77,7 +80,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("");
   const [niche, setNiche] = useState<"local" | "university">("local");
-  const [ticketLink, setTicketLink] = useState("");
+  const [externalLinks, setExternalLinks] = useState<string[]>([""]);
+  // Keep ticketLink synced with externalLinks[0] for now if needed, but primary source is externalLinks
   const [price, setPrice] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState("");
   const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
@@ -100,6 +104,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [tempPosterSrc, setTempPosterSrc] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Upsell State
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const [upsellContext, setUpsellContext] = useState<{ featureName?: string, description?: string }>({});
 
   useEffect(() => {
     if (showToEdit) {
@@ -150,7 +158,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setVenue(showToEdit.venue || "");
       setCity(showToEdit.city || "");
       setNiche(showToEdit.niche || "local");
-      setTicketLink(showToEdit.ticket_link || "");
+
+      // Links Logic
+      if (showToEdit.external_links && Array.isArray(showToEdit.external_links) && showToEdit.external_links.length > 0) {
+        setExternalLinks(showToEdit.external_links.map((l: any) => String(l)));
+      } else if (showToEdit.ticket_link) {
+        setExternalLinks([showToEdit.ticket_link]);
+      } else {
+        setExternalLinks([""]);
+      }
+
       setPrice(showToEdit.price ? String(showToEdit.price) : "");
       setProductionStatus(showToEdit.production_status || "ongoing");
       setPosterPreview(showToEdit.poster_url || null);
@@ -196,7 +213,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setVenue("");
     setCity("");
     setNiche("local");
-    setTicketLink("");
+    setExternalLinks([""]);
     setPrice("");
     setPaymentInstructions("");
     setCollectBalanceOnsite(true);
@@ -272,6 +289,28 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
   const handleRemoveCastMember = (index: number) => {
     setCast(cast.filter((_, i) => i !== index));
+  };
+
+  const handleLinkChange = (index: number, value: string) => {
+    const newLinks = [...externalLinks];
+    newLinks[index] = value;
+    setExternalLinks(newLinks);
+  };
+
+  const addLink = () => {
+      if (!isPro && externalLinks.length >= 1) {
+          setUpsellContext({
+              featureName: "Multiple Links",
+              description: "Adding multiple links requires a Premium subscription."
+          });
+          setUpsellOpen(true);
+          return;
+      }
+      if (externalLinks.length >= 3) {
+           toast({ title: "Limit Reached", description: "Maximum of 3 links allowed." });
+           return;
+      }
+      setExternalLinks([...externalLinks, ""]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -369,6 +408,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       dateString = `${daysStr}, ${start} - ${end}`;
     }
 
+    const validLinks = externalLinks.filter(l => l.trim() !== "");
+
     const payload = {
       title,
       description: description || null,
@@ -376,7 +417,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       venue: venue || null,
       city: city || null,
       niche,
-      ticket_link: ticketLink || null,
+      ticket_link: validLinks[0] || null,
+      external_links: validLinks,
       price: price ? parseFloat(price) : null,
       production_status: productionStatus,
       poster_url: finalPosterUrl,
@@ -653,16 +695,35 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
-                  className="bg-background border-secondary/30"
-                />
+
+                <div className="relative">
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0.00"
+                    disabled={!isPro}
+                    className={`bg-background border-secondary/30 ${!isPro ? "opacity-50 cursor-not-allowed pr-10" : ""}`}
+                  />
+                  {!isPro && (
+                      <div
+                          className="absolute inset-0 z-10 cursor-pointer flex items-center justify-end pr-3"
+                          onClick={() => {
+                              setUpsellContext({
+                                   featureName: "Direct Ticketing",
+                                   description: "Selling tickets directly through StageLink requires a Premium subscription."
+                              });
+                              setUpsellOpen(true);
+                          }}
+                      >
+                           <Lock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                  )}
+                </div>
+
                 {price && parseFloat(price) > 0 && (
                    <div className="text-xs text-muted-foreground mt-1 space-y-1">
                      <div className="flex justify-between">
@@ -683,15 +744,39 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ticketLink">Ticket Link (Optional)</Label>
-                <Input
-                  id="ticketLink"
-                  type="url"
-                  value={ticketLink}
-                  onChange={(e) => setTicketLink(e.target.value)}
-                  placeholder="https://..."
-                  className="bg-background border-secondary/30"
-                />
+                <Label htmlFor="ticketLink">Ticket / External Links</Label>
+                {externalLinks.map((link, index) => (
+                    <div key={index} className="flex gap-2 mb-2">
+                        <Input
+                            value={link}
+                            onChange={(e) => handleLinkChange(index, e.target.value)}
+                            placeholder={index === 0 ? "Main Ticket Link (https://...)" : "Additional Link (https://...)"}
+                            className="bg-background border-secondary/30"
+                        />
+                         {index > 0 && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                    const newLinks = externalLinks.filter((_, i) => i !== index);
+                                    setExternalLinks(newLinks);
+                                }}
+                            >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                        )}
+                    </div>
+                ))}
+                 <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addLink}
+                    className="text-xs w-full"
+                >
+                    <Plus className="w-3 h-3 mr-1" /> Add another link
+                </Button>
               </div>
             </div>
 
@@ -882,6 +967,12 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
           </form>
         </DialogContent>
       </Dialog>
+      <UpsellModal
+        open={upsellOpen}
+        onOpenChange={setUpsellOpen}
+        featureName={upsellContext.featureName}
+        description={upsellContext.description}
+      />
 
       {tempPosterSrc && (
         <ImageCropper
