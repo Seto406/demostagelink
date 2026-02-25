@@ -29,6 +29,7 @@ const Directory = lazy(() => import("./pages/Directory"));
 const Shows = lazy(() => import("./pages/Shows"));
 const About = lazy(() => import("./pages/About"));
 const Login = lazy(() => import("./pages/Login"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -70,7 +71,8 @@ const AppRoutes = () => {
   }, [location.pathname]);
 
   const RequireAuth = ({ children }: { children: ReactNode }) => {
-    const { user, loading } = useAuth();
+    const { user, profile, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
       return <FullPageLoader />;
@@ -78,6 +80,16 @@ const AppRoutes = () => {
 
     if (!user) {
       return <Navigate to="/login" replace />;
+    }
+
+    // Redirect to onboarding if needed
+    if (profile?.role === 'audience' && !profile.has_completed_onboarding && location.pathname !== '/onboarding') {
+      return <Navigate to="/onboarding" replace />;
+    }
+
+    // Redirect away from onboarding if already completed
+    if (location.pathname === '/onboarding' && profile?.has_completed_onboarding) {
+      return <Navigate to="/feed" replace />;
     }
 
     return children;
@@ -88,7 +100,8 @@ const AppRoutes = () => {
       <Suspense fallback={<FullPageLoader />}>
         <Routes location={location}>
           <Route path="/" element={<Index />} />
-          <Route path="/feed" element={<UserFeed />} />
+          <Route path="/feed" element={<RequireAuth><UserFeed /></RequireAuth>} />
+          <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
           <Route path="/directory" element={<Directory />} />
           <Route path="/shows" element={<Shows />} />
           <Route path="/about" element={<About />} />
@@ -129,12 +142,15 @@ const AppLayout = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   const isLandingPage = location.pathname === "/";
+  const isOnboardingPage = location.pathname === "/onboarding";
+
+  const shouldHideNavbar = isLoginPage || isLandingPage || isOnboardingPage;
 
   return (
     <>
       <GlobalTour />
-      {!loading && !isLoginPage && !isLandingPage && <Navbar />}
-      <main className={!loading && !isLoginPage && !isLandingPage ? "pt-[72px]" : undefined}>
+      {!loading && !shouldHideNavbar && <Navbar />}
+      <main className={!loading && !shouldHideNavbar ? "pt-[72px]" : undefined}>
         <AppRoutes />
       </main>
     </>

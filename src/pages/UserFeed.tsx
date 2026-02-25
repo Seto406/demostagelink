@@ -83,7 +83,7 @@ const UserFeed = () => {
   const { user, profile, loading } = useAuth();
   const extendedProfile = profile as unknown as ExtendedProfile;
   const { isPro } = useSubscription();
-  const { startTour } = useTour();
+  const { startTour, tourActive } = useTour();
   const [producerRequestModal, setProducerRequestModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -184,7 +184,8 @@ const UserFeed = () => {
   // Start Tour Effect
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("stagelink_has_seen_tour");
-    if (!loading && !hasSeenTour && suggestedProducers.length > 0) {
+    // Only start if not already active/running to avoid conflict with Onboarding flow
+    if (!loading && !hasSeenTour && suggestedProducers.length > 0 && !tourActive) {
       // Save a target producer for the tour (fallback for non-producers)
       localStorage.setItem("stagelink_tour_target_producer", suggestedProducers[0].id);
 
@@ -193,7 +194,7 @@ const UserFeed = () => {
       }, 2000); // Slight delay to ensure UI is ready
       return () => clearTimeout(timer);
     }
-  }, [loading, suggestedProducers, startTour]);
+  }, [loading, suggestedProducers, startTour, tourActive]);
 
   // Infinite scroll intersection observer
   useEffect(() => {

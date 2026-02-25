@@ -22,6 +22,8 @@ interface Profile {
   university: string | null;
   has_completed_tour?: boolean | null;
   producer_role: string | null;
+  genres: string[] | null;
+  has_completed_onboarding: boolean;
 }
 
 interface AuthContextType {

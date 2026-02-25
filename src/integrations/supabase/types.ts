@@ -518,6 +518,8 @@ export type Database = {
           group_logo_url: string | null
           group_banner_url: string | null
           producer_role: string | null
+          genres: string[] | null
+          has_completed_onboarding: boolean
         }
         Insert: {
           address?: string | null
@@ -542,6 +544,8 @@ export type Database = {
           group_logo_url?: string | null
           group_banner_url?: string | null
           producer_role?: string | null
+          genres?: string[] | null
+          has_completed_onboarding?: boolean
         }
         Update: {
           address?: string | null
@@ -566,6 +570,8 @@ export type Database = {
           group_logo_url?: string | null
           group_banner_url?: string | null
           producer_role?: string | null
+          genres?: string[] | null
+          has_completed_onboarding?: boolean
         }
         Relationships: []
       }
