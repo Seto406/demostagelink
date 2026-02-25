@@ -283,12 +283,17 @@ const ProducerProfile = () => {
             toast.success("Following group");
 
             if (profile?.id) {
+              const link = profile.role === 'producer'
+                  ? `/producer/${profile.id}`
+                  : `/profile/${profile.id}`;
+
               await createNotification({
-                userId: producer.user_id,
+                userId: producer.id,
                 actorId: profile.id,
                 type: 'follow',
                 title: 'New Follower',
                 message: `${profile?.group_name || profile?.username || 'Someone'} started following your group.`,
+                link
               });
             }
         }

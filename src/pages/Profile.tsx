@@ -490,12 +490,17 @@ const Profile = () => {
             toast.success("Following user");
 
             if (currentUserProfile) {
+              const link = currentUserProfile.role === 'producer'
+                ? `/producer/${currentUserProfile.id}`
+                : `/profile/${currentUserProfile.id}`;
+
               await createNotification({
-                userId: profile.user_id, // Auth ID for notifications
+                userId: profile.id, // Use Profile ID
                 actorId: currentUserProfile.id, // Profile ID for actor
                 type: 'follow',
                 title: 'New Follower',
                 message: `${currentUserProfile.group_name || currentUserProfile.username || 'Someone'} started following you.`,
+                link
               });
             }
         }

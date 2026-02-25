@@ -348,6 +348,10 @@ const Directory = () => {
         return;
     }
 
+    if (!profile) {
+        return;
+    }
+
     setJoiningGroupId(group.id);
     try {
       // Check for total existing memberships (active or pending)
@@ -400,11 +404,11 @@ const Directory = () => {
       if (error) throw error;
 
       await createNotification({
-        userId: group.user_id || group.id, // Fallback to group.id if user_id is missing (though it should be there)
-        actorId: user.id,
+        userId: group.id, // Use Profile ID
+        actorId: profile.id, // Use Profile ID
         type: 'membership_application',
         title: 'New Member Application',
-        message: `${profile?.group_name || profile?.username || 'Someone'} wants to join your group.`,
+        message: `${profile.group_name || profile.username || 'Someone'} wants to join your group.`,
         link: `/dashboard/members`
       });
 
