@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket, Upload, Loader2, QrCode } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket, Upload, Loader2, QrCode, ZoomIn, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateReservationFee } from "@/lib/pricing";
@@ -25,9 +26,19 @@ const CheckoutPage = () => {
   // Manual Payment State
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    // Cleanup preview URL on unmount or change
+    return () => {
+      if (paymentProofPreview) {
+        URL.revokeObjectURL(paymentProofPreview);
+      }
+    };
+  }, [paymentProofPreview]);
 
   useEffect(() => {
     const fetchShow = async () => {
@@ -134,6 +145,23 @@ const CheckoutPage = () => {
     }
   };
   */
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setProofFile(file);
+
+    if (file) {
+      const objectUrl = URL.createObjectURL(file);
+      setPaymentProofPreview(objectUrl);
+    } else {
+      setPaymentProofPreview(null);
+    }
+  };
+
+  const handleClearProof = () => {
+    setProofFile(null);
+    setPaymentProofPreview(null);
+  };
 
   const handleManualSubmit = async () => {
     if (!show || !show.price) return;
@@ -312,18 +340,40 @@ const CheckoutPage = () => {
                             {/* QR Code Display */}
                             <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-secondary/20">
                                 {qrCodeUrl ? (
-                                    <img
-                                        src={qrCodeUrl}
-                                        alt="Payment QR Code"
-                                        className="max-w-[200px] h-auto object-contain"
-                                    />
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <button className="relative group cursor-zoom-in" type="button">
+                                                <img
+                                                    src={qrCodeUrl}
+                                                    alt="Payment QR Code"
+                                                    className="max-w-[200px] h-auto object-contain transition-transform group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/10 transition-opacity rounded-lg">
+                                                    <ZoomIn className="w-8 h-8 text-white drop-shadow-md" />
+                                                </div>
+                                            </button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-transparent border-none shadow-none">
+                                            <DialogTitle className="sr-only">Payment QR Code</DialogTitle>
+                                            <div className="relative flex items-center justify-center w-full h-full bg-white p-4 rounded-lg">
+                                                <img
+                                                    src={qrCodeUrl}
+                                                    alt="Payment QR Code Expanded"
+                                                    className="w-full h-auto max-h-[80vh] object-contain"
+                                                />
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                 ) : (
                                     <div className="flex flex-col items-center text-muted-foreground py-8">
                                         <QrCode className="w-12 h-12 mb-2 opacity-50" />
                                         <p className="text-xs">No QR Code Available</p>
                                     </div>
                                 )}
-                                <p className="text-xs text-center text-muted-foreground mt-2">
+                                <p className="text-xs text-center text-muted-foreground mt-2 flex items-center gap-1">
+                                    <ZoomIn className="w-3 h-3" /> Click QR code to enlarge
+                                </p>
+                                <p className="text-xs text-center text-muted-foreground mt-1">
                                     Scan to pay {formatCurrency(reservationFee)}
                                 </p>
                             </div>
@@ -356,13 +406,38 @@ const CheckoutPage = () => {
                             {/* File Upload */}
                             <div className="grid w-full gap-1.5">
                                 <Label htmlFor="proof">Proof of Payment (Screenshot)</Label>
-                                <Input
-                                    id="proof"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                                    className="cursor-pointer"
-                                />
+                                <div className="space-y-4">
+                                    {!paymentProofPreview ? (
+                                        <Input
+                                            id="proof"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            className="cursor-pointer"
+                                        />
+                                    ) : (
+                                        <div className="relative rounded-lg overflow-hidden border border-border bg-muted/50 group w-full max-w-sm">
+                                            <img
+                                                src={paymentProofPreview}
+                                                alt="Payment Proof Preview"
+                                                className="w-full h-48 object-contain bg-black/5"
+                                            />
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                                                onClick={handleClearProof}
+                                                type="button"
+                                            >
+                                                <X className="w-4 h-4" />
+                                                <span className="sr-only">Remove file</span>
+                                            </Button>
+                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 text-white text-xs truncate">
+                                                {proofFile?.name}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">Upload a screenshot of your successful transfer.</p>
                             </div>
                         </div>
