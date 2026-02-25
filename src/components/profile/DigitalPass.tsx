@@ -4,6 +4,7 @@ import { Calendar, MapPin, QrCode, Download, Image, FileText } from "lucide-reac
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,11 +100,18 @@ export const DigitalPass = ({
       {/* Download Button */}
       <div className="absolute top-2 right-2 z-30 print:hidden">
          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm border border-secondary/20 hover:bg-background/80 shadow-sm">
-                    <Download className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm border border-secondary/20 hover:bg-background/80 shadow-sm" aria-label="Download options">
+                        <Download className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Download options</p>
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleDownloadImage} className="cursor-pointer">
                     <Image className="mr-2 h-4 w-4" />
