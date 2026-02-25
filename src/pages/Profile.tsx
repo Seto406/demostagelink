@@ -65,6 +65,19 @@ interface FollowData {
   } | null;
 }
 
+interface FollowerData {
+  id: string;
+  follower_id: string;
+  profiles: {
+    id: string;
+    username: string | null;
+    group_name: string | null;
+    avatar_url: string | null;
+    role: "audience" | "producer" | "admin";
+    niche: string | null;
+  } | null;
+}
+
 interface ReviewData {
   id: string;
   rating: number;
@@ -97,6 +110,7 @@ const Profile = () => {
   // Stats & Data
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [following, setFollowing] = useState<FollowData[]>([]);
+  const [followers, setFollowers] = useState<FollowerData[]>([]);
   const [reviews, setReviews] = useState<ReviewData[]>([]);
   const [memberships, setMemberships] = useState<GroupMembership[]>([]);
   const [followerCount, setFollowerCount] = useState(0);
@@ -197,13 +211,37 @@ const Profile = () => {
             }
           }
 
-          // Fetch Followers Count
-          const { count } = await supabase
-            .from("follows")
-            .select("*", { count: 'exact', head: true })
-            .eq("following_id", profileId);
+          // Fetch Followers
+          try {
+            const { data: followersData, error: followersError, count } = await supabase
+              .from("follows")
+              .select(`
+                id,
+                follower_id,
+                profiles!follows_follower_id_fkey (
+                  id,
+                  username,
+                  group_name,
+                  avatar_url,
+                  role,
+                  niche
+                )
+              `, { count: 'exact' })
+              .eq("following_id", profileId);
 
-          setFollowerCount(count || 0);
+            if (followersError) {
+              console.error("Error fetching followers:", followersError);
+              toast.error("Failed to load followers.");
+            } else {
+              if (followersData) {
+                setFollowers(followersData as unknown as FollowerData[]);
+              }
+              setFollowerCount(count || 0);
+            }
+          } catch (e) {
+            console.error("Could not fetch followers", e);
+            toast.error("Failed to load followers.");
+          }
 
           // Fetch Tickets (Passes)
           // We fetch all non-cancelled tickets. Separation logic happens in render or state processing.
@@ -505,7 +543,7 @@ const Profile = () => {
            {/* Tabs Section */}
            <div>
              <Tabs defaultValue={isOwnProfile ? "passes" : "following"} className="w-full">
-               <TabsList className={`grid w-full mb-6 bg-card border border-secondary/20 h-auto p-1 ${isOwnProfile ? "grid-cols-3" : "grid-cols-2"}`}>
+               <TabsList className={`grid w-full mb-6 bg-card border border-secondary/20 h-auto p-1 ${isOwnProfile ? "grid-cols-4" : "grid-cols-3"}`}>
                  {isOwnProfile && (
                    <TabsTrigger value="passes" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                       <TicketIcon className="w-4 h-4" />
@@ -516,6 +554,10 @@ const Profile = () => {
                  <TabsTrigger value="following" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Users className="w-4 h-4" />
                     Following
+                 </TabsTrigger>
+                 <TabsTrigger value="followers" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
+                    <Users className="w-4 h-4" />
+                    Followers
                  </TabsTrigger>
                  <TabsTrigger value="reviews" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Star className="w-4 h-4" />
@@ -638,6 +680,45 @@ const Profile = () => {
                         <Link to="/directory">
                             <Button variant="outline">Find Groups</Button>
                         </Link>
+                    </div>
+                 )}
+               </TabsContent>
+
+               <TabsContent value="followers" className="mt-0">
+                 {followers.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {followers.map((follower) => {
+                            const displayName = follower.profiles?.group_name || follower.profiles?.username || "Anonymous";
+                            const link = follower.profiles?.role === 'producer'
+                              ? `/producer/${follower.follower_id}`
+                              : `/profile/${follower.follower_id}`;
+
+                            return (
+                                <Link to={link} key={follower.id}>
+                                    <div className="flex items-center gap-4 p-4 rounded-xl bg-card border border-secondary/10 hover:border-secondary/30 transition-all hover:bg-secondary/5">
+                                        <Avatar className="w-12 h-12 border border-secondary/20">
+                                            <AvatarImage src={follower.profiles?.avatar_url || undefined} />
+                                            <AvatarFallback>{displayName[0]?.toUpperCase() || "?"}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h4 className="font-medium text-foreground line-clamp-1">{displayName}</h4>
+                                            {follower.profiles?.niche && (
+                                                <span className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {follower.profiles.niche}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                 ) : (
+                    <div className="text-center py-12 bg-card/50 border border-secondary/10 rounded-2xl">
+                        <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No Followers Yet</h3>
+                        <p className="text-muted-foreground mb-6">Connect with others in the community.</p>
                     </div>
                  )}
                </TabsContent>
