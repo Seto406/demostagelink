@@ -124,11 +124,12 @@ const AppLayout = () => {
   const { loading } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
+  const isLandingPage = location.pathname === "/";
 
   return (
     <>
-      {!loading && !isLoginPage && <Navbar />}
-      <main className={!loading && !isLoginPage ? "pt-[72px]" : undefined}>
+      {!loading && !isLoginPage && !isLandingPage && <Navbar />}
+      <main className={!loading && !isLoginPage && !isLandingPage ? "pt-[72px]" : undefined}>
         <AppRoutes />
       </main>
     </>

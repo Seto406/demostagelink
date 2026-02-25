@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
-import { Calendar, Users, MapPin, Search, Heart, Shield, UserPlus, Ticket } from "lucide-react";
+import { Calendar, Users, MapPin, Search, Star, Shield, UserPlus, Ticket } from "lucide-react";
 
 const features = [
   {
@@ -41,8 +41,8 @@ const features = [
     color: "bg-blue-500"
   },
   {
-    icon: Heart,
-    title: "Favorites Only",
+    icon: Star,
+    title: "Favorites",
     description: "Audiences can save shows they're interested in and build a personal theater watchlist for easy access.",
     color: "bg-pink-500"
   },
