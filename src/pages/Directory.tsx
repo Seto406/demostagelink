@@ -34,6 +34,7 @@ const niches = ["All", "Local/Community-based", "University Theater Group"];
 
 interface TheaterGroup {
   id: string;
+  user_id?: string;
   group_name: string;
   description: string | null;
   niche: "local" | "university" | null;
@@ -262,7 +263,7 @@ const Directory = () => {
     try {
         let query = supabase
             .from("profiles")
-            .select("id, group_name, description, niche, address, group_logo_url, is_premium")
+            .select("id, user_id, group_name, description, niche, address, group_logo_url, is_premium")
             .eq("role", "producer")
             .not("group_name", "is", null)
             .order("is_premium", { ascending: false })
@@ -399,7 +400,7 @@ const Directory = () => {
       if (error) throw error;
 
       await createNotification({
-        userId: group.id,
+        userId: group.user_id || group.id, // Fallback to group.id if user_id is missing (though it should be there)
         actorId: user.id,
         type: 'membership_application',
         title: 'New Member Application',

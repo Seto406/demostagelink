@@ -284,7 +284,7 @@ const ProducerProfile = () => {
 
             if (profile?.id) {
               await createNotification({
-                userId: producer.id,
+                userId: producer.user_id,
                 actorId: profile.id,
                 type: 'follow',
                 title: 'New Follower',
