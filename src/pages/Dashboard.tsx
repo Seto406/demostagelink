@@ -499,6 +499,24 @@ const Dashboard = () => {
         link: `/group/${selectedGroupId}`
     });
 
+    // Send email notification
+    const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name;
+    const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          recipient_id: request.sender_id,
+          type: 'collab_accepted',
+          data: {
+             sender_name: groupName,
+             group_name: groupName,
+             link: `${window.location.origin}/producer/${selectedGroupId}`
+          }
+        }
+    });
+
+    if (emailError) {
+        console.error("Failed to send acceptance email:", emailError);
+    }
+
     setCollabRequests(prev => prev.filter(r => r.id !== requestId));
     toast.success("Collaborator approved!");
     setIsUpdating(null);

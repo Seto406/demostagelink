@@ -263,18 +263,22 @@ serve(async (req) => {
     if (!res.ok) {
         const errorText = await res.text();
         console.error("Resend API error:", errorText);
-        // We log the error but still return success as the DB operation succeeded.
+        // Return success for the request, but indicate email failure
+        return new Response(
+          JSON.stringify({ success: true, message: "Request sent, but email delivery failed.", emailSent: false }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Collaboration request sent successfully" }),
+      JSON.stringify({ success: true, message: "Collaboration request sent successfully", emailSent: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: any) {
     console.error("Error processing request:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Internal Server Error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

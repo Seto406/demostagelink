@@ -338,13 +338,31 @@ const ProducerProfile = () => {
       if (error) throw error;
 
       await createNotification({
-        userId: producer.id,
-        actorId: profile.id,
+        userId: producer.user_id, // Use Auth ID for notifications
+        actorId: profile.id, // Use Profile ID for actor
         type: 'membership_application',
         title: 'New Member Application',
         message: `${profile.group_name || profile.username || 'Someone'} wants to join your group.`,
         link: `/dashboard`
       });
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          recipient_id: producer.user_id,
+          type: 'membership_application',
+          data: {
+            applicant_name: profile.group_name || profile.username || 'Someone',
+            group_name: producer.group_name,
+            link: `${window.location.origin}/dashboard`
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error("Failed to send email notification:", emailError);
+        // We don't block the UI flow for email failure
+      }
 
       toast.success("Membership application sent successfully!");
       setHasApplied(true);
