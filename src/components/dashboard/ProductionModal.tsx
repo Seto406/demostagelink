@@ -471,11 +471,14 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       },
     };
 
+    // Determine status: Admins can approve immediately; producers need approval.
+    const targetStatus = profile.role === "admin" ? "approved" : "pending";
+
     let query;
     if (showToEdit) {
       query = supabase
         .from("shows")
-        .update(payload)
+        .update({ ...payload, status: targetStatus })
         .eq("id", showToEdit.id);
     } else {
       query = supabase
@@ -484,7 +487,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
           ...payload,
           producer_id: profile.id,
           theater_group_id: theaterGroup?.id || null,
-          status: "approved",
+          status: targetStatus,
         });
     }
 
@@ -499,7 +502,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
       toast({
         title: "Submission Successful",
-        description: "Your show has been submitted for review.",
+        description: targetStatus === "approved" ? "Your show is now live." : "Your show has been submitted for review.",
       });
 
       if (onSuccess) {
