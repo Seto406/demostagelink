@@ -43,7 +43,8 @@ import {
   ExternalLink,
   Settings,
   CreditCard,
-  Bell
+  Bell,
+  Sparkles
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -198,27 +199,20 @@ const AdminPanel = () => {
       const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
 
       if (!statsError && statsData) {
-        // Map snake_case to camelCase and fill missing fields with defaults
-        const mappedStats: Stats = {
-          totalUsers: statsData.total_users || 0,
-          totalShows: 0, // Not returned by RPC yet?
-          activeProducers: 0,
-          pendingRequests: statsData.pending_approvals || 0,
-          activeShows: statsData.active_shows || 0,
-          totalRevenue: statsData.total_revenue || 0,
-          deletedShows: 0,
-          pendingShows: 0,
-          approvedShows: 0,
-          rejectedShows: 0
-        } as unknown as Stats;
+        // RPC returns camelCase keys matching our Stats interface
+        const rpcStats = statsData as unknown as Stats;
 
-        // Since the RPC might not return everything yet, we might want to still do parallel fetch if data is incomplete
-        // But for now let's just use what we have and maybe fetch others?
-        // Actually the RPC seems to return a subset.
-        // Let's just fallback to parallel fetch if RPC is not comprehensive enough or update Stats type.
-        // For now, I will comment out the RPC usage to rely on parallel fetch which works for all fields.
-        // setStats(mappedStats);
-        // return;
+        setStats({
+          totalUsers: rpcStats.totalUsers || 0,
+          totalShows: rpcStats.totalShows || 0,
+          activeProducers: rpcStats.activeProducers || 0,
+          pendingRequests: rpcStats.pendingRequests || 0,
+          deletedShows: rpcStats.deletedShows || 0,
+          pendingShows: rpcStats.pendingShows || 0,
+          approvedShows: rpcStats.approvedShows || 0,
+          rejectedShows: rpcStats.rejectedShows || 0
+        });
+        return;
       }
 
       if (statsError) {
