@@ -122,6 +122,11 @@ const Dashboard = () => {
   const [foundUser, setFoundUser] = useState<ApplicantProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Role Editing State
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MembershipApplication | null>(null);
+  const [newRole, setNewRole] = useState("");
+
   // Upsell State
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<{ featureName?: string; description?: string }>({});
@@ -612,6 +617,26 @@ const Dashboard = () => {
     setIsUpdating(null);
   };
 
+  const handleUpdateRole = async () => {
+    if (!selectedMember) return;
+    setIsUpdating(selectedMember.id);
+
+    const { error } = await supabase
+      .from("group_members")
+      .update({ role_in_group: newRole })
+      .eq("id", selectedMember.id);
+
+    if (error) {
+      console.error("Error updating role:", error);
+      toast.error(error.message || "Failed to update role.");
+    } else {
+      toast.success("Role updated.");
+      setActiveMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, role_in_group: newRole } : m));
+      setRoleDialogOpen(false);
+    }
+    setIsUpdating(null);
+  };
+
   // Quick Action Handlers
   const handleAnalyze = () => {
     analyticsRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1083,6 +1108,18 @@ const Dashboard = () => {
                            </Link>
                          </Button>
                        )}
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         className="rounded-xl border border-secondary/30 text-muted-foreground hover:bg-secondary/10 hover:text-secondary"
+                         onClick={() => {
+                           setSelectedMember(member);
+                           setNewRole(member.role_in_group || "");
+                           setRoleDialogOpen(true);
+                         }}
+                       >
+                         <Settings className="h-4 w-4 mr-1" /> Role
+                       </Button>
                     </div>
                   </div>
                 );
@@ -1187,6 +1224,41 @@ const Dashboard = () => {
               onClick={handleLinkUser}
             >
               {isUpdating === selectedUnlinkedMember?.id ? "Linking..." : "Confirm Link"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Member Role</DialogTitle>
+            <DialogDescription>
+              Assign a role or title to this member within your group.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="role">Role / Title</Label>
+              <Input
+                id="role"
+                placeholder="e.g. Actor, Stage Manager"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-end">
+            <Button variant="secondary" onClick={() => setRoleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isUpdating === selectedMember?.id}
+              onClick={handleUpdateRole}
+            >
+              {isUpdating === selectedMember?.id ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
