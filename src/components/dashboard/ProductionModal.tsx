@@ -136,6 +136,31 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<{ featureName?: string, description?: string }>({});
 
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setDescription("");
+    setScheduleSlots([{ date: "", time: "" }]);
+    setVenue("");
+    setCity("");
+    setNiche("local");
+    setExternalLinks([""]);
+    setPrice("");
+    setPaymentInstructions("");
+    setCollectBalanceOnsite(true);
+    setGenre([]);
+    setDirector("");
+    setHours("");
+    setMinutes("");
+    setTags([]);
+    setCast([]);
+    setTempCastName("");
+    setTempCastRole("");
+    setProductionStatus("ongoing");
+    setPosterFile(null);
+    if (posterPreview) URL.revokeObjectURL(posterPreview);
+    setPosterPreview(null);
+  }, [posterPreview]);
+
   useEffect(() => {
     if (showToEdit) {
       setTitle(showToEdit.title || "");
@@ -214,31 +239,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       resetForm();
     }
   }, [showToEdit, open, resetForm]);
-
-  const resetForm = useCallback(() => {
-    setTitle("");
-    setDescription("");
-    setScheduleSlots([{ date: "", time: "" }]);
-    setVenue("");
-    setCity("");
-    setNiche("local");
-    setExternalLinks([""]);
-    setPrice("");
-    setPaymentInstructions("");
-    setCollectBalanceOnsite(true);
-    setGenre([]);
-    setDirector("");
-    setHours("");
-    setMinutes("");
-    setTags([]);
-    setCast([]);
-    setTempCastName("");
-    setTempCastRole("");
-    setProductionStatus("ongoing");
-    setPosterFile(null);
-    if (posterPreview) URL.revokeObjectURL(posterPreview);
-    setPosterPreview(null);
-  }, [posterPreview]);
 
   const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
