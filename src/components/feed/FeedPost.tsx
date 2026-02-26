@@ -195,7 +195,7 @@ export function FeedPost({ show }: FeedPostProps) {
         {/* Header */}
         <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
           <div className="flex items-center gap-3">
-            <Link to={`/group/${show.producer_id?.id}`} className="hover:opacity-80 transition-opacity">
+            <Link to={`/producer/${show.producer_id?.id}`} className="hover:opacity-80 transition-opacity">
               <Avatar className={cn(
                   "h-10 w-10 border border-secondary/30",
                   isPremium && "border-primary/50 ring-2 ring-primary/20"
@@ -206,7 +206,7 @@ export function FeedPost({ show }: FeedPostProps) {
             </Link>
             <div className="flex flex-col">
               <div className="flex items-center gap-1">
-                <Link to={`/group/${show.producer_id?.id}`} className="font-semibold text-sm hover:underline">
+                <Link to={`/producer/${show.producer_id?.id}`} className="font-semibold text-sm hover:underline">
                   {producerName}
                 </Link>
                 {isPremium && (

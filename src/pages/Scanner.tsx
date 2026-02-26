@@ -45,7 +45,11 @@ const Scanner = () => {
 
     // Stop scanner temporarily
     if (scannerRef.current) {
-         scannerRef.current.pause();
+        try {
+            scannerRef.current.pause(true);
+        } catch (e) {
+            console.warn("Failed to pause scanner:", e);
+        }
     }
 
     try {
@@ -82,10 +86,14 @@ const Scanner = () => {
 
   // Initialize Scanner
   useEffect(() => {
+    let isMounted = true;
+
     // Only initialize if camera tab is active and we are not showing a result
     if (activeTab === "camera" && !lastResult) {
       const onScanSuccess = (decodedText: string) => {
-        handleScan(decodedText);
+        if (isMounted) {
+          handleScan(decodedText);
+        }
       };
 
       const onScanFailure = () => {
@@ -93,30 +101,41 @@ const Scanner = () => {
       };
 
       // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         const readerElement = document.getElementById("reader");
-        if (!readerElement) return;
+        if (!readerElement || !isMounted) return;
 
-        // Prevent multiple initializations
+        // Ensure previous scanner is cleared
         if (scannerRef.current) {
-            scannerRef.current.clear().catch(console.error);
+           try {
+               await scannerRef.current.clear();
+           } catch (e) {
+               console.warn("Failed to clear previous scanner", e);
+           }
+           scannerRef.current = null;
         }
 
-        const scanner = new Html5QrcodeScanner(
-          "reader",
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          false
-        );
+        try {
+            const scanner = new Html5QrcodeScanner(
+              "reader",
+              { fps: 10, qrbox: { width: 250, height: 250 } },
+              false
+            );
 
-        scannerRef.current = scanner;
-
-        scanner.render(onScanSuccess, onScanFailure);
+            scannerRef.current = scanner;
+            scanner.render(onScanSuccess, onScanFailure);
+        } catch (e) {
+            console.error("Failed to initialize scanner", e);
+            toast.error("Failed to start camera. Please ensure permissions are granted.");
+        }
       }, 500);
 
       return () => {
+        isMounted = false;
         clearTimeout(timer);
         if (scannerRef.current) {
-          scannerRef.current.clear().catch(console.error);
+           scannerRef.current.clear().catch(console.warn);
+           scannerRef.current = null;
         }
       };
     }

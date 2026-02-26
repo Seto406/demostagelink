@@ -167,14 +167,14 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
       <Card className="border-secondary/20 bg-card/50 backdrop-blur-sm overflow-hidden hover:border-secondary/40 transition-colors">
         <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
           <div className="flex items-center gap-3">
-             <Link to={`/group/${post.profiles?.id || post.profile_id}`}>
+             <Link to={`/producer/${post.profiles?.id || post.profile_id}`}>
                <Avatar className="h-10 w-10 border border-secondary/30">
                  <AvatarImage src={authorAvatar || undefined} />
                  <AvatarFallback>{initials}</AvatarFallback>
                </Avatar>
              </Link>
              <div className="flex flex-col">
-               <Link to={`/group/${post.profiles?.id || post.profile_id}`} className="font-semibold text-sm hover:underline">
+               <Link to={`/producer/${post.profiles?.id || post.profile_id}`} className="font-semibold text-sm hover:underline">
                  {authorName}
                </Link>
                <span className="text-xs text-muted-foreground">{timeAgo}</span>

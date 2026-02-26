@@ -423,7 +423,7 @@ const Dashboard = () => {
         title: "Membership Approved",
         message: `You are now a member of ${groupName}!`,
         type: "membership",
-        link: `/group/${selectedGroupId}`,
+        link: `/producer/${selectedGroupId}`,
       });
 
     if (notificationError) {
@@ -561,7 +561,7 @@ const Dashboard = () => {
         title: "Collab Request Accepted",
         message: `Your collaboration request to ${managedGroups.find(g => g.id === selectedGroupId)?.group_name} was accepted!`,
         type: "collab",
-        link: `/group/${selectedGroupId}`
+        link: `/producer/${selectedGroupId}`
     });
 
     // Send email notification
