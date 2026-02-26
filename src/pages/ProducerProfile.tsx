@@ -674,7 +674,7 @@ const ProducerProfile = () => {
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
                       {producer.facebook_url && (
                         <a 
-                          href={producer.facebook_url}
+                          href={`/external-redirect?url=${encodeURIComponent(producer.facebook_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -685,7 +685,7 @@ const ProducerProfile = () => {
                       )}
                       {producer.instagram_url && (
                         <a 
-                          href={producer.instagram_url}
+                          href={`/external-redirect?url=${encodeURIComponent(producer.instagram_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
