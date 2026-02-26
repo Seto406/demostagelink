@@ -426,6 +426,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     const uniqueDates = Array.from(new Set(dateStrings));
     const displayDateString = uniqueDates.join(", ");
 
+    // Ensure we send a valid YYYY-MM-DD date to the `date` column
+    const firstDate = validSlots.length > 0 ? validSlots[0].date : null;
+
     // Construct Display Time String
     // If all times are the same, use that. Otherwise "Various Times"
     const uniqueTimes = Array.from(new Set(validSlots.map(s => s.time).filter(Boolean)));
@@ -447,7 +450,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     const payload = {
       title,
       description: description || null,
-      date: displayDateString,
+      date: firstDate, // Use the earliest date in YYYY-MM-DD format
       show_time: displayTimeString || null,
       venue: venue || null,
       city: city || null,
@@ -468,6 +471,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         ...(showToEdit?.seo_metadata || {}),
         payment_instructions: paymentInstructions || null,
         schedule: validSlots, // Save the full array of slots
+        display_date: displayDateString, // Save the friendly string
       },
     };
 
