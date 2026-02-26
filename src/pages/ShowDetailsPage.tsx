@@ -631,6 +631,7 @@ END:VCALENDAR`;
                               showId={show.id}
                               refreshTrigger={refreshReviews}
                               isUpcoming={show.date ? new Date(show.date) > new Date() : false}
+                              producerId={typeof show.producer_id === 'object' && show.producer_id ? show.producer_id.id : (typeof show.producer_id === 'string' ? show.producer_id : undefined)}
                             />
                         </div>
                    </section>
