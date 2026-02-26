@@ -167,7 +167,9 @@ test.describe('Analytics Dashboard', () => {
     const analyzeBtn = page.getByRole('button', { name: 'Analyze Production' });
     await expect(analyzeBtn).toBeVisible();
     await analyzeBtn.click();
-    // (Playwright can't easily assert scroll position, but clicking shouldn't fail)
+
+    // Take screenshot for verification
+    await page.screenshot({ path: 'analytics-dashboard.png', fullPage: true });
   });
 
   test('should show locked state for non-Pro user', async ({ page }) => {
