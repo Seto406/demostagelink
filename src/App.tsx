@@ -47,6 +47,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const PaymentSuccess = lazy(() => import("./pages/payment/Success"));
 const PaymentCancel = lazy(() => import("./pages/payment/Cancel"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const TestEmail = lazy(() => import("./pages/TestEmail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -116,6 +117,7 @@ const AppRoutes = () => {
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="/checkout/:showId" element={<CheckoutPage />} />
+          <Route path="/test-email" element={<TestEmail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
