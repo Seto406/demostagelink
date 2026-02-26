@@ -1806,10 +1806,10 @@ const AdminPanel = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === "approve" 
-                ? `Are you sure you want to approve "${confirmAction?.show.title}"? It will become visible on the public feed.`
+                ? `Are you sure you want to approve "${confirmAction?.show.title}"? It will become visible on the public feed. (To send email notifications to all users, use the 'Broadcast' button after approval).`
                 : confirmAction?.type === "reject"
-                  ? `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified.`
-                  : `Are you sure you want to broadcast "${confirmAction?.show.title}" to all audience members? This will send an email notification.`
+                  ? `Are you sure you want to reject "${confirmAction?.show.title}"? The producer will be notified via email.`
+                  : `Are you sure you want to broadcast "${confirmAction?.show.title}" to all audience members? This will send an email notification to everyone.`
               }
             </AlertDialogDescription>
           </AlertDialogHeader>

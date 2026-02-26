@@ -76,8 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const validEmails = audienceProfiles
       .map((p: any) => p.email)
-      .filter((email: any) => email && typeof email === 'string' && email.length > 0)
-      .filter((email: string) => ['stagelinkjules@gmail.com', 'connect.stagelink@gmail.com'].includes(email));
+      .filter((email: any) => email && typeof email === 'string' && email.length > 0);
 
     if (validEmails.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No valid emails found", count: 0 }), {
