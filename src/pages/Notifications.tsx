@@ -75,13 +75,19 @@ const Notifications = () => {
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*', // Listen for INSERT and UPDATE
             schema: 'public',
             table: 'notifications',
             filter: `user_id=eq.${profile.id}`
           },
           (payload) => {
-            setNotifications(prev => [payload.new as Notification, ...prev]);
+            if (payload.eventType === 'INSERT') {
+                setNotifications(prev => [payload.new as Notification, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+                setNotifications(prev => prev.map(n =>
+                    n.id === payload.new.id ? { ...n, ...payload.new as Notification } : n
+                ));
+            }
             refreshUnreadCount();
           }
         )

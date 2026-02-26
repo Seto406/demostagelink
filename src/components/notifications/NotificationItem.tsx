@@ -1,6 +1,19 @@
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, MessageCircle, Heart, Circle, UserPlus, Users, Award, Handshake, Check } from "lucide-react";
+import {
+  Bell,
+  MessageCircle,
+  Heart,
+  Circle,
+  UserPlus,
+  Users,
+  Award,
+  Handshake,
+  Check,
+  Ticket,
+  CreditCard,
+  Star
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Notification {
@@ -28,6 +41,12 @@ export function NotificationItem({ notification, onRead, onMarkAsRead }: Notific
       case 'membership_application': return <Users className="w-4 h-4 text-orange-500" />;
       case 'membership': return <Award className="w-4 h-4 text-purple-500" />;
       case 'collab': return <Handshake className="w-4 h-4 text-indigo-500" />;
+      case 'show_approved': return <Ticket className="w-4 h-4 text-green-500" />;
+      case 'show_rejected': return <Ticket className="w-4 h-4 text-red-500" />;
+      case 'payment_approved': return <CreditCard className="w-4 h-4 text-green-500" />;
+      case 'payment_rejected': return <CreditCard className="w-4 h-4 text-red-500" />;
+      case 'payment_submitted': return <CreditCard className="w-4 h-4 text-yellow-500" />;
+      case 'review': return <Star className="w-4 h-4 text-yellow-500" />;
       default: return <Bell className="w-4 h-4 text-secondary" />;
     }
   };

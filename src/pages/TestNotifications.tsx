@@ -16,8 +16,8 @@ const TestNotifications = () => {
         actorId: profile.id, // From self
         type,
         title: `Test Notification: ${type}`,
-        message: `This is a test notification for type: ${type}`,
-        link: type === 'collab' ? '/dashboard' : '/profile'
+        message: `This is a test notification for type: ${type}. It should have a specific icon.`,
+        link: type.includes('show') ? '/shows' : type.includes('payment') ? '/profile?tab=passes' : '/dashboard'
       });
       toast.success(`Created ${type} notification`);
     } catch (error) {
@@ -33,22 +33,42 @@ const TestNotifications = () => {
         <h1 className="text-2xl font-bold mb-6">Test Notifications</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button onClick={() => handleCreateNotification('like')}>
-            Trigger Like
+            Like
           </Button>
           <Button onClick={() => handleCreateNotification('comment')}>
-            Trigger Comment
+            Comment
           </Button>
           <Button onClick={() => handleCreateNotification('follow')}>
-            Trigger Follow
+            Follow
           </Button>
           <Button onClick={() => handleCreateNotification('membership_application')}>
-            Trigger Membership Application
+            Membership Application
           </Button>
           <Button onClick={() => handleCreateNotification('membership')}>
-            Trigger Membership Approved
+            Membership Approved
           </Button>
           <Button onClick={() => handleCreateNotification('collab')}>
-            Trigger Collab Accepted
+            Collab Accepted
+          </Button>
+
+          {/* New Types */}
+          <Button variant="secondary" onClick={() => handleCreateNotification('show_approved')}>
+            Show Approved
+          </Button>
+          <Button variant="secondary" onClick={() => handleCreateNotification('show_rejected')}>
+            Show Rejected
+          </Button>
+          <Button variant="secondary" onClick={() => handleCreateNotification('payment_approved')}>
+            Payment Approved
+          </Button>
+          <Button variant="secondary" onClick={() => handleCreateNotification('payment_rejected')}>
+            Payment Rejected
+          </Button>
+          <Button variant="secondary" onClick={() => handleCreateNotification('payment_submitted')}>
+            Payment Submitted
+          </Button>
+          <Button variant="secondary" onClick={() => handleCreateNotification('review')}>
+            New Review
           </Button>
         </div>
       </div>
