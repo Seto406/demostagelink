@@ -90,7 +90,16 @@ const CheckoutPage = () => {
           ...data,
           cast_members: (data.cast_members as unknown) as CastMember[] | null
       };
-      setShow(showData as unknown as ShowDetails);
+
+      const details = showData as unknown as ShowDetails;
+
+      if (details.date && new Date(details.date) < new Date(new Date().setHours(0,0,0,0))) {
+        toast.error("This event has ended");
+        navigate(`/shows/${showId}`);
+        return;
+      }
+
+      setShow(details);
       setLoading(false);
     };
 
