@@ -62,7 +62,7 @@ export function FeedPost({ show }: FeedPostProps) {
   const [reservationCount, setReservationCount] = useState(0);
   const queryClient = useQueryClient();
 
-  const isProducerOrAdmin = !loading && user && (user.id === show.producer_id?.id || profile?.role === 'admin');
+  const isProducerOrAdmin = !loading && user && (profile?.id === show.producer_id?.id || profile?.role === 'admin');
   const producerName = show.producer_id?.group_name || "Unknown Group";
   const producerAvatar = show.producer_id?.group_logo_url;
   const isPremium = show.is_premium;

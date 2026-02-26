@@ -85,7 +85,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
   const { toggleFavorite, isFavorited } = useFavorites();
   const { toast } = useToast();
 
-  const isProducerOrAdmin = user && ((profile?.role === 'producer' && user.id === show.producer_id?.id) || profile?.role === 'admin');
+  const isProducerOrAdmin = user && ((profile?.role === 'producer' && profile?.id === show.producer_id?.id) || profile?.role === 'admin');
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
