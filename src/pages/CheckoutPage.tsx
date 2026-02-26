@@ -464,7 +464,7 @@ const CheckoutPage = () => {
                         </div>
 
                          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-xs text-yellow-600 dark:text-yellow-400">
-                            <strong>Note:</strong> You are paying a <u>{formatCurrency(reservationFee)}</u> reservation fee now. Your ticket will be issued after admin verification (usually within 24h).
+                            <strong>Note:</strong> You are paying a <u>{formatCurrency(reservationFee)}</u> reservation fee now. Your ticket will be issued after admin verification (usually within 24h). Reserved seat is non-refundable.
                         </div>
 
                     </CardContent>

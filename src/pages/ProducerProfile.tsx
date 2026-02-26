@@ -618,30 +618,31 @@ const ProducerProfile = () => {
                             )}
                           </Button>
                         ) : profile.role === 'audience' ? (
-                          <Button
-                            onClick={handleJoinRequest}
-                            disabled={joinLoading || hasApplied}
-                            variant="outline"
-                            className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
-                          >
-                            {joinLoading ? (
-                              "Sending..."
-                            ) : hasApplied ? (
+                          <>
+                            {hasApplied ? (
                               applicationStatus === 'active' ? (
-                                <>
-                                  <UserCheck className="w-4 h-4 mr-2" />
-                                  Member
-                                </>
+                                null
                               ) : (
-                                `Application ${applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}`
+                                <Button
+                                  disabled
+                                  variant="outline"
+                                  className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                                >
+                                  Application {applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}
+                                </Button>
                               )
                             ) : (
-                              <>
+                              <Button
+                                onClick={handleJoinRequest}
+                                disabled={joinLoading || hasApplied}
+                                variant="outline"
+                                className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                              >
                                 <UserPlus className="w-4 h-4 mr-2" />
                                 Join as Member
-                              </>
+                              </Button>
                             )}
-                          </Button>
+                          </>
                         ) : null
                       )}
                   </div>
