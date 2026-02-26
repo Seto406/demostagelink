@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck, Globe } from "lucide-react";
 import { createNotification } from "@/lib/notifications";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +29,8 @@ interface ProfileData {
   group_name?: string | null;
   niche?: string | null;
   producer_role?: string | null;
+  description?: string | null;
+  website_url?: string | null;
 }
 
 // Interfaces for fetched data
@@ -597,12 +599,29 @@ const Profile = () => {
                  </p>
                )}
 
+               {profile.description && (
+                  <p className="text-muted-foreground mb-4 text-center md:text-left max-w-lg">
+                    {profile.description}
+                  </p>
+               )}
+
                <div className="flex flex-col gap-2 justify-center md:justify-start text-sm text-muted-foreground mb-4">
                  {isOwnProfile && user?.email && (
                     <div className="flex items-center gap-1.5 justify-center md:justify-start">
                       <Mail className="w-4 h-4" />
                       {user.email}
                     </div>
+                 )}
+                 {profile.website_url && (
+                    <a
+                      href={profile.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 justify-center md:justify-start hover:text-secondary transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      {profile.website_url.replace(/^https?:\/\//, '')}
+                    </a>
                  )}
                  <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     <div className="flex items-center gap-1.5">

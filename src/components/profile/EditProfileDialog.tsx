@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Camera, Upload, X, Save } from "lucide-react";
@@ -36,6 +37,8 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   // Profile form state
   const [username, setUsername] = useState("");
   const [producerRole, setProducerRole] = useState("");
+  const [description, setDescription] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
@@ -46,20 +49,28 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [initialValues, setInitialValues] = useState<{
     username: string;
     producerRole: string;
+    description: string;
+    websiteUrl: string;
   } | null>(null);
 
   useEffect(() => {
     if (open && profile) {
       const initialUsername = profile.username || "";
       const initialProducerRole = profile.producer_role || "";
+      const initialDescription = profile.description || "";
+      const initialWebsiteUrl = profile.website_url || "";
 
       setUsername(initialUsername);
       setProducerRole(initialProducerRole);
+      setDescription(initialDescription);
+      setWebsiteUrl(initialWebsiteUrl);
       setAvatarUrl(profile.avatar_url || null);
 
       setInitialValues({
         username: initialUsername,
-        producerRole: initialProducerRole
+        producerRole: initialProducerRole,
+        description: initialDescription,
+        websiteUrl: initialWebsiteUrl
       });
       setShowDiscardAlert(false);
     }
@@ -72,9 +83,11 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     // immediate and persistent (auto-saved), so there are no "unsaved" changes for it.
     return (
       username !== initialValues.username ||
-      producerRole !== initialValues.producerRole
+      producerRole !== initialValues.producerRole ||
+      description !== initialValues.description ||
+      websiteUrl !== initialValues.websiteUrl
     );
-  }, [username, producerRole, initialValues]);
+  }, [username, producerRole, description, websiteUrl, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -115,11 +128,35 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       }
     }
 
+    // Website URL validation
+    if (websiteUrl) {
+      const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      if (!urlPattern.test(websiteUrl)) {
+        toast({
+          title: "Invalid URL",
+          description: "Please enter a valid URL for your portfolio.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+          toast({
+            title: "Invalid URL",
+            description: "URL must start with http:// or https://",
+             variant: "destructive",
+          });
+          return;
+       }
+    }
+
     setSaving(true);
     try {
       const updateData: Record<string, unknown> = {
         username: username || null,
         producer_role: producerRole || null,
+        description: description || null,
+        website_url: websiteUrl || null,
       };
 
       const { error } = await supabase
@@ -349,6 +386,36 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
              />
              <p className="text-xs text-muted-foreground mt-1">
                This is how you will appear in comments and reviews.
+             </p>
+          </div>
+
+          {/* Bio / Description */}
+          <div>
+             <Label htmlFor="description">Bio / Description</Label>
+             <Textarea
+               id="description"
+               value={description}
+               onChange={(e) => setDescription(e.target.value)}
+               placeholder="Tell us about yourself..."
+               className="mt-1 bg-background border-secondary/30 min-h-[100px]"
+             />
+             <p className="text-xs text-muted-foreground mt-1">
+               A short bio for your profile.
+             </p>
+          </div>
+
+          {/* Portfolio Link */}
+          <div>
+             <Label htmlFor="websiteUrl">Portfolio Link</Label>
+             <Input
+               id="websiteUrl"
+               value={websiteUrl}
+               onChange={(e) => setWebsiteUrl(e.target.value)}
+               placeholder="https://your-portfolio.com"
+               className="mt-1 bg-background border-secondary/30"
+             />
+             <p className="text-xs text-muted-foreground mt-1">
+               Link to your personal website or portfolio.
              </p>
           </div>
 
