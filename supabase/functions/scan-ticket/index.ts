@@ -23,7 +23,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { ticket_id, access_code, show_id } = await req.json();
+    const { ticket_id: rawTicketId, access_code: rawAccessCode, show_id } = await req.json();
+    const ticket_id = rawTicketId ? String(rawTicketId).trim() : undefined;
+    const access_code = rawAccessCode ? String(rawAccessCode).trim().toUpperCase() : undefined;
+
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
