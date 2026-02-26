@@ -157,11 +157,11 @@ const Profile = () => {
           setProfile(profileData as unknown as ProfileData);
 
           // Check follow status
-          if (user && !isOwnProfile) {
+          if (user && currentUserProfile && !isOwnProfile) {
             const { data: followData } = await supabase
               .from("follows")
               .select("id")
-              .eq("follower_id", user.id)
+              .eq("follower_id", currentUserProfile.id)
               .eq("following_id", profileId)
               .maybeSingle();
 
@@ -455,6 +455,10 @@ const Profile = () => {
         toast.error("Please login to follow this user");
         return;
     }
+    if (!currentUserProfile) {
+        toast.error("Profile not loaded. Please try again.");
+        return;
+    }
     if (!profile) return;
 
     setFollowLoading(true);
@@ -463,7 +467,7 @@ const Profile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", user.id)
+            .eq("follower_id", currentUserProfile.id)
             .eq("following_id", profile.id);
 
         if (error) {
@@ -478,7 +482,7 @@ const Profile = () => {
         const { error } = await supabase
             .from("follows")
             .insert({
-                follower_id: user.id,
+                follower_id: currentUserProfile.id,
                 following_id: profile.id
             });
 
