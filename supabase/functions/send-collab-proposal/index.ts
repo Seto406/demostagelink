@@ -122,21 +122,45 @@ serve(async (req) => {
     // 6. Create In-App Notification
     const senderName = senderProfile.group_name || "Someone";
 
-    const { error: notificationError } = await supabaseAdmin
-      .from('notifications')
-      .insert({
-        user_id: recipientProfile.id,
-        actor_id: senderProfile.id,
-        type: 'collaboration_request',
-        title: 'New Collaboration Request',
-        message: `${senderName} wants to collaborate with you.`,
-        link: `/dashboard`,
-        read: false
-      });
+    try {
+      const { error: notificationError } = await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: recipientProfile.id,
+          actor_id: senderProfile.id,
+          type: 'collaboration_request',
+          title: 'New Collaboration Request',
+          message: `${senderName} wants to collaborate with you.`,
+          link: `/dashboard`,
+          read: false
+        } as any);
 
-    if (notificationError) {
-      console.error("Error creating notification:", notificationError);
-      // We don't throw here, as the request was created successfully
+      if (notificationError) {
+         // If the error is about the missing actor_id column, retry without it
+        if (notificationError.message?.includes('column "actor_id" of relation "notifications" does not exist') ||
+            notificationError.code === '42703') { // Postgres error code for undefined column
+          console.warn('actor_id column missing in notifications table, retrying without it...');
+
+          const { error: retryError } = await supabaseAdmin
+            .from('notifications')
+            .insert({
+              user_id: recipientProfile.id,
+              type: 'collaboration_request',
+              title: 'New Collaboration Request',
+              message: `${senderName} wants to collaborate with you.`,
+              link: `/dashboard`,
+              read: false
+            });
+
+          if (retryError) {
+             console.error("Error creating notification (retry):", retryError);
+          }
+        } else {
+            console.error("Error creating notification:", notificationError);
+        }
+      }
+    } catch (error) {
+       console.error("Failed to create notification:", error);
     }
 
     // 7. Send Email

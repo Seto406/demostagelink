@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS public.follows (
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES public.profiles(id),
+    actor_id UUID REFERENCES public.profiles(id),
     title TEXT NOT NULL,
     message TEXT NOT NULL,
     type TEXT NOT NULL,
