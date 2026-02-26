@@ -56,6 +56,8 @@ export const DigitalPass = ({
             useCORS: true,
             scale: 2, // Higher resolution
             backgroundColor: null,
+            scrollX: 0,
+            scrollY: 0,
         });
         const link = document.createElement("a");
         link.download = `pass-${title.substring(0, 20).replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${ticketId.slice(0, 8)}.png`;
@@ -72,7 +74,9 @@ export const DigitalPass = ({
       try {
         const canvas = await html2canvas(passRef.current, {
             useCORS: true,
-            scale: 2
+            scale: 2,
+            scrollX: 0,
+            scrollY: 0,
         });
         const imgData = canvas.toDataURL('image/png');
 
