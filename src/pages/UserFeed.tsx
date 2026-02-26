@@ -68,6 +68,7 @@ interface FeedPostType {
     group_name: string | null;
     avatar_url: string | null;
     group_logo_url: string | null;
+    is_premium?: boolean;
   };
   post_likes?: { count: number }[];
 }
@@ -175,7 +176,8 @@ const UserFeed = () => {
             username,
             group_name,
             avatar_url,
-            group_logo_url
+            group_logo_url,
+            is_premium
           )
         `)
         .lt("created_at", cursor)
@@ -203,8 +205,20 @@ const UserFeed = () => {
         });
       });
 
-      // Sort desc by created_at
-      mixedItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Sort: Premium items first, then chronological
+      mixedItems.sort((a, b) => {
+        // Determine premium status
+        const aPremium = a.type === 'show' ? (a.data as FeedShow).is_premium : (a.data as FeedPostType).profiles.is_premium;
+        const bPremium = b.type === 'show' ? (b.data as FeedShow).is_premium : (b.data as FeedPostType).profiles.is_premium;
+
+        // Priority sort
+        if (aPremium !== bPremium) {
+          return aPremium ? -1 : 1;
+        }
+
+        // Chronological sort
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
 
       // Slice to limit
       // This ensures we have a consistent page size and the cursor for the next page

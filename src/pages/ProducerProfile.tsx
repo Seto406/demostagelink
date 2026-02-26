@@ -41,6 +41,7 @@ interface Producer {
   map_screenshot_url: string | null;
   university: string | null;
   producer_role: string | null;
+  is_premium?: boolean;
 }
 
 interface Show {
@@ -128,7 +129,7 @@ const ProducerProfile = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
+        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role, is_premium")
         .eq("id", id)
         .maybeSingle();
 
@@ -451,6 +452,16 @@ const ProducerProfile = () => {
   const displayBanner = theaterGroup?.banner_url || producer.group_banner_url;
   const displayName = theaterGroup?.name || producer.group_name || "Unnamed Group";
   const displayDescription = theaterGroup?.description || producer.description;
+  const isPremium = producer.is_premium;
+
+  // Filter members for Basic Tier (limit 10)
+  const visibleMembers = (!isPremium && members.length > 10) ? members.slice(0, 10) : members;
+
+  // Filter shows for Basic Tier (limit 2 active listings)
+  const currentShows = shows.filter(s => s.production_status !== "completed");
+  const pastShows = shows.filter(s => s.production_status === "completed");
+
+  const visibleCurrentShows = (!isPremium && currentShows.length > 2) ? currentShows.slice(0, 2) : currentShows;
 
   return (
     <div className="min-h-screen bg-background">
@@ -734,7 +745,7 @@ const ProducerProfile = () => {
             </motion.div>
           )}
 
-          {members.length > 0 && (
+          {visibleMembers.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -744,9 +755,14 @@ const ProducerProfile = () => {
             >
               <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                 Ensemble
+                {!isPremium && members.length > 10 && (
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
+                    (Showing 10 of {members.length})
+                  </span>
+                )}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {members.map((member) => (
+                {visibleMembers.map((member) => (
                   <Link
                     key={member.id}
                     to={member.profile ? `/profile/${member.profile.id}` : '#'}
@@ -783,15 +799,18 @@ const ProducerProfile = () => {
               </div>
             ) : (
               <>
-                {shows.some(s => s.production_status !== "completed") && (
+                {visibleCurrentShows.length > 0 && (
                   <div className="mb-12">
                     <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                       Current Productions
+                      {!isPremium && currentShows.length > 2 && (
+                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                            (Showing 2 of {currentShows.length})
+                        </span>
+                      )}
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {shows
-                        .filter(s => s.production_status !== "completed")
-                        .map((show, index) => (
+                      {visibleCurrentShows.map((show, index) => (
                           <motion.div
                             key={show.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -866,15 +885,13 @@ const ProducerProfile = () => {
                   </div>
                 )}
 
-                {shows.some(s => s.production_status === "completed") && (
+                {pastShows.length > 0 && (
                   <div>
                     <h2 className="text-2xl font-serif font-bold text-foreground mb-6">
                       Past Productions
                     </h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {shows
-                        .filter(s => s.production_status === "completed")
-                        .map((show, index) => (
+                      {pastShows.map((show, index) => (
                           <motion.div
                             key={show.id}
                             initial={{ opacity: 0, y: 20 }}

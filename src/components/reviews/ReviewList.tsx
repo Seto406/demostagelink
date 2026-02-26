@@ -15,6 +15,7 @@ interface Review {
     username: string | null;
     first_name: string | null;
     last_name: string | null;
+    is_premium?: boolean;
   } | null;
 }
 
@@ -44,7 +45,21 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming }: ReviewListPro
         console.error("Error fetching reviews:", error);
       } else {
         // Safe cast as we know the structure from the query
-        setReviews(data as unknown as Review[]);
+        const loadedReviews = data as unknown as Review[];
+
+        // Sort: Premium users first
+        loadedReviews.sort((a, b) => {
+            const aPremium = a.profiles?.is_premium;
+            const bPremium = b.profiles?.is_premium;
+
+            if (aPremium !== bPremium) {
+                return aPremium ? -1 : 1;
+            }
+
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        setReviews(loadedReviews);
       }
     } catch (err) {
       console.error(err);

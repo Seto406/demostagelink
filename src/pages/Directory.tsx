@@ -369,6 +369,27 @@ const Directory = () => {
         return;
       }
 
+      // Check for group request limit (Basic Tier: 10 requests/month)
+      if (!group.is_premium) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        const { count: requestCount, error: requestCountError } = await supabase
+            .from('group_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', group.id)
+            .eq('status', 'pending')
+            .gte('created_at', startOfMonth);
+
+        if (requestCountError) {
+             console.error("Error checking group request limit:", requestCountError);
+        } else if (requestCount !== null && requestCount >= 10) {
+             toast.error("This group has reached its monthly limit for join requests.");
+             setJoiningGroupId(null);
+             return;
+        }
+      }
+
       // Check for existing membership/application
       const { data: existingMember, error: fetchError } = await supabase
         .from('group_members')
