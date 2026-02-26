@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
@@ -126,6 +136,9 @@ const Dashboard = () => {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MembershipApplication | null>(null);
   const [newRole, setNewRole] = useState("");
+
+  // Member Removal State
+  const [memberToRemove, setMemberToRemove] = useState<MembershipApplication | null>(null);
 
   // Upsell State
   const [upsellOpen, setUpsellOpen] = useState(false);
@@ -442,6 +455,26 @@ const Dashboard = () => {
 
     setApplications((prev) => prev.filter((application) => application.id !== applicationId));
     toast.success("Application declined.");
+    setIsUpdating(null);
+  };
+
+  const handleRemoveMember = async () => {
+    if (!memberToRemove) return;
+    setIsUpdating(memberToRemove.id);
+
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("id", memberToRemove.id);
+
+    if (error) {
+      console.error("Error removing member:", error);
+      toast.error("Failed to remove member.");
+    } else {
+      toast.success("Member removed.");
+      setActiveMembers((prev) => prev.filter((m) => m.id !== memberToRemove.id));
+      setMemberToRemove(null);
+    }
     setIsUpdating(null);
   };
 
@@ -1120,6 +1153,14 @@ const Dashboard = () => {
                        >
                          <Settings className="h-4 w-4 mr-1" /> Role
                        </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                         onClick={() => setMemberToRemove(member)}
+                       >
+                         <Trash2 className="h-4 w-4 mr-1" /> Remove
+                       </Button>
                     </div>
                   </div>
                 );
@@ -1289,6 +1330,26 @@ const Dashboard = () => {
         featureName={upsellContext.featureName}
         description={upsellContext.description}
       />
+      <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Member?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this member from the group? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleRemoveMember}
+              disabled={isUpdating === memberToRemove?.id}
+            >
+              {isUpdating === memberToRemove?.id ? "Removing..." : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
