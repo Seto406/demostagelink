@@ -64,6 +64,18 @@ const handler = async (req: Request): Promise<Response> => {
           <p><a href="${link || 'https://www.stagelink.show/dashboard'}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Go to Dashboard</a></p>
         </div>
       `;
+    } else if (type === "membership_approved") {
+      const { group_name, link } = data;
+      subject = `Membership Approved! 🎉`;
+      html = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1>Membership Approved</h1>
+          <p>Hi there,</p>
+          <p>Your request to join <strong>${group_name}</strong> has been approved!</p>
+          <p>You can now view the group's profile and your membership status.</p>
+          <p><a href="${link || 'https://www.stagelink.show/dashboard'}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Group Profile</a></p>
+        </div>
+      `;
     } else {
       throw new Error("Invalid notification type");
     }
