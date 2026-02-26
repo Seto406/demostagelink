@@ -75,6 +75,7 @@ interface Show {
   niche: "local" | "university" | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
+  updated_at: string;
   producer_id: string;
   poster_url: string | null;
   deleted_at: string | null;
@@ -278,6 +279,7 @@ const AdminPanel = () => {
         niche,
         status,
         created_at,
+        updated_at,
         producer_id,
         poster_url,
         deleted_at,
@@ -1175,135 +1177,157 @@ const AdminPanel = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {shows.map((show) => (
-                        <tr key={show.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
-                          <td className="p-4">
-                            {show.poster_url ? (
-                              <img 
-                                src={show.poster_url} 
-                                alt={show.title} 
-                                className="w-12 h-16 object-cover rounded border border-secondary/20"
-                              />
-                            ) : (
-                              <div className="w-12 h-16 bg-muted rounded border border-secondary/20 flex items-center justify-center">
-                                <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                      {shows.map((show) => {
+                        // Determine if it's an update or new submission
+                        const isUpdate = new Date(show.updated_at).getTime() - new Date(show.created_at).getTime() > 60000; // 1 minute buffer
+
+                        return (
+                          <tr key={show.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
+                            <td className="p-4">
+                              <div className="relative inline-block">
+                                {show.poster_url ? (
+                                  <img
+                                    src={show.poster_url}
+                                    alt={show.title}
+                                    className="w-12 h-16 object-cover rounded border border-secondary/20"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-16 bg-muted rounded border border-secondary/20 flex items-center justify-center">
+                                    <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                                  </div>
+                                )}
+                                {filterStatus === "pending" && isUpdate && (
+                                   <div className="absolute -top-2 -right-4 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
+                                      EDIT
+                                   </div>
+                                )}
+                                {filterStatus === "pending" && !isUpdate && (
+                                   <div className="absolute -top-2 -right-4 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
+                                      NEW
+                                   </div>
+                                )}
                               </div>
-                            )}
-                          </td>
-                          <td className="p-4 text-foreground font-medium">{show.title}</td>
-                          <td className="p-4 text-muted-foreground">
-                            {show.profiles?.group_name || "Unknown Group"}
-                          </td>
-                          <td className="p-4 text-muted-foreground">{getNicheLabel(show.niche)}</td>
-                          <td className="p-4 text-muted-foreground">
-                            {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-3 py-1 text-xs border rounded-full ${getStatusColor(show.status)}`}>
-                              {getStatusLabel(show.status)}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openDetails(show)}
-                                className="h-8 w-8 p-0"
-                                title="View Details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              
-                              {/* Restore button for deleted shows */}
-                              {filterStatus === "deleted" ? (
+                            </td>
+                            <td className="p-4 text-foreground font-medium">
+                              {show.title}
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {isUpdate && filterStatus === "pending" ? "Update Request" : "Submission"}
+                              </div>
+                            </td>
+                            <td className="p-4 text-muted-foreground">
+                              {show.profiles?.group_name || "Unknown Group"}
+                            </td>
+                            <td className="p-4 text-muted-foreground">{getNicheLabel(show.niche)}</td>
+                            <td className="p-4 text-muted-foreground">
+                              {show.date ? new Date(show.date).toLocaleDateString() : "TBD"}
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-3 py-1 text-xs border rounded-full ${getStatusColor(show.status)}`}>
+                                {getStatusLabel(show.status)}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRestoreShow(show.id)}
-                                  className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                  title="Restore Show"
+                                  onClick={() => openDetails(show)}
+                                  className="h-8 w-8 p-0"
+                                  title="View Details"
                                 >
-                                  <RotateCcw className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
-                              ) : (
-                                <>
-                                  {show.status === "pending" && (
-                                    <>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setConfirmAction({ type: "approve", show })}
-                                        className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                        title="Approve"
-                                      >
-                                        <Check className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setConfirmAction({ type: "reject", show })}
-                                        className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                                        title="Reject"
-                                      >
-                                        <XCircle className="w-4 h-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                  {show.status === "approved" && (
-                                    <>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setConfirmAction({ type: "broadcast", show })}
-                                        className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
-                                        title="Broadcast to Audience"
-                                      >
-                                        <Megaphone className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleSendReminder(show.id, show.title)}
-                                        className="h-8 w-8 p-0 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10"
-                                        title="Send Reminder"
-                                      >
-                                        <Bell className="w-4 h-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                  {show.status !== "pending" && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        supabase
-                                          .from("shows")
-                                          .update({ status: "pending" })
-                                          .eq("id", show.id)
-                                          .then(() => fetchShows());
-                                      }}
-                                      className="text-xs text-muted-foreground hover:text-foreground"
-                                    >
-                                      Reset
-                                    </Button>
-                                  )}
-                                  {/* Soft Delete button */}
+
+                                {/* Restore button for deleted shows */}
+                                {filterStatus === "deleted" ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleSoftDeleteShow(show.id)}
-                                    className="h-8 w-8 p-0 text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
-                                    title="Delete Show"
+                                    onClick={() => handleRestoreShow(show.id)}
+                                    className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                    title="Restore Show"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <RotateCcw className="w-4 h-4" />
                                   </Button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                ) : (
+                                  <>
+                                    {show.status === "pending" && (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setConfirmAction({ type: "approve", show })}
+                                          className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                          title="Approve"
+                                        >
+                                          <Check className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setConfirmAction({ type: "reject", show })}
+                                          className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                          title="Reject"
+                                        >
+                                          <XCircle className="w-4 h-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                    {show.status === "approved" && (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setConfirmAction({ type: "broadcast", show })}
+                                          className="h-8 w-8 p-0 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                          title="Broadcast to Audience"
+                                        >
+                                          <Megaphone className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleSendReminder(show.id, show.title)}
+                                          className="h-8 w-8 p-0 text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10"
+                                          title="Send Reminder"
+                                        >
+                                          <Bell className="w-4 h-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                    {show.status !== "pending" && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          supabase
+                                            .from("shows")
+                                            .update({ status: "pending" })
+                                            .eq("id", show.id)
+                                            .then(() => fetchShows());
+                                        }}
+                                        className="text-xs text-muted-foreground hover:text-foreground"
+                                      >
+                                        Reset
+                                      </Button>
+                                    )}
+                                    {/* Soft Delete button */}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleSoftDeleteShow(show.id)}
+                                      className="h-8 w-8 p-0 text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
+                                      title="Delete Show"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
