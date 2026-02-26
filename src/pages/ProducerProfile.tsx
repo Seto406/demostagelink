@@ -343,7 +343,7 @@ const ProducerProfile = () => {
       if (error) throw error;
 
       await createNotification({
-        userId: producer.user_id, // Use Auth ID for notifications
+        userId: producer.id, // Use Profile ID for notifications
         actorId: profile.id, // Use Profile ID for actor
         type: 'membership_application',
         title: 'New Member Application',

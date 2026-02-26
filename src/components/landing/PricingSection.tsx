@@ -99,10 +99,10 @@ const plans = [
         ]
       }
     ],
-    cta: "Join Waitlist",
+    cta: "Subscribe Now",
     popular: true,
     comingSoon: false,
-    link: "mailto:connect.stagelink@gmail.com?subject=Join Premium Tier Waitlist",
+    link: "mailto:connect.stagelink@gmail.com?subject=Subscribe to Pro Producer",
     isExternal: true
   }
 ];

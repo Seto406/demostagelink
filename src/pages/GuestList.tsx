@@ -6,8 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BrandedLoader } from "@/components/ui/branded-loader";
-import { ArrowLeft, Download, Users, QrCode, FileText } from "lucide-react";
+import { ArrowLeft, Download, Users, QrCode, FileText, Eye, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -27,6 +28,9 @@ interface Guest {
     avatar_url: string | null;
     group_name: string | null;
   } | null;
+  payments: {
+    proof_of_payment_url: string | null;
+  } | null;
 }
 
 interface Show {
@@ -41,6 +45,7 @@ const GuestList = () => {
   const { showId } = useParams<{ showId: string }>();
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
+  const [selectedProof, setSelectedProof] = useState<string | null>(null);
 
   // Fetch Show Details to verify ownership
   const { data: show, isLoading: showLoading } = useQuery({
@@ -76,6 +81,9 @@ const GuestList = () => {
             username,
             avatar_url,
             group_name
+          ),
+          payments:payment_id (
+            proof_of_payment_url
           )
         `)
         .eq('show_id', showId)
@@ -240,6 +248,7 @@ const GuestList = () => {
                       <TableHead>Guest Name</TableHead>
                       <TableHead>Access Code</TableHead>
                       <TableHead>Ticket Status</TableHead>
+                      <TableHead>Proof</TableHead>
                       <TableHead>Checked In</TableHead>
                       <TableHead className="text-right">Purchase Date</TableHead>
                     </TableRow>
@@ -274,6 +283,20 @@ const GuestList = () => {
                             {guest.status}
                           </span>
                         </TableCell>
+                        <TableCell>
+                           {guest.payments?.proof_of_payment_url ? (
+                               <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   className="h-8 w-8 p-0"
+                                   onClick={() => setSelectedProof(guest.payments!.proof_of_payment_url)}
+                               >
+                                   <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                               </Button>
+                           ) : (
+                               <span className="text-muted-foreground text-xs">-</span>
+                           )}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {guest.checked_in_at ? new Date(guest.checked_in_at).toLocaleTimeString() : '-'}
                         </TableCell>
@@ -293,6 +316,30 @@ const GuestList = () => {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={!!selectedProof} onOpenChange={(open) => !open && setSelectedProof(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+                <DialogTitle>Proof of Payment</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-4">
+                {selectedProof && (
+                    <img
+                        src={selectedProof}
+                        alt="Proof of Payment"
+                        className="max-w-full h-auto rounded-lg border border-secondary/20"
+                    />
+                )}
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <a href={selectedProof || "#"} target="_blank" rel="noopener noreferrer">
+                            Open in New Tab <ExternalLink className="w-4 h-4 ml-2" />
+                        </a>
+                    </Button>
+                </div>
+            </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

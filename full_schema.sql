@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS public.follows (
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES public.profiles(id),
+    actor_id UUID REFERENCES public.profiles(id),
     title TEXT NOT NULL,
     message TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -521,3 +522,64 @@ CREATE INDEX IF NOT EXISTS idx_shows_producer_id ON public.shows(producer_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON public.tickets(user_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_show_id ON public.tickets(show_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+
+
+-- 6. TICKET ACCESS CODE GENERATION
+CREATE OR REPLACE FUNCTION generate_ticket_access_code()
+RETURNS TRIGGER AS $$
+DECLARE
+  chars text[] := '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}';
+  result text := '';
+  i integer := 0;
+  exists_check boolean;
+BEGIN
+  IF NEW.access_code IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  LOOP
+    result := '';
+    FOR i IN 1..6 LOOP
+      result := result || chars[1+floor(random()*array_length(chars, 1))::int];
+    END LOOP;
+
+    SELECT EXISTS(SELECT 1 FROM public.tickets WHERE access_code = result) INTO exists_check;
+    IF NOT exists_check THEN
+      NEW.access_code := result;
+      EXIT;
+    END IF;
+  END LOOP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS ensure_ticket_access_code ON public.tickets;
+CREATE TRIGGER ensure_ticket_access_code
+BEFORE INSERT ON public.tickets
+FOR EACH ROW
+EXECUTE FUNCTION generate_ticket_access_code();
+
+-- Backfill existing tickets
+DO $$
+DECLARE
+  t_record RECORD;
+  chars text[] := '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}';
+  new_code text;
+  i integer;
+  exists_check boolean;
+BEGIN
+  FOR t_record IN SELECT id FROM public.tickets WHERE access_code IS NULL LOOP
+    LOOP
+      new_code := '';
+      FOR i IN 1..6 LOOP
+        new_code := new_code || chars[1+floor(random()*array_length(chars, 1))::int];
+      END LOOP;
+
+      SELECT EXISTS(SELECT 1 FROM public.tickets WHERE access_code = new_code) INTO exists_check;
+      IF NOT exists_check THEN
+        UPDATE public.tickets SET access_code = new_code WHERE id = t_record.id;
+        EXIT;
+      END IF;
+    END LOOP;
+  END LOOP;
+END $$;
