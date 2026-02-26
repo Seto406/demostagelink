@@ -336,22 +336,19 @@ export function FeedPost({ show }: FeedPostProps) {
         <CardFooter className="flex flex-col p-0">
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
                 <div className="flex items-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleShare}
-                          className="text-muted-foreground hover:text-foreground hover:bg-background/50 h-8 w-8 p-0"
-                          aria-label="Share this show"
-                        >
-                            <Share2 className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Share this show</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center gap-1">
+                        <LikeButton
+                            isLiked={isLiked(show.id)}
+                            onClick={() => {
+                                const currentlyLiked = isLiked(show.id);
+                                setLikeCount(prev => currentlyLiked ? Math.max(0, prev - 1) : prev + 1);
+                                toggleLike(show.id, show.producer_id?.id);
+                            }}
+                            size="sm"
+                            className="hover:bg-background/50 h-8 w-8 p-0"
+                        />
+                        <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
+                    </div>
 
                     <BookmarkButton
                         isFavorited={isFavorited(show.id)}
@@ -367,19 +364,22 @@ export function FeedPost({ show }: FeedPostProps) {
                         className="hover:bg-background/50 h-8 w-8 p-0"
                     />
 
-                    <div className="flex items-center gap-1">
-                        <LikeButton
-                            isLiked={isLiked(show.id)}
-                            onClick={() => {
-                                const currentlyLiked = isLiked(show.id);
-                                setLikeCount(prev => currentlyLiked ? Math.max(0, prev - 1) : prev + 1);
-                                toggleLike(show.id, show.producer_id?.id);
-                            }}
-                            size="sm"
-                            className="hover:bg-background/50"
-                        />
-                        <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleShare}
+                          className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 rounded-full flex items-center justify-center transition-all bg-background/80 backdrop-blur-sm border border-secondary/30 hover:border-primary/50 hover:bg-background/90"
+                          aria-label="Share this show"
+                        >
+                            <Share2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Share this show</p>
+                      </TooltipContent>
+                    </Tooltip>
                 </div>
 
                 <div className="flex items-center gap-2">
