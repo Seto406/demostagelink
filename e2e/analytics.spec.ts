@@ -51,9 +51,13 @@ test.describe('Analytics Dashboard', () => {
     clicks: 45,
     ctr: 36.5,
     chartData: [
-      { date: '2023-10-26', clicks: 10 },
+      { date: '2023-10-22', clicks: 5 },
+      { date: '2023-10-23', clicks: 10 },
+      { date: '2023-10-24', clicks: 30 },
+      { date: '2023-10-25', clicks: 15 },
+      { date: '2023-10-26', clicks: 45 },
       { date: '2023-10-27', clicks: 20 },
-      { date: '2023-10-28', clicks: 15 },
+      { date: '2023-10-28', clicks: 35 },
     ],
   };
 
@@ -151,7 +155,8 @@ test.describe('Analytics Dashboard', () => {
     await expect(page.getByText('123')).toBeVisible();
 
     await expect(page.getByText('Total Ticket Clicks')).toBeVisible();
-    await expect(page.getByText('45')).toBeVisible();
+    // Use .first() because '45' might also appear in the chart Y-axis or tooltips
+    await expect(page.getByText('45').first()).toBeVisible();
 
     await expect(page.getByText('Click-Through Rate')).toBeVisible();
     await expect(page.getByText('36.5%')).toBeVisible();
@@ -167,6 +172,12 @@ test.describe('Analytics Dashboard', () => {
     const analyzeBtn = page.getByRole('button', { name: 'Analyze Production' });
     await expect(analyzeBtn).toBeVisible();
     await analyzeBtn.click();
+
+    // Wait for chart animation to complete
+    // Recharts draws SVG paths. We wait for the line path to be visible.
+    await page.waitForSelector('.recharts-line-curve', { state: 'visible', timeout: 10000 });
+    // Add a small buffer for the animation to finish drawing
+    await page.waitForTimeout(2000);
 
     // Take screenshot for verification
     await page.screenshot({ path: 'analytics-dashboard.png', fullPage: true });
