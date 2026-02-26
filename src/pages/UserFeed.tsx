@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import Navbar from "@/components/layout/Navbar";
@@ -9,17 +9,10 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Users, 
-  Home, 
-  Calendar, 
-  Search, 
-  Heart, 
-  User, 
-  Settings, 
-  PlusSquare, 
   TrendingUp, 
-  ExternalLink, 
-  LayoutDashboard 
+  LayoutDashboard,
+  CalendarPlus,
+  PenLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,14 +26,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { FeedPost } from "@/components/feed/FeedPost";
+import { FeedUpdate } from "@/components/feed/FeedUpdate";
+import { CreateUpdateModal } from "@/components/feed/CreateUpdateModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { dummyShows as importedDummyShows } from "@/data/dummyShows";
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useTour } from "@/contexts/TourContext";
 
-// Interface for Feed Shows (includes joined data)
+// Interfaces
 export interface FeedShow {
   id: string;
   title: string;
@@ -62,6 +56,26 @@ export interface FeedShow {
   show_likes?: { count: number }[];
 }
 
+interface FeedPostType {
+  id: string;
+  content: string;
+  media_urls: string[] | null;
+  created_at: string;
+  profile_id: string;
+  profiles: {
+    id: string;
+    username: string | null;
+    group_name: string | null;
+    avatar_url: string | null;
+    group_logo_url: string | null;
+  };
+  post_likes?: { count: number }[];
+}
+
+type FeedItem =
+  | { type: 'show'; data: FeedShow; created_at: string }
+  | { type: 'post'; data: FeedPostType; created_at: string };
+
 interface Producer {
   id: string;
   group_name: string | null;
@@ -70,7 +84,6 @@ interface Producer {
   group_logo_url: string | null;
 }
 
-// Local interface extension for Profile to include group_logo_url without modifying global types yet
 interface ExtendedProfile {
   group_logo_url?: string | null;
   avatar_url?: string | null;
@@ -84,8 +97,13 @@ const UserFeed = () => {
   const extendedProfile = profile as unknown as ExtendedProfile;
   const { isPro } = useSubscription();
   const { startTour } = useTour();
+
+  // Modals
   const [producerRequestModal, setProducerRequestModal] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+  // Form State
   const [groupName, setGroupName] = useState("");
   const [portfolioLink, setPortfolioLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -99,20 +117,23 @@ const UserFeed = () => {
     }
   }, [user, loading, navigate]);
 
-  // Fetch approved shows with infinite scroll
+  // Fetch Feed Items (Shows + Posts)
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading: loadingShows
+    isLoading: loadingFeed,
+    refetch
   } = useInfiniteQuery({
-    queryKey: ['approved-shows'],
-    queryFn: async ({ pageParam = 0 }) => {
-      const from = pageParam * 20;
-      const to = from + 19;
+    queryKey: ['feed-mixed'],
+    queryFn: async ({ pageParam }) => {
+      // pageParam is the ISO timestamp cursor
+      const cursor = pageParam as string; // defaults to current time in initialPageParam
+      const limit = 10;
 
-      const { data, error } = await supabase
+      // Fetch Shows
+      const { data: showsData, error: showsError } = await supabase
         .from("shows")
         .select(`
           id,
@@ -134,23 +155,73 @@ const UserFeed = () => {
           )
         `)
         .eq("status", "approved")
-        .order("is_premium", { ascending: false })
-        .order("production_status", { ascending: false })
-        .order("date", { ascending: true })
-        .range(from, to);
+        .lt("created_at", cursor)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-      if (error) throw error;
-      return data as FeedShow[];
+      if (showsError) throw showsError;
+
+      // Fetch Posts
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts")
+        .select(`
+          id,
+          content,
+          media_urls,
+          created_at,
+          profile_id,
+          profiles:profile_id (
+            id,
+            username,
+            group_name,
+            avatar_url,
+            group_logo_url
+          )
+        `)
+        .lt("created_at", cursor)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (postsError) throw postsError;
+
+      // Combine and Sort
+      const mixedItems: FeedItem[] = [];
+
+      showsData?.forEach((show: any) => {
+        mixedItems.push({
+          type: 'show',
+          data: show as FeedShow,
+          created_at: show.created_at
+        });
+      });
+
+      postsData?.forEach((post: any) => {
+        mixedItems.push({
+          type: 'post',
+          data: post as FeedPostType,
+          created_at: post.created_at
+        });
+      });
+
+      // Sort desc by created_at
+      mixedItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Slice to limit
+      // This ensures we have a consistent page size and the cursor for the next page
+      // is the oldest item in THIS page, preventing skipping of items in the "denser" list.
+      return mixedItems.slice(0, limit);
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage && lastPage.length === 20 ? allPages.length : undefined;
+    initialPageParam: new Date().toISOString(),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || lastPage.length === 0) return undefined;
+      // Cursor is the created_at of the very last item in the page
+      return lastPage[lastPage.length - 1].created_at;
     },
   });
 
-  const shows = data?.pages.flat() || [];
+  const feedItems = useMemo(() => data?.pages.flat() || [], [data]);
 
-  // Fetch producer's recent shows
+  // Fetch producer's recent shows (Sidebar)
   const { data: recentShows } = useQuery({
     queryKey: ['producer-recent-shows', profile?.id],
     queryFn: async () => {
@@ -166,7 +237,7 @@ const UserFeed = () => {
     enabled: !!user && !!profile?.id && profile?.role === 'producer'
   });
 
-  // Fetch suggested producers
+  // Fetch suggested producers (Sidebar)
   const { data: suggestedProducers = [] } = useQuery({
     queryKey: ['suggested-producers'],
     queryFn: async () => {
@@ -187,12 +258,10 @@ const UserFeed = () => {
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("stagelink_has_seen_tour");
     if (!loading && !hasSeenTour && suggestedProducers.length > 0) {
-      // Save a target producer for the tour (fallback for non-producers)
       localStorage.setItem("stagelink_tour_target_producer", suggestedProducers[0].id);
-
       const timer = setTimeout(() => {
         startTour();
-      }, 2000); // Slight delay to ensure UI is ready
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [loading, suggestedProducers, startTour]);
@@ -228,6 +297,10 @@ const UserFeed = () => {
     setSubmitting(false);
   };
 
+  const handlePostSuccess = () => {
+      refetch();
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center"><BrandedLoader /></div>;
 
   return (
@@ -236,33 +309,64 @@ const UserFeed = () => {
         
         {/* Feed (Center) */}
         <main className="w-full max-w-2xl pb-24">
-          {/* Post Production Bar - Visible only to Producers */}
+
+          {/* Post Creation Area - Visible only to Producers */}
           {profile?.role === "producer" && (
-            <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm cursor-pointer hover:border-secondary/40 transition-all" onClick={() => setShowProductionModal(true)}>
-              <CardContent className="p-4 flex gap-4 items-center">
-                <Avatar>
-                  <AvatarImage src={extendedProfile?.group_logo_url || profile.avatar_url || undefined} />
-                  <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 bg-muted/50 rounded-full px-4 py-2.5 text-muted-foreground text-sm">
-                  Post a new production...
+            <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4 mb-3">
+                  <Avatar>
+                    <AvatarImage src={extendedProfile?.group_logo_url || profile.avatar_url || undefined} />
+                    <AvatarFallback>{profile.group_name?.[0] || "P"}</AvatarFallback>
+                  </Avatar>
+                  <div
+                    className="flex-1 bg-muted/50 rounded-full px-4 py-2.5 text-muted-foreground text-sm cursor-pointer hover:bg-muted/70 transition-colors"
+                    onClick={() => setShowUpdateModal(true)}
+                  >
+                    Share an update with your audience...
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-secondary/10">
+                    <Button
+                        variant="ghost"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-secondary/10"
+                        onClick={() => setShowProductionModal(true)}
+                    >
+                        <CalendarPlus className="w-5 h-5 text-secondary" />
+                        <span className="text-sm font-medium">New Production</span>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-secondary/10"
+                        onClick={() => setShowUpdateModal(true)}
+                    >
+                        <PenLine className="w-5 h-5 text-[#3b82f6]" />
+                        <span className="text-sm font-medium">Post Update</span>
+                    </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Show List */}
-          {loadingShows && shows.length === 0 ? (
+          {/* Feed Items */}
+          {loadingFeed && feedItems.length === 0 ? (
             <div className="flex justify-center py-12"><BrandedLoader size="md" /></div>
           ) : (
             <div className="grid grid-cols-1 gap-6 w-full">
-              {shows.map((show, index) => (
-                <div key={show.id} data-tour={index === 0 ? "feed-post" : undefined}>
-                  <FeedPost show={show} />
+              {feedItems.map((item, index) => (
+                <div key={`${item.type}-${item.data.id}`} data-tour={index === 0 ? "feed-post" : undefined}>
+                  {item.type === 'show' ? (
+                      <FeedPost show={item.data as FeedShow} />
+                  ) : (
+                      <FeedUpdate post={item.data as FeedPostType} onDelete={() => refetch()} />
+                  )}
+
                   {index === 0 && <div data-tour="feed-interaction" className="sr-only">Interaction Target</div>}
                   {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
                 </div>
               ))}
+
               <div ref={observerTarget} className="py-8 text-center text-muted-foreground text-sm">
                 {isFetchingNextPage ? <BrandedLoader size="sm" /> : hasNextPage ? "Scroll for more" : "End of the stage."}
               </div>
@@ -350,6 +454,12 @@ const UserFeed = () => {
 
       {/* Modals */}
       <ProductionModal open={showProductionModal} onOpenChange={setShowProductionModal} showToEdit={null} />
+
+      <CreateUpdateModal
+          open={showUpdateModal}
+          onOpenChange={setShowUpdateModal}
+          onSuccess={handlePostSuccess}
+      />
 
       <Dialog open={producerRequestModal} onOpenChange={setProducerRequestModal}>
         <DialogContent className="bg-card border-secondary/30 sm:max-w-md">
