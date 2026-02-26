@@ -307,6 +307,9 @@ CREATE TABLE IF NOT EXISTS public.group_audience_links (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Ensure group_audience_links columns exist (if table already existed)
+ALTER TABLE public.group_audience_links ADD COLUMN IF NOT EXISTS audience_user_id UUID REFERENCES public.profiles(id);
+
 -- system_settings
 CREATE TABLE IF NOT EXISTS public.system_settings (
     key TEXT PRIMARY KEY,
