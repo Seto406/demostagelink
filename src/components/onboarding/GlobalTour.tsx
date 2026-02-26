@@ -124,12 +124,17 @@ export const GlobalTour = () => {
       run={run}
       stepIndex={stepIndex}
       continuous
-      showProgress
+      showProgress={false}
       showSkipButton
       disableOverlayClose
       disableCloseOnEsc
       spotlightClicks
       callback={handleJoyrideCallback}
+      locale={{
+        next: "Next",
+        last: "Finish",
+        back: "Back",
+      }}
       styles={{
         options: {
           zIndex: 10000,
