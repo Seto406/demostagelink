@@ -18,6 +18,10 @@ interface Show {
   show_time: string;
   venue: string | null;
   ticket_link: string | null;
+  seo_metadata?: {
+    reminder_sent?: boolean;
+    [key: string]: any;
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -36,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Processing reminder for specific show: ${showId}`);
       const { data: show, error } = await supabase
         .from("shows")
-        .select("id, title, show_time, venue, ticket_link")
+        .select("id, title, show_time, venue, ticket_link, seo_metadata")
         .eq("id", showId)
         .single();
 
@@ -51,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const { data: shows, error } = await supabase
         .from("shows")
-        .select("id, title, show_time, venue, ticket_link")
+        .select("id, title, show_time, venue, ticket_link, seo_metadata")
         .eq("status", "approved")
         .gte("show_time", startRange)
         .lt("show_time", endRange);
@@ -60,7 +64,11 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("Error fetching scheduled shows:", error);
         throw error;
       }
-      if (shows) showsToRemind = shows as Show[];
+
+      // Filter out shows that already sent reminders
+      if (shows) {
+        showsToRemind = (shows as Show[]).filter(s => !s.seo_metadata?.reminder_sent);
+      }
     }
 
     console.log(`Found ${showsToRemind.length} shows to send reminders for.`);
@@ -158,7 +166,27 @@ const handler = async (req: Request): Promise<Response> => {
         };
       }));
 
-      return Promise.all(ticketPromises);
+      // After sending to all tickets, update show metadata
+      await Promise.all(ticketPromises);
+
+      // Update show metadata to prevent duplicate reminders
+      const currentMetadata = show.seo_metadata || {};
+      const { error: updateError } = await supabase
+        .from("shows")
+        .update({
+            seo_metadata: {
+                ...currentMetadata,
+                reminder_sent: true,
+                reminder_sent_at: new Date().toISOString()
+            }
+        })
+        .eq("id", show.id);
+
+      if (updateError) {
+          console.error(`Failed to update reminder status for show ${show.id}:`, updateError);
+      }
+
+      return ticketPromises;
     });
 
     const resultsNested = await Promise.all(showPromises);
