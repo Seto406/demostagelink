@@ -330,7 +330,10 @@ DECLARE
     t text;
 BEGIN
     FOR t IN
-        SELECT table_name FROM information_schema.columns WHERE column_name = 'updated_at' AND table_schema = 'public'
+        SELECT table_name FROM information_schema.columns
+        WHERE column_name = 'updated_at'
+        AND table_schema = 'public'
+        AND table_name IN (SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE')
     LOOP
         EXECUTE format('DROP TRIGGER IF EXISTS update_%I_updated_at ON public.%I', t, t);
         EXECUTE format('CREATE TRIGGER update_%I_updated_at BEFORE UPDATE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()', t, t);
