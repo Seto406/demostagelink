@@ -601,7 +601,7 @@ const Dashboard = () => {
 
     if (error) {
       console.error("Error updating role:", error);
-      toast.error("Failed to update role.");
+      toast.error(error.message || "Failed to update role.");
     } else {
       toast.success("Role updated.");
       setActiveMembers(prev => prev.map(m => m.id === selectedMember.id ? { ...m, role_in_group: newRole } : m));
