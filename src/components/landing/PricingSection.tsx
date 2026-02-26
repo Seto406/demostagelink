@@ -45,10 +45,10 @@ const plans = [
       "Rich media gallery",
       "Audience engagement insights"
     ],
-    cta: "Join Waitlist",
+    cta: "Subscribe Now",
     popular: true,
     comingSoon: false,
-    link: "mailto:connect.stagelink@gmail.com?subject=Join Pro Producer Waitlist",
+    link: "mailto:connect.stagelink@gmail.com?subject=Subscribe to Pro Producer",
     isExternal: true
   }
 ];
