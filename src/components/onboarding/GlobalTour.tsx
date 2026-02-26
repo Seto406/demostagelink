@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import ReactJoyride, { CallBackProps, EVENTS, STATUS, Step } from "react-joyride";
+import ReactJoyride, { ACTIONS, CallBackProps, EVENTS, STATUS, Step } from "react-joyride";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTour } from "@/contexts/TourContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,11 +104,15 @@ export const GlobalTour = () => {
         }
       }
     } else if (type === EVENTS.TARGET_NOT_FOUND) {
-        // If target not found, we could skip or just wait?
-        // Usually means we are on the wrong page or element missing.
-        // For now, let's log it.
-        console.warn(`Target not found for step ${index}`);
-        // Optional: auto-skip if strictly needed, but might disorient user.
+        // If target not found, we skip the step
+        // This is crucial for handling empty states (e.g. no shows, no members)
+        // or conditional elements that might not be present.
+        const stepIncrement = action === ACTIONS.PREV ? -1 : 1;
+
+        // Ensure we don't go out of bounds (though Joyride handles this via FINISHED status usually)
+        // We set the step index to the NEXT one, skipping the missing one.
+        setStepIndex(index + stepIncrement);
+        console.warn(`Target not found for step ${index}, skipping to ${index + stepIncrement}`);
     }
   };
 
