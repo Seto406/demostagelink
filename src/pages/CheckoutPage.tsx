@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { calculateReservationFee } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 import { ShowDetails, dummyShows, CastMember } from "@/data/dummyShows";
 import Footer from "@/components/layout/Footer";
 
@@ -210,6 +211,17 @@ const CheckoutPage = () => {
         if (funcError) throw funcError;
 
         toast.success("Payment submitted for review!");
+
+        if (user) {
+            await createNotification({
+                userId: user.id,
+                type: "payment_submitted",
+                title: "Payment Submitted",
+                message: `We've received your payment proof for ${show.title}. Verification usually takes 24h.`,
+                link: "/profile?tab=passes"
+            });
+        }
+
         navigate("/payment/success?manual=true");
 
     } catch (error) {

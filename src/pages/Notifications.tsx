@@ -24,8 +24,14 @@ const Notifications = () => {
     if (!profile) return;
 
     try {
-      if (isInitial) setLoading(true);
-      else setLoadingMore(true);
+      if (isInitial) {
+        setLoading(true);
+        // We don't necessarily need to clear notifications here if we want to preserve them while loading,
+        // but since we are handling "isInitial", clearing ensures we don't show stale data if the user switched profiles or something drastic happened (unlikely here).
+        // setNotifications([]);
+      } else {
+        setLoadingMore(true);
+      }
 
       const from = pageIndex * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
@@ -43,6 +49,8 @@ const Notifications = () => {
 
       if (newNotifications.length < ITEMS_PER_PAGE) {
         setHasMore(false);
+      } else {
+        setHasMore(true);
       }
 
       setNotifications(prev => isInitial ? newNotifications : [...prev, ...newNotifications]);
@@ -56,6 +64,9 @@ const Notifications = () => {
 
   useEffect(() => {
     if (profile) {
+      // Reset state when profile changes or on mount
+      setPage(0);
+      setHasMore(true);
       fetchNotifications(0, true);
 
       // Subscribe to real-time notifications
@@ -64,13 +75,19 @@ const Notifications = () => {
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*', // Listen for INSERT and UPDATE
             schema: 'public',
             table: 'notifications',
             filter: `user_id=eq.${profile.id}`
           },
           (payload) => {
-            setNotifications(prev => [payload.new as Notification, ...prev]);
+            if (payload.eventType === 'INSERT') {
+                setNotifications(prev => [payload.new as Notification, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+                setNotifications(prev => prev.map(n =>
+                    n.id === payload.new.id ? { ...n, ...payload.new as Notification } : n
+                ));
+            }
             refreshUnreadCount();
           }
         )
@@ -117,7 +134,7 @@ const Notifications = () => {
     refreshUnreadCount();
   };
 
-  if (authLoading || (loading && profile)) {
+  if (authLoading || (loading && notifications.length === 0)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <BrandedLoader size="lg" text="Loading notifications..." />
@@ -168,6 +185,7 @@ const Notifications = () => {
                   <NotificationItem
                     notification={notification}
                     onRead={markAsRead}
+                    onMarkAsRead={markAsRead}
                   />
                 </motion.div>
               ))}

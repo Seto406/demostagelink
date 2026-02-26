@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { createNotification } from "@/lib/notifications";
 import { Loader2, Check, X, ExternalLink, Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
@@ -80,6 +81,23 @@ export function PaymentApprovals() {
 
         toast.success(`Payment ${action}d successfully.`);
         setPayments(prev => prev.filter(p => p.id !== paymentId));
+
+        // Notify user if possible
+        const payment = payments.find(p => p.id === paymentId);
+        if (payment && payment.user_id) {
+             const message = action === 'approve'
+                ? "Your manual payment has been verified and approved."
+                : "Your manual payment could not be verified. Please check your email.";
+
+             await createNotification({
+                 userId: payment.user_id,
+                 type: action === 'approve' ? 'payment_approved' : 'payment_rejected',
+                 title: action === 'approve' ? "Payment Verified" : "Payment Issue",
+                 message: message,
+                 link: "/profile?tab=passes"
+             });
+        }
+
     } catch (error) {
         console.error(`Error ${action}ing payment:`, error);
         toast.error(`Failed to ${action} payment.`);

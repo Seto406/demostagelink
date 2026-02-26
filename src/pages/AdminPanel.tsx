@@ -50,6 +50,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { createNotification } from "@/lib/notifications";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -433,6 +434,16 @@ const AdminPanel = () => {
       });
 
       sendNotification(showId, showTitle, "approved", producerId);
+
+      // In-app notification
+      createNotification({
+        userId: producerId,
+        type: "show_approved",
+        title: "Show Approved",
+        message: `Your show "${showTitle}" has been approved and is now live!`,
+        link: `/show/${showId}`
+      });
+
       fetchStats();
     }
   };
@@ -464,6 +475,16 @@ const AdminPanel = () => {
       });
 
       sendNotification(showId, showTitle, "rejected", producerId);
+
+      // In-app notification
+      createNotification({
+        userId: producerId,
+        type: "show_rejected",
+        title: "Show Rejected",
+        message: `Your show "${showTitle}" was rejected. Please check your email for details.`,
+        link: `/dashboard`
+      });
+
       fetchStats();
     }
   };
