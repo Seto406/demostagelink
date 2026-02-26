@@ -335,10 +335,6 @@ export function FeedPost({ show }: FeedPostProps) {
         {/* Footer */}
         <CardFooter className="flex flex-col p-0">
             <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
-                <div className="flex items-center gap-3">
-                    {/* Left side empty for balance or future stats */}
-                </div>
-
                 <div className="flex items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -384,7 +380,9 @@ export function FeedPost({ show }: FeedPostProps) {
                         />
                         <span className="text-xs text-muted-foreground font-medium">{likeCount}</span>
                     </div>
+                </div>
 
+                <div className="flex items-center gap-2">
                     <Link to={`/show/${show.id}`}>
                         {show.price === 0 ? (
                             <Button size="sm" variant="default" className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-medium">
