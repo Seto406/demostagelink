@@ -219,7 +219,7 @@ serve(async (req) => {
     const paymentsList = session.attributes.payments || [];
     const successfulPayment = paymentsList.find((p: PayMongoPayment) => p.attributes.status === "paid");
 
-    let isPaid = !!successfulPayment;
+    const isPaid = !!successfulPayment;
 
     // Update DB
     if (isPaid) {
