@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Camera, Upload, X, Save } from "lucide-react";
+import { Camera, Upload, X, Save, Plus, Trash2 } from "lucide-react";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -38,7 +38,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [username, setUsername] = useState("");
   const [producerRole, setProducerRole] = useState("");
   const [description, setDescription] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteUrls, setWebsiteUrls] = useState<string[]>([""]);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
@@ -50,7 +50,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     username: string;
     producerRole: string;
     description: string;
-    websiteUrl: string;
+    websiteUrls: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -58,19 +58,22 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       const initialUsername = profile.username || "";
       const initialProducerRole = profile.producer_role || "";
       const initialDescription = profile.description || "";
-      const initialWebsiteUrl = profile.website_url || "";
+      // Ensure we have at least one input if array is empty
+      const initialWebsiteUrls = profile.website_urls && profile.website_urls.length > 0
+        ? profile.website_urls
+        : [""];
 
       setUsername(initialUsername);
       setProducerRole(initialProducerRole);
       setDescription(initialDescription);
-      setWebsiteUrl(initialWebsiteUrl);
+      setWebsiteUrls(initialWebsiteUrls);
       setAvatarUrl(profile.avatar_url || null);
 
       setInitialValues({
         username: initialUsername,
         producerRole: initialProducerRole,
         description: initialDescription,
-        websiteUrl: initialWebsiteUrl
+        websiteUrls: initialWebsiteUrls
       });
       setShowDiscardAlert(false);
     }
@@ -79,15 +82,17 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
   const isDirty = useMemo(() => {
     if (!initialValues) return false;
-    // Note: avatarUrl is intentionally excluded because avatar uploads are
-    // immediate and persistent (auto-saved), so there are no "unsaved" changes for it.
+
+    // Check if arrays are different
+    const urlsChanged = JSON.stringify(websiteUrls) !== JSON.stringify(initialValues.websiteUrls);
+
     return (
       username !== initialValues.username ||
       producerRole !== initialValues.producerRole ||
       description !== initialValues.description ||
-      websiteUrl !== initialValues.websiteUrl
+      urlsChanged
     );
-  }, [username, producerRole, description, websiteUrl, initialValues]);
+  }, [username, producerRole, description, websiteUrls, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -129,21 +134,24 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     }
 
     // Website URL validation
-    if (websiteUrl) {
+    // Filter out empty strings first
+    const cleanUrls = websiteUrls.filter(url => url.trim() !== "");
+
+    for (const url of cleanUrls) {
       const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-      if (!urlPattern.test(websiteUrl)) {
+      if (!urlPattern.test(url)) {
         toast({
           title: "Invalid URL",
-          description: "Please enter a valid URL for your portfolio.",
+          description: `"${url}" is not a valid URL.`,
           variant: "destructive",
         });
         return;
       }
 
-      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
           toast({
             title: "Invalid URL",
-            description: "URL must start with http:// or https://",
+            description: `"${url}" must start with http:// or https://`,
              variant: "destructive",
           });
           return;
@@ -156,7 +164,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         username: username || null,
         producer_role: producerRole || null,
         description: description || null,
-        website_url: websiteUrl || null,
+        website_urls: cleanUrls.length > 0 ? cleanUrls : null,
       };
 
       const { error } = await supabase
@@ -404,18 +412,53 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
              </p>
           </div>
 
-          {/* Portfolio Link */}
+          {/* Portfolio Links */}
           <div>
-             <Label htmlFor="websiteUrl">Portfolio Link</Label>
-             <Input
-               id="websiteUrl"
-               value={websiteUrl}
-               onChange={(e) => setWebsiteUrl(e.target.value)}
-               placeholder="https://your-portfolio.com"
-               className="mt-1 bg-background border-secondary/30"
-             />
-             <p className="text-xs text-muted-foreground mt-1">
-               Link to your personal website or portfolio.
+             <Label>Portfolio Links (Max 3)</Label>
+             <div className="space-y-3 mt-1">
+               {websiteUrls.map((url, index) => (
+                 <div key={index} className="flex gap-2">
+                   <Input
+                     value={url}
+                     onChange={(e) => {
+                       const newUrls = [...websiteUrls];
+                       newUrls[index] = e.target.value;
+                       setWebsiteUrls(newUrls);
+                     }}
+                     placeholder="https://your-portfolio.com"
+                     className="bg-background border-secondary/30"
+                   />
+                   {websiteUrls.length > 1 && (
+                     <Button
+                       variant="outline"
+                       size="icon"
+                       onClick={() => {
+                         const newUrls = websiteUrls.filter((_, i) => i !== index);
+                         setWebsiteUrls(newUrls);
+                       }}
+                       className="shrink-0 text-muted-foreground hover:text-destructive"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </Button>
+                   )}
+                 </div>
+               ))}
+
+               {websiteUrls.length < 3 && (
+                 <Button
+                   type="button"
+                   variant="outline"
+                   size="sm"
+                   onClick={() => setWebsiteUrls([...websiteUrls, ""])}
+                   className="mt-2 text-xs"
+                 >
+                   <Plus className="w-3 h-3 mr-1" />
+                   Add Link
+                 </Button>
+               )}
+             </div>
+             <p className="text-xs text-muted-foreground mt-2">
+               Links to your personal website or portfolio.
              </p>
           </div>
 

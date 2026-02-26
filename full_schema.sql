@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     address TEXT,
     facebook_url TEXT,
     instagram_url TEXT,
-    website_url TEXT,
+    website_urls TEXT[],
     avatar_url TEXT,
     rank TEXT,
     xp INTEGER,

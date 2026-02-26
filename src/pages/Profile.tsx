@@ -30,7 +30,7 @@ interface ProfileData {
   niche?: string | null;
   producer_role?: string | null;
   description?: string | null;
-  website_url?: string | null;
+  website_urls?: string[] | null;
 }
 
 // Interfaces for fetched data
@@ -612,17 +612,18 @@ const Profile = () => {
                       {user.email}
                     </div>
                  )}
-                 {profile.website_url && (
+                 {profile.website_urls && profile.website_urls.map((url, index) => (
                     <a
-                      href={profile.website_url}
+                      key={index}
+                      href={url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 justify-center md:justify-start hover:text-secondary transition-colors"
                     >
                       <Globe className="w-4 h-4" />
-                      {profile.website_url.replace(/^https?:\/\//, '')}
+                      {url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                     </a>
-                 )}
+                 ))}
                  <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />

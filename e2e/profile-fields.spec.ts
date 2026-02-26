@@ -1,13 +1,17 @@
 import { test, expect } from '@playwright/test';
 
-test('Verify Profile Description and Website URL', async ({ page }) => {
+test('Verify Profile Description and Multiple Website URLs', async ({ page }) => {
   const mockUserId = '00000000-0000-0000-0000-000000000001';
   const mockProfileId = '00000000-0000-0000-0000-000000000002';
-  const mockDescription = 'This is a test bio description.';
-  const mockWebsiteUrl = 'https://my-portfolio.com';
+  const mockDescription = 'This is a test bio description with multiple links.';
+  const mockWebsiteUrls = [
+      'https://portfolio-1.com',
+      'https://portfolio-2.com',
+      'https://portfolio-3.com'
+  ];
 
   // 1. Inject mock user into AuthContext (so we are "logged in")
-  await page.addInitScript(({ mockUserId, mockProfileId, mockDescription, mockWebsiteUrl }) => {
+  await page.addInitScript(({ mockUserId, mockProfileId, mockDescription, mockWebsiteUrls }) => {
     (window as any).PlaywrightTest = true;
     (window as any).PlaywrightUser = {
       id: mockUserId,
@@ -24,17 +28,14 @@ test('Verify Profile Description and Website URL', async ({ page }) => {
       username: 'TestUser',
       role: 'audience',
       description: mockDescription,
-      website_url: mockWebsiteUrl,
+      website_urls: mockWebsiteUrls,
       created_at: new Date().toISOString(),
     };
-  }, { mockUserId, mockProfileId, mockDescription, mockWebsiteUrl });
+  }, { mockUserId, mockProfileId, mockDescription, mockWebsiteUrls });
 
   // 2. Intercept Supabase request for the profile data
-  // Profile.tsx fetches with .eq("id", profileId).maybeSingle()
-  // This typically makes a request to /rest/v1/profiles?id=eq.UUID&select=*
   await page.route('**/rest/v1/profiles?*', async route => {
     const url = route.request().url();
-    console.log('Intercepted profile request:', url);
 
     if (url.includes(`id=eq.${mockProfileId}`) || url.includes(`id=eq.${mockUserId}`)) {
       await route.fulfill({
@@ -46,7 +47,7 @@ test('Verify Profile Description and Website URL', async ({ page }) => {
             username: 'TestUser',
             role: 'audience',
             description: mockDescription,
-            website_url: mockWebsiteUrl,
+            website_urls: mockWebsiteUrls,
             created_at: new Date().toISOString(),
             avatar_url: null,
             group_name: null,
@@ -70,8 +71,6 @@ test('Verify Profile Description and Website URL', async ({ page }) => {
   await page.route('**/rest/v1/reviews?*', async route => route.fulfill({ status: 200, body: '[]' }));
 
   // 3. Go to profile
-  // Since we injected the user, /profile (without ID) should load the "current user's" profile
-  // which uses the mock ID we provided.
   console.log('Navigating to /profile...');
   await page.goto('/profile');
 
@@ -79,16 +78,15 @@ test('Verify Profile Description and Website URL', async ({ page }) => {
   console.log('Checking for description visibility...');
   await expect(page.getByText(mockDescription)).toBeVisible({ timeout: 10000 });
 
-  console.log('Checking for website link visibility...');
-  // The text displayed should be without protocol: "my-portfolio.com"
-  const expectedLinkText = 'my-portfolio.com';
-  // Use a more specific locator if possible, or verify text content
-  await expect(page.getByRole('link', { name: expectedLinkText })).toBeVisible();
-
-  const link = page.getByRole('link', { name: expectedLinkText });
-  await expect(link).toHaveAttribute('href', mockWebsiteUrl);
+  console.log('Checking for multiple website links...');
+  for (const url of mockWebsiteUrls) {
+      const displayUrl = url.replace('https://', '');
+      const link = page.getByRole('link', { name: displayUrl });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', url);
+  }
 
   // 5. Screenshot
   console.log('Taking screenshot...');
-  await page.screenshot({ path: 'verification/verification.png', fullPage: true });
+  await page.screenshot({ path: 'verification/verification_multi_links.png', fullPage: true });
 });
