@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +27,7 @@ import { toast } from "@/hooks/use-toast";
 import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
-import { Json } from "@/integrations/supabase/types";
+import { Json, Tables } from "@/integrations/supabase/types";
 import { calculateReservationFee } from "@/lib/pricing";
 import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -93,7 +93,7 @@ const convertRangeToSlots = (start: string, end: string, selectedDays: string[])
     return slots.length > 0 ? slots : [{ date: start, time: "" }];
 };
 
-export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: any }) {
+export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: Tables<"shows"> }) {
   const { user, profile } = useAuth();
   const { isPro } = useSubscription();
   const queryClient = useQueryClient();
@@ -174,7 +174,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
       // Links Logic
       if (showToEdit.external_links && Array.isArray(showToEdit.external_links) && showToEdit.external_links.length > 0) {
-        setExternalLinks(showToEdit.external_links.map((l: any) => String(l)));
+        setExternalLinks(showToEdit.external_links.map((l: unknown) => String(l)));
       } else if (showToEdit.ticket_link) {
         setExternalLinks([showToEdit.ticket_link]);
       } else {
@@ -213,9 +213,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     } else {
       resetForm();
     }
-  }, [showToEdit, open]);
+  }, [showToEdit, open, resetForm]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setTitle("");
     setDescription("");
     setScheduleSlots([{ date: "", time: "" }]);
@@ -238,7 +238,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setPosterFile(null);
     if (posterPreview) URL.revokeObjectURL(posterPreview);
     setPosterPreview(null);
-  };
+  }, [posterPreview]);
 
   const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -379,7 +379,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     try {
       // Get the producer's theater group ID
       const { data: theaterGroup, error: groupError } = await supabase
-        .from("theater_groups" as any)
+        .from("theater_groups")
         .select("id")
         .eq("owner_id", profile.id)
         .maybeSingle();

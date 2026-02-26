@@ -11,7 +11,7 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  let body: any = {};
+  let body: Record<string, unknown> = {};
   try {
     body = await req.json();
   } catch {

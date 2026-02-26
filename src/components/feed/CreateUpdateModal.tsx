@@ -113,11 +113,12 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
       if (onSuccess) onSuccess();
       onOpenChange(false);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Post error:", error);
+      const message = error instanceof Error ? error.message : "Failed to post update.";
       toast({
           title: "Error",
-          description: error.message || "Failed to post update.",
+          description: message,
           variant: "destructive"
       });
     } finally {

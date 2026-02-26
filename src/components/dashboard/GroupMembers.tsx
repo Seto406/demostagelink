@@ -230,7 +230,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
             title: "Success",
             description: "Member added successfully!",
           });
-        } catch (insertError: any) {
+        } catch (insertError: unknown) {
           console.error("Error adding member:", insertError);
           throw insertError;
         }
@@ -239,11 +239,12 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
       resetForm();
       setShowModal(false);
       fetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save member error:", error);
+      const message = error instanceof Error ? error.message : "Failed to save member.";
       toast({
         title: "Error",
-        description: error.message || (error instanceof Error ? error.message : "Failed to save member."),
+        description: message,
         variant: "destructive",
       });
     } finally {

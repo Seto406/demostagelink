@@ -30,7 +30,7 @@ export const GlobalTour = () => {
     const { status, type, index, action } = data;
 
     // Handle Finish / Skip
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       completeTour();
       return;
     }

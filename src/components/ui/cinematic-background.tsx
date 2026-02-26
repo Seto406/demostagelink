@@ -77,7 +77,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
         top: `${Math.random() * 100}%`,
         boxShadow: "0 0 4px 1px rgba(250, 204, 21, 0.4)",
         willChange: "transform, opacity",
-      },
+      } as React.CSSProperties,
       animate: {
         y: [0, Math.random() * 100 - 50, 0],
         x: [0, Math.random() * 100 - 50, 0],
@@ -495,7 +495,7 @@ export const CinematicBackground = ({ children }: CinematicBackgroundProps) => {
 };
 
 const FloatingParticles = () => {
-  const [particles, setParticles] = useState<any[]>([]);
+  const [particles, setParticles] = useState<Array<{ id: number, style: React.CSSProperties, animate: Record<string, unknown>, transition: Record<string, unknown> }>>([]);
 
   useEffect(() => {
     setParticles([...Array(15)].map((_, i) => ({
@@ -507,7 +507,7 @@ const FloatingParticles = () => {
           ? "rgba(212, 175, 55, 0.4)"
           : "rgba(139, 0, 0, 0.3)",
         willChange: "transform, opacity",
-      },
+      } as React.CSSProperties,
       animate: {
         y: [0, -100, 0],
         x: [0, Math.random() * 50 - 25, 0],
@@ -541,7 +541,7 @@ const FloatingParticles = () => {
 };
 
 const StageDustParticles = () => {
-  const [particles, setParticles] = useState<any[]>([]);
+  const [particles, setParticles] = useState<Array<{ id: number, style: React.CSSProperties, animate: Record<string, unknown>, transition: Record<string, unknown> }>>([]);
 
   useEffect(() => {
     setParticles([...Array(5)].map((_, i) => ({
@@ -551,7 +551,7 @@ const StageDustParticles = () => {
         top: `${Math.random() * 100}%`,
         filter: "blur(1px)",
         willChange: "transform, opacity",
-      },
+      } as React.CSSProperties,
       animate: {
         y: [0, -200, 0],
         x: [0, Math.random() * 100 - 50, 0],

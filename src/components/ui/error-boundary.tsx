@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
     if (import.meta.env.VITE_SENTRY_DSN) {
-      Sentry.captureException(error, { extra: errorInfo as any });
+      Sentry.captureException(error, { extra: errorInfo as unknown as Record<string, unknown> });
     }
   }
 

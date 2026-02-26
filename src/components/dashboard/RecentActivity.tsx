@@ -58,6 +58,7 @@ export const RecentActivity = ({ showIds }: RecentActivityProps) => {
     };
 
     fetchActivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(showIds)]); // Depend on deep comparison of IDs
 
   if (loading) {

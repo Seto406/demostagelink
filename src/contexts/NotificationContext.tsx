@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { Tables } from "@/integrations/supabase/types";
 
 interface NotificationContextType {
   unreadCount: number;
@@ -52,7 +53,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             setNewNotificationSignal((prev) => prev + 1);
 
             // Show toast for new notification
-            const newNotification = payload.new as any;
+            const newNotification = payload.new as Tables<'notifications'>;
             if (newNotification.title && newNotification.message) {
               toast({
                 title: newNotification.title,

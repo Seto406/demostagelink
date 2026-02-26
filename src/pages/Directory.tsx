@@ -356,7 +356,7 @@ const Directory = () => {
     try {
       // Check for total existing memberships (active or pending)
       const { count: membershipCount, error: countError } = await supabase
-        .from('group_members' as any)
+        .from('group_members')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .in('status', ['active', 'pending']);
@@ -371,7 +371,7 @@ const Directory = () => {
 
       // Check for existing membership/application
       const { data: existingMember, error: fetchError } = await supabase
-        .from('group_members' as any)
+        .from('group_members')
         .select('status')
         .eq('user_id', user.id)
         .eq('group_id', group.id)
@@ -380,11 +380,11 @@ const Directory = () => {
       if (fetchError) throw fetchError;
 
       if (existingMember) {
-        if ((existingMember as any).status === 'pending') {
+        if (existingMember.status === 'pending') {
           toast.info("You already have a pending application.");
           setJoiningGroupId(null);
           return;
-        } else if ((existingMember as any).status === 'active') {
+        } else if (existingMember.status === 'active') {
           toast.info("You are already a member of this group.");
           setJoiningGroupId(null);
           return;
@@ -392,7 +392,7 @@ const Directory = () => {
       }
 
       const { error } = await supabase
-        .from('group_members' as any)
+        .from('group_members')
         .insert([{
           user_id: user.id,
           group_id: group.id,
@@ -413,9 +413,10 @@ const Directory = () => {
       });
 
       toast.success(`Application sent to ${group.group_name}!`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending membership application:", error);
-      toast.error(error.message || "Failed to send application");
+      const message = error instanceof Error ? error.message : "Failed to send application";
+      toast.error(message);
     } finally {
       setJoiningGroupId(null);
     }

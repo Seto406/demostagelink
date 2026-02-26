@@ -15,7 +15,9 @@ interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE';
   table: string;
   schema: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   record: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   old_record: any;
 }
 
@@ -75,8 +77,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Found ${audienceProfiles.length} audience members to notify about show: ${record.title}`);
 
     const validEmails = audienceProfiles
-      .map((p: any) => p.email)
-      .filter((email: any) => email && typeof email === 'string' && email.length > 0);
+      .map((p) => p.email)
+      .filter((email) => email && typeof email === 'string' && email.length > 0);
 
     if (validEmails.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No valid emails found", count: 0 }), {

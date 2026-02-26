@@ -58,11 +58,11 @@ export const SearchBar = ({ variant }: SearchBarProps) => {
 
         if (error) throw error;
 
-        const mappedResults: SearchResult[] = (data || []).map((profile: any) => ({
+        const mappedResults: SearchResult[] = (data || []).map((profile) => ({
           id: profile.id,
           display_name: profile.group_name || profile.username || "User",
           username: profile.username,
-          role: profile.role,
+          role: profile.role as SearchResult['role'],
           avatar_url: profile.avatar_url,
           niche: profile.niche,
           group_name: profile.group_name

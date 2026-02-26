@@ -100,9 +100,8 @@ const ProducerProfile = () => {
 
       trackEvent('profile_view', id);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: groupData, error: groupError } = await supabase
-        .from("theater_groups" as any)
+        .from("theater_groups")
         .select("*")
         .eq("owner_id", id)
         .maybeSingle();
@@ -114,9 +113,8 @@ const ProducerProfile = () => {
       }
 
       if (user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: applicationData } = await supabase
-          .from("group_members" as any)
+          .from("group_members")
           .select("status")
           .eq("user_id", user.id)
           .eq("group_id", id)
@@ -124,8 +122,7 @@ const ProducerProfile = () => {
 
         if (applicationData) {
           setHasApplied(true);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setApplicationStatus((applicationData as any).status);
+          setApplicationStatus(applicationData.status);
         }
       }
 
@@ -149,7 +146,7 @@ const ProducerProfile = () => {
         .order("date", { ascending: false });
 
       if (groupData) {
-         query = query.or(`producer_id.eq.${id},theater_group_id.eq.${(groupData as any).id}`);
+         query = query.or(`producer_id.eq.${id},theater_group_id.eq.${groupData.id}`);
       } else {
          query = query.eq("producer_id", id);
       }
@@ -308,7 +305,7 @@ const ProducerProfile = () => {
     setJoinLoading(true);
     try {
       const { data: existingMember, error: fetchError } = await supabase
-        .from('group_members' as any)
+        .from('group_members')
         .select('id, status')
         .eq('user_id', user.id)
         .eq('group_id', producer.id)
@@ -317,12 +314,12 @@ const ProducerProfile = () => {
       if (fetchError) throw fetchError;
 
       if (existingMember) {
-        if ((existingMember as any).status === 'pending') {
+        if (existingMember.status === 'pending') {
           toast.info("You already have a pending application.");
           setHasApplied(true);
           setApplicationStatus('pending');
           return;
-        } else if ((existingMember as any).status === 'active') {
+        } else if (existingMember.status === 'active') {
           toast.info("You are already a member of this group.");
           setHasApplied(true);
           setApplicationStatus('active');
@@ -331,7 +328,7 @@ const ProducerProfile = () => {
       }
 
       const { error } = await supabase
-        .from('group_members' as any)
+        .from('group_members')
         .insert([{
           user_id: user.id,
           group_id: producer.id,
@@ -372,9 +369,10 @@ const ProducerProfile = () => {
       toast.success("Membership application sent successfully!");
       setHasApplied(true);
       setApplicationStatus('pending');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending membership application:", error);
-      toast.error(error.message || "Failed to send application");
+      const message = error instanceof Error ? error.message : "Failed to send application";
+      toast.error(message);
     } finally {
       setJoinLoading(false);
     }
@@ -396,9 +394,10 @@ const ProducerProfile = () => {
       } else if (data?.success) {
         toast.success(data.message || "Collaboration request sent successfully!");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending collaboration request:", error);
-      toast.error(error.message || "Failed to send request");
+      const message = error instanceof Error ? error.message : "Failed to send request";
+      toast.error(message || "Failed to send request");
     } finally {
       setCollabLoading(false);
     }

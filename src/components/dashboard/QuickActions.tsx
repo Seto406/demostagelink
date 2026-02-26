@@ -35,7 +35,7 @@ interface QuickActionsProps {
 }
 
 const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivElement, {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   subtext: string;
   onClick?: () => void;
@@ -44,7 +44,7 @@ const ActionCard = forwardRef<HTMLButtonElement | HTMLAnchorElement | HTMLDivEle
   variant?: "default" | "primary";
   className?: string;
   badge?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }>(({
   icon: Icon,
   label,
@@ -171,13 +171,15 @@ export const QuickActions = ({
       const headers = ["Guest Name", "Ticket ID", "Status", "Payment ID", "Purchase Date"];
       const csvContent = [
         headers.join(","),
-        ...guests.map(guest => [
-           `"${(guest.profiles as any)?.username || (guest.profiles as any)?.group_name || 'Guest'}"`,
+        ...guests.map(guest => {
+           const profile = guest.profiles as unknown as { username?: string; group_name?: string } | null;
+           return [
+           `"${profile?.username || profile?.group_name || 'Guest'}"`,
            guest.id,
            guest.status,
            guest.payment_id || "N/A",
            new Date(guest.created_at).toLocaleDateString()
-        ].join(","))
+        ].join(",")})
       ].join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

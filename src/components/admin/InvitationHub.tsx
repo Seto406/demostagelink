@@ -138,11 +138,12 @@ export function InvitationHub() {
 
       setFormData({ email: "", firstName: "" });
       fetchInvitations(); // Refresh list immediately
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending invite:", error);
+      const message = error instanceof Error ? error.message : "Could not send invitation.";
       toast({
         title: "Invitation Failed",
-        description: error.message || "Could not send invitation.",
+        description: message,
         variant: "destructive",
       });
     } finally {

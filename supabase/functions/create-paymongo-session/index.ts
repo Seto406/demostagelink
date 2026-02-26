@@ -145,7 +145,7 @@ serve(async (req) => {
     const frontendUrl = envFrontendUrl ?? "https://www.stagelink.show";
 
     // Prepare Metadata
-    const metadata: any = {
+    const metadata: Record<string, string> = {
         show_id,
         type: "ticket",
         payment_id: paymentRef // Store our internal ID in metadata too, just in case
@@ -224,9 +224,10 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
      console.error("Error creating session:", error);
-     return new Response(JSON.stringify({ error: error.message }), {
+     const message = error instanceof Error ? error.message : "Unknown error";
+     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
