@@ -447,23 +447,50 @@ const Dashboard = () => {
 
     setIsUpdating(requestId);
 
-    // 1. Insert into group_members
+    // 1. Insert or Update group_members
     const sender = applicantsByUserId[request.sender_id];
-    const { error: insertError } = await supabase
-        .from("group_members")
-        .insert({
-            user_id: request.sender_id,
-            group_id: selectedGroupId,
-            role_in_group: 'producer',
-            status: 'active',
-            member_name: sender?.username || "Collaborator"
-        });
 
-    if (insertError) {
-        console.error("Error inserting group member:", insertError);
-        toast.error("Failed to add producer to group members.");
-        setIsUpdating(null);
-        return;
+    // Check if already a member
+    const { data: existingMember } = await supabase
+        .from("group_members")
+        .select("id")
+        .eq("user_id", request.sender_id)
+        .eq("group_id", selectedGroupId)
+        .maybeSingle();
+
+    if (existingMember) {
+        const { error: updateError } = await supabase
+            .from("group_members")
+            .update({
+                role_in_group: 'producer',
+                status: 'active',
+                member_name: sender?.username || "Collaborator"
+            })
+            .eq("id", existingMember.id);
+
+        if (updateError) {
+            console.error("Error updating group member:", updateError);
+            toast.error("Failed to update group member status.");
+            setIsUpdating(null);
+            return;
+        }
+    } else {
+        const { error: insertError } = await supabase
+            .from("group_members")
+            .insert({
+                user_id: request.sender_id,
+                group_id: selectedGroupId,
+                role_in_group: 'producer',
+                status: 'active',
+                member_name: sender?.username || "Collaborator"
+            });
+
+        if (insertError) {
+            console.error("Error inserting group member:", insertError);
+            toast.error("Failed to add producer to group members.");
+            setIsUpdating(null);
+            return;
+        }
     }
 
     // 2. Update request status
