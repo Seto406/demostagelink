@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Keyboard, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { createNotification } from "@/lib/notifications";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -66,6 +67,22 @@ const Scanner = () => {
       setLastResult(data);
       if (data.success) {
           toast.success("Check-in Successful!");
+
+          // Notify the ticket holder
+          if (data.ticket && data.ticket.user_id) {
+             try {
+                 await createNotification({
+                     userId: data.ticket.user_id,
+                     type: 'ticket_verified',
+                     title: "Welcome to the Show!",
+                     message: `Your ticket for "${data.ticket.show_title || 'the show'}" has been scanned. Enjoy!`,
+                     link: `/profile?tab=passes`
+                 });
+             } catch (e) {
+                 console.error("Failed to notify user:", e);
+             }
+          }
+
       } else {
           toast.error(data.message || "Check-in Failed");
       }

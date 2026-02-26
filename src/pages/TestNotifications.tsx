@@ -30,46 +30,38 @@ const TestNotifications = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto px-4 pt-24">
-        <h1 className="text-2xl font-bold mb-6">Test Notifications</h1>
+        <h1 className="text-2xl font-bold mb-6">Test Notifications (Deep Dive)</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Button onClick={() => handleCreateNotification('like')}>
-            Like
-          </Button>
-          <Button onClick={() => handleCreateNotification('comment')}>
-            Comment
-          </Button>
-          <Button onClick={() => handleCreateNotification('follow')}>
-            Follow
-          </Button>
-          <Button onClick={() => handleCreateNotification('membership_application')}>
-            Membership Application
-          </Button>
-          <Button onClick={() => handleCreateNotification('membership')}>
-            Membership Approved
-          </Button>
-          <Button onClick={() => handleCreateNotification('collab')}>
-            Collab Accepted
-          </Button>
+          <div className="col-span-full mb-4">
+             <h3 className="text-lg font-semibold mb-2">Social & Engagement</h3>
+             <div className="flex flex-wrap gap-2">
+                <Button onClick={() => handleCreateNotification('like')}>Like</Button>
+                <Button onClick={() => handleCreateNotification('comment')}>Comment</Button>
+                <Button onClick={() => handleCreateNotification('follow')}>Follow</Button>
+                <Button onClick={() => handleCreateNotification('review')}>New Review</Button>
+             </div>
+          </div>
 
-          {/* New Types */}
-          <Button variant="secondary" onClick={() => handleCreateNotification('show_approved')}>
-            Show Approved
-          </Button>
-          <Button variant="secondary" onClick={() => handleCreateNotification('show_rejected')}>
-            Show Rejected
-          </Button>
-          <Button variant="secondary" onClick={() => handleCreateNotification('payment_approved')}>
-            Payment Approved
-          </Button>
-          <Button variant="secondary" onClick={() => handleCreateNotification('payment_rejected')}>
-            Payment Rejected
-          </Button>
-          <Button variant="secondary" onClick={() => handleCreateNotification('payment_submitted')}>
-            Payment Submitted
-          </Button>
-          <Button variant="secondary" onClick={() => handleCreateNotification('review')}>
-            New Review
-          </Button>
+          <div className="col-span-full mb-4">
+             <h3 className="text-lg font-semibold mb-2">Membership & Collab</h3>
+             <div className="flex flex-wrap gap-2">
+                <Button onClick={() => handleCreateNotification('membership_application')}>Membership App</Button>
+                <Button onClick={() => handleCreateNotification('membership')}>Membership Approved</Button>
+                <Button onClick={() => handleCreateNotification('collab')}>Collab Accepted</Button>
+             </div>
+          </div>
+
+          <div className="col-span-full mb-4">
+             <h3 className="text-lg font-semibold mb-2">Workflow & Transactional</h3>
+             <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={() => handleCreateNotification('show_approved')}>Show Approved</Button>
+                <Button variant="secondary" onClick={() => handleCreateNotification('show_rejected')}>Show Rejected</Button>
+                <Button variant="secondary" onClick={() => handleCreateNotification('payment_approved')}>Payment Approved</Button>
+                <Button variant="secondary" onClick={() => handleCreateNotification('payment_rejected')}>Payment Rejected</Button>
+                <Button variant="secondary" onClick={() => handleCreateNotification('payment_submitted')}>Payment Submitted</Button>
+                <Button variant="outline" onClick={() => handleCreateNotification('ticket_verified')}>Ticket Verified</Button>
+             </div>
+          </div>
         </div>
       </div>
     </div>

@@ -12,7 +12,8 @@ import {
   Check,
   Ticket,
   CreditCard,
-  Star
+  Star,
+  QrCode
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ export function NotificationItem({ notification, onRead, onMarkAsRead }: Notific
       case 'payment_rejected': return <CreditCard className="w-4 h-4 text-red-500" />;
       case 'payment_submitted': return <CreditCard className="w-4 h-4 text-yellow-500" />;
       case 'review': return <Star className="w-4 h-4 text-yellow-500" />;
+      case 'ticket_verified': return <QrCode className="w-4 h-4 text-blue-500" />;
       default: return <Bell className="w-4 h-4 text-secondary" />;
     }
   };
