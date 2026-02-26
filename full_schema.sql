@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
     user_id UUID NOT NULL REFERENCES public.profiles(id),
     show_id UUID NOT NULL REFERENCES public.shows(id),
     content TEXT NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -192,6 +193,7 @@ CREATE TABLE IF NOT EXISTS public.post_comments (
     post_id UUID NOT NULL REFERENCES public.posts(id),
     profile_id UUID NOT NULL REFERENCES public.profiles(id),
     content TEXT NOT NULL,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -420,6 +422,15 @@ CREATE POLICY "Public can view comments" ON public.comments FOR SELECT USING (tr
 DROP POLICY IF EXISTS "Users can insert comments" ON public.comments;
 CREATE POLICY "Users can insert comments" ON public.comments FOR INSERT WITH CHECK (user_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Users can delete own comments" ON public.comments;
+CREATE POLICY "Users can delete own comments" ON public.comments FOR UPDATE USING (user_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Producers can moderate show comments" ON public.comments;
+CREATE POLICY "Producers can moderate show comments" ON public.comments FOR UPDATE USING (show_id IN (SELECT id FROM public.shows WHERE producer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())));
+
+DROP POLICY IF EXISTS "Admins can moderate comments" ON public.comments;
+CREATE POLICY "Admins can moderate comments" ON public.comments FOR UPDATE USING (auth.uid() IN (SELECT user_id FROM public.profiles WHERE role = 'admin'));
+
 -- Reviews (Public Read, Author Write)
 DROP POLICY IF EXISTS "Public can view reviews" ON public.reviews;
 CREATE POLICY "Public can view reviews" ON public.reviews FOR SELECT USING (true);
@@ -437,6 +448,15 @@ DROP POLICY IF EXISTS "Public can view post comments" ON public.post_comments;
 CREATE POLICY "Public can view post comments" ON public.post_comments FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Users can insert post comments" ON public.post_comments;
 CREATE POLICY "Users can insert post comments" ON public.post_comments FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Users can delete own post comments" ON public.post_comments;
+CREATE POLICY "Users can delete own post comments" ON public.post_comments FOR UPDATE USING (profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Post authors can moderate post comments" ON public.post_comments;
+CREATE POLICY "Post authors can moderate post comments" ON public.post_comments FOR UPDATE USING (post_id IN (SELECT id FROM public.posts WHERE profile_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())));
+
+DROP POLICY IF EXISTS "Admins can moderate post comments" ON public.post_comments;
+CREATE POLICY "Admins can moderate post comments" ON public.post_comments FOR UPDATE USING (auth.uid() IN (SELECT user_id FROM public.profiles WHERE role = 'admin'));
 
 -- Post Likes (Public Read, Author Write)
 DROP POLICY IF EXISTS "Public can view post likes" ON public.post_likes;

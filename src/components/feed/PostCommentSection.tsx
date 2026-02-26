@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
 
@@ -15,6 +15,7 @@ interface Comment {
   content: string;
   created_at: string;
   profile_id: string;
+  deleted_at: string | null;
   profiles: {
     username: string | null;
     group_name: string | null;
@@ -43,6 +44,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
           content,
           created_at,
           profile_id,
+          deleted_at,
           profiles:profile_id (
             username,
             group_name,
@@ -53,7 +55,9 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setComments(data as unknown as Comment[]);
+      // Filter out deleted comments
+      const activeComments = (data as unknown as Comment[]).filter(c => !c.deleted_at);
+      setComments(activeComments);
     } catch (error) {
       console.error("Error fetching comments:", error);
     } finally {
@@ -85,6 +89,31 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
       supabase.removeChannel(channel);
     };
   }, [postId, fetchComments]);
+
+  const handleDelete = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("post_comments")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Comment deleted",
+        description: "The comment has been removed.",
+      });
+
+      fetchComments();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete comment.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,8 +194,14 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
             const commenterName = comment.profiles?.group_name || comment.profiles?.username || "User";
             const initials = commenterName.substring(0, 2).toUpperCase();
 
+            // Check permissions
+            const isAuthor = profile?.id === comment.profile_id;
+            const isPostAuthor = profile?.id === postAuthorId;
+            const isAdmin = profile?.role === 'admin';
+            const canDelete = isAuthor || isPostAuthor || isAdmin;
+
             return (
-              <div key={comment.id} className="flex gap-3">
+              <div key={comment.id} className="flex gap-3 group">
                 <Link to={`/profile/${comment.profile_id}`}>
                   <Avatar className="w-8 h-8 border border-secondary/20 hover:border-secondary transition-colors">
                     <AvatarImage src={comment.profiles?.avatar_url || undefined} />
@@ -174,13 +209,26 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                   </Avatar>
                 </Link>
                 <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Link to={`/profile/${comment.profile_id}`} className="hover:underline">
-                      <span className="text-sm font-medium text-foreground">{commenterName}</span>
-                    </Link>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/profile/${comment.profile_id}`} className="hover:underline">
+                        <span className="text-sm font-medium text-foreground">{commenterName}</span>
+                      </Link>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(comment.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span className="sr-only">Delete comment</span>
+                      </Button>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">{comment.content}</p>
                 </div>
