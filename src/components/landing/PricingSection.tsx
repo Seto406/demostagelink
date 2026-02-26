@@ -13,17 +13,43 @@ import { SUBSCRIPTION_PRICE_DISPLAY, SUBSCRIPTION_PERIOD } from "@/config/pricin
 
 const plans = [
   {
-    name: "Viewer & Starter",
+    name: "BASIC TIER",
     price: "Free",
-    description: "For theater lovers and new groups just getting started",
-    features: [
-      "Unlimited show discovery",
-      "Group profile with social links",
-      "Show listings with ticket links",
-      "Team member showcase",
-      "Included in Theater Directory",
-      "City-based discovery",
-      "Audience favorites & watchlist"
+    goal: "Organic Visibility",
+    description: "Best for: trying the platform and maintaining a simple presence",
+    categories: [
+      {
+        title: "Exposure",
+        features: [
+          "Posts mainly reach followers only",
+          "Regular chronological feed placement",
+          "Appears occasionally in suggestions"
+        ]
+      },
+      {
+        title: "Discovery",
+        features: [
+          "Can search and browse shows and groups",
+          "Standard listing order",
+          "Limited join requests"
+        ]
+      },
+      {
+        title: "Engagement",
+        features: [
+          "Comment and review shows",
+          "Limited notifications",
+          "No seat tracking or ticket integration"
+        ]
+      },
+      {
+        title: "Management & Insights",
+        features: [
+          "View submission status only",
+          "Limited member visibility",
+          "Up to 2 show listings per month"
+        ]
+      }
     ],
     cta: "Get Started",
     popular: false,
@@ -32,18 +58,46 @@ const plans = [
     isExternal: false
   },
   {
-    name: "Pro Producer",
+    name: "PREMIUM TIER",
     price: SUBSCRIPTION_PRICE_DISPLAY,
     period: SUBSCRIPTION_PERIOD,
-    description: "For established groups ready to grow their audience",
-    features: [
-      "Everything in Free, plus:",
-      "Real-time analytics dashboard",
-      "Email & SMS notifications",
-      "Priority search placement",
-      "Featured productions badge",
-      "Rich media gallery",
-      "Audience engagement insights"
+    goal: "Expanded Visibility",
+    description: "Best for: producers and groups who want measurable reach and audience growth",
+    categories: [
+      {
+        title: "Exposure",
+        features: [
+          "Posts reach followers + interested audiences",
+          "Higher ranking in feeds and search",
+          "Featured placements and highlighted posts"
+        ]
+      },
+      {
+        title: "Discovery",
+        features: [
+          "Priority search and category placement",
+          "Unlimited join requests",
+          "Appears in featured recommendations"
+        ]
+      },
+      {
+        title: "Engagement",
+        features: [
+          "Boosted reactions and interactions",
+          "Unlimited notifications",
+          "Seat commitment (attendance tracking)",
+          "External ticket integration"
+        ]
+      },
+      {
+        title: "Management & Insights",
+        features: [
+          "Profile views, ticket clicks, CTR analytics",
+          "Unlimited member profiles",
+          "Unlimited show listings",
+          "Collaboration notifications highlighted"
+        ]
+      }
     ],
     cta: "Subscribe Now",
     popular: true,
@@ -80,14 +134,14 @@ const PricingSection = () => {
         </motion.div>
 
         {/* Pricing Cards - Centered */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto justify-items-center">
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto justify-items-center items-start">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-              className={`relative rounded-3xl p-8 ${
+              className={`relative rounded-3xl p-8 w-full ${
                 plan.popular
                   ? "bg-gradient-to-b from-primary/20 to-card border-2 border-secondary shadow-2xl shadow-primary/20"
                   : "bg-card border border-secondary/20"
@@ -95,8 +149,8 @@ const PricingSection = () => {
             >
               {/* Popular/Coming Soon Badge */}
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className={`flex items-center gap-1 px-4 py-1 rounded-full text-sm font-semibold ${
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                  <div className={`flex items-center gap-1 px-4 py-1 rounded-full text-sm font-semibold whitespace-nowrap ${
                     plan.comingSoon 
                       ? "bg-muted text-muted-foreground" 
                       : "bg-secondary text-secondary-foreground"
@@ -118,39 +172,48 @@ const PricingSection = () => {
               )}
 
               {/* Plan Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className={`w-5 h-5 ${plan.popular ? "text-secondary" : "text-primary"}`} />
-                  <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
-                </div>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-serif font-bold text-foreground">{plan.price}</span>
+              <div className="mb-8 text-center border-b border-border pb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-4">
+                  <span className="text-4xl font-serif font-bold text-white">{plan.price}</span>
                   {plan.period && (
                     <span className="text-muted-foreground">
                       {plan.period}
                     </span>
                   )}
                 </div>
-                <p className="text-muted-foreground">
+                 <div className="mb-4 inline-block px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
+                  Goal: {plan.goal}
+                </div>
+                <p className="text-sm text-muted-foreground italic">
                   {plan.description}
                 </p>
               </div>
 
-              {/* Features */}
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
-                      plan.popular ? "bg-secondary" : "bg-primary"
-                    }`}>
-                      <Check className={`w-3 h-3 ${plan.popular ? "text-secondary-foreground" : "text-primary-foreground"}`} />
-                    </div>
-                    <span className="text-muted-foreground">
-                      {feature}
-                    </span>
-                  </li>
+              {/* Features Categories */}
+              <div className="space-y-6 mb-8">
+                {plan.categories.map((category) => (
+                  <div key={category.title}>
+                    <h4 className="font-semibold text-foreground mb-3 text-sm uppercase tracking-wide opacity-80 border-l-2 border-secondary pl-2">
+                      {category.title}
+                    </h4>
+                    <ul className="space-y-3">
+                      {category.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3 text-sm">
+                          <div className={`flex-shrink-0 w-4 h-4 mt-0.5 rounded-full flex items-center justify-center ${
+                            plan.popular ? "bg-secondary/20" : "bg-primary/20"
+                          }`}>
+                            <Check className={`w-3 h-3 ${plan.popular ? "text-secondary" : "text-primary"}`} />
+                          </div>
+                          <span className="text-muted-foreground leading-tight">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
 
               {/* CTA Button */}
               {plan.comingSoon ? (
@@ -194,7 +257,7 @@ const PricingSection = () => {
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-center text-muted-foreground mt-8"
+          className="text-center text-muted-foreground mt-12 text-sm"
         >
           All plans include our core features. No hidden fees. Cancel anytime.
         </motion.p>
