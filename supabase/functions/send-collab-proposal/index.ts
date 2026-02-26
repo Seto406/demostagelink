@@ -91,8 +91,8 @@ serve(async (req) => {
     const { data: existingRequest, error: existingRequestError } = await supabaseAdmin
         .from("collaboration_requests")
         .select("id")
-        .eq("sender_id", user.id)
-        .eq("receiver_id", recipientProfile.user_id)
+        .eq("sender_id", senderProfile.id)
+        .eq("receiver_id", recipientProfile.id)
         .eq("status", "pending")
         .maybeSingle();
 
@@ -109,8 +109,8 @@ serve(async (req) => {
     const { error: insertError } = await supabaseAdmin
         .from("collaboration_requests")
         .insert({
-            sender_id: user.id,
-            receiver_id: recipientProfile.user_id,
+            sender_id: senderProfile.id,
+            receiver_id: recipientProfile.id,
             status: "pending"
         });
 
