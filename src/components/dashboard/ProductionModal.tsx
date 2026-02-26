@@ -447,6 +447,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
     const validLinks = externalLinks.filter(l => l.trim() !== "");
 
+    const { display_date, ...restMetadata } = (showToEdit?.seo_metadata || {}) as Record<string, unknown>;
+
     const payload = {
       title,
       description: description || null,
@@ -468,10 +470,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       tags: tags.length > 0 ? tags : null,
       cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
       seo_metadata: {
-        ...(showToEdit?.seo_metadata || {}),
+        ...restMetadata,
         payment_instructions: paymentInstructions || null,
         schedule: validSlots, // Save the full array of slots
-        display_date: displayDateString, // Save the friendly string
+        formatted_date: displayDateString, // Save the friendly string
       },
     };
 
