@@ -85,6 +85,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
   const { toggleFavorite, isFavorited } = useFavorites();
   const { toast } = useToast();
 
+  const isPast = show.date ? new Date(show.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
   const isProducerOrAdmin = user && ((profile?.role === 'producer' && profile?.id === show.producer_id?.id) || profile?.role === 'admin');
 
   const handleShare = (e: React.MouseEvent) => {
@@ -323,18 +324,29 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               {/* Buy Ticket Button */}
               {show.ticket_link && (
                 <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto">
-                  <Button
-                    size="sm"
-                    className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.open(show.ticket_link || '', '_blank');
-                    }}
-                  >
-                    <Ticket className="w-3 h-3 mr-1" />
-                    Buy Ticket
-                  </Button>
+                  {isPast ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled
+                      className="w-full text-xs h-8 font-semibold bg-muted text-muted-foreground"
+                    >
+                      Event Ended
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(show.ticket_link || '', '_blank');
+                      }}
+                    >
+                      <Ticket className="w-3 h-3 mr-1" />
+                      Buy Ticket
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

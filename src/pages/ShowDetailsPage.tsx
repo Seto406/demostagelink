@@ -175,6 +175,8 @@ const ShowDetailsPage = () => {
     return "Past Production";
   };
 
+  const isPast = show && show.date ? new Date(show.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -463,7 +465,11 @@ END:VCALENDAR`;
 
                         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                             {/* Primary Action */}
-                            {(show.price !== null && show.price !== undefined && show.price >= 0) ? (
+                            {isPast ? (
+                                <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none text-lg font-serif px-8">
+                                    Event Ended
+                                </Button>
+                            ) : (show.price !== null && show.price !== undefined && show.price >= 0) ? (
                                 <Button
                                     size="lg"
                                     className={`flex-1 sm:flex-none text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 ${
