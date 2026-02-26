@@ -110,7 +110,7 @@ const Navbar = () => {
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
 
-              <Link to={homePath} className="hidden md:flex items-center gap-2 sm:gap-3 group">
+              <Link to={homePath} className="hidden md:flex items-center gap-2 sm:gap-3 group flex-shrink-0">
                 <img src={stageLinkLogo} alt="" className="h-8 w-auto sm:h-10" aria-hidden="true" />
                 <span className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                   Stage<span className="text-secondary">Link</span>
@@ -118,7 +118,7 @@ const Navbar = () => {
               </Link>
 
               {/* Desktop Search Bar */}
-              <div className="hidden xl:block w-full max-w-[280px] lg:max-w-sm ml-4">
+              <div className="hidden xl:block w-[280px] ml-6">
                 <SearchBar variant="desktop" />
               </div>
             </div>
