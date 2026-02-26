@@ -90,7 +90,7 @@ const GuestList = () => {
   // Access Control
   useEffect(() => {
     if (!authLoading && !showLoading && show) {
-      const isProducer = user?.id === show.producer_id;
+      const isProducer = user?.id === show.producer_id || profile?.id === show.producer_id;
       const isAdmin = profile?.role === 'admin';
 
       if (!isProducer && !isAdmin) {
