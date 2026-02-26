@@ -258,7 +258,7 @@ const Dashboard = () => {
       const { data: collabData, error: collabError } = await supabase
         .from("collaboration_requests")
         .select("*")
-        .eq("receiver_id", user?.id)
+        .eq("receiver_id", profile?.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -342,28 +342,55 @@ const Dashboard = () => {
       // Collect IDs from all sources
       const appUserIds = apps.map((app) => app.user_id).filter(Boolean);
       const activeUserIds = active.map((m) => m.user_id).filter(Boolean);
-      const collabUserIds = collabs.map((r) => r.sender_id).filter(Boolean);
-      const allUserIds = Array.from(new Set([...appUserIds, ...activeUserIds, ...collabUserIds]));
+      const allUserIds = Array.from(new Set([...appUserIds, ...activeUserIds]));
 
-      if (allUserIds.length === 0) {
+      // Collab requests use Profile IDs (sender_id), not Auth User IDs
+      const collabSenderProfileIds = collabs.map((r) => r.sender_id).filter(Boolean);
+
+      if (allUserIds.length === 0 && collabSenderProfileIds.length === 0) {
         setApplicantsByUserId({});
         return;
       }
 
-      const { data: applicantProfiles, error: applicantError } = await supabase
-        .from("profiles")
-        .select("id, user_id, username, avatar_url, group_name, role")
-        .in("user_id", allUserIds);
+      let userProfiles: ApplicantProfile[] = [];
+
+      if (allUserIds.length > 0) {
+        const { data: up, error: userProfilesError } = await supabase
+          .from("profiles")
+          .select("id, user_id, username, avatar_url, group_name, role")
+          .in("user_id", allUserIds);
+
+        if (userProfilesError) {
+          console.error("Error loading applicant profiles:", userProfilesError);
+          toast.error("Failed to load applicant profiles.");
+          return;
+        }
+        userProfiles = (up || []) as ApplicantProfile[];
+      }
+
+      let collabProfiles: ApplicantProfile[] = [];
+      if (collabSenderProfileIds.length > 0) {
+        const { data: cp, error: cpError } = await supabase
+           .from("profiles")
+           .select("id, user_id, username, avatar_url, group_name, role")
+           .in("id", collabSenderProfileIds);
+
+        if (cpError) console.error("Error loading collab profiles:", cpError);
+        else collabProfiles = cp as ApplicantProfile[];
+      }
 
       if (aborted) return;
 
-      if (applicantError) {
-        console.error("Error loading applicant profiles:", applicantError);
-        toast.error("Failed to load applicant profiles.");
-        return;
-      }
+      const allProfiles = [...userProfiles, ...collabProfiles] as ApplicantProfile[];
 
-      const lookup = Object.fromEntries(((applicantProfiles || []) as ApplicantProfile[]).map((p) => [p.user_id, p]));
+      // Create lookup map indexed by BOTH user_id (Auth ID) and id (Profile ID)
+      // This handles lookups from applications (via user_id) and collab requests (via profile_id)
+      const lookup: Record<string, ApplicantProfile> = {};
+      allProfiles.forEach(p => {
+        if (p.user_id) lookup[p.user_id] = p;
+        if (p.id) lookup[p.id] = p;
+      });
+
       setApplicantsByUserId(lookup);
     };
 
@@ -566,20 +593,28 @@ const Dashboard = () => {
 
     // Send email notification
     const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name;
-    const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
-        body: {
-          recipient_id: request.sender_id,
-          type: 'collab_accepted',
-          data: {
-             sender_name: groupName,
-             group_name: groupName,
-             link: `${window.location.origin}/producer/${selectedGroupId}`
-          }
-        }
-    });
 
-    if (emailError) {
-        console.error("Failed to send acceptance email:", emailError);
+    // Resolve sender's Auth ID (user_id) from the profile lookup
+    const senderProfile = applicantsByUserId[request.sender_id];
+    const recipientAuthId = senderProfile?.user_id;
+
+    if (recipientAuthId) {
+      const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+          body: {
+            recipient_id: recipientAuthId,
+            type: 'collab_accepted',
+            data: {
+               sender_name: groupName,
+               group_name: groupName,
+               link: `${window.location.origin}/producer/${selectedGroupId}`
+            }
+          }
+      });
+      if (emailError) {
+          console.error("Failed to send acceptance email:", emailError);
+      }
+    } else {
+      console.error("Could not resolve sender Auth ID for email notification");
     }
 
     setCollabRequests(prev => prev.filter(r => r.id !== requestId));

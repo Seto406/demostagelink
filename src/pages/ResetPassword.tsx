@@ -49,40 +49,34 @@ const ResetPassword = () => {
     setIsSubmitting(true);
 
     try {
-      // First, generate the reset link using Supabase
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password?type=recovery`,
+      // Send branded email via our edge function (it handles link generation)
+      const { data, error } = await supabase.functions.invoke("send-password-reset", {
+        body: {
+          email,
+          redirectTo: `${window.location.origin}/reset-password?type=recovery`,
+        },
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // Send branded email via our edge function
-        try {
-          await supabase.functions.invoke("send-password-reset", {
-            body: {
-              email,
-              redirectTo: `${window.location.origin}/reset-password?type=recovery`,
-            },
-          });
-        } catch (emailErr) {
-          console.error("Failed to send branded email, falling back to default:", emailErr);
-        }
-        
-        setEmailSent(true);
-        toast({
-          title: "Check your email",
-          description: "We've sent you a password reset link.",
-        });
+        throw new Error(error.message || "Failed to send reset email");
       }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setEmailSent(true);
+      toast({
+        title: "Check your email",
+        description: "We've sent you a password reset link.",
+      });
+
     } catch (err) {
+      console.error("Password reset error:", err);
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: message,
         variant: "destructive",
       });
     }

@@ -64,6 +64,25 @@ const VerifyEmail = () => {
             });
           } else {
             setStatus("success");
+
+            // Trigger welcome email before cleaning up
+            if (data.session?.user?.email) {
+                const userRole = data.session.user.user_metadata?.role;
+                const role = userRole === "producer" ? "producer" : "audience";
+
+                const { error: emailError } = await supabase.functions.invoke("send-welcome-email", {
+                    body: {
+                        email: data.session.user.email,
+                        name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.first_name || "",
+                        role: role
+                    }
+                });
+
+                if (emailError) {
+                    console.error("Failed to send welcome email:", emailError);
+                }
+            }
+
             localStorage.removeItem("pendingVerificationEmail");
             localStorage.removeItem("lastVerificationEmailSent");
             
