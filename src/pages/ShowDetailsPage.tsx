@@ -381,7 +381,7 @@ END:VCALENDAR`;
                         }`}>
                             {status}
                         </span>
-                         {user && (user.id === show.producer_id?.id || profile?.role === 'admin') && (
+                         {user && (profile?.id === show.producer_id?.id || profile?.role === 'admin') && (
                              <Link to={`/dashboard?tab=shows&edit=${show.id}`}>
                                <Button variant="outline" size="sm" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white gap-2 h-7">
                                  <Pencil className="w-3 h-3" />

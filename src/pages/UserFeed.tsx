@@ -152,18 +152,18 @@ const UserFeed = () => {
 
   // Fetch producer's recent shows
   const { data: recentShows } = useQuery({
-    queryKey: ['producer-recent-shows', user?.id],
+    queryKey: ['producer-recent-shows', profile?.id],
     queryFn: async () => {
-       if (!user) return [];
+       if (!user || !profile?.id) return [];
        const { data } = await supabase
          .from('shows')
          .select('id, title, status')
-         .eq('producer_id', user.id)
+         .eq('producer_id', profile.id)
          .order('created_at', { ascending: false })
          .limit(3);
        return data || [];
     },
-    enabled: !!user && profile?.role === 'producer'
+    enabled: !!user && !!profile?.id && profile?.role === 'producer'
   });
 
   // Fetch suggested producers
@@ -174,6 +174,8 @@ const UserFeed = () => {
         .from("profiles")
         .select("id, group_name, avatar_url, niche, group_logo_url")
         .eq("role", "producer")
+        .not("group_name", "is", null)
+        .neq("group_name", "")
         .order("created_at", { ascending: false })
         .limit(5);
       if (error) throw error;
