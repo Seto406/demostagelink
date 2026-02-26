@@ -138,9 +138,10 @@ test.describe('Analytics Dashboard', () => {
         window.localStorage.setItem(`sb-${projectId}-auth-token`, JSON.stringify(session));
 
         // Mock AuthContext
-        (window as any).PlaywrightTest = true;
-        (window as any).PlaywrightUser = user;
-        (window as any).PlaywrightProfile = profile;
+        const win = window as any;
+        win.PlaywrightTest = true;
+        win.PlaywrightUser = user;
+        win.PlaywrightProfile = profile;
     }, { session: mockSession, user: mockUser, profile: mockProfile });
   });
 

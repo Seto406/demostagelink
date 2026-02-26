@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, User } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,8 +34,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let payment: any = null;
-    let user: any = null;
+    let user: User | null = null;
 
     // 1. Authenticate User (Optional if ref is provided)
     const authHeader = req.headers.get("Authorization");
@@ -378,10 +379,11 @@ serve(async (req) => {
       );
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Function Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

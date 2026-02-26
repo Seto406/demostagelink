@@ -20,7 +20,7 @@ interface Show {
   ticket_link: string | null;
   seo_metadata?: {
     reminder_sent?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

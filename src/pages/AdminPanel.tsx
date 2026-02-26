@@ -82,7 +82,7 @@ interface Show {
   poster_url: string | null;
   deleted_at: string | null;
   seo_metadata: {
-    schedule?: any;
+    schedule?: unknown;
     hype_message?: string;
   } | null;
   profiles?: {

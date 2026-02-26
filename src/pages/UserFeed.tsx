@@ -187,7 +187,7 @@ const UserFeed = () => {
       // Combine and Sort
       const mixedItems: FeedItem[] = [];
 
-      showsData?.forEach((show: any) => {
+      showsData?.forEach((show) => {
         mixedItems.push({
           type: 'show',
           data: show as FeedShow,
@@ -195,7 +195,7 @@ const UserFeed = () => {
         });
       });
 
-      postsData?.forEach((post: any) => {
+      postsData?.forEach((post) => {
         mixedItems.push({
           type: 'post',
           data: post as FeedPostType,

@@ -1,4 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { TablesInsert } from "@/integrations/supabase/types";
+
+// Extends generated type to include actor_id if missing
+type NotificationInsert = TablesInsert<'notifications'> & { actor_id?: string | null };
 
 interface CreateNotificationParams {
   userId: string; // The recipient of the notification
@@ -32,7 +36,7 @@ export const createNotification = async ({
         message,
         link,
         read: false
-      } as any); // Type assertion needed until types are updated
+      } as NotificationInsert);
 
     if (error) {
       // If the error is about the missing actor_id column, retry without it

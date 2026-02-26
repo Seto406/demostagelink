@@ -171,7 +171,7 @@ const Profile = () => {
           // Fetch Group Memberships if not a producer
           if (profileData.role === 'audience') {
             const { data: membersData } = await supabase
-              .from('group_members' as any)
+              .from('group_members')
               .select(`
                 id,
                 group_id,
@@ -187,7 +187,7 @@ const Profile = () => {
               .eq('status', 'active');
 
             if (membersData && membersData.length > 0) {
-              const membershipsWithCredits = await Promise.all(membersData.map(async (m: any) => {
+              const membershipsWithCredits = await Promise.all(membersData.map(async (m) => {
                 const groupId = m.group_id || m.profiles?.id;
                 // Fetch approved shows for this group
                 const { data: showsData } = await supabase
@@ -200,12 +200,13 @@ const Profile = () => {
                 const memberName = m.member_name || profileData.username;
 
                 // Filter shows where the user is credited
-                const credits = (showsData || []).filter((show: any) => {
-                  const cast = show.cast_members as any[] || [];
+                const credits = (showsData || []).filter((show) => {
+                  const cast = (show.cast_members as unknown as Array<{ name: string, role: string }>) || [];
                   // Check if cast contains memberName (case insensitive)
-                  return cast.some((c: any) => c.name?.toLowerCase() === memberName?.toLowerCase());
-                }).map((show: any) => {
-                  const role = (show.cast_members as any[]).find((c: any) => c.name?.toLowerCase() === memberName?.toLowerCase())?.role || 'Cast';
+                  return cast.some((c) => c.name?.toLowerCase() === memberName?.toLowerCase());
+                }).map((show) => {
+                  const cast = (show.cast_members as unknown as Array<{ name: string, role: string }>) || [];
+                  const role = cast.find((c) => c.name?.toLowerCase() === memberName?.toLowerCase())?.role || 'Cast';
                   return {
                     id: show.id,
                     title: show.title,
@@ -318,7 +319,7 @@ const Profile = () => {
              toast.error("Failed to load your passes.");
           } else if (ticketsData) {
              // Map shows.show_time to date property to match interface
-             const mappedTickets = ticketsData.map((t: any) => ({
+             const mappedTickets = ticketsData.map((t) => ({
                  ...t,
                  shows: t.shows ? {
                      ...t.shows,

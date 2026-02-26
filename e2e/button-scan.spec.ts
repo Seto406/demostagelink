@@ -283,8 +283,9 @@ test.describe('Full Button Functionality Scan', () => {
         // Reading AuthContext.tsx earlier showed:
         // if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
         // This suggests we can inject directly onto the window object.
-        (window as any).PlaywrightTest = true;
-        (window as any).PlaywrightUser = {
+        const win = window as any;
+        win.PlaywrightTest = true;
+        win.PlaywrightUser = {
             id: mockUserId,
             aud: 'authenticated',
             role: 'authenticated',
@@ -293,7 +294,7 @@ test.describe('Full Button Functionality Scan', () => {
             user_metadata: {},
             created_at: new Date().toISOString(),
         };
-        (window as any).PlaywrightProfile = {
+        win.PlaywrightProfile = {
             id: mockProfileId,
             user_id: mockUserId,
             role: 'producer', // Give producer role to access dashboard

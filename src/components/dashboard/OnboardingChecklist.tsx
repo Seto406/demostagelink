@@ -3,9 +3,10 @@ import { CheckSquare, Square, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { Tables } from "@/integrations/supabase/types";
 
 interface OnboardingChecklistProps {
-  profile: any;
+  profile: Tables<"profiles"> | null;
   hasShows: boolean;
 }
 
@@ -31,7 +32,7 @@ export const OnboardingChecklist = ({ profile, hasShows }: OnboardingChecklistPr
   }, [profile?.id]);
 
   // Relaxed check: Description is optional as per client feedback
-  const hasProfile = !!(profile?.group_name && (profile?.avatar_url || (profile as any)?.group_logo_url));
+  const hasProfile = !!(profile?.group_name && (profile?.avatar_url || profile?.group_logo_url));
   const hasMembers = memberCount > 0;
 
   const steps = [

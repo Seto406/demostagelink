@@ -45,9 +45,10 @@ const TestEmail = () => {
       }
 
       setResult(JSON.stringify(data, null, 2));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error sending welcome email:", err);
-      setResult("Error: " + (err.message || JSON.stringify(err)));
+      const message = err instanceof Error ? err.message : JSON.stringify(err);
+      setResult("Error: " + message);
     } finally {
       setLoading(false);
     }
@@ -78,9 +79,10 @@ const TestEmail = () => {
       }
 
       setResult(JSON.stringify(data, null, 2));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error sending notification:", err);
-      setResult("Error: " + (err.message || JSON.stringify(err)));
+      const message = err instanceof Error ? err.message : JSON.stringify(err);
+      setResult("Error: " + message);
     } finally {
       setNotificationLoading(false);
     }

@@ -284,11 +284,10 @@ const Dashboard = () => {
       }
 
       // Fetch Followers
-      let followsData = null;
+      let followsData: Database["public"]["Tables"]["follows"]["Row"][] | null = null;
       try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data, error: followsError } = await supabase
-            .from("follows" as any)
+            .from("follows")
             .select("id, follower_id, created_at")
             .eq("following_id", selectedGroupId)
             .order("created_at", { ascending: false });
@@ -306,8 +305,7 @@ const Dashboard = () => {
           toast.error("An unexpected error occurred loading followers.");
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const followerIds = followsData?.map((f: any) => f.follower_id) || [];
+      const followerIds = followsData?.map((f) => f.follower_id) || [];
 
       let followersWithProfiles: Follower[] = [];
       if (followerIds.length > 0) {
@@ -397,7 +395,7 @@ const Dashboard = () => {
     fetchApplications();
 
     return () => { aborted = true; };
-  }, [selectedGroupId, user, refreshKey]);
+  }, [selectedGroupId, user, refreshKey, profile]);
 
   const handleApproval = async (applicationId: string) => {
     if (!selectedGroupId) return;

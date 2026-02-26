@@ -133,7 +133,7 @@ serve(async (req) => {
           message: `${senderName} wants to collaborate with you.`,
           link: `/dashboard`,
           read: false
-        } as any);
+        } as Record<string, unknown>);
 
       if (notificationError) {
          // If the error is about the missing actor_id column, retry without it
@@ -299,10 +299,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error processing request:", error);
+    const message = error instanceof Error ? error.message : "Internal Server Error";
     return new Response(
-      JSON.stringify({ error: error.message || "Internal Server Error" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

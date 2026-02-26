@@ -59,15 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasInitialized = useRef(false);
 
-  const fetchProfile = useCallback(async (userId: string, userMetadata?: any) => {
+  const fetchProfile = useCallback(async (userId: string, userMetadata?: Record<string, unknown>) => {
     try {
       // Wrapped in strict 5s timeout to prevent infinite hangs
       const fetchResponse = await withTimeout(
-        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle() as unknown as Promise<any>
+        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle()
       );
 
       if (fetchResponse.data) {
-        setProfile(fetchResponse.data as Profile);
+        setProfile(fetchResponse.data as unknown as Profile);
         return;
       }
 
@@ -84,13 +84,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         supabase.from("profiles").insert([{
           user_id: userId,
           role,
-          avatar_url: userMetadata?.avatar_url || null,
-          username: userMetadata?.username || null,
-        }]).select().single() as unknown as Promise<any>
+          avatar_url: (userMetadata?.avatar_url as string) || null,
+          username: (userMetadata?.username as string) || null,
+        }]).select().single()
       );
 
       if (createResponse.data) {
-        setProfile(createResponse.data as Profile);
+        setProfile(createResponse.data as unknown as Profile);
         localStorage.removeItem("pendingUserRole");
       }
     } catch (error) {
@@ -141,11 +141,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== "undefined" && (window as any).PlaywrightTest) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).PlaywrightUser) setUser((window as any).PlaywrightUser);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((window as any).PlaywrightProfile) setProfile((window as any).PlaywrightProfile);
+    const win = window as any;
+    if (typeof window !== "undefined" && win.PlaywrightTest) {
+        if (win.PlaywrightUser) setUser(win.PlaywrightUser);
+        if (win.PlaywrightProfile) setProfile(win.PlaywrightProfile);
         setLoading(false);
         clearTimeout(failsafeTimer);
         return;
