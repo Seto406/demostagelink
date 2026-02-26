@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -445,131 +445,54 @@ const Dashboard = () => {
     setIsUpdating(null);
   };
 
-  const handleApproveCollab = async (requestId: string) => {
+  const handleCollabResponse = async (requestId: string, responseType: 'interested' | 'considering' | 'busy' | 'declined') => {
     if (!selectedGroupId) return;
     const request = collabRequests.find(r => r.id === requestId);
     if (!request) return;
 
     setIsUpdating(requestId);
 
-    // 1. Insert or Update group_members
-    const sender = applicantsByUserId[request.sender_id];
-
-    // Check if already a member
-    const { data: existingMember } = await supabase
-        .from("group_members")
-        .select("id")
-        .eq("user_id", request.sender_id)
-        .eq("group_id", selectedGroupId)
-        .maybeSingle();
-
-    if (existingMember) {
-        const { error: updateError } = await supabase
-            .from("group_members")
-            .update({
-                role_in_group: 'producer',
-                status: 'active',
-                member_name: sender?.username || "Collaborator"
-            })
-            .eq("id", existingMember.id);
-
-        if (updateError) {
-            console.error("Error updating group member:", updateError);
-            toast.error("Failed to update group member status.");
-            setIsUpdating(null);
-            return;
-        }
-    } else {
-        const { error: insertError } = await supabase
-            .from("group_members")
-            .insert({
-                user_id: request.sender_id,
-                group_id: selectedGroupId,
-                role_in_group: 'producer',
-                status: 'active',
-                member_name: sender?.username || "Collaborator"
-            });
-
-        if (insertError) {
-            console.error("Error inserting group member:", insertError);
-            toast.error("Failed to add producer to group members.");
-            setIsUpdating(null);
-            return;
-        }
-    }
-
-    // 2. Update request status
     const { error: updateError } = await supabase
         .from("collaboration_requests")
-        .update({ status: 'accepted' })
+        .update({ status: responseType })
         .eq('id', requestId);
 
     if (updateError) {
         console.error("Error updating request status:", updateError);
-    }
-
-    // Update profile for the new producer
-    const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-            role: 'producer',
-            group_name: managedGroups.find(g => g.id === selectedGroupId)?.group_name
-        })
-        .eq("user_id", request.sender_id);
-
-    if (profileError) {
-        console.error("Error updating producer profile:", profileError);
-        toast.error("Collaborator approved, but profile update failed.");
+        toast.error("Failed to update status.");
+        setIsUpdating(null);
+        return;
     }
 
     // Notification
+    const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name || "The Group";
+
+    let message = "";
+    switch (responseType) {
+        case 'interested':
+            message = `${groupName} is interested in collaborating!`;
+            break;
+        case 'considering':
+            message = `${groupName} is considering your request.`;
+            break;
+        case 'busy':
+            message = `${groupName} is currently busy but thanks you for the offer.`;
+            break;
+        case 'declined':
+            message = `${groupName} has declined the collaboration request.`;
+            break;
+    }
+
     await supabase.from("notifications").insert({
         user_id: request.sender_id,
-        title: "Collab Request Accepted",
-        message: `Your collaboration request to ${managedGroups.find(g => g.id === selectedGroupId)?.group_name} was accepted!`,
+        title: "Collaboration Update",
+        message: message,
         type: "collab",
-        link: `/group/${selectedGroupId}`
+        link: `/producer/${selectedGroupId}`
     });
-
-    // Send email notification
-    const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name;
-    const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
-        body: {
-          recipient_id: request.sender_id,
-          type: 'collab_accepted',
-          data: {
-             sender_name: groupName,
-             group_name: groupName,
-             link: `${window.location.origin}/producer/${selectedGroupId}`
-          }
-        }
-    });
-
-    if (emailError) {
-        console.error("Failed to send acceptance email:", emailError);
-    }
 
     setCollabRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.success("Collaborator approved!");
-    setIsUpdating(null);
-  };
-
-  const handleDeclineCollab = async (requestId: string) => {
-    setIsUpdating(requestId);
-    const { error } = await supabase
-      .from("collaboration_requests")
-      .update({ status: 'rejected' })
-      .eq("id", requestId);
-
-    if (error) {
-      console.error("Error rejecting collab:", error);
-      toast.error("Unable to reject request.");
-      setIsUpdating(null);
-      return;
-    }
-
-    setCollabRequests(prev => prev.filter((r) => r.id !== requestId));
-    toast.success("Request rejected.");
+    toast.success(`Response sent: ${responseType}`);
     setIsUpdating(null);
   };
 
@@ -919,23 +842,47 @@ const Dashboard = () => {
                        </div>
                      </div>
 
-                     <div className="flex items-center gap-2">
+                     <div className="flex flex-wrap items-center gap-2 justify-end">
                        <Button
                          size="sm"
-                         className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                         className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 h-8 px-3"
                          disabled={isUpdating === request.id}
-                         onClick={() => handleApproveCollab(request.id)}
+                         onClick={() => handleCollabResponse(request.id, 'interested')}
+                         title="Interested"
                        >
-                         <Check className="mr-1 h-4 w-4" /> Accept Collab
+                         <Check className="h-4 w-4" />
+                         <span className="hidden sm:inline ml-1">Interested</span>
+                       </Button>
+                       <Button
+                         size="sm"
+                         className="rounded-xl bg-amber-500 text-white hover:bg-amber-600 h-8 px-3"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleCollabResponse(request.id, 'considering')}
+                         title="Considering"
+                       >
+                         <Clock className="h-4 w-4" />
+                         <span className="hidden sm:inline ml-1">Thinking</span>
+                       </Button>
+                       <Button
+                         size="sm"
+                         className="rounded-xl bg-slate-500 text-white hover:bg-slate-600 h-8 px-3"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleCollabResponse(request.id, 'busy')}
+                         title="Busy"
+                       >
+                         <Calendar className="h-4 w-4" />
+                         <span className="hidden sm:inline ml-1">Busy</span>
                        </Button>
                        <Button
                          size="sm"
                          variant="ghost"
-                         className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                         className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 h-8 px-3"
                          disabled={isUpdating === request.id}
-                         onClick={() => handleDeclineCollab(request.id)}
+                         onClick={() => handleCollabResponse(request.id, 'declined')}
+                         title="Decline"
                        >
-                         <X className="mr-1 h-4 w-4" /> Reject
+                         <X className="h-4 w-4" />
+                         <span className="hidden sm:inline ml-1">Decline</span>
                        </Button>
                      </div>
                    </div>
