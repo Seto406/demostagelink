@@ -440,104 +440,66 @@ const Dashboard = () => {
     setIsUpdating(null);
   };
 
-  const handleApproveCollab = async (requestId: string) => {
+  const handleCollabResponse = async (requestId: string, responseType: 'interested' | 'considering' | 'busy' | 'declined') => {
     if (!selectedGroupId) return;
     const request = collabRequests.find(r => r.id === requestId);
     if (!request) return;
 
     setIsUpdating(requestId);
 
-    // 1. Insert into group_members
-    const sender = applicantsByUserId[request.sender_id];
-    const { error: insertError } = await supabase
-        .from("group_members")
-        .insert({
-            user_id: request.sender_id,
-            group_id: selectedGroupId,
-            role_in_group: 'producer',
-            status: 'active',
-            member_name: sender?.username || "Collaborator"
-        });
+    const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name || "A producer";
 
-    if (insertError) {
-        console.error("Error inserting group member:", insertError);
-        toast.error("Failed to add producer to group members.");
-        setIsUpdating(null);
-        return;
-    }
-
-    // 2. Update request status
+    // 1. Update request status
     const { error: updateError } = await supabase
         .from("collaboration_requests")
-        .update({ status: 'accepted' })
+        .update({ status: responseType })
         .eq('id', requestId);
 
     if (updateError) {
         console.error("Error updating request status:", updateError);
+        toast.error("Failed to update request.");
+        setIsUpdating(null);
+        return;
     }
 
-    // Update profile for the new producer
-    const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-            role: 'producer',
-            group_name: managedGroups.find(g => g.id === selectedGroupId)?.group_name
-        })
-        .eq("user_id", request.sender_id);
+    // 2. Notification Message Logic
+    let title = "Collab Update";
+    let message = "";
 
-    if (profileError) {
-        console.error("Error updating producer profile:", profileError);
-        toast.error("Collaborator approved, but profile update failed.");
+    switch (responseType) {
+        case 'interested':
+            title = "Collab Interest!";
+            message = `${groupName} is interested in collaborating! Check your email or messages to connect.`;
+            break;
+        case 'considering':
+            title = "Collab Update";
+            message = `${groupName} will think about your proposal.`;
+            break;
+        case 'busy':
+            title = "Collab Update";
+            message = `${groupName} is not available right now, but thanks you for the interest.`;
+            break;
+        case 'declined':
+            title = "Collab Declined";
+            message = `${groupName} cannot collaborate at this time.`;
+            break;
     }
 
-    // Notification
-    await supabase.from("notifications").insert({
+    // 3. Send In-App Notification
+    const { error: notifError } = await supabase.from("notifications").insert({
         user_id: request.sender_id,
-        title: "Collab Request Accepted",
-        message: `Your collaboration request to ${managedGroups.find(g => g.id === selectedGroupId)?.group_name} was accepted!`,
-        type: "collab",
-        link: `/group/${selectedGroupId}`
+        title,
+        message,
+        type: "collab_update",
+        link: `/producer/${selectedGroupId}` // Link back to the responder's profile
     });
 
-    // Send email notification
-    const groupName = managedGroups.find(g => g.id === selectedGroupId)?.group_name;
-    const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
-        body: {
-          recipient_id: request.sender_id,
-          type: 'collab_accepted',
-          data: {
-             sender_name: groupName,
-             group_name: groupName,
-             link: `${window.location.origin}/producer/${selectedGroupId}`
-          }
-        }
-    });
-
-    if (emailError) {
-        console.error("Failed to send acceptance email:", emailError);
+    if (notifError) {
+        console.error("Error sending notification:", notifError);
     }
 
     setCollabRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.success("Collaborator approved!");
-    setIsUpdating(null);
-  };
-
-  const handleDeclineCollab = async (requestId: string) => {
-    setIsUpdating(requestId);
-    const { error } = await supabase
-      .from("collaboration_requests")
-      .update({ status: 'rejected' })
-      .eq("id", requestId);
-
-    if (error) {
-      console.error("Error rejecting collab:", error);
-      toast.error("Unable to reject request.");
-      setIsUpdating(null);
-      return;
-    }
-
-    setCollabRequests(prev => prev.filter((r) => r.id !== requestId));
-    toast.success("Request rejected.");
+    toast.success("Response sent!");
     setIsUpdating(null);
   };
 
@@ -867,23 +829,42 @@ const Dashboard = () => {
                        </div>
                      </div>
 
-                     <div className="flex items-center gap-2">
+                     <div className="flex flex-wrap items-center gap-2 justify-end max-w-md">
                        <Button
                          size="sm"
-                         className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-500"
+                         variant="default"
+                         className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs"
                          disabled={isUpdating === request.id}
-                         onClick={() => handleApproveCollab(request.id)}
+                         onClick={() => handleCollabResponse(request.id, 'interested')}
                        >
-                         <Check className="mr-1 h-4 w-4" /> Accept Collab
+                         Send Interest Back
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         className="rounded-xl border-secondary/30 text-secondary hover:bg-secondary/10 text-xs"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleCollabResponse(request.id, 'considering')}
+                       >
+                         We will think about it
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         className="rounded-xl border-orange-500/30 text-orange-600 hover:bg-orange-500/10 text-xs"
+                         disabled={isUpdating === request.id}
+                         onClick={() => handleCollabResponse(request.id, 'busy')}
+                       >
+                         Not available now
                        </Button>
                        <Button
                          size="sm"
                          variant="ghost"
-                         className="rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                         className="rounded-xl text-muted-foreground hover:bg-secondary/10 text-xs"
                          disabled={isUpdating === request.id}
-                         onClick={() => handleDeclineCollab(request.id)}
+                         onClick={() => handleCollabResponse(request.id, 'declined')}
                        >
-                         <X className="mr-1 h-4 w-4" /> Reject
+                         Sorry we can't
                        </Button>
                      </div>
                    </div>
