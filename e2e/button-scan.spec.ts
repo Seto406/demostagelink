@@ -265,11 +265,14 @@ test.describe('Full Button Functionality Scan', () => {
     // is a built-in backdoor for testing.
 
     await page.addInitScript(() => {
+        const mockUserId = '00000000-0000-0000-0000-000000000001';
+        const mockProfileId = '00000000-0000-0000-0000-000000000002';
+
         window.localStorage.setItem('sb-project-auth-token', JSON.stringify({
             access_token: 'mock-token',
             refresh_token: 'mock-refresh',
             user: {
-                id: 'test-user-id',
+                id: mockUserId,
                 aud: 'authenticated',
                 role: 'authenticated',
                 email: 'test@example.com',
@@ -282,7 +285,7 @@ test.describe('Full Button Functionality Scan', () => {
         // This suggests we can inject directly onto the window object.
         (window as any).PlaywrightTest = true;
         (window as any).PlaywrightUser = {
-            id: 'test-user-id',
+            id: mockUserId,
             aud: 'authenticated',
             role: 'authenticated',
             email: 'test@example.com',
@@ -291,8 +294,8 @@ test.describe('Full Button Functionality Scan', () => {
             created_at: new Date().toISOString(),
         };
         (window as any).PlaywrightProfile = {
-            id: 'test-profile-id',
-            user_id: 'test-user-id',
+            id: mockProfileId,
+            user_id: mockUserId,
             role: 'producer', // Give producer role to access dashboard
             group_name: 'Test Theater Group',
             username: 'testgroup',
