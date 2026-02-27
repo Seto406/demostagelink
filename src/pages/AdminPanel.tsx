@@ -306,7 +306,7 @@ const AdminPanel = () => {
 
     // Apply sorting and pagination last
     const { data, count, error } = await query
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .range(start, end);
 
     if (!mounted.current) return;

@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { ArrowLeft, Download, Users, QrCode, FileText, Eye, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -321,6 +321,7 @@ const GuestList = () => {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>Proof of Payment</DialogTitle>
+                <DialogDescription className="sr-only">Proof of Payment Image</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4">
                 {selectedProof && (
