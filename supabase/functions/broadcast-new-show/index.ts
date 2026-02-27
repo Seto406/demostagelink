@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import pLimit from "https://esm.sh/p-limit@3.1.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -36,8 +36,10 @@ const handler = async (req: Request): Promise<Response> => {
     // 1. Authorize User (Check if Admin)
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("Missing Authorization header");
       throw new Error("Missing Authorization header");
     }
+    console.log("Authorization header present (length):", authHeader.length);
 
     // Configure client without persisting session to avoid storage issues in Edge Runtime
     const supabaseClient = createClient(
@@ -57,7 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (userError || !user) {
       console.error("User authentication failed:", userError);
       return new Response(
-        JSON.stringify({ error: "Authentication failed: Invalid or expired token" }),
+        JSON.stringify({ error: "Authentication failed: Invalid or expired token", details: userError }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
