@@ -1,7 +1,10 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,29 +28,68 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { showId, showTitle, status, producerId }: NotificationRequest = await req.json();
 
+    if (!showId || !showTitle || !status || !producerId) {
+      throw new Error("Missing required fields");
+    }
+
+    // 1. Authentication & Authorization
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Missing Authorization header");
+    }
+
+    const supabaseAuth = createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+
+    if (userError || !user) {
+      console.error("User authentication failed:", userError);
+      throw new Error("Unauthorized: Invalid user token");
+    }
+
+    // Check Profile Role via Service Role to bypass RLS
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error("Profile lookup failed:", profileError);
+      throw new Error("Unauthorized: Profile not found");
+    }
+
+    if (profile.role !== 'admin') {
+      console.warn(`User ${user.id} is not an admin (Role: ${profile.role})`);
+      throw new Error("Forbidden: Admin privileges required");
+    }
+
     console.log(`Processing notification for show: ${showTitle}, status: ${status}`);
 
-    // Create Supabase client to get producer email
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Get the producer's email from auth.users via the profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: producerProfile, error: producerProfileError } = await supabaseAdmin
       .from("profiles")
       .select("user_id")
       .eq("id", producerId)
       .single();
 
-    if (profileError || !profile) {
-      console.error("Error fetching profile:", profileError);
+    if (producerProfileError || !producerProfile) {
+      console.error("Error fetching producer profile:", producerProfileError);
       throw new Error("Could not find producer profile");
     }
 
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profile.user_id);
+    const { data: userData, error: userDataError } = await supabaseAdmin.auth.admin.getUserById(producerProfile.user_id);
 
-    if (userError || !userData?.user?.email) {
-      console.error("Error fetching user:", userError);
+    if (userDataError || !userData?.user?.email) {
+      console.error("Error fetching user data:", userDataError);
       throw new Error("Could not find producer email");
     }
 
@@ -128,10 +170,12 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: unknown) {
     console.error("Error in send-show-notification function:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    const status = errorMessage.includes("Unauthorized") || errorMessage.includes("Forbidden") ? 401 : 500;
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
-        status: 500,
+        status: status,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
