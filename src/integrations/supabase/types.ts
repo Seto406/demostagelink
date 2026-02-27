@@ -805,6 +805,7 @@ export type Database = {
           external_links: Json
           genre: string | null
           id: string
+          is_update: boolean | null
           niche: Database["public"]["Enums"]["niche_type"] | null
           poster_url: string | null
           price: number | null
@@ -834,6 +835,8 @@ export type Database = {
           external_links?: Json
           genre?: string | null
           id?: string
+          is_update?: never
+          is_update?: never
           niche?: Database["public"]["Enums"]["niche_type"] | null
           poster_url?: string | null
           price?: number | null
