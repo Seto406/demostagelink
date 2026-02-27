@@ -53,9 +53,24 @@ serve(async (req) => {
         // Send Email via existing function
         if (ticket) {
             console.log(`Approved payment ${payment_id}, sending confirmation email.`);
+
+            let authUserId = null;
+            // Resolve Profile ID to Auth ID if applicable
+            if (ticket.user_id) {
+                const { data: profile } = await supabaseAdmin
+                    .from("profiles")
+                    .select("user_id")
+                    .eq("id", ticket.user_id)
+                    .maybeSingle();
+
+                if (profile) {
+                    authUserId = profile.user_id;
+                }
+            }
+
             await supabaseAdmin.functions.invoke("send-ticket-confirmation", {
                 body: {
-                    user_id: ticket.user_id,
+                    user_id: authUserId,
                     show_id: ticket.show_id,
                     email: ticket.customer_email,
                     name: ticket.customer_name
