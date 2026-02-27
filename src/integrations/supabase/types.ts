@@ -892,6 +892,54 @@ export type Database = {
           },
         ]
       }
+      show_edit_requests: {
+        Row: {
+          id: string
+          show_id: string
+          producer_id: string
+          changes: Json
+          status: string
+          admin_feedback: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          show_id: string
+          producer_id: string
+          changes: Json
+          status?: string
+          admin_feedback?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          show_id?: string
+          producer_id?: string
+          changes?: Json
+          status?: string
+          admin_feedback?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+           {
+            foreignKeyName: "show_edit_requests_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "show_edit_requests_producer_id_fkey"
+            columns: ["producer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       tickets: {
         Row: {
           access_code: string | null
@@ -1039,6 +1087,19 @@ export type Database = {
           users: Json[]
           total_count: number
         }
+      }
+      approve_show_edit_request: {
+        Args: {
+          request_id: string
+        }
+        Returns: void
+      }
+      reject_show_edit_request: {
+        Args: {
+          request_id: string
+          feedback: string
+        }
+        Returns: void
       }
     }
     Enums: {
