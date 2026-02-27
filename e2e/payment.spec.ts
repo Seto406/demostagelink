@@ -25,7 +25,7 @@ test.describe('Payment E2E Flow', () => {
     if (!showId) test.skip('No paid show found in DB');
 
     // 1. Navigate to Show Page
-    await page.goto(`/shows/${showId}`);
+    await page.goto(`/show/${showId}`); // CORRECTED PATH
 
     // 2. Click Buy Ticket
     // Expect a "Get Tickets", "Buy Ticket", "Reserve Now" button.
@@ -33,11 +33,15 @@ test.describe('Payment E2E Flow', () => {
     // Wait for network idle to ensure content is loaded
     await page.waitForLoadState('networkidle');
 
-    const buyButton = page.getByRole('button', { name: /Get Tickets|Buy Ticket|Reserve Now|Reserve Seat/i }).first();
-    // Check if visible
-    if (await buyButton.isVisible()) {
+    // Use a more generic selector that handles various button texts
+    // Using a more permissive selector to find the primary CTA
+    const buyButton = page.locator('button').filter({ hasText: /Get Tickets|Buy Ticket|Reserve Now|Reserve Seat/i }).first();
+
+    // Check if visible with a timeout
+    try {
+        await expect(buyButton).toBeVisible({ timeout: 5000 });
         await buyButton.click();
-    } else {
+    } catch (e) {
         // Log page content for debugging
         console.log('Buy button not found. Page content snippet:', await page.content().then(c => c.substring(0, 500)));
         // Fail explicitly
