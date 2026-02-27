@@ -32,6 +32,7 @@ import { calculateReservationFee } from "@/lib/pricing";
 import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "./UpsellModal";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProductionModalProps {
   open: boolean;
@@ -132,6 +133,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [cropperOpen, setCropperOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Admin: Auto-approve state
+  const [adminAutoApprove, setAdminAutoApprove] = useState(true);
+
   // Upsell State
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<{ featureName?: string, description?: string }>({});
@@ -159,6 +163,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setPosterFile(null);
     if (posterPreview) URL.revokeObjectURL(posterPreview);
     setPosterPreview(null);
+    setAdminAutoApprove(true);
   }, [posterPreview]);
 
   useEffect(() => {
@@ -514,8 +519,13 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       },
     };
 
-    // Determine status: Admins can approve immediately; producers need approval.
-    const targetStatus = profile.role === "admin" ? "approved" : "pending";
+    // Determine status:
+    // Admins can approve immediately if checkbox checked; otherwise pending.
+    // Producers always need approval (pending).
+    let targetStatus: "approved" | "pending" | "rejected" = "pending";
+    if (profile.role === "admin") {
+      targetStatus = adminAutoApprove ? "approved" : "pending";
+    }
 
     let query;
     if (showToEdit) {
@@ -1020,6 +1030,28 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                 </label>
               )}
             </div>
+
+            {/* Admin Auto-Approve Option */}
+            {profile?.role === "admin" && (
+              <div className="flex items-center space-x-2 bg-secondary/10 p-4 rounded-lg border border-secondary/20">
+                 <Checkbox
+                    id="admin-auto-approve"
+                    checked={adminAutoApprove}
+                    onCheckedChange={(c) => setAdminAutoApprove(!!c)}
+                 />
+                 <div className="grid gap-1.5 leading-none">
+                    <Label
+                       htmlFor="admin-auto-approve"
+                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                       Auto-approve changes
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                       If unchecked, changes will be submitted as "pending" for another admin to review.
+                    </p>
+                 </div>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={uploading}>
               {uploading ? "Saving..." : showToEdit ? "Update Production" : "Post Production"}
