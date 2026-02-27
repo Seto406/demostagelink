@@ -357,12 +357,14 @@ const UserFeed = () => {
               {feedItems.map((item, index) => (
                 <div key={`${item.type}-${item.data.id}`} data-tour={index === 0 ? "feed-post" : undefined}>
                   {item.type === 'show' ? (
-                      <FeedPost show={item.data as FeedShow} />
+                      <FeedPost
+                        show={item.data as FeedShow}
+                        dataTour={index === 0 ? "feed-interaction" : undefined}
+                      />
                   ) : (
                       <FeedUpdate post={item.data as FeedPostType} onDelete={() => refetch()} />
                   )}
 
-                  {index === 0 && <div data-tour="feed-interaction" className="sr-only">Interaction Target</div>}
                   {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
                 </div>
               ))}

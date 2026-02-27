@@ -914,10 +914,16 @@ const Dashboard = () => {
 
       {/* Zone 2: Stats */}
       <div className="mb-8" ref={analyticsRef} data-tour="dashboard-analytics">
-         {selectedGroupId && <AnalyticsDashboard profileId={selectedGroupId} isPro={isPro} onUpsell={() => {
-             setUpsellContext({ featureName: "Analytics", description: "Detailed analytics are available on the Premium plan." });
-             setUpsellOpen(true);
-         }} />}
+         {selectedGroupId ? (
+             <AnalyticsDashboard profileId={selectedGroupId} isPro={isPro} onUpsell={() => {
+                 setUpsellContext({ featureName: "Analytics", description: "Detailed analytics are available on the Premium plan." });
+                 setUpsellOpen(true);
+             }} />
+         ) : (
+             <div className="p-8 text-center text-muted-foreground bg-card/30 border border-dashed border-secondary/20 rounded-xl">
+                 Analytics will appear here once you create a group.
+             </div>
+         )}
       </div>
 
       {/* Zone 3: Management */}

@@ -282,26 +282,29 @@ export const getTourSteps = (isProducer: boolean): Step[] => [
       </div>
     ),
   },
-  {
-    target: '[data-tour="directory-join-btn"]', // Join button on card
-    title: "Highlight Features 2: Request to Join",
-    content: (
-      <div>
-        Audience members can request to join a theatre group account via the Join as a Member button:
-        <ul className="list-disc list-inside mt-1 text-sm">
-          <li>Sends a notification to the group for approval</li>
-          <li>Enables performers or members to connect directly</li>
-        </ul>
-        <div className="mt-2 p-2 bg-secondary/10 rounded border border-secondary/20 text-xs">
-          <strong>Visibility Impact:</strong> Groups receive qualified requests, and audiences can join without searching externally.
+  // Only show Join Request step to Non-Producers
+  ...(!isProducer ? [
+    {
+      target: '[data-tour="directory-join-btn"]', // Join button on card
+      title: "Highlight Features 2: Request to Join",
+      content: (
+        <div>
+          Audience members can request to join a theatre group account via the Join as a Member button:
+          <ul className="list-disc list-inside mt-1 text-sm">
+            <li>Sends a notification to the group for approval</li>
+            <li>Enables performers or members to connect directly</li>
+          </ul>
+          <div className="mt-2 p-2 bg-secondary/10 rounded border border-secondary/20 text-xs">
+            <strong>Visibility Impact:</strong> Groups receive qualified requests, and audiences can join without searching externally.
+          </div>
         </div>
-      </div>
-    ),
-  },
+      ),
+    }
+  ] : []),
   {
     target: "body", // Collab button isn't on directory page itself usually, so body fallback with context
     placement: "center",
-    title: "Highlight Features 3: Collaboration Button",
+    title: isProducer ? "Highlight Features 2: Collaboration Button" : "Highlight Features 3: Collaboration Button",
     content: (
       <div>
         Producers can tap the Collab button (on a group's profile) to connect with other producers.
