@@ -1,0 +1,5 @@
+avatars (Public: true)
+posters (Public: true)
+post-media (Public: true)
+system_assets (Public: true)
+payment_proofs (Public: false)
