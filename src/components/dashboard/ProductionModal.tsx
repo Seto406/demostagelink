@@ -161,9 +161,17 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setTempCastRole("");
     setProductionStatus("ongoing");
     setPosterFile(null);
-    if (posterPreview) URL.revokeObjectURL(posterPreview);
     setPosterPreview(null);
     setAdminAutoApprove(true);
+  }, []);
+
+  // Ensure blob URLs are revoked when component unmounts or preview changes
+  useEffect(() => {
+      return () => {
+          if (posterPreview && posterPreview.startsWith('blob:')) {
+              URL.revokeObjectURL(posterPreview);
+          }
+      };
   }, [posterPreview]);
 
   useEffect(() => {
@@ -287,10 +295,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
   const clearPoster = () => {
     setPosterFile(null);
-    if (posterPreview) {
-      URL.revokeObjectURL(posterPreview);
-      setPosterPreview(null);
-    }
+    setPosterPreview(null);
   };
 
   const handleAddCastMember = () => {
