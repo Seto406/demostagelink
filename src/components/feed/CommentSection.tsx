@@ -20,6 +20,8 @@ interface Comment {
     username: string | null;
     group_name: string | null;
     avatar_url: string | null;
+    first_name: string | null;
+    last_name: string | null;
   };
   shows?: {
     producer_id: string;
@@ -50,7 +52,9 @@ export function CommentSection({ showId }: CommentSectionProps) {
           profiles (
             username,
             group_name,
-            avatar_url
+            avatar_url,
+            first_name,
+            last_name
           ),
           shows (
             producer_id
@@ -209,7 +213,11 @@ export function CommentSection({ showId }: CommentSectionProps) {
           </p>
         ) : (
           comments.map((comment) => {
-            const commenterName = comment.profiles?.group_name || comment.profiles?.username || "User";
+            // Priority: username -> group_name -> first_name + last_name -> "User"
+            const commenterName =
+                comment.profiles?.username ||
+                comment.profiles?.group_name ||
+                (comment.profiles?.first_name ? `${comment.profiles.first_name} ${comment.profiles.last_name || ''}`.trim() : "User");
             const initials = commenterName.substring(0, 2).toUpperCase();
 
             // Check permissions

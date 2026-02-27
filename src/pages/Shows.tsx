@@ -599,7 +599,8 @@ const Shows = () => {
       const lower = debouncedSearchQuery.toLowerCase();
       result = result.filter((s) =>
         s.title.toLowerCase().includes(lower) ||
-        (s.description && s.description.toLowerCase().includes(lower))
+        (s.description && s.description.toLowerCase().includes(lower)) ||
+        (s.seo_metadata?.transcript_content && s.seo_metadata.transcript_content.toLowerCase().includes(lower))
       );
     }
 

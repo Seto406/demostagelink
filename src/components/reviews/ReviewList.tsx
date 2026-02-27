@@ -157,7 +157,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div>
                   <h4 className="font-medium text-foreground flex items-center gap-2">
-                    {review.profiles?.group_name || review.profiles?.username || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ''}` : "Audience Member")}
+                    {review.profiles?.username || review.profiles?.group_name || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ''}`.trim() : "Audience Member")}
                     {!review.is_approved && (
                       <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold uppercase tracking-wider">Moderated</span>
                     )}

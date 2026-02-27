@@ -43,7 +43,16 @@ serve(async (req) => {
       throw new Error("Only admins can delete users");
     }
 
-    const { user_id } = await req.json();
+    const { user_id, security_key } = await req.json();
+
+    // Validate Security Key
+    const validKey = Deno.env.get("ADMIN_ACTION_KEY");
+    if (!validKey || security_key !== validKey) {
+      return new Response(
+        JSON.stringify({ error: "Invalid security key" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!user_id) {
       return new Response(

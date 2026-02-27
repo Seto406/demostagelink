@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil, Home, Check } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Ticket, Users, Clock, ExternalLink, Share2, Download, Heart, Pencil, Home, Check, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import {
@@ -453,6 +453,28 @@ END:VCALENDAR`;
                             </div>
                         )}
                     </div>
+
+                    {/* Transcript CTA */}
+                    {show.seo_metadata?.transcript_url && (
+                        <div className="py-2">
+                            <a
+                                href={show.seo_metadata.transcript_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => {
+                                    const groupId = show?.theater_group?.id || show?.producer_id?.id;
+                                    if (groupId && show?.id) {
+                                      trackEvent('transcript_click', groupId, show.id);
+                                    }
+                                }}
+                            >
+                                <Button variant="secondary" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20">
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Read Transcript
+                                </Button>
+                            </a>
+                        </div>
+                    )}
 
                     {/* Price & Actions */}
                     <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center pt-2">
