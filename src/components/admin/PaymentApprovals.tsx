@@ -22,7 +22,10 @@ type ManualPayment = {
   profiles?: {
     username: string | null;
     email: string | null;
-  } | null;
+  } | {
+    username: string | null;
+    email: string | null;
+  }[] | null;
   tickets?: {
       customer_name: string | null;
       customer_email: string | null;
@@ -109,8 +112,23 @@ export function PaymentApprovals() {
   const getDisplayInfo = (payment: ManualPayment) => {
     // Priority: Guest Info in Ticket -> Guest Info in Payment -> Profile Info
     const ticket = payment.tickets?.[0];
-    const name = ticket?.customer_name || payment.customer_name || payment.profiles?.username || "Guest";
-    const email = ticket?.customer_email || payment.customer_email || payment.profiles?.email || "No Email";
+
+    // Safely get profile info (could be object or array)
+    let profileName = "Guest";
+    let profileEmail = "No Email";
+
+    if (payment.profiles) {
+        if (Array.isArray(payment.profiles)) {
+            profileName = payment.profiles[0]?.username || "Guest";
+            profileEmail = payment.profiles[0]?.email || "No Email";
+        } else {
+            profileName = payment.profiles.username || "Guest";
+            profileEmail = payment.profiles.email || "No Email";
+        }
+    }
+
+    const name = ticket?.customer_name || payment.customer_name || profileName;
+    const email = ticket?.customer_email || payment.customer_email || profileEmail;
     const showTitle = ticket?.shows?.title || payment.description || "Unknown Show";
 
     return { name, email, showTitle };
