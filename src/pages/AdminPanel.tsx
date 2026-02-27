@@ -87,8 +87,18 @@ interface Show {
   } | null;
   profiles?: {
     group_name: string | null;
-  };
+  } | {
+    group_name: string | null;
+  }[] | null;
 }
+
+const getGroupName = (show: Show) => {
+  if (!show.profiles) return "Unknown Group";
+  if (Array.isArray(show.profiles)) {
+    return show.profiles[0]?.group_name || "Unknown Group";
+  }
+  return show.profiles.group_name || "Unknown Group";
+};
 
 interface UserProfile {
   id: string | null;
@@ -730,6 +740,31 @@ const AdminPanel = () => {
     }
   };
 
+  // Hard delete show
+  const handleHardDeleteShow = async (showId: string) => {
+    // Requires confirmation
+    const { error } = await supabase
+      .from("shows")
+      .delete()
+      .eq("id", showId);
+
+    if (error) {
+      console.error("Hard delete error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to permanently delete production.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Production Deleted",
+        description: "Production has been permanently removed.",
+      });
+      fetchShows();
+      fetchStats();
+    }
+  };
+
   const handleFilterChange = (status: FilterStatus) => {
     setFilterStatus(status);
     setCurrentShowsPage(1);
@@ -1230,7 +1265,7 @@ const AdminPanel = () => {
                               </div>
                             </td>
                             <td className="p-4 text-muted-foreground">
-                              {show.profiles?.group_name || "Unknown Group"}
+                              {getGroupName(show)}
                             </td>
                             <td className="p-4 text-muted-foreground">{getNicheLabel(show.niche)}</td>
                             <td className="p-4 text-muted-foreground">
@@ -1255,28 +1290,55 @@ const AdminPanel = () => {
 
                                 {/* Restore button for deleted shows */}
                                 {filterStatus === "deleted" ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRestoreShow(show.id)}
-                                    className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                    title="Restore Show"
-                                  >
-                                    <RotateCcw className="w-4 h-4" />
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRestoreShow(show.id)}
+                                      className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                      title="Restore Show"
+                                    >
+                                      <RotateCcw className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (confirm("Are you sure you want to permanently delete this show? This action cannot be undone.")) {
+                                          handleHardDeleteShow(show.id);
+                                        }
+                                      }}
+                                      className="h-8 w-8 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                      title="Permanently Delete"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </>
                                 ) : (
                                   <>
                                     {show.status === "pending" && (
                                       <>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setConfirmAction({ type: "approve", show })}
-                                          className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                          title="Approve"
-                                        >
-                                          <Check className="w-4 h-4" />
-                                        </Button>
+                                        {isUpdate ? (
+                                           <Button
+                                              variant="default"
+                                              size="sm"
+                                              onClick={() => setConfirmAction({ type: "approve", show })}
+                                              className="bg-blue-600 hover:bg-blue-700 text-white h-8 px-2 text-xs"
+                                              title="Approve Update"
+                                           >
+                                              <Check className="w-3 h-3 mr-1" /> Approve Edit
+                                           </Button>
+                                        ) : (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              onClick={() => setConfirmAction({ type: "approve", show })}
+                                              className="h-8 w-8 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                              title="Approve"
+                                            >
+                                              <Check className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                         <Button
                                           variant="ghost"
                                           size="sm"
@@ -1693,7 +1755,7 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">{selectedShow?.title}</DialogTitle>
             <DialogDescription>
-              Submitted by {selectedShow?.profiles?.group_name || "Unknown Group"}
+              Submitted by {selectedShow ? getGroupName(selectedShow) : "Unknown Group"}
             </DialogDescription>
           </DialogHeader>
           {selectedShow && (
