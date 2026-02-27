@@ -602,7 +602,10 @@ DECLARE
     t text;
 BEGIN
     FOR t IN
-        SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
     LOOP
         EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
     END LOOP;
