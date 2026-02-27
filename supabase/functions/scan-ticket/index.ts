@@ -198,6 +198,22 @@ const handler = async (req: Request): Promise<Response> => {
         });
     }
 
+    // Check status (Must be confirmed)
+    if (ticket.status !== 'confirmed') {
+         return new Response(JSON.stringify({
+            success: false,
+            message: `Ticket status is ${ticket.status}`,
+             ticket: {
+                id: ticket.id,
+                status: ticket.status,
+                attendee: ticket.profiles?.username || ticket.customer_name || "Guest"
+            }
+        }), {
+            status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+    }
+
     // Update Ticket
     const { error: updateError } = await supabase
         .from("tickets")
