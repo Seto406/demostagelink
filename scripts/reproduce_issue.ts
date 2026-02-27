@@ -1,47 +1,42 @@
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { createClient } from "@supabase/supabase-js";
+import 'dotenv/config';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
+// Initialize Supabase client
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
+  console.error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY");
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function reproduce() {
+async function testEditRequests() {
   console.log("Checking for pending edit requests...");
 
-  // This query matches what the AdminPanel fetches for "Edit Requests"
-  const { count, error } = await supabase
+  const { data: shows, error } = await supabase
     .from("shows")
-    .select("id", { count: "exact", head: true })
+    .select("*")
     .eq("status", "pending")
-    .is("deleted_at", null)
     .eq("is_update", true);
 
   if (error) {
-    console.error("Error fetching pending edits:", error);
+    console.error("Error fetching edit requests:", error);
     return;
   }
 
-  console.log(`Pending Edit Requests (status='pending' AND is_update=true): ${count}`);
-
-  if (count === 0) {
-      console.log("Verified: No edit requests found.");
-      console.log("Root Cause Analysis: Admin edits are auto-approved by the frontend, so they never enter 'pending' state.");
+  console.log(`Found ${shows.length} pending edit requests.`);
+  if (shows.length > 0) {
+    console.log("Sample show:", shows[0]);
   } else {
-      console.log("Found pending edits. The UI might be filtering them out incorrectly.");
+    console.log("Verified: No edit requests found.");
   }
+
+  // Check if we can insert a show and update it to simulate an edit request
+  // Note: We need a producer user to create a show. We might not have one easily available without auth.
+  // So we will just inspect existing data or rely on code analysis.
 }
 
-reproduce();
+testEditRequests();
