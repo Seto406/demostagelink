@@ -1,9 +1,10 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import pLimit from "https://esm.sh/p-limit@4.0.0";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import pLimit from "https://esm.sh/p-limit@3.1.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
@@ -33,6 +34,64 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { showId } = await req.json().catch(() => ({}));
 
+    // 1. Authentication & Authorization
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Missing Authorization header");
+    }
+
+    let isAuthorized = false;
+
+    // Check if it's a Service Role request (e.g. Cron or Manual Admin script with Service Key)
+    // We check if the token in the header *is* the service role key.
+    // Note: The header is usually "Bearer <token>"
+    if (authHeader.includes(SUPABASE_SERVICE_ROLE_KEY)) {
+      console.log("Authorized via Service Role Key");
+      isAuthorized = true;
+    } else {
+      // It's a User Token. Verify User and Role.
+      const supabaseAuth = createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        {
+          global: { headers: { Authorization: authHeader } },
+          auth: { persistSession: false }
+        }
+      );
+
+      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+
+      if (userError || !user) {
+        console.error("User authentication failed:", userError);
+        throw new Error("Unauthorized: Invalid user token");
+      }
+
+      // Check Profile Role
+      // Use Service Role client to check role safely, bypassing RLS that might hide it
+      const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const { data: profile, error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error("Profile lookup failed:", profileError);
+        throw new Error("Unauthorized: Profile not found");
+      }
+
+      if (profile.role === 'admin') {
+        isAuthorized = true;
+      } else {
+        console.warn(`User ${user.id} is not an admin (Role: ${profile.role})`);
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new Error("Forbidden: Admin privileges required");
+    }
+
+    // 2. Main Logic
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     let showsToRemind: Show[] = [];
 
@@ -200,10 +259,12 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: unknown) {
     console.error("Error in send-show-reminder function:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const status = errorMessage.includes("Unauthorized") || errorMessage.includes("Forbidden") ? 401 : 500;
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
-        status: 500,
+        status: status,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );

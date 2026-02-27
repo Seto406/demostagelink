@@ -58,8 +58,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (userError || !user) {
       console.error("User authentication failed:", userError);
+      console.error("User Auth Error Message:", userError?.message);
       return new Response(
-        JSON.stringify({ error: "Authentication failed: Invalid or expired token", details: userError }),
+        JSON.stringify({
+            error: "Authentication failed: Invalid or expired token",
+            details: userError,
+            message: userError?.message
+        }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,10 +21,17 @@ serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
     );
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+        console.error("User authentication failed:", userError);
+        throw new Error("Unauthorized: Invalid user token");
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -32,7 +39,12 @@ serve(async (req) => {
     );
 
     // Verify Admin Role
-    const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("user_id", user.id).single();
+    const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
     if (profile?.role !== 'admin') throw new Error("Forbidden: Admin only");
 
     if (action === 'approve') {
@@ -138,11 +150,14 @@ serve(async (req) => {
         status: 200
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
      console.error("Approve Manual Payment Error:", error);
-     return new Response(JSON.stringify({ error: error.message }), {
+     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+     const status = errorMessage.includes("Unauthorized") || errorMessage.includes("Forbidden") ? 401 : 400;
+
+     return new Response(JSON.stringify({ error: errorMessage }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400
+        status: status
     });
   }
 });
