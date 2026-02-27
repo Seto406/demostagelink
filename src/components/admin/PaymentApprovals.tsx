@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { Loader2, Check, X, ExternalLink, Eye } from "lucide-react";
@@ -235,6 +235,7 @@ export function PaymentApprovals() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>Proof of Payment</DialogTitle>
+                <DialogDescription className="sr-only">Proof of Payment Image</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4">
                 {selectedProof && (
