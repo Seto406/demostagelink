@@ -23,7 +23,19 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { ticket_id: rawTicketId, access_code: rawAccessCode, show_id } = await req.json();
+    let rawTicketId, rawAccessCode, show_id;
+    try {
+        const body = await req.json();
+        rawTicketId = body.ticket_id;
+        rawAccessCode = body.access_code;
+        show_id = body.show_id;
+    } catch {
+        return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+    }
+
     const ticket_id = rawTicketId ? String(rawTicketId).trim() : undefined;
     const access_code = rawAccessCode ? String(rawAccessCode).trim().toUpperCase() : undefined;
 

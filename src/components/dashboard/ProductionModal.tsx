@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,6 +140,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<{ featureName?: string, description?: string }>({});
 
+  const initializedRef = useRef<string | null>(null);
+
   const resetForm = useCallback(() => {
     setTitle("");
     setDescription("");
@@ -163,6 +165,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setPosterFile(null);
     setPosterPreview(null);
     setAdminAutoApprove(true);
+    initializedRef.current = null;
   }, []);
 
   // Ensure blob URLs are revoked when component unmounts or preview changes
@@ -175,6 +178,22 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   }, [posterPreview]);
 
   useEffect(() => {
+    if (!open) {
+      // If modal is closed, reset the initialization tracker
+      initializedRef.current = null;
+      resetForm();
+      return;
+    }
+
+    const currentShowId = showToEdit ? showToEdit.id : 'new';
+
+    // Only initialize if we haven't already for this show/mode
+    if (initializedRef.current === currentShowId) {
+      return;
+    }
+
+    initializedRef.current = currentShowId;
+
     if (showToEdit) {
       setTitle(showToEdit.title || "");
       setDescription(showToEdit.description || "");
@@ -249,7 +268,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
 
     } else {
-      resetForm();
+      // It's a new show, just ensure clean state (which resetForm did, but good to be explicit)
+      // We already called resetForm when closing, but if opened directly...
+      // resetForm() is called in the !open block above when it closes.
+      // So if we are here, we are opening fresh.
     }
   }, [showToEdit, open, resetForm]);
 
@@ -613,7 +635,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   return (
     <>
       <Dialog open={open} onOpenChange={(val) => {
-        if (!val && !showToEdit) resetForm();
         onOpenChange(val);
       }}>
         <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-2xl">

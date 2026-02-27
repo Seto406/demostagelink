@@ -76,7 +76,11 @@ serve(async (req) => {
         .single();
 
     if (recipientError || !recipientProfile) {
-        throw new Error("Recipient profile not found");
+        // Return JSON error instead of throwing 500
+        return new Response(
+            JSON.stringify({ error: "Recipient profile not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
     }
 
     // 3. Prevent self-collaboration
@@ -123,41 +127,33 @@ serve(async (req) => {
     const senderName = senderProfile.group_name || "Someone";
 
     try {
-      const { error: notificationError } = await supabaseAdmin
-        .from('notifications')
-        .insert({
+      // Robust Notification Insert
+      // We check if actor_id is valid (it is optional in some schemas)
+      const payload: any = {
           user_id: recipientProfile.id,
-          actor_id: senderProfile.id,
           type: 'collaboration_request',
           title: 'New Collaboration Request',
           message: `${senderName} wants to collaborate with you.`,
           link: `/dashboard`,
           read: false
-        } as Record<string, unknown>);
+      };
+
+      // Add actor_id only if it exists in the schema (we assume it does based on full_schema.sql,
+      // but memory suggests potential issues. We'll try including it, and catch specific error if not).
+      payload.actor_id = senderProfile.id;
+
+      const { error: notificationError } = await supabaseAdmin
+        .from('notifications')
+        .insert(payload);
 
       if (notificationError) {
-         // If the error is about the missing actor_id column, retry without it
-        if (notificationError.message?.includes('column "actor_id" of relation "notifications" does not exist') ||
-            notificationError.code === '42703') { // Postgres error code for undefined column
-          console.warn('actor_id column missing in notifications table, retrying without it...');
-
-          const { error: retryError } = await supabaseAdmin
-            .from('notifications')
-            .insert({
-              user_id: recipientProfile.id,
-              type: 'collaboration_request',
-              title: 'New Collaboration Request',
-              message: `${senderName} wants to collaborate with you.`,
-              link: `/dashboard`,
-              read: false
-            });
-
-          if (retryError) {
-             console.error("Error creating notification (retry):", retryError);
+          // Fallback: Retry without actor_id if column missing or constraint violation
+          if (notificationError.code === '42703' || notificationError.message?.includes('actor_id')) {
+             delete payload.actor_id;
+             await supabaseAdmin.from('notifications').insert(payload);
+          } else {
+             console.error("Notification failed:", notificationError);
           }
-        } else {
-            console.error("Error creating notification:", notificationError);
-        }
       }
     } catch (error) {
        console.error("Failed to create notification:", error);

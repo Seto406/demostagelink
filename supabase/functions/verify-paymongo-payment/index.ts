@@ -331,6 +331,29 @@ serve(async (req) => {
              } else {
                  console.warn("Skipping email confirmation: No user_id or email found.");
              }
+
+             // Insert Analytics Event for Ticket Purchase
+             try {
+                 const { error: analyticsError } = await supabaseAdmin
+                     .from("analytics_events")
+                     .insert({
+                         event_type: "ticket_purchase",
+                         group_id: ticketData.shows?.producer_id, // Ensure we have this from the fetch
+                         show_id: showId,
+                         user_id: profileIdForTicket, // Null if guest
+                         meta: {
+                             payment_id: payment.id,
+                             ticket_id: ticketData.id,
+                             amount: payment.amount / 100 // Convert cents to base unit if PayMongo uses cents
+                         }
+                     });
+
+                 if (analyticsError) {
+                     console.error("Failed to log analytics event:", analyticsError);
+                 }
+             } catch (analyticsErr) {
+                 console.error("Error logging analytics:", analyticsErr);
+             }
           }
         }
       } else {

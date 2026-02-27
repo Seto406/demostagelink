@@ -73,10 +73,10 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
         const fileExt = file.name.split('.').pop();
         const fileName = `${profile.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        // Attempt to upload to 'post-media' bucket
+        // Attempt to upload to 'social_updates' bucket
         // If it fails, we might need to fallback or error out.
         const { error: uploadError } = await supabase.storage
-          .from('post-media')
+          .from('social_updates')
           .upload(fileName, file);
 
         if (uploadError) {
@@ -85,13 +85,13 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
                  // Try to create it? We can't easily here.
                  // Fallback to 'show-posters' just to make it work in demo?
                  // No, that's bad practice.
-                 throw new Error("Storage bucket 'post-media' not found. Please contact admin.");
+                 throw new Error("Storage bucket 'social_updates' not found. Please contact admin.");
             }
             throw uploadError;
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('post-media')
+          .from('social_updates')
           .getPublicUrl(fileName);
 
         mediaUrls.push(publicUrl);

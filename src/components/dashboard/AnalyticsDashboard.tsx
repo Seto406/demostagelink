@@ -46,7 +46,11 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
 
     try {
       // 1. Fetch Analytics RPC
-      const { data, error } = await supabase.rpc('get_analytics_summary', { target_group_id: profileId });
+      // Pass both parameters to satisfy the overloaded signature and avoid PGRST203
+      const { data, error } = await supabase.rpc('get_analytics_summary', {
+        target_group_id: profileId,
+        group_id: null
+      });
 
       if (error) throw error;
 

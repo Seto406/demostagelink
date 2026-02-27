@@ -66,11 +66,13 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
         let fetchedReviews = data as unknown as Review[];
 
         // Filter reviews based on approval status and user role
+        let visibleReviews = fetchedReviews;
+
         if (!canModerate) {
-          fetchedReviews = fetchedReviews.filter(review => review.is_approved);
+          visibleReviews = fetchedReviews.filter(review => review.is_approved);
         }
 
-        setReviews(fetchedReviews);
+        setReviews(visibleReviews);
       }
     } catch (err) {
       console.error(err);
@@ -157,7 +159,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
                   <h4 className="font-medium text-foreground flex items-center gap-2">
                     {review.profiles?.group_name || review.profiles?.username || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ''}` : "Audience Member")}
                     {!review.is_approved && (
-                      <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30">Hidden</span>
+                      <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold uppercase tracking-wider">Moderated</span>
                     )}
                   </h4>
                   <p className="text-xs text-muted-foreground">

@@ -172,26 +172,26 @@ export const DigitalPass = ({
                     </div>
 
                     <Link to={`/show/${id}`} className="block group-hover:text-secondary transition-colors">
-                        <h3 className="font-serif text-xl font-bold text-foreground mb-1 line-clamp-2">
+                        <h3 className="font-serif text-xl font-bold text-foreground mb-1 line-clamp-2 break-words leading-tight">
                             {title}
                         </h3>
                     </Link>
 
-                    <p className="text-sm text-muted-foreground font-medium mb-3">
+                    <p className="text-sm text-muted-foreground font-medium mb-3 truncate max-w-[250px]">
                         {groupName}
                     </p>
 
                     <div className="space-y-1.5 text-xs text-muted-foreground/80 mb-4">
                         {date && (
                             <div className="flex items-center gap-2">
-                                <Calendar className="w-3.5 h-3.5 text-secondary" />
-                                <span>{new Date(date).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}</span>
+                                <Calendar className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                                <span className="truncate">{new Date(date).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}</span>
                             </div>
                         )}
                         {(venue || city) && (
                             <div className="flex items-center gap-2">
-                                <MapPin className="w-3.5 h-3.5 text-secondary" />
-                                <span className="line-clamp-1">{venue ? `${venue}, ${city}` : city}</span>
+                                <MapPin className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                                <span className="line-clamp-1 break-words">{venue ? `${venue}, ${city}` : city}</span>
                             </div>
                         )}
                     </div>
