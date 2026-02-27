@@ -344,6 +344,43 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     e.preventDefault();
     if (!profile || !user) return;
 
+    if (!isPro && !showToEdit) {
+      // Check for Basic Tier limit (2 shows/month)
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count, error: countError } = await supabase
+        .from("shows")
+        .select("*", { count: "exact", head: true })
+        .eq("producer_id", profile.id)
+        .gte("created_at", startOfMonth.toISOString());
+
+      if (countError) {
+        console.error("Error checking show limit:", countError);
+        toast({
+          title: "Error",
+          description: "Failed to verify show limit.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (count !== null && count >= 2) {
+        toast({
+          title: "Limit Reached",
+          description: "Basic Plan limit reached. You can only post 2 shows per month.",
+          variant: "destructive",
+        });
+        setUpsellContext({
+          featureName: "Unlimited Shows",
+          description: "Upgrade to Premium to post unlimited shows.",
+        });
+        setUpsellOpen(true);
+        return;
+      }
+    }
+
     const errors: string[] = [];
     if (!title) errors.push("Title");
 

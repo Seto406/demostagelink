@@ -41,6 +41,7 @@ interface Producer {
   map_screenshot_url: string | null;
   university: string | null;
   producer_role: string | null;
+  is_premium?: boolean;
 }
 
 interface Show {
@@ -128,7 +129,7 @@ const ProducerProfile = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role")
+        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role, is_premium")
         .eq("id", id)
         .maybeSingle();
 
@@ -304,6 +305,27 @@ const ProducerProfile = () => {
 
     setJoinLoading(true);
     try {
+      // Check Basic Tier limit for the group
+      if (!producer.is_premium) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count, error: countError } = await supabase
+          .from("group_members")
+          .select("*", { count: "exact", head: true })
+          .eq("group_id", producer.id)
+          .eq("status", "pending") // Count pending requests
+          .gte("created_at", startOfMonth.toISOString());
+
+        if (countError) throw countError;
+
+        if (count !== null && count >= 10) {
+          toast.error("This group has reached its monthly limit for new member requests.");
+          return;
+        }
+      }
+
       const { data: existingMember, error: fetchError } = await supabase
         .from('group_members')
         .select('id, status')
@@ -621,7 +643,11 @@ const ProducerProfile = () => {
                           <>
                             {hasApplied ? (
                               applicationStatus === 'active' ? (
-                                null
+                                <div className="ml-2">
+                                  <Badge variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30 border-primary/20 h-9 px-3">
+                                    Member
+                                  </Badge>
+                                </div>
                               ) : (
                                 <Button
                                   disabled
@@ -747,7 +773,9 @@ const ProducerProfile = () => {
                 Ensemble
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {members.map((member) => (
+                {members
+                  .slice(0, !producer.is_premium ? 10 : undefined)
+                  .map((member) => (
                   <Link
                     key={member.id}
                     to={member.profile ? `/profile/${member.profile.id}` : '#'}
@@ -770,6 +798,11 @@ const ProducerProfile = () => {
                   </Link>
                 ))}
               </div>
+              {!producer.is_premium && members.length > 10 && (
+                <p className="text-center text-xs text-muted-foreground mt-4">
+                  {members.length - 10} more members hidden
+                </p>
+              )}
             </motion.div>
           )}
 

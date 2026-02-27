@@ -353,10 +353,12 @@ const Dashboard = () => {
       let userProfiles: ApplicantProfile[] = [];
 
       if (allUserIds.length > 0) {
+        // Fetch profiles by their Profile IDs (since group_members.user_id stores Profile IDs)
+        // Also include user_id (Auth ID) for notifications
         const { data: up, error: userProfilesError } = await supabase
           .from("profiles")
           .select("id, user_id, username, avatar_url, group_name, role")
-          .in("user_id", allUserIds);
+          .in("id", allUserIds);
 
         if (userProfilesError) {
           console.error("Error loading applicant profiles:", userProfilesError);
@@ -459,16 +461,24 @@ const Dashboard = () => {
     }
 
     try {
-      await supabase.functions.invoke('send-notification-email', {
-          body: {
-            recipient_id: application.user_id,
-            type: 'membership_approved',
-            data: {
-              group_name: groupName,
-              link: `${window.location.origin}/producer/${selectedGroupId}`
-            }
-          }
-      });
+      // Resolve applicant's Auth ID using the profile lookup
+      const applicantProfile = applicantsByUserId[application.user_id];
+      const applicantAuthId = applicantProfile?.user_id;
+
+      if (applicantAuthId) {
+          await supabase.functions.invoke('send-notification-email', {
+              body: {
+                recipient_id: applicantAuthId,
+                type: 'membership_approved',
+                data: {
+                  group_name: groupName,
+                  link: `${window.location.origin}/producer/${selectedGroupId}`
+                }
+              }
+          });
+      } else {
+          console.warn("Could not resolve applicant Auth ID for email notification");
+      }
     } catch (emailError) {
        console.error("Failed to send approval email:", emailError);
     }

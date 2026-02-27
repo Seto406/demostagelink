@@ -354,6 +354,28 @@ const Directory = () => {
 
     setJoiningGroupId(group.id);
     try {
+      // Check Basic Tier limit for the group
+      if (!group.is_premium) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count, error: countError } = await supabase
+          .from("group_members")
+          .select("*", { count: "exact", head: true })
+          .eq("group_id", group.id)
+          .eq("status", "pending")
+          .gte("created_at", startOfMonth.toISOString());
+
+        if (countError) throw countError;
+
+        if (count !== null && count >= 10) {
+          toast.error("This group has reached its monthly limit for new member requests.");
+          setJoiningGroupId(null);
+          return;
+        }
+      }
+
       // Check for total existing memberships (active or pending)
       const { count: membershipCount, error: countError } = await supabase
         .from('group_members')
