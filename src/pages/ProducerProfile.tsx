@@ -196,22 +196,22 @@ const ProducerProfile = () => {
       }
 
       // Fetch following count
-      if (profileData?.user_id) {
+      if (profileData?.id) {
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .eq("follower_id", profileData.user_id);
+            .eq("follower_id", profileData.id);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
           }
       }
 
-      if (user) {
+      if (user && profile) {
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .eq("follower_id", user.id)
+            .eq("follower_id", profile.id)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -245,6 +245,10 @@ const ProducerProfile = () => {
         toast.error("Please login to follow this group");
         return;
     }
+    if (!profile) {
+        toast.error("Profile not loaded. Please try again.");
+        return;
+    }
     if (!producer) return;
 
     setFollowLoading(true);
@@ -253,7 +257,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", user.id)
+            .eq("follower_id", profile.id)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -268,7 +272,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .insert({
-                follower_id: user.id,
+                follower_id: profile.id,
                 following_id: producer.id
             });
 

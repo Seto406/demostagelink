@@ -312,7 +312,7 @@ const Dashboard = () => {
           const { data: followerProfiles } = await supabase
             .from("profiles")
             .select("id, user_id, username, avatar_url")
-            .in("user_id", followerIds);
+            .in("id", followerIds);
 
           if (aborted) return;
 
@@ -321,7 +321,7 @@ const Dashboard = () => {
             id: f.id,
             follower_id: f.follower_id,
             created_at: f.created_at,
-            profile: followerProfiles?.find((p) => p.user_id === f.follower_id)
+            profile: followerProfiles?.find((p) => p.id === f.follower_id)
           }));
       }
       setFollowers(followersWithProfiles);
