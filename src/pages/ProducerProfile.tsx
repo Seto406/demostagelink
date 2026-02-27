@@ -618,30 +618,31 @@ const ProducerProfile = () => {
                             )}
                           </Button>
                         ) : profile.role === 'audience' ? (
-                          <Button
-                            onClick={handleJoinRequest}
-                            disabled={joinLoading || hasApplied}
-                            variant="outline"
-                            className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
-                          >
-                            {joinLoading ? (
-                              "Sending..."
-                            ) : hasApplied ? (
+                          <>
+                            {hasApplied ? (
                               applicationStatus === 'active' ? (
-                                <>
-                                  <UserCheck className="w-4 h-4 mr-2" />
-                                  Member
-                                </>
+                                null
                               ) : (
-                                `Application ${applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}`
+                                <Button
+                                  disabled
+                                  variant="outline"
+                                  className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                                >
+                                  Application {applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}
+                                </Button>
                               )
                             ) : (
-                              <>
+                              <Button
+                                onClick={handleJoinRequest}
+                                disabled={joinLoading || hasApplied}
+                                variant="outline"
+                                className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                              >
                                 <UserPlus className="w-4 h-4 mr-2" />
                                 Join as Member
-                              </>
+                              </Button>
                             )}
-                          </Button>
+                          </>
                         ) : null
                       )}
                   </div>
@@ -673,7 +674,7 @@ const ProducerProfile = () => {
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
                       {producer.facebook_url && (
                         <a 
-                          href={producer.facebook_url}
+                          href={`/external-redirect?url=${encodeURIComponent(producer.facebook_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -684,7 +685,7 @@ const ProducerProfile = () => {
                       )}
                       {producer.instagram_url && (
                         <a 
-                          href={producer.instagram_url}
+                          href={`/external-redirect?url=${encodeURIComponent(producer.instagram_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"

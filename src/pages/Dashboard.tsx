@@ -458,6 +458,21 @@ const Dashboard = () => {
       return;
     }
 
+    try {
+      await supabase.functions.invoke('send-notification-email', {
+          body: {
+            recipient_id: application.user_id,
+            type: 'membership_approved',
+            data: {
+              group_name: groupName,
+              link: `${window.location.origin}/producer/${selectedGroupId}`
+            }
+          }
+      });
+    } catch (emailError) {
+       console.error("Failed to send approval email:", emailError);
+    }
+
     setApplications((prev) => prev.filter((item) => item.id !== applicationId));
     setActiveMembers((prev) => [...prev, { ...application, status: 'active' }]);
     toast.success("Member approved.");
