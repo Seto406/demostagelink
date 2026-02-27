@@ -44,7 +44,8 @@ import {
   Settings,
   CreditCard,
   Bell,
-  Sparkles
+  Sparkles,
+  PenLine
 } from "lucide-react";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,6 +58,7 @@ import { Input } from "@/components/ui/input";
 import { InvitationHub } from "@/components/admin/InvitationHub";
 import { PaymentSettings } from "@/components/admin/PaymentSettings";
 import { PaymentApprovals } from "@/components/admin/PaymentApprovals";
+import { EditRequests } from "@/components/admin/EditRequests";
 import {
   Pagination,
   PaginationContent,
@@ -209,6 +211,14 @@ const AdminPanel = () => {
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
+      // 1. Fetch count of edit requests from new table
+      const { count: editRequestCount, error: editError } = await supabase
+        .from("show_edit_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+
+      if (editError) console.error("Error fetching edit requests count:", editError);
+
       // Try to use RPC for performance optimization (single request vs 8 parallel requests)
       const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
 
@@ -223,7 +233,7 @@ const AdminPanel = () => {
           pendingRequests: rpcStats.pendingRequests || 0,
           deletedShows: rpcStats.deletedShows || 0,
           pendingNewShows: rpcStats.pendingNewShows || 0,
-          pendingEditedShows: rpcStats.pendingEditedShows || 0,
+          pendingEditedShows: (editRequestCount || 0) + (rpcStats.pendingEditedShows || 0), // Merge legacy and new
           approvedShows: rpcStats.approvedShows || 0,
           rejectedShows: rpcStats.rejectedShows || 0
         });
@@ -256,7 +266,7 @@ const AdminPanel = () => {
         pendingRequests: requestsRes.count || 0,
         deletedShows: deletedRes.count || 0,
         pendingNewShows: pendingNewRes.count || 0,
-        pendingEditedShows: pendingEditedRes.count || 0,
+        pendingEditedShows: (pendingEditedRes.count || 0) + (editRequestCount || 0),
         approvedShows: approvedRes.count || 0,
         rejectedShows: rejectedRes.count || 0,
       });
@@ -1022,6 +1032,17 @@ const AdminPanel = () => {
               {sidebarOpen && <span>Show Approvals</span>}
             </button>
             <button
+              onClick={() => setActiveTab("edit-requests")}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                activeTab === "edit-requests"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <PenLine className="w-5 h-5" />
+              {sidebarOpen && <span>Edit Requests</span>}
+            </button>
+            <button
               onClick={() => setActiveTab("users")}
               className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
                 activeTab === "users" 
@@ -1108,7 +1129,7 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-xl text-foreground">
-              {activeTab === "shows" ? "Show Approvals" : activeTab === "users" ? "User Management" : activeTab === "payments" ? "Payment Approvals" : activeTab === "settings" ? "Payment Settings" : "Invitations"}
+              {activeTab === "shows" ? "Show Approvals" : activeTab === "edit-requests" ? "Edit Requests" : activeTab === "users" ? "User Management" : activeTab === "payments" ? "Payment Approvals" : activeTab === "settings" ? "Payment Settings" : "Invitations"}
             </h1>
             <Button
               variant="outline"
@@ -1183,6 +1204,8 @@ const AdminPanel = () => {
             <PaymentApprovals />
           ) : activeTab === "invitations" ? (
             <InvitationHub />
+          ) : activeTab === "edit-requests" ? (
+            <EditRequests />
           ) : activeTab === "shows" ? (
             <motion.div
               initial={{ opacity: 0 }}

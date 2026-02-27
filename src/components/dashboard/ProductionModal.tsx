@@ -528,12 +528,34 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     }
 
     let query;
+    let isRequest = false;
+
+    // Logic:
+    // If it's a NEW show -> Insert into 'shows' directly (status pending or approved).
+    // If it's an EXISTING APPROVED show -> Insert into 'show_edit_requests' (unless Admin overrides).
+    // If it's an EXISTING PENDING/REJECTED show -> Update 'shows' directly (status pending).
+
     if (showToEdit) {
-      query = supabase
-        .from("shows")
-        .update({ ...payload, status: targetStatus, is_update: true })
-        .eq("id", showToEdit.id);
+      // Check if it's already an approved show, and user is NOT an admin force-approving
+      if (showToEdit.status === 'approved' && profile.role !== 'admin') {
+         isRequest = true;
+         query = supabase
+           .from("show_edit_requests")
+           .insert({
+              show_id: showToEdit.id,
+              producer_id: profile.id,
+              changes: payload as Json,
+              status: 'pending'
+           });
+      } else {
+         // Direct update for pending/rejected shows OR admin overrides
+         query = supabase
+          .from("shows")
+          .update({ ...payload, status: targetStatus, is_update: true })
+          .eq("id", showToEdit.id);
+      }
     } else {
+      // New Show
       query = supabase
         .from("shows")
         .insert({
@@ -553,10 +575,17 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       await queryClient.invalidateQueries({ queryKey: ['productions'] });
       await queryClient.invalidateQueries({ queryKey: ['shows'] });
 
-      toast({
-        title: "Submission Successful",
-        description: targetStatus === "approved" ? "Your show is now live." : "Your show has been submitted for review.",
-      });
+      if (isRequest) {
+          toast({
+             title: "Edit Request Submitted",
+             description: "Your changes have been submitted for review. The show will remain live with current details until approved.",
+          });
+      } else {
+          toast({
+            title: "Submission Successful",
+            description: targetStatus === "approved" ? "Your show is now live." : "Your show has been submitted for review.",
+          });
+      }
 
       if (onSuccess) {
         onSuccess();
