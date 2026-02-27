@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateReservationFee } from "@/lib/pricing";
@@ -19,7 +19,7 @@ import Footer from "@/components/layout/Footer";
 const CheckoutPage = () => {
   const { showId } = useParams<{ showId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [show, setShow] = useState<ShowDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -221,9 +221,9 @@ const CheckoutPage = () => {
 
         toast.success("Payment submitted for review!");
 
-        if (user) {
+        if (user && profile) {
             await createNotification({
-                userId: user.id,
+                userId: profile.id, // Use Profile ID, not Auth ID
                 type: "payment_submitted",
                 title: "Payment Submitted",
                 message: `We've received your payment proof for ${show.title}. Verification usually takes 24h.`,
@@ -376,6 +376,7 @@ const CheckoutPage = () => {
                                         </DialogTrigger>
                                         <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-transparent border-none shadow-none">
                                             <DialogTitle className="sr-only">Payment QR Code</DialogTitle>
+                                            <DialogDescription className="sr-only">Scan QR Code to Pay</DialogDescription>
                                             <div className="relative flex items-center justify-center w-full h-full bg-white p-4 rounded-lg">
                                                 <img
                                                     src={qrCodeUrl}
