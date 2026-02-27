@@ -39,10 +39,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing Authorization header");
     }
 
+    // Configure client without persisting session to avoid storage issues in Edge Runtime
     const supabaseClient = createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: authHeader } } }
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
     );
 
     const {
@@ -51,7 +55,11 @@ const handler = async (req: Request): Promise<Response> => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      console.error("User authentication failed:", userError);
+      return new Response(
+        JSON.stringify({ error: "Authentication failed: Invalid or expired token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Check role in profiles table
@@ -61,8 +69,20 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("user_id", user.id)
       .single();
 
-    if (profileError || !profile || profile.role !== "admin") {
-      throw new Error("Unauthorized: Admin privileges required");
+    if (profileError || !profile) {
+      console.error("Profile lookup failed for user:", user.id, profileError);
+       return new Response(
+        JSON.stringify({ error: "Profile not found" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (profile.role !== "admin") {
+      console.warn("Unauthorized access attempt by:", user.id, "Role:", profile.role);
+       return new Response(
+        JSON.stringify({ error: "Forbidden: Admin privileges required" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // 2. Initialize Admin Client for Sensitive Operations
