@@ -128,12 +128,13 @@ interface Stats {
   activeProducers: number;
   pendingRequests: number;
   deletedShows: number;
-  pendingShows: number;
+  pendingNewShows: number;
+  pendingEditedShows: number;
   approvedShows: number;
   rejectedShows: number;
 }
 
-type FilterStatus = "all" | "pending" | "approved" | "rejected" | "deleted";
+type FilterStatus = "all" | "pending" | "pending_new" | "pending_edit" | "approved" | "rejected" | "deleted";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -143,7 +144,7 @@ const AdminPanel = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending_new");
   const [selectedShow, setSelectedShow] = useState<Show | null>(null);
   const [detailsModal, setDetailsModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: "approve" | "reject" | "broadcast"; show: Show } | null>(null);
@@ -163,7 +164,8 @@ const AdminPanel = () => {
     activeProducers: 0,
     pendingRequests: 0,
     deletedShows: 0,
-    pendingShows: 0,
+    pendingNewShows: 0,
+    pendingEditedShows: 0,
     approvedShows: 0,
     rejectedShows: 0
   });
@@ -219,7 +221,8 @@ const AdminPanel = () => {
           activeProducers: rpcStats.activeProducers || 0,
           pendingRequests: rpcStats.pendingRequests || 0,
           deletedShows: rpcStats.deletedShows || 0,
-          pendingShows: rpcStats.pendingShows || 0,
+          pendingNewShows: rpcStats.pendingNewShows || 0,
+          pendingEditedShows: rpcStats.pendingEditedShows || 0,
           approvedShows: rpcStats.approvedShows || 0,
           rejectedShows: rpcStats.rejectedShows || 0
         });
@@ -231,13 +234,14 @@ const AdminPanel = () => {
       }
 
       // Fallback: Fetch all stats in parallel
-      const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+      const [usersRes, showsRes, producersRes, requestsRes, deletedRes, pendingNewRes, pendingEditedRes, approvedRes, rejectedRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact" }),
         supabase.from("shows").select("id", { count: "exact" }).is("deleted_at", null),
         supabase.from("profiles").select("id", { count: "exact" }).eq("role", "producer"),
         supabase.from("producer_requests").select("id", { count: "exact" }).eq("status", "pending"),
         supabase.from("shows").select("id", { count: "exact" }).not("deleted_at", "is", null),
-        supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null),
+        supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null).eq("is_update", false),
+        supabase.from("shows").select("id", { count: "exact" }).eq("status", "pending").is("deleted_at", null).eq("is_update", true),
         supabase.from("shows").select("id", { count: "exact" }).eq("status", "approved").is("deleted_at", null),
         supabase.from("shows").select("id", { count: "exact" }).eq("status", "rejected").is("deleted_at", null),
       ]);
@@ -250,7 +254,8 @@ const AdminPanel = () => {
         activeProducers: producersRes.count || 0,
         pendingRequests: requestsRes.count || 0,
         deletedShows: deletedRes.count || 0,
-        pendingShows: pendingRes.count || 0,
+        pendingNewShows: pendingNewRes.count || 0,
+        pendingEditedShows: pendingEditedRes.count || 0,
         approvedShows: approvedRes.count || 0,
         rejectedShows: rejectedRes.count || 0,
       });
@@ -299,7 +304,14 @@ const AdminPanel = () => {
       query = query.not("deleted_at", "is", null);
     } else {
       query = query.is("deleted_at", null);
-      if (filterStatus !== "all") {
+      if (filterStatus === "pending_new") {
+        query = query.eq("status", "pending").eq("is_update", false);
+      } else if (filterStatus === "pending_edit") {
+        query = query.eq("status", "pending").eq("is_update", true);
+      } else if (filterStatus === "pending") {
+         // Legacy fallback or "All Pending" if needed, though we split them now
+         query = query.eq("status", "pending");
+      } else if (filterStatus !== "all") {
         query = query.eq("status", filterStatus);
       }
     }
@@ -1149,7 +1161,7 @@ const AdminPanel = () => {
               className="space-y-6"
             >
               {/* Show Filter Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <button
                   onClick={() => handleFilterChange("all")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
@@ -1160,13 +1172,22 @@ const AdminPanel = () => {
                   <p className="text-2xl font-serif text-foreground">{stats.totalShows}</p>
                 </button>
                 <button
-                  onClick={() => handleFilterChange("pending")}
+                  onClick={() => handleFilterChange("pending_new")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
-                    filterStatus === "pending" ? "border-yellow-500" : "border-secondary/20 hover:border-yellow-500/50"
+                    filterStatus === "pending_new" ? "border-green-500" : "border-secondary/20 hover:border-green-500/50"
                   }`}
                 >
-                  <p className="text-muted-foreground text-sm mb-1">Pending</p>
-                  <p className="text-2xl font-serif text-yellow-500">{stats.pendingShows}</p>
+                  <p className="text-muted-foreground text-sm mb-1">New Pending</p>
+                  <p className="text-2xl font-serif text-green-500">{stats.pendingNewShows}</p>
+                </button>
+                 <button
+                  onClick={() => handleFilterChange("pending_edit")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "pending_edit" ? "border-blue-500" : "border-secondary/20 hover:border-blue-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">Edit Requests</p>
+                  <p className="text-2xl font-serif text-blue-500">{stats.pendingEditedShows}</p>
                 </button>
                 <button
                   onClick={() => handleFilterChange("approved")}
@@ -1206,9 +1227,11 @@ const AdminPanel = () => {
                     <CheckCircle className="w-6 h-6 text-green-500" />
                   </div>
                   <p className="text-muted-foreground font-medium">
-                    {filterStatus === "pending" 
-                      ? "All caught up! No pending productions found."
-                      : `No ${filterStatus === "all" ? "" : filterStatus} productions found.`}
+                    {filterStatus === "pending_new"
+                      ? "All caught up! No new pending productions found."
+                      : filterStatus === "pending_edit"
+                        ? "All caught up! No edit requests found."
+                        : `No ${filterStatus === "all" ? "" : filterStatus} productions found.`}
                   </p>
                 </div>
               ) : (
@@ -1246,12 +1269,12 @@ const AdminPanel = () => {
                                     <ImageIcon className="w-5 h-5 text-muted-foreground" />
                                   </div>
                                 )}
-                                {filterStatus === "pending" && isUpdate && (
+                                {isUpdate && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
                                    <div className="absolute -top-2 -right-4 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                                       EDIT
                                    </div>
                                 )}
-                                {filterStatus === "pending" && !isUpdate && (
+                                {!isUpdate && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
                                    <div className="absolute -top-2 -right-4 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                                       NEW
                                    </div>
@@ -1261,7 +1284,7 @@ const AdminPanel = () => {
                             <td className="p-4 text-foreground font-medium">
                               {show.title}
                               <div className="text-xs text-muted-foreground mt-0.5">
-                                {isUpdate && filterStatus === "pending" ? "Update Request" : "Submission"}
+                                {isUpdate ? "Update Request" : "Submission"}
                               </div>
                             </td>
                             <td className="p-4 text-muted-foreground">
