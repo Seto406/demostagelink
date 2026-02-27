@@ -378,6 +378,36 @@ CREATE POLICY "Producers can insert shows" ON public.shows FOR INSERT WITH CHECK
 DROP POLICY IF EXISTS "Producers can update own shows" ON public.shows;
 CREATE POLICY "Producers can update own shows" ON public.shows FOR UPDATE USING (producer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "Admins can view all shows" ON public.shows;
+CREATE POLICY "Admins can view all shows" ON public.shows
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can update all shows" ON public.shows;
+CREATE POLICY "Admins can update all shows" ON public.shows
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can delete all shows" ON public.shows;
+CREATE POLICY "Admins can delete all shows" ON public.shows
+FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
 -- Tickets (Private)
 DROP POLICY IF EXISTS "Users can view own tickets" ON public.tickets;
 CREATE POLICY "Users can view own tickets" ON public.tickets FOR SELECT USING (user_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
@@ -388,6 +418,36 @@ CREATE POLICY "Users can insert own tickets" ON public.tickets FOR INSERT WITH C
 -- Payments (Private)
 DROP POLICY IF EXISTS "Users can view own payments" ON public.payments;
 CREATE POLICY "Users can view own payments" ON public.payments FOR SELECT USING (user_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Admins can view all payments" ON public.payments;
+CREATE POLICY "Admins can view all payments" ON public.payments
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can update all payments" ON public.payments;
+CREATE POLICY "Admins can update all payments" ON public.payments
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can delete all payments" ON public.payments;
+CREATE POLICY "Admins can delete all payments" ON public.payments
+FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
 
 -- Subscriptions (Private)
 DROP POLICY IF EXISTS "Users can view own subscription" ON public.subscriptions;
@@ -507,6 +567,36 @@ DROP POLICY IF EXISTS "Users can view own producer requests" ON public.producer_
 CREATE POLICY "Users can view own producer requests" ON public.producer_requests FOR SELECT USING (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users can insert producer requests" ON public.producer_requests;
 CREATE POLICY "Users can insert producer requests" ON public.producer_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view all producer requests" ON public.producer_requests;
+CREATE POLICY "Admins can view all producer requests" ON public.producer_requests
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can update all producer requests" ON public.producer_requests;
+CREATE POLICY "Admins can update all producer requests" ON public.producer_requests
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can delete all producer requests" ON public.producer_requests;
+CREATE POLICY "Admins can delete all producer requests" ON public.producer_requests
+FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
 
 -- Invitations (Public Read by ID)
 DROP POLICY IF EXISTS "Anyone can view invitations by ID" ON public.invitations;
