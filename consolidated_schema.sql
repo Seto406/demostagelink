@@ -830,6 +830,8 @@ CREATE POLICY "Owners can update theater groups" ON public.theater_groups FOR UP
 -- System Settings (Public Read)
 DROP POLICY IF EXISTS "Public can view system settings" ON public.system_settings;
 CREATE POLICY "Public can view system settings" ON public.system_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins can update system settings" ON public.system_settings;
 CREATE POLICY "Admins can update system settings" ON public.system_settings
     FOR UPDATE USING (
         EXISTS (
@@ -838,6 +840,8 @@ CREATE POLICY "Admins can update system settings" ON public.system_settings
             AND profiles.role = 'admin'
         )
     );
+
+DROP POLICY IF EXISTS "Admins can insert system settings" ON public.system_settings;
 CREATE POLICY "Admins can insert system settings" ON public.system_settings
     FOR INSERT WITH CHECK (
         EXISTS (
