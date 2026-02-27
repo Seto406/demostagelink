@@ -267,7 +267,7 @@ CREATE TABLE IF NOT EXISTS public.collaboration_requests (
 -- producer_requests
 CREATE TABLE IF NOT EXISTS public.producer_requests (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id), -- Note: usually requests come from user trying to be producer
+    user_id UUID NOT NULL REFERENCES public.profiles(user_id), -- Correctly references profiles(user_id) now
     group_name TEXT NOT NULL,
     portfolio_link TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
@@ -308,6 +308,18 @@ CREATE TABLE IF NOT EXISTS public.group_audience_links (
     status TEXT DEFAULT 'pending',
     invited_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     accepted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- show_edit_requests
+CREATE TABLE IF NOT EXISTS public.show_edit_requests (
+    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    show_id UUID NOT NULL REFERENCES public.shows(id) ON DELETE CASCADE,
+    producer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    changes JSONB NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    admin_feedback TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -420,6 +432,161 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats() TO authenticated;
 
+-- Admin User List RPC
+CREATE OR REPLACE FUNCTION public.get_admin_user_list(
+    page_number integer,
+    page_size integer
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    total_count integer;
+    users_list json;
+BEGIN
+    -- Check if admin
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Access denied';
+    END IF;
+
+    -- Get total count
+    SELECT count(*) INTO total_count FROM public.profiles;
+
+    -- Get paginated users with email from auth.users
+    SELECT json_agg(t) INTO users_list
+    FROM (
+        SELECT
+            p.id,
+            p.user_id,
+            u.email,
+            p.role,
+            p.group_name,
+            p.created_at
+        FROM public.profiles p
+        LEFT JOIN auth.users u ON p.user_id = u.id
+        ORDER BY p.created_at DESC
+        LIMIT page_size
+        OFFSET (page_number - 1) * page_size
+    ) t;
+
+    -- If users_list is null (no users), make it empty array
+    IF users_list IS NULL THEN
+        users_list := '[]'::json;
+    END IF;
+
+    RETURN json_build_object(
+        'users', users_list,
+        'total_count', total_count
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_admin_user_list(integer, integer) TO authenticated;
+
+-- Approve Edit Request RPC
+CREATE OR REPLACE FUNCTION public.approve_show_edit_request(request_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    req RECORD;
+    target_show_id UUID;
+    show_changes JSONB;
+BEGIN
+    -- Check if admin
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Access denied';
+    END IF;
+
+    -- Get the request
+    SELECT * INTO req FROM public.show_edit_requests WHERE id = request_id AND status = 'pending';
+
+    IF req IS NULL THEN
+        RAISE EXCEPTION 'Request not found or not pending';
+    END IF;
+
+    target_show_id := req.show_id;
+    show_changes := req.changes;
+
+    -- Update the show with the changes
+    -- We check if the key EXISTS in the JSON using the ? operator.
+    -- If it exists, we take the value (even if it is null).
+    -- If it doesn't exist, we keep the original column value.
+    -- Casting is crucial.
+
+    UPDATE public.shows
+    SET
+        title = CASE WHEN show_changes ? 'title' THEN (show_changes->>'title') ELSE title END,
+        description = CASE WHEN show_changes ? 'description' THEN (show_changes->>'description') ELSE description END,
+        date = CASE WHEN show_changes ? 'date' THEN (show_changes->>'date') ELSE date END,
+        show_time = CASE WHEN show_changes ? 'show_time' THEN (show_changes->>'show_time') ELSE show_time END,
+        venue = CASE WHEN show_changes ? 'venue' THEN (show_changes->>'venue') ELSE venue END,
+        city = CASE WHEN show_changes ? 'city' THEN (show_changes->>'city') ELSE city END,
+        niche = CASE WHEN show_changes ? 'niche' THEN (show_changes->>'niche')::public.niche_type ELSE niche END,
+        ticket_link = CASE WHEN show_changes ? 'ticket_link' THEN (show_changes->>'ticket_link') ELSE ticket_link END,
+        external_links = CASE WHEN show_changes ? 'external_links' THEN (show_changes->'external_links') ELSE external_links END,
+        price = CASE WHEN show_changes ? 'price' THEN (show_changes->>'price')::numeric ELSE price END,
+        poster_url = CASE WHEN show_changes ? 'poster_url' THEN (show_changes->>'poster_url') ELSE poster_url END,
+        reservation_fee = CASE WHEN show_changes ? 'reservation_fee' THEN (show_changes->>'reservation_fee')::numeric ELSE reservation_fee END,
+        collect_balance_onsite = CASE WHEN show_changes ? 'collect_balance_onsite' THEN (show_changes->>'collect_balance_onsite')::boolean ELSE collect_balance_onsite END,
+        genre = CASE WHEN show_changes ? 'genre' THEN (show_changes->>'genre') ELSE genre END,
+        director = CASE WHEN show_changes ? 'director' THEN (show_changes->>'director') ELSE director END,
+        duration = CASE WHEN show_changes ? 'duration' THEN (show_changes->>'duration') ELSE duration END,
+        tags = CASE
+            WHEN show_changes ? 'tags' THEN
+                (SELECT array_agg(x) FROM jsonb_array_elements_text(show_changes->'tags') t(x))
+            ELSE tags
+        END,
+        cast_members = CASE WHEN show_changes ? 'cast_members' THEN (show_changes->'cast_members') ELSE cast_members END,
+        seo_metadata = CASE WHEN show_changes ? 'seo_metadata' THEN (show_changes->'seo_metadata') ELSE seo_metadata END,
+        production_status = CASE WHEN show_changes ? 'production_status' THEN (show_changes->>'production_status') ELSE production_status END,
+        updated_at = now()
+    WHERE id = target_show_id;
+
+    -- Mark request as approved
+    UPDATE public.show_edit_requests
+    SET status = 'approved', updated_at = now()
+    WHERE id = request_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.approve_show_edit_request(UUID) TO authenticated;
+
+-- Reject Edit Request RPC
+CREATE OR REPLACE FUNCTION public.reject_show_edit_request(request_id UUID, feedback TEXT)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    -- Check if admin
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Access denied';
+    END IF;
+
+    -- Update request status
+    UPDATE public.show_edit_requests
+    SET status = 'rejected', admin_feedback = feedback, updated_at = now()
+    WHERE id = request_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.reject_show_edit_request(UUID, TEXT) TO authenticated;
+
 -- 4. RLS POLICIES
 
 -- Enable RLS on all tables
@@ -444,6 +611,18 @@ CREATE POLICY "Users can insert their own profile." ON public.profiles FOR INSER
 DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
 CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
 
+-- Admins can update all profiles
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+CREATE POLICY "Admins can update all profiles" ON public.profiles
+FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+  )
+);
+
 -- Shows: Approved public, Producer full access
 DROP POLICY IF EXISTS "Anyone can view approved shows" ON public.shows;
 CREATE POLICY "Anyone can view approved shows" ON public.shows FOR SELECT USING (status = 'approved');
@@ -460,6 +639,7 @@ CREATE POLICY "Producers can update own shows" ON public.shows FOR UPDATE USING 
 DROP POLICY IF EXISTS "Admins can view all shows" ON public.shows;
 CREATE POLICY "Admins can view all shows" ON public.shows
 FOR SELECT
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -470,6 +650,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can update all shows" ON public.shows;
 CREATE POLICY "Admins can update all shows" ON public.shows
 FOR UPDATE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -480,6 +661,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can delete all shows" ON public.shows;
 CREATE POLICY "Admins can delete all shows" ON public.shows
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -501,6 +683,7 @@ CREATE POLICY "Users can view own payments" ON public.payments FOR SELECT USING 
 DROP POLICY IF EXISTS "Admins can view all payments" ON public.payments;
 CREATE POLICY "Admins can view all payments" ON public.payments
 FOR SELECT
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -511,6 +694,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can update all payments" ON public.payments;
 CREATE POLICY "Admins can update all payments" ON public.payments
 FOR UPDATE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -521,6 +705,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can delete all payments" ON public.payments;
 CREATE POLICY "Admins can delete all payments" ON public.payments
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -650,6 +835,7 @@ CREATE POLICY "Users can insert producer requests" ON public.producer_requests F
 DROP POLICY IF EXISTS "Admins can view all producer requests" ON public.producer_requests;
 CREATE POLICY "Admins can view all producer requests" ON public.producer_requests
 FOR SELECT
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -660,6 +846,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can update all producer requests" ON public.producer_requests;
 CREATE POLICY "Admins can update all producer requests" ON public.producer_requests
 FOR UPDATE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -670,6 +857,7 @@ USING (
 DROP POLICY IF EXISTS "Admins can delete all producer requests" ON public.producer_requests;
 CREATE POLICY "Admins can delete all producer requests" ON public.producer_requests
 FOR DELETE
+TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles
@@ -705,6 +893,45 @@ CREATE POLICY "Owners can update theater groups" ON public.theater_groups FOR UP
 -- System Settings (Public Read)
 DROP POLICY IF EXISTS "Public can view system settings" ON public.system_settings;
 CREATE POLICY "Public can view system settings" ON public.system_settings FOR SELECT USING (true);
+
+-- Show Edit Requests RLS
+DROP POLICY IF EXISTS "Producers can view own edit requests" ON public.show_edit_requests;
+CREATE POLICY "Producers can view own edit requests" ON public.show_edit_requests
+    FOR SELECT
+    USING (producer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Producers can insert own edit requests" ON public.show_edit_requests;
+CREATE POLICY "Producers can insert own edit requests" ON public.show_edit_requests
+    FOR INSERT
+    WITH CHECK (producer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Producers can update own pending edit requests" ON public.show_edit_requests;
+CREATE POLICY "Producers can update own pending edit requests" ON public.show_edit_requests
+    FOR UPDATE
+    USING (
+        producer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()) AND
+        status = 'pending'
+    );
+
+DROP POLICY IF EXISTS "Admins can view all edit requests" ON public.show_edit_requests;
+CREATE POLICY "Admins can view all edit requests" ON public.show_edit_requests
+    FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+        )
+    );
+
+DROP POLICY IF EXISTS "Admins can update all edit requests" ON public.show_edit_requests;
+CREATE POLICY "Admins can update all edit requests" ON public.show_edit_requests
+    FOR UPDATE
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.user_id = auth.uid() AND profiles.role = 'admin'
+        )
+    );
 
 -- 5. INDEXES (Examples)
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
