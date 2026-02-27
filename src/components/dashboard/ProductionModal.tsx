@@ -215,13 +215,32 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       } else {
           // Fallback to main date column
           const dateStr = showToEdit.date || "";
+
+          // Parse show_time properly (it might be an ISO string now, or legacy text)
+          let timeStr = "";
+          if (showToEdit.show_time) {
+              // Check if it's an ISO string
+              if (showToEdit.show_time.includes('T') && showToEdit.show_time.endsWith('Z')) {
+                  const d = new Date(showToEdit.show_time);
+                  if (!isNaN(d.getTime())) {
+                      timeStr = format(d, "HH:mm");
+                  }
+              } else {
+                  // Legacy text like "9:00 AM" or empty
+                  // If it's not a valid time format, we might not be able to populate the time input
+                  // For now, only populate if it matches HH:mm (unlikely for legacy text)
+                  // So we rely on the user to re-enter time for legacy records during edit
+                  timeStr = "";
+              }
+          }
+
           // Check if dateStr looks like a single date "yyyy-MM-dd"
           if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-               setScheduleSlots([{ date: dateStr, time: showToEdit.show_time || "" }]);
+               setScheduleSlots([{ date: dateStr, time: timeStr }]);
           } else {
               // Try to parse text date or just default
               // Reset to empty if unstructured
-               setScheduleSlots([{ date: "", time: showToEdit.show_time || "" }]);
+               setScheduleSlots([{ date: "", time: timeStr }]);
           }
       }
 
@@ -502,6 +521,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     // If all times are the same, use that. Otherwise "Various Times"
     const uniqueTimes = Array.from(new Set(validSlots.map(s => s.time).filter(Boolean)));
     let displayTimeString = "";
+    let showTimeISO: string | null = null;
 
     if (uniqueTimes.length === 1) {
         // Convert 24h to 12h
@@ -514,6 +534,17 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         displayTimeString = "Various Times";
     }
 
+    // Calculate show_time ISO timestamp from the first slot
+    if (firstDate && validSlots[0].time) {
+        const [h, m] = validSlots[0].time.split(":");
+        // Parse the local YYYY-MM-DD date
+        const d = parseDateLocal(firstDate);
+        d.setHours(parseInt(h));
+        d.setMinutes(parseInt(m));
+        d.setSeconds(0);
+        showTimeISO = d.toISOString();
+    }
+
     const validLinks = externalLinks.filter(l => l.trim() !== "");
 
     const { display_date, ...restMetadata } = (showToEdit?.seo_metadata || {}) as Record<string, unknown>;
@@ -522,7 +553,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       title,
       description: description || null,
       date: firstDate, // Use the earliest date in YYYY-MM-DD format
-      show_time: displayTimeString || null,
+      show_time: showTimeISO, // Send valid ISO timestamp
       venue: venue || null,
       city: city || null,
       niche,
@@ -543,6 +574,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         payment_instructions: paymentInstructions || null,
         schedule: validSlots, // Save the full array of slots
         formatted_date: displayDateString, // Save the friendly string
+        formatted_show_time: displayTimeString, // Save the friendly time string
       },
     };
 
