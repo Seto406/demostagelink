@@ -32,7 +32,8 @@ export const PullToRefresh = ({
     if (disabled || isRefreshing) return;
     
     const scrollTop = containerRef.current?.scrollTop || 0;
-    if (scrollTop > 0) return;
+    const windowScrollY = window.scrollY || 0;
+    if (scrollTop > 0 || windowScrollY > 0) return;
     
     startY.current = e.touches[0].clientY;
     setIsPulling(true);
@@ -42,7 +43,8 @@ export const PullToRefresh = ({
     if (!isPulling || disabled || isRefreshing) return;
     
     const scrollTop = containerRef.current?.scrollTop || 0;
-    if (scrollTop > 0) {
+    const windowScrollY = window.scrollY || 0;
+    if (scrollTop > 0 || windowScrollY > 0) {
       pullDistance.set(0);
       return;
     }
