@@ -1,6 +1,32 @@
--- Add is_update generated column to shows table
+-- Add is_update column to shows table (standard column, not generated)
 ALTER TABLE public.shows
-ADD COLUMN IF NOT EXISTS is_update BOOLEAN GENERATED ALWAYS AS (updated_at > (created_at + interval '1 minute')) STORED;
+ADD COLUMN IF NOT EXISTS is_update BOOLEAN DEFAULT false;
+
+-- Create function to update is_update
+CREATE OR REPLACE FUNCTION public.update_show_is_update_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If updated_at is more than 1 minute after created_at, mark as update
+  -- Using NEW.created_at handles both insert (where they are equal) and update
+  IF NEW.updated_at > (NEW.created_at + interval '1 minute') THEN
+    NEW.is_update := true;
+  ELSE
+    NEW.is_update := false;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to maintain is_update
+DROP TRIGGER IF EXISTS set_show_is_update ON public.shows;
+CREATE TRIGGER set_show_is_update
+BEFORE INSERT OR UPDATE ON public.shows
+FOR EACH ROW
+EXECUTE FUNCTION public.update_show_is_update_column();
+
+-- Backfill existing data
+UPDATE public.shows
+SET is_update = (updated_at > (created_at + interval '1 minute'));
 
 -- Update get_admin_dashboard_stats RPC function
 CREATE OR REPLACE FUNCTION public.get_admin_dashboard_stats()
