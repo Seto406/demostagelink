@@ -821,6 +821,7 @@ export type Database = {
           video_url: string | null
           reservation_fee: number | null
           collect_balance_onsite: boolean | null
+          theater_group_id: string | null
         }
         Insert: {
           cast_members?: Json | null
@@ -850,6 +851,7 @@ export type Database = {
           video_url?: string | null
           reservation_fee?: number | null
           collect_balance_onsite?: boolean | null
+          theater_group_id?: string | null
         }
         Update: {
           cast_members?: Json | null
@@ -878,6 +880,7 @@ export type Database = {
           video_url?: string | null
           reservation_fee?: number | null
           collect_balance_onsite?: boolean | null
+          theater_group_id?: string | null
         }
         Relationships: [
           {
@@ -885,6 +888,13 @@ export type Database = {
             columns: ["producer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shows_theater_group_id_fkey"
+            columns: ["theater_group_id"]
+            isOneToOne: false
+            referencedRelation: "theater_groups"
             referencedColumns: ["id"]
           },
         ]
