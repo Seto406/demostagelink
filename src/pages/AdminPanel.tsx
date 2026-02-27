@@ -78,6 +78,7 @@ interface Show {
   status: "pending" | "approved" | "rejected";
   created_at: string;
   updated_at: string;
+  is_update: boolean;
   producer_id: string;
   poster_url: string | null;
   deleted_at: string | null;
@@ -290,6 +291,7 @@ const AdminPanel = () => {
         status,
         created_at,
         updated_at,
+        is_update,
         producer_id,
         poster_url,
         deleted_at,
@@ -304,15 +306,22 @@ const AdminPanel = () => {
       query = query.not("deleted_at", "is", null);
     } else {
       query = query.is("deleted_at", null);
+
+      // Explicitly handle "New Pending" and "Edit Requests"
+      // Note: We avoid passing 'pending_new' or 'pending_edit' to the .eq('status', ...) filter
+      // because 'status' is an enum that only accepts 'pending', 'approved', 'rejected'.
       if (filterStatus === "pending_new") {
         query = query.eq("status", "pending").eq("is_update", false);
       } else if (filterStatus === "pending_edit") {
         query = query.eq("status", "pending").eq("is_update", true);
       } else if (filterStatus === "pending") {
-         // Legacy fallback or "All Pending" if needed, though we split them now
+         // Legacy fallback for "All Pending"
          query = query.eq("status", "pending");
-      } else if (filterStatus !== "all") {
-        query = query.eq("status", filterStatus);
+      } else if (filterStatus === "all") {
+         // No status filter, just show all non-deleted
+      } else {
+         // For 'approved' and 'rejected'
+         query = query.eq("status", filterStatus);
       }
     }
 
@@ -1180,7 +1189,7 @@ const AdminPanel = () => {
                   <p className="text-muted-foreground text-sm mb-1">New Pending</p>
                   <p className="text-2xl font-serif text-green-500">{stats.pendingNewShows}</p>
                 </button>
-                 <button
+                <button
                   onClick={() => handleFilterChange("pending_edit")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
                     filterStatus === "pending_edit" ? "border-blue-500" : "border-secondary/20 hover:border-blue-500/50"
@@ -1251,9 +1260,6 @@ const AdminPanel = () => {
                     </thead>
                     <tbody>
                       {shows.map((show) => {
-                        // Determine if it's an update or new submission
-                        const isUpdate = new Date(show.updated_at).getTime() - new Date(show.created_at).getTime() > 60000; // 1 minute buffer
-
                         return (
                           <tr key={show.id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                             <td className="p-4">
@@ -1269,12 +1275,12 @@ const AdminPanel = () => {
                                     <ImageIcon className="w-5 h-5 text-muted-foreground" />
                                   </div>
                                 )}
-                                {isUpdate && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
+                                {show.is_update && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
                                    <div className="absolute -top-2 -right-4 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                                       EDIT
                                    </div>
                                 )}
-                                {!isUpdate && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
+                                {!show.is_update && (filterStatus === "pending_new" || filterStatus === "pending_edit") && (
                                    <div className="absolute -top-2 -right-4 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
                                       NEW
                                    </div>
@@ -1284,7 +1290,7 @@ const AdminPanel = () => {
                             <td className="p-4 text-foreground font-medium">
                               {show.title}
                               <div className="text-xs text-muted-foreground mt-0.5">
-                                {isUpdate ? "Update Request" : "Submission"}
+                                {show.is_update ? "Update Request" : "Submission"}
                               </div>
                             </td>
                             <td className="p-4 text-muted-foreground">
@@ -1341,7 +1347,7 @@ const AdminPanel = () => {
                                   <>
                                     {show.status === "pending" && (
                                       <>
-                                        {isUpdate ? (
+                                        {show.is_update ? (
                                            <Button
                                               variant="default"
                                               size="sm"
