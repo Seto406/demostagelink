@@ -48,9 +48,10 @@ export interface FeedPostProps {
     show_likes?: { count: number }[];
     favorites?: { count: number }[]; // Keep for backward compatibility if needed, but we'll use show_likes for display
   };
+  dataTour?: string;
 }
 
-export function FeedPost({ show }: FeedPostProps) {
+export function FeedPost({ show, dataTour }: FeedPostProps) {
   const { user, profile, loading } = useAuth();
   const { toggleFavorite, isFavorited } = useFavorites();
   const { toggleLike, isLiked } = useShowLikes();
@@ -334,7 +335,10 @@ export function FeedPost({ show }: FeedPostProps) {
 
         {/* Footer */}
         <CardFooter className="flex flex-col p-0">
-            <div className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5">
+            <div
+              className="w-full p-3 flex items-center justify-between border-t border-secondary/10 bg-secondary/5"
+              data-tour={dataTour}
+            >
                 <div className="flex items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
