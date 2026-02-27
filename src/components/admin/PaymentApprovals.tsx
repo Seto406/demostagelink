@@ -29,6 +29,7 @@ type ManualPayment = {
   tickets?: {
       customer_name: string | null;
       customer_email: string | null;
+      user_id: string | null;
       shows?: {
           title: string | null;
       } | null;
@@ -56,6 +57,7 @@ export function PaymentApprovals() {
           tickets:tickets!payment_id (
             customer_name,
             customer_email,
+            user_id,
             shows (title)
           )
         `)
@@ -87,13 +89,16 @@ export function PaymentApprovals() {
 
         // Notify user if possible
         const payment = payments.find(p => p.id === paymentId);
-        if (payment && payment.user_id) {
+        // Use user_id from ticket (Profile ID)
+        const profileId = payment?.tickets?.[0]?.user_id;
+
+        if (payment && profileId) {
              const message = action === 'approve'
                 ? "Your manual payment has been verified and approved."
                 : "Your manual payment could not be verified. Please check your email.";
 
              await createNotification({
-                 userId: payment.user_id,
+                 userId: profileId,
                  type: action === 'approve' ? 'payment_approved' : 'payment_rejected',
                  title: action === 'approve' ? "Payment Verified" : "Payment Issue",
                  message: message,
