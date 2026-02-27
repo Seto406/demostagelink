@@ -531,7 +531,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     if (showToEdit) {
       query = supabase
         .from("shows")
-        .update({ ...payload, status: targetStatus })
+        .update({ ...payload, status: targetStatus, is_update: true })
         .eq("id", showToEdit.id);
     } else {
       query = supabase
