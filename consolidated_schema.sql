@@ -918,61 +918,79 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(use
 
 
 -- 6. TICKET ACCESS CODE GENERATION
+
+-- Drop old function if it exists with a different return type (TRIGGER vs TEXT)
+DROP FUNCTION IF EXISTS generate_ticket_access_code() CASCADE;
+
+-- Function to generate a random 6-character alphanumeric code
 CREATE OR REPLACE FUNCTION generate_ticket_access_code()
+RETURNS TEXT AS $$
+DECLARE
+  chars TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; -- Excluding I, O, 0, 1 for clarity
+  result TEXT := '';
+  i INTEGER;
+BEGIN
+  FOR i IN 1..6 LOOP
+    result := result || substr(chars, floor(random() * length(chars) + 1)::integer, 1);
+  END LOOP;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger function to automatically set access_code on insert if null
+CREATE OR REPLACE FUNCTION set_ticket_access_code()
 RETURNS TRIGGER AS $$
 DECLARE
-  chars text[] := '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}';
-  result text := '';
-  i integer := 0;
-  exists_check boolean;
+  code TEXT;
+  collision_count INTEGER := 0;
 BEGIN
-  IF NEW.access_code IS NOT NULL THEN
-    RETURN NEW;
-  END IF;
+  IF NEW.access_code IS NULL THEN
+    LOOP
+      code := generate_ticket_access_code();
+      -- Check if code exists
+      IF NOT EXISTS (SELECT 1 FROM public.tickets WHERE access_code = code) THEN
+        NEW.access_code := code;
+        EXIT;
+      END IF;
 
-  LOOP
-    result := '';
-    FOR i IN 1..6 LOOP
-      result := result || chars[1+floor(random()*array_length(chars, 1))::int];
+      collision_count := collision_count + 1;
+      IF collision_count > 10 THEN
+        RAISE EXCEPTION 'Failed to generate unique access code after 10 attempts';
+      END IF;
     END LOOP;
-
-    SELECT EXISTS(SELECT 1 FROM public.tickets WHERE access_code = result) INTO exists_check;
-    IF NOT exists_check THEN
-      NEW.access_code := result;
-      EXIT;
-    END IF;
-  END LOOP;
+  END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create the trigger
+DROP TRIGGER IF EXISTS trigger_set_ticket_access_code ON public.tickets;
+-- Also drop the old trigger name if it exists
 DROP TRIGGER IF EXISTS ensure_ticket_access_code ON public.tickets;
-CREATE TRIGGER ensure_ticket_access_code
+
+CREATE TRIGGER trigger_set_ticket_access_code
 BEFORE INSERT ON public.tickets
 FOR EACH ROW
-EXECUTE FUNCTION generate_ticket_access_code();
+EXECUTE FUNCTION set_ticket_access_code();
 
--- Backfill existing tickets
+-- Backfill existing tickets that have no access_code
 DO $$
 DECLARE
-  t_record RECORD;
-  chars text[] := '{0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}';
-  new_code text;
-  i integer;
-  exists_check boolean;
+  ticket_record RECORD;
+  new_code TEXT;
 BEGIN
-  FOR t_record IN SELECT id FROM public.tickets WHERE access_code IS NULL LOOP
+  -- Only update tickets that need it
+  FOR ticket_record IN SELECT id FROM public.tickets WHERE access_code IS NULL LOOP
     LOOP
-      new_code := '';
-      FOR i IN 1..6 LOOP
-        new_code := new_code || chars[1+floor(random()*array_length(chars, 1))::int];
-      END LOOP;
-
-      SELECT EXISTS(SELECT 1 FROM public.tickets WHERE access_code = new_code) INTO exists_check;
-      IF NOT exists_check THEN
-        UPDATE public.tickets SET access_code = new_code WHERE id = t_record.id;
-        EXIT;
-      END IF;
+      new_code := generate_ticket_access_code();
+      BEGIN
+        UPDATE public.tickets
+        SET access_code = new_code
+        WHERE id = ticket_record.id;
+        EXIT; -- Exit loop if update succeeds (no unique constraint violation)
+      EXCEPTION WHEN unique_violation THEN
+        -- Retry if code already exists
+      END;
     END LOOP;
   END LOOP;
 END $$;
