@@ -121,6 +121,8 @@ USING (
 
 
 -- 3. Ensure get_admin_user_list RPC exists
+DROP FUNCTION IF EXISTS public.get_admin_user_list(integer, integer);
+
 CREATE OR REPLACE FUNCTION public.get_admin_user_list(
     page_number integer,
     page_size integer

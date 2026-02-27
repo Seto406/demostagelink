@@ -433,6 +433,8 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats() TO authenticated;
 
 -- Admin User List RPC
+DROP FUNCTION IF EXISTS public.get_admin_user_list(integer, integer);
+
 CREATE OR REPLACE FUNCTION public.get_admin_user_list(
     page_number integer,
     page_size integer
