@@ -952,6 +952,8 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(use
 
 
 -- 6. TICKET ACCESS CODE GENERATION
+DROP FUNCTION IF EXISTS generate_ticket_access_code() CASCADE;
+
 CREATE OR REPLACE FUNCTION generate_ticket_access_code()
 RETURNS TRIGGER AS $$
 DECLARE
