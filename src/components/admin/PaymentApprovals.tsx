@@ -9,6 +9,7 @@ import { createNotification } from "@/lib/notifications";
 import { Loader2, Check, X, ExternalLink, Eye } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
+import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 
 type ManualPayment = {
   id: string;
@@ -78,7 +79,7 @@ export function PaymentApprovals() {
   const handleAction = async (paymentId: string, action: 'approve' | 'reject') => {
     setProcessingId(paymentId);
     try {
-        const { error } = await supabase.functions.invoke("approve-manual-payment", {
+        const { error } = await invokeFunctionWithSession("approve-manual-payment", {
             body: { payment_id: paymentId, action }
         });
 

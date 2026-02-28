@@ -52,6 +52,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
+import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -533,7 +534,7 @@ const AdminPanel = () => {
   const handleBroadcast = async (showId: string) => {
     setBroadcastLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("broadcast-new-show", {
+      const { data, error } = await invokeFunctionWithSession("broadcast-new-show", {
         body: { showId },
       });
 
@@ -748,12 +749,14 @@ const AdminPanel = () => {
 
   // Soft delete show
   const handleSoftDeleteShow = async (showId: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("shows")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", showId);
+      .eq("id", showId)
+      .select("id")
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       toast({
         title: "Error",
         description: "Failed to delete production.",
@@ -1221,7 +1224,7 @@ const AdminPanel = () => {
               className="space-y-6"
             >
               {/* Show Filter Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <button
                   onClick={() => handleFilterChange("all")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
@@ -1239,15 +1242,6 @@ const AdminPanel = () => {
                 >
                   <p className="text-muted-foreground text-sm mb-1">New Pending</p>
                   <p className="text-2xl font-serif text-green-500">{stats.pendingNewShows}</p>
-                </button>
-                <button
-                  onClick={() => handleFilterChange("pending_edit")}
-                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
-                    filterStatus === "pending_edit" ? "border-blue-500" : "border-secondary/20 hover:border-blue-500/50"
-                  }`}
-                >
-                  <p className="text-muted-foreground text-sm mb-1">Edit Requests</p>
-                  <p className="text-2xl font-serif text-blue-500">{stats.pendingEditedShows}</p>
                 </button>
                 <button
                   onClick={() => handleFilterChange("approved")}
