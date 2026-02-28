@@ -157,18 +157,23 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
       }
 
       try {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('posts')
             .delete()
+            .select('id')
             .eq('id', post.id)
             .eq('profile_id', profile.id);
 
           if (error) throw error;
+          if (!data || data.length === 0) {
+            throw new Error("Delete was blocked or the post no longer exists.");
+          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
       } catch (e) {
           const message = e instanceof Error ? e.message : "Failed to delete post.";
+          console.error("Post delete failed", { postId: post.id, profileId: profile?.id, error: e });
           toast({ title: "Error", description: message, variant: "destructive" });
       }
   };
