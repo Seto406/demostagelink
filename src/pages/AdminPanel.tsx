@@ -910,17 +910,6 @@ const AdminPanel = () => {
   // Force delete user function
   // Force redeploy: Clean build cache trigger
   const handleForceDeleteUser = async () => {
-    const validKey = import.meta.env.VITE_ADMIN_ACTION_KEY;
-
-    if (!validKey || adminSecurityKey.trim() !== validKey.trim()) {
-      toast({
-        title: "Invalid Security Key",
-        description: "The provided security key is incorrect.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!userToDelete) return;
 
     try {
@@ -944,10 +933,28 @@ const AdminPanel = () => {
 
       // Call Edge Function to delete user from Auth (which cascades to profile)
       const { error: deleteUserError } = await supabase.functions.invoke("delete-user", {
-        body: { user_id: userToDelete.user_id },
+        body: { user_id: userToDelete.user_id, security_key: adminSecurityKey },
       });
 
-      if (deleteUserError) throw deleteUserError;
+      if (deleteUserError) {
+        // Handle custom error response from Edge Function
+        if (deleteUserError instanceof Error && deleteUserError.message) {
+           try {
+              const parsed = JSON.parse(deleteUserError.message);
+              if (parsed.error === "Invalid security key") {
+                 toast({
+                    title: "Invalid Security Key",
+                    description: "The provided security key is incorrect.",
+                    variant: "destructive",
+                 });
+                 return;
+              }
+           } catch (e) {
+              // ignore parse error
+           }
+        }
+        throw deleteUserError;
+      }
 
       toast({
         title: "User Deleted",
