@@ -153,11 +153,11 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .select('id')
-            .maybeSingle();
+            .eq('profile_id', profile.id)
+            .select('id');
 
           if (error) throw error;
-          if (!data) {
+          if (!data?.length) {
             throw new Error("Delete could not be completed. The post may already be removed, or your session no longer has permission to delete it.");
           }
 
