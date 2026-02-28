@@ -197,12 +197,13 @@ const ProducerProfile = () => {
         setFollowerCount(count);
       }
 
-      // Fetch following count
-      if (profileData?.user_id) {
+      // Fetch following count (supports both follower_id = profiles.id and follower_id = auth.users.id)
+      if (profileData?.id || profileData?.user_id) {
+          const followerIds = [profileData?.id, profileData?.user_id].filter((value): value is string => Boolean(value));
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .eq("follower_id", profileData.user_id);
+            .in("follower_id", followerIds);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
@@ -210,10 +211,11 @@ const ProducerProfile = () => {
       }
 
       if (user) {
+        const followerIds = [profile?.id, user.id].filter((value): value is string => Boolean(value));
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .eq("follower_id", user.id)
+            .in("follower_id", followerIds)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -226,7 +228,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user, authLoading, refreshKey]);
+  }, [id, user, authLoading, refreshKey, profile?.id]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
@@ -249,10 +251,9 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const { data: authData } = await supabase.auth.getUser();
-    const activeUserId = authData.user?.id;
+    const followerId = profile?.id;
 
-    if (!activeUserId) {
+    if (!followerId) {
       toast.error("Your session expired. Please login again.");
       return;
     }
@@ -263,7 +264,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", activeUserId)
+            .eq("follower_id", followerId)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -278,7 +279,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .insert({
-                follower_id: activeUserId,
+                follower_id: followerId,
                 following_id: producer.id
             });
 
