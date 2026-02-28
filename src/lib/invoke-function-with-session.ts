@@ -30,6 +30,28 @@ export const invokeFunctionWithSession = async <T = unknown>(
   functionName: string,
   options: InvokeOptions = {},
 ) => {
+  const isUnauthorizedError = (error: unknown) => {
+    const candidate = error as {
+      message?: string;
+      context?: { status?: number; statusCode?: number };
+      status?: number;
+      statusCode?: number;
+    } | null;
+
+    if (!candidate) return false;
+
+    const status =
+      candidate.context?.status ??
+      candidate.context?.statusCode ??
+      candidate.status ??
+      candidate.statusCode;
+
+    if (status === 401) return true;
+
+    const message = candidate.message?.toLowerCase() ?? "";
+    return message.includes("401") || message.includes("unauthorized") || message.includes("invalid jwt");
+  };
+
   const accessToken = await getAccessToken();
 
   const invoke = () =>
@@ -42,7 +64,7 @@ export const invokeFunctionWithSession = async <T = unknown>(
     });
 
   let response = await invoke();
-  if (response.error && (response.error as { context?: { status?: number } }).context?.status === 401) {
+  if (response.error && isUnauthorizedError(response.error)) {
     const refreshedToken = await getAccessToken(true);
     response = await supabase.functions.invoke<T>(functionName, {
       ...options,
