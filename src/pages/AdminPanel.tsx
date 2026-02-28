@@ -917,47 +917,39 @@ const AdminPanel = () => {
     if (!userToDelete) return;
 
     try {
-      // Delete user's shows first
-      if (userToDelete.id) {
-        const { error: showsError } = await supabase
-          .from("shows")
-          .delete()
-          .eq("producer_id", userToDelete.id);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
-        if (showsError) console.error("Error deleting user shows:", showsError);
+      if (!accessToken) {
+        throw new Error("Admin session not found");
       }
 
-      // Delete user's producer requests
-      const { error: requestsError } = await supabase
-        .from("producer_requests")
-        .delete()
-        .eq("user_id", userToDelete.user_id);
-
-      if (requestsError) console.error("Error deleting user requests:", requestsError);
-
-      // Call Edge Function to delete user from Auth (which cascades to profile)
-      const { error: deleteUserError } = await supabase.functions.invoke("delete-user", {
-        body: { user_id: userToDelete.user_id, security_key: adminSecurityKey },
+      const response = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          user_id: userToDelete.user_id,
+          profile_id: userToDelete.id,
+          security_key: adminSecurityKey,
+        }),
       });
 
-      if (deleteUserError) {
-        // Handle custom error response from Edge Function
-        if (deleteUserError instanceof Error && deleteUserError.message) {
-           try {
-              const parsed = JSON.parse(deleteUserError.message);
-              if (parsed.error === "Invalid security key") {
-                 toast({
-                    title: "Invalid Security Key",
-                    description: "The provided security key is incorrect.",
-                    variant: "destructive",
-                 });
-                 return;
-              }
-           } catch (e) {
-              // ignore parse error
-           }
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result?.error === "Invalid security key") {
+          toast({
+            title: "Invalid Security Key",
+            description: "The provided security key is incorrect.",
+            variant: "destructive",
+          });
+          return;
         }
-        throw deleteUserError;
+
+        throw new Error(result?.error || "Failed to delete user");
       }
 
       toast({
