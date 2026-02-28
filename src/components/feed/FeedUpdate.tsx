@@ -161,6 +161,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
             .from('posts')
             .delete()
             .eq('id', post.id)
+            .eq('profile_id', profile?.id ?? "")
             .select('id');
 
           if (error) throw error;
@@ -174,10 +175,8 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
           const message = e instanceof Error ? e.message : "Failed to delete post.";
           console.error("Post delete failed", {
             postId: post.id,
-            postProfileId: post.profile_id,
-            activeProfileId: profile?.id,
+            profileId: profile?.id,
             authUserId: user?.id,
-            postOwnerUserId: post.profiles?.user_id,
             isOwner,
             error: e,
           });
