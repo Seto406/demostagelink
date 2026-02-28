@@ -6,6 +6,9 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Time-Traveler Logic: fetch interceptor to handle clock skew
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const requestUrl = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+  const isAuthRequest = requestUrl.includes('/auth/v1/');
+
   // Perform the request
   const response = await fetch(input, init);
 
@@ -21,8 +24,9 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const isSessionFuture = typeof errorMsg === 'string' && errorMsg.includes("Session in the future");
       const isSessionNotFound = typeof errorMsg === 'string' && errorMsg.includes("session_not_found");
 
-      // Safe Auth Reset: Only reload for specific session errors, never for function errors
-      if (!isFunctionsError && ((response.status === 401 && isSessionFuture) || isSessionNotFound)) {
+      // Safe Auth Reset: only clear local session when Supabase Auth endpoints report a corrupt session.
+      // This avoids logging users out on unrelated Edge Function 401 responses.
+      if (isAuthRequest && !isFunctionsError && ((response.status === 401 && isSessionFuture) || isSessionNotFound)) {
         console.error("Critical session error detected. Clearing session.");
         // Clear all sb- keys to kill the bad session
         Object.keys(localStorage).forEach((key) => {
