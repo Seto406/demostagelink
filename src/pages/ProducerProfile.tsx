@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
 import { Pencil } from "lucide-react";
+import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 
 interface TheaterGroup {
   id: string;
@@ -409,46 +410,24 @@ const ProducerProfile = () => {
     }
   };
 
-  const INVALID_JWT_ERROR = { code: 401, message: "Invalid JWT" } as const;
-
   const handleCollabRequest = async () => {
     if (!user || !profile || !producer) return;
 
     setCollabLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-collab-proposal', {
+      const { data, error } = await invokeFunctionWithSession<{ success?: boolean; error?: string; message?: string }>('send-collab-proposal', {
         body: { recipient_profile_id: producer.id }
       });
 
       if (error) {
         const errorStatus = (error as { context?: { status?: number } })?.context?.status;
-        const isUnauthorized = errorStatus === 401 || (error.message || '').includes('401');
+        if (errorStatus === 409) {
+          toast.info("You already have a pending collaboration request with this producer.");
+          return;
+        }
 
-        if (isUnauthorized) {
-          console.warn('send-collab-proposal returned auth error', INVALID_JWT_ERROR);
-
-          const { error: fallbackError } = await supabase
-            .from('collaboration_requests')
-            .insert({
-              sender_id: profile.id,
-              receiver_id: producer.id,
-              status: 'pending'
-            });
-
-          if (fallbackError) {
-            throw new Error(`${INVALID_JWT_ERROR.message}. ${fallbackError.message}`);
-          }
-
-          await createNotification({
-            userId: producer.id,
-            actorId: profile.id,
-            type: 'collaboration_request',
-            title: 'New Collaboration Request',
-            message: `${profile.group_name || profile.username || 'Someone'} sent you a collaboration request.`,
-            link: '/dashboard'
-          });
-
-          toast.success('Collab request sent. Email delivery may be delayed right now, but the in-app request was created.');
+        if (errorStatus === 401 || (error.message || '').includes('401')) {
+          toast.error("Your session expired. Please sign in again and retry.");
           return;
         }
 
@@ -464,7 +443,7 @@ const ProducerProfile = () => {
       console.error("Error sending collaboration request:", error);
       const message = error instanceof Error ? error.message : "Failed to send request";
       const isInvalidJwt = message.includes('401') || message.toLowerCase().includes('invalid jwt');
-      toast.error(isInvalidJwt ? `${INVALID_JWT_ERROR.message} (code: ${INVALID_JWT_ERROR.code}). Please sign in again and retry.` : (message || "Failed to send request"));
+      toast.error(isInvalidJwt ? "Your session expired. Please sign in again and retry." : (message || "Failed to send request"));
     } finally {
       setCollabLoading(false);
     }
@@ -672,8 +651,8 @@ const ProducerProfile = () => {
                           <Button
                             onClick={handleCollabRequest}
                             disabled={collabLoading}
-                            variant="outline"
-                            className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                            variant="default"
+                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 ml-2"
                           >
                             {collabLoading ? (
                               "Sending..."

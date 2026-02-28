@@ -145,7 +145,7 @@ const ITEMS_PER_PAGE = 10;
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 1024 : false));
   const [shows, setShows] = useState<Show[]>([]);
   const [loadingShows, setLoadingShows] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending_new");

@@ -5,7 +5,7 @@ type InvokeOptions = {
   headers?: Record<string, string>;
 };
 
-const getAccessToken = async () => {
+const getAccessToken = async (forceRefresh = false) => {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) {
     throw sessionError;
@@ -13,8 +13,9 @@ const getAccessToken = async () => {
 
   const session = sessionData.session;
   const isExpiringSoon = !session?.expires_at || session.expires_at * 1000 <= Date.now() + 60_000;
+  const shouldRefresh = forceRefresh || !session || isExpiringSoon;
 
-  if (!session || isExpiringSoon) {
+  if (shouldRefresh) {
     const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
     if (refreshError || !refreshData.session?.access_token) {
       throw refreshError ?? new Error("No active session");
@@ -42,7 +43,7 @@ export const invokeFunctionWithSession = async <T = unknown>(
 
   let response = await invoke();
   if (response.error && (response.error as { context?: { status?: number } }).context?.status === 401) {
-    const refreshedToken = await getAccessToken();
+    const refreshedToken = await getAccessToken(true);
     response = await supabase.functions.invoke<T>(functionName, {
       ...options,
       headers: {
