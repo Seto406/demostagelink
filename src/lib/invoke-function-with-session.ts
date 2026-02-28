@@ -26,54 +26,66 @@ const getAccessToken = async (forceRefresh = false) => {
   return session.access_token;
 };
 
+const isUnauthorizedError = (error: unknown) => {
+  const candidate = error as {
+    message?: string;
+    context?: { status?: number; statusCode?: number };
+    status?: number;
+    statusCode?: number;
+  } | null;
+
+  if (!candidate) return false;
+
+  const status =
+    candidate.context?.status ??
+    candidate.context?.statusCode ??
+    candidate.status ??
+    candidate.statusCode;
+
+  if (status === 401) return true;
+
+  const message = candidate.message?.toLowerCase() ?? "";
+  return message.includes("401") || message.includes("unauthorized") || message.includes("invalid jwt");
+};
+
+const invokeWithBearer = async <T = unknown>(
+  functionName: string,
+  options: InvokeOptions,
+  accessToken: string,
+) => {
+  return supabase.functions.invoke<T>(functionName, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
 export const invokeFunctionWithSession = async <T = unknown>(
   functionName: string,
   options: InvokeOptions = {},
 ) => {
-  const isUnauthorizedError = (error: unknown) => {
-    const candidate = error as {
-      message?: string;
-      context?: { status?: number; statusCode?: number };
-      status?: number;
-      statusCode?: number;
-    } | null;
+  let response = await invokeWithBearer(functionName, options, await getAccessToken());
 
-    if (!candidate) return false;
-
-    const status =
-      candidate.context?.status ??
-      candidate.context?.statusCode ??
-      candidate.status ??
-      candidate.statusCode;
-
-    if (status === 401) return true;
-
-    const message = candidate.message?.toLowerCase() ?? "";
-    return message.includes("401") || message.includes("unauthorized") || message.includes("invalid jwt");
-  };
-
-  const accessToken = await getAccessToken();
-
-  const invoke = () =>
-    supabase.functions.invoke<T>(functionName, {
-      ...options,
-      headers: {
-        ...(options.headers ?? {}),
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-  let response = await invoke();
-  if (response.error && isUnauthorizedError(response.error)) {
-    const refreshedToken = await getAccessToken(true);
-    response = await supabase.functions.invoke<T>(functionName, {
-      ...options,
-      headers: {
-        ...(options.headers ?? {}),
-        Authorization: `Bearer ${refreshedToken}`,
-      },
-    });
+  if (!response.error || !isUnauthorizedError(response.error)) {
+    return response;
   }
 
-  return response;
+  try {
+    response = await invokeWithBearer(functionName, options, await getAccessToken(true));
+  } catch (refreshError) {
+    return {
+      data: null,
+      error: refreshError,
+    } as typeof response;
+  }
+
+  if (!response.error || !isUnauthorizedError(response.error)) {
+    return response;
+  }
+
+  // Final fallback: after a forced refresh, allow Supabase client internals to attach auth headers.
+  // This helps if a manually attached Authorization header lags behind the active in-memory session.
+  return supabase.functions.invoke<T>(functionName, options);
 };
