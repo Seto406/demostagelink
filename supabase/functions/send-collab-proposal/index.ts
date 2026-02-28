@@ -23,6 +23,9 @@ serve(async (req) => {
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
         },
+        auth: {
+          persistSession: false,
+        },
       }
     );
 
@@ -46,7 +49,12 @@ serve(async (req) => {
     // Initialize Admin Client
     const supabaseAdmin = createClient(
       SUPABASE_URL ?? "",
-      SUPABASE_SERVICE_ROLE_KEY ?? ""
+      SUPABASE_SERVICE_ROLE_KEY ?? "",
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
     );
 
     // 1. Fetch Sender Profile
@@ -129,7 +137,7 @@ serve(async (req) => {
     try {
       // Robust Notification Insert
       // We check if actor_id is valid (it is optional in some schemas)
-      const payload: any = {
+      const payload: Record<string, unknown> = {
           user_id: recipientProfile.id,
           type: 'collaboration_request',
           title: 'New Collaboration Request',
