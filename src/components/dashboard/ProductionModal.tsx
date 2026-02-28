@@ -146,6 +146,20 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [upsellContext, setUpsellContext] = useState<{ featureName?: string, description?: string }>({});
 
   const initializedRef = useRef<string | null>(null);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const hasScheduledDates = scheduleSlots.some(slot => !!slot.date);
+  const hasFutureOrTodaySchedule = scheduleSlots.some((slot) => {
+    if (!slot.date) return false;
+    return parseDateLocal(slot.date).getTime() >= todayStart.getTime();
+  });
+  const isPastProductionByDate = hasScheduledDates && !hasFutureOrTodaySchedule;
+
+  useEffect(() => {
+    if (isPastProductionByDate && productionStatus === "ongoing") {
+      setProductionStatus("completed");
+    }
+  }, [isPastProductionByDate, productionStatus]);
 
   const resetForm = useCallback(() => {
     setTitle("");
@@ -558,6 +572,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
     const { display_date, ...restMetadata } = (showToEdit?.seo_metadata || {}) as Record<string, unknown>;
 
+    const effectiveProductionStatus = isPastProductionByDate && productionStatus === "ongoing"
+      ? "completed"
+      : productionStatus;
+
     const payload = {
       title,
       description: description || null,
@@ -569,7 +587,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       ticket_link: validLinks[0] || null,
       external_links: validLinks,
       price: price ? parseFloat(price) : null,
-      production_status: productionStatus,
+      production_status: effectiveProductionStatus,
       poster_url: finalPosterUrl,
       reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
       collect_balance_onsite: collectBalanceOnsite,
@@ -877,11 +895,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-secondary/30">
-                    <SelectItem value="ongoing">Ongoing/Upcoming</SelectItem>
+                    <SelectItem value="ongoing" disabled={isPastProductionByDate}>Ongoing/Upcoming</SelectItem>
                     <SelectItem value="completed">Completed (Past)</SelectItem>
                     <SelectItem value="draft">Draft (Hidden)</SelectItem>
                   </SelectContent>
                 </Select>
+                {isPastProductionByDate && (
+                  <p className="text-[11px] text-muted-foreground">
+                    This production is dated in the past and is automatically set to Completed.
+                  </p>
+                )}
               </div>
             </div>
 
