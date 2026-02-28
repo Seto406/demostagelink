@@ -13,6 +13,7 @@ import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
@@ -252,9 +253,9 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerId = profile?.id;
+    const followerIds = [profile?.id, user.id].filter((value, index, array): value is string => Boolean(value) && array.indexOf(value) === index);
 
-    if (!followerId) {
+    if (followerIds.length === 0) {
       toast.error("Your session expired. Please login again.");
       return;
     }
@@ -265,7 +266,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", followerId)
+            .in("follower_id", followerIds)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -277,12 +278,26 @@ const ProducerProfile = () => {
             toast.success("Unfollowed group");
         }
     } else {
-        const { error } = await supabase
+        let error = null;
+
+        for (const followerId of followerIds) {
+          const followResult = await supabase
             .from("follows")
             .insert({
-                follower_id: followerId,
-                following_id: producer.id
+              follower_id: followerId,
+              following_id: producer.id
             });
+
+          error = followResult.error;
+
+          if (!error) {
+            break;
+          }
+
+          if ((error as { code?: string }).code !== '23503') {
+            break;
+          }
+        }
 
         if (error) {
             console.error("Error following:", error);
