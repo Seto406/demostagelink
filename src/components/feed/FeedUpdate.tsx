@@ -146,22 +146,24 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
   };
 
   const handleDelete = async () => {
-      if (!user?.id) {
+      if (!user?.id || !profile?.id) {
         toast({ title: "Error", description: "You need to be signed in to delete a post.", variant: "destructive" });
         return;
       }
 
+      if (!isOwner) {
+        toast({ title: "Error", description: "You can only delete your own post.", variant: "destructive" });
+        return;
+      }
+
       try {
-          const { error, data } = await supabase
+          const { error } = await supabase
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .select('id');
+            .eq('profile_id', profile.id);
 
           if (error) throw error;
-          if (!data?.length) {
-            throw new Error("Delete could not be completed. The post may already be removed, or your session no longer has permission to delete it.");
-          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
