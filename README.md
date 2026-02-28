@@ -53,15 +53,15 @@ Built by [La Creneurs](https://www.stagelink.show) — because every performance
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ and pnpm
-- Supabase project (auto-configured via Lovable Cloud)
+- Node.js 20 and pnpm
+- Supabase project
 
 ### Local Development
 
 ```sh
 # Clone the repository
 git clone <YOUR_GIT_URL>
-cd stagelink
+cd demostagelink
 
 # Install dependencies
 pnpm install
@@ -70,10 +70,31 @@ pnpm install
 pnpm dev
 ```
 
-### Environment Variables
-Environment variables are automatically configured via Lovable Cloud:
+### Environment Variables (Vercel)
+Set these in your Vercel project settings (do not commit `.env` files):
+
+**Client (safe to expose via Vite):**
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PROJECT_ID` (optional)
+
+**Server-only (must never be `VITE_*`):**
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_ACTION_KEY`
+
+Use `.env.example` as the template for local values.
+
+### Admin Actions Flow
+- The frontend calls Vercel API routes under `/api/admin/*`.
+- The API route verifies the caller is an admin and checks `ADMIN_ACTION_KEY`.
+- Privileged actions (like deleting users) run server-side with `SUPABASE_SERVICE_ROLE_KEY`.
+
+---
+
+## 🔒 Security Notes
+- Secrets were previously committed in this repository. Rotate any exposed keys immediately, especially `SUPABASE_SERVICE_ROLE_KEY` and any admin keys.
+- If this repository was public, scrub git history to permanently remove leaked secrets.
+- Never store privileged secrets in `VITE_*` variables because Vite bundles them into client code.
 
 ---
 

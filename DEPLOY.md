@@ -1,40 +1,31 @@
-# Deployment Guide
+# Deployment Guide (Vercel + pnpm)
 
-This project is configured to be deployed on [Render](https://render.com) as a Static Site, using the `render.yaml` Blueprint configuration.
+This project is intended to be deployed on Vercel.
 
-## Automatic Deployment
+## 1) Build settings
+- **Framework Preset:** Vite
+- **Install Command:** `pnpm install --frozen-lockfile`
+- **Build Command:** `pnpm build`
+- **Output Directory:** `dist`
 
-To enable automatic deployment whenever you push to your Git repository:
+## 2) Environment variables
+Set these in **Vercel → Project Settings → Environment Variables**.
 
-1.  **Sign up/Log in to Render**: Go to [dashboard.render.com](https://dashboard.render.com).
-2.  **Create a New Blueprint Instance**:
-    *   Click on **New +** button in the dashboard.
-    *   Select **Blueprint**.
-    *   Connect your GitHub/GitLab repository.
-    *   Render will automatically detect the `render.yaml` file in the root of your project.
-3.  **Apply the Blueprint**:
-    *   Render will show you the resources defined in `render.yaml` (a Static Site named `vite-react-shadcn-ts`).
-    *   Click **Apply**.
+### Client variables (exposed to browser)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PROJECT_ID` (optional)
 
-Once set up, Render will automatically build and deploy your site every time you push changes to the main branch.
+### Server-only variables (never use `VITE_` prefix)
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_ACTION_KEY`
 
-## Manual Configuration (If not using Blueprint)
+## 3) Admin flow
+- Frontend calls `/api/admin/*` endpoints.
+- Vercel API routes validate the admin session and `ADMIN_ACTION_KEY`.
+- Privileged operations run only on the server using `SUPABASE_SERVICE_ROLE_KEY`.
 
-If you prefer to configure it manually as a **Static Site**:
-
-1.  **Build Command**: `pnpm install && pnpm run build`
-2.  **Publish Directory**: `dist`
-3.  **Environment Variables**:
-    *   `VITE_SUPABASE_URL`: Your Supabase URL.
-    *   `VITE_SUPABASE_PUBLISHABLE_KEY`: Your Supabase Anon Key.
-    *   `VITE_SENTRY_DSN`: (Optional) Sentry DSN for error tracking.
-    *   `VITE_ADMIN_ACTION_KEY`: (Optional) Admin key if used.
-4.  **Rewrite Rules**:
-    *   **Source**: `/*`
-    *   **Destination**: `/index.html`
-    *   This is required for Single Page Applications (SPA) to handle client-side routing.
-
-## Troubleshooting
-
-*   **Build Failures**: Check the logs on Render. Ensure `pnpm-lock.yaml` is up to date.
-*   **Env Vars**: Ensure all required environment variables are set in the Render dashboard if they are not picked up automatically (Blueprint sets `sync: false` for sensitive keys, so you might need to enter them manually in the Render Dashboard).
+## 4) Security reminders
+- Do **not** commit `.env` files.
+- Use `.env.example` as a safe template.
+- Rotate any key that may have been committed previously.
