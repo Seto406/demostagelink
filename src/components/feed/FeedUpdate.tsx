@@ -149,13 +149,16 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
       }
 
       try {
-          const { error } = await supabase
+          const { error, count } = await supabase
             .from('posts')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('id', post.id)
             .eq('profile_id', profile.id);
 
           if (error) throw error;
+          if (!count) {
+            throw new Error("Delete could not be completed. Please make sure you're deleting your own update and try again.");
+          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
