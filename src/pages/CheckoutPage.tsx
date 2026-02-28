@@ -16,6 +16,34 @@ import { createNotification } from "@/lib/notifications";
 import { ShowDetails, dummyShows, CastMember } from "@/data/dummyShows";
 import Footer from "@/components/layout/Footer";
 
+
+interface ScheduleSlot {
+  date?: string;
+  time?: string;
+}
+
+const getReservationCutoff = (show: ShowDetails): Date | null => {
+  const metadata = (show.seo_metadata || {}) as { schedule_slots?: ScheduleSlot[] };
+  const slots = Array.isArray(metadata.schedule_slots) ? metadata.schedule_slots : [];
+
+  const candidateDates: Date[] = [];
+
+  slots.forEach((slot) => {
+    if (!slot?.date) return;
+    const time = slot.time && /^\d{2}:\d{2}$/.test(slot.time) ? slot.time : "23:59";
+    const parsed = new Date(`${slot.date}T${time}:00`);
+    if (!Number.isNaN(parsed.getTime())) candidateDates.push(parsed);
+  });
+
+  if (candidateDates.length === 0 && show.date) {
+    const parsed = new Date(show.date);
+    if (!Number.isNaN(parsed.getTime())) candidateDates.push(parsed);
+  }
+
+  if (candidateDates.length === 0) return null;
+  return new Date(Math.max(...candidateDates.map((d) => d.getTime())));
+};
+
 const CheckoutPage = () => {
   const { showId } = useParams<{ showId: string }>();
   const navigate = useNavigate();
@@ -176,6 +204,12 @@ const CheckoutPage = () => {
   const handleManualSubmit = async () => {
     if (!show || !show.price) return;
 
+    const cutoff = getReservationCutoff(show);
+    if (cutoff && cutoff.getTime() < Date.now()) {
+      toast.error("Ticket reservations for this schedule are already closed.");
+      return;
+    }
+
     if (!proofFile) {
         toast.error("Please upload a proof of payment (screenshot).");
         return;
@@ -260,6 +294,8 @@ const CheckoutPage = () => {
 
   const reservationFee = show.reservation_fee ?? (show.price ? calculateReservationFee(show.price, show.producer_id?.niche ?? null) : 25);
   const remainingBalance = Math.max(0, (show.price || 0) - reservationFee);
+  const reservationCutoff = getReservationCutoff(show);
+  const reservationClosed = reservationCutoff ? reservationCutoff.getTime() < Date.now() : false;
 
   const formattedDate = show.date
     ? new Date(show.date).toLocaleDateString("en-US", {
@@ -321,6 +357,9 @@ const CheckoutPage = () => {
                                 <span>{show.venue}{show.city ? `, ${show.city}` : ""}</span>
                             </div>
                         )}
+                        {reservationCutoff && (
+                            <p className="text-xs text-muted-foreground">Reservations close on {reservationCutoff.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}.</p>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -358,6 +397,11 @@ const CheckoutPage = () => {
 
                         {/* Manual Payment UI */}
                         <div className="space-y-6 pt-4 border-t border-border">
+                          {reservationClosed && (
+                            <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                              Ticket reservations are closed for this show schedule.
+                            </div>
+                          )}
                             {/* QR Code Display */}
                             <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border border-secondary/20">
                                 {qrCodeUrl ? (
@@ -474,7 +518,7 @@ const CheckoutPage = () => {
                             className="w-full text-lg h-12"
                             size="lg"
                             onClick={handleManualSubmit}
-                            disabled={processing || !proofFile || (!user && (!guestName || !guestEmail))}
+                            disabled={reservationClosed || processing || !proofFile || (!user && (!guestName || !guestEmail))}
                         >
                             {processing ? (
                                 <>

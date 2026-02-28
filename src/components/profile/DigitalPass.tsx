@@ -96,7 +96,7 @@ export const DigitalPass = ({
   };
 
   return (
-    <div className="group relative w-full max-w-md mx-auto">
+    <div className="group relative mx-auto w-full max-w-2xl">
       {/* Download Button */}
       <div className="absolute top-2 right-2 z-30 print:hidden">
          <DropdownMenu>
@@ -121,9 +121,9 @@ export const DigitalPass = ({
       <div ref={passRef} className={`relative bg-card border rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl ${isUsed ? 'border-muted grayscale-[0.5] opacity-80' : 'border-secondary/30 hover:border-secondary/50'}`}>
 
         {/* Ticket Header / Main Info */}
-        <div className="flex flex-col sm:flex-row">
+        <div className="flex flex-col md:flex-row">
             {/* Poster Section (Left/Top) */}
-            <div className="relative w-full sm:w-1/3 aspect-[3/4] sm:aspect-auto sm:h-auto overflow-hidden bg-muted">
+            <div className="relative h-48 w-full overflow-hidden bg-muted md:h-auto md:w-1/3">
                 {posterUrl ? (
                     <img
                         src={posterUrl}
@@ -152,7 +152,7 @@ export const DigitalPass = ({
             {/* Content Section (Right/Bottom) */}
             <div className="flex-1 p-5 flex flex-col justify-between relative bg-card">
                 {/* Perforated Edge (Visual separator for mobile, or decoration) */}
-                <div className="hidden sm:block absolute left-0 top-0 bottom-0 w-[1px] border-l-2 border-dashed border-secondary/30 -ml-[1px] z-10" />
+                <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[1px] border-l-2 border-dashed border-secondary/30 -ml-[1px] z-10" />
 
                 <div>
                     <div className="flex justify-between items-start gap-2 mb-2">
@@ -187,6 +187,9 @@ export const DigitalPass = ({
                                 <Calendar className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
                                 <span className="truncate">{new Date(date).toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}</span>
                             </div>
+                        )}
+                        {date && (
+                            <div className="text-[11px] text-muted-foreground">Reservation valid until showtime.</div>
                         )}
                         {(venue || city) && (
                             <div className="flex items-center gap-2">
@@ -240,8 +243,8 @@ export const DigitalPass = ({
         </div>
 
         {/* Decorative Notches (for perforated look) */}
-        <div className="hidden sm:block absolute top-0 left-[33.33%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-background rounded-full border border-secondary/30 z-20" />
-        <div className="hidden sm:block absolute bottom-0 left-[33.33%] -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-background rounded-full border border-secondary/30 z-20" />
+        <div className="hidden md:block absolute top-0 left-[33.33%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-background rounded-full border border-secondary/30 z-20" />
+        <div className="hidden md:block absolute bottom-0 left-[33.33%] -translate-x-1/2 translate-y-1/2 w-4 h-4 bg-background rounded-full border border-secondary/30 z-20" />
 
       </div>
     </div>

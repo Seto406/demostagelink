@@ -414,7 +414,7 @@ const ProducerProfile = () => {
       if (data?.error) {
         toast.error(data.error);
       } else if (data?.success) {
-        toast.success(data.message || "Collaboration request sent successfully!");
+        toast.success(data.message || "Intro request sent successfully!");
       }
     } catch (error: unknown) {
       console.error("Error sending collaboration request:", error);
@@ -635,7 +635,7 @@ const ProducerProfile = () => {
                             ) : (
                               <>
                                 <Handshake className="w-4 h-4 mr-2" />
-                                Request Collab
+                                Send Intro
                               </>
                             )}
                           </Button>

@@ -144,13 +144,13 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
 
   const handleDelete = async () => {
       try {
-          const { data, error } = await supabase.from('posts').delete().eq('id', post.id).select();
+          const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', post.id)
+            .eq('profile_id', profile?.id);
 
           if (error) throw error;
-
-          if (!data || data.length === 0) {
-            throw new Error("Unable to delete post. You may not have permission.");
-          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
