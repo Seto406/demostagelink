@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin, Download, Image, FileText, CheckCircle2 } from "lucide-react";
-import html2canvas from "html2canvas";
+import { toPng, toCanvas } from "html-to-image";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
 import { Button } from "@/components/ui/button";
@@ -52,16 +52,18 @@ export const DigitalPass = ({
   const handleDownloadImage = async () => {
     if (passRef.current) {
       try {
-        const canvas = await html2canvas(passRef.current, {
-            useCORS: true,
-            scale: 2, // Higher resolution
-            backgroundColor: null,
-            scrollX: 0,
-            scrollY: 0,
+        const dataUrl = await toPng(passRef.current, {
+            cacheBust: true,
+            pixelRatio: 2, // Higher resolution
+            backgroundColor: 'transparent',
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left'
+            }
         });
         const link = document.createElement("a");
         link.download = `pass-${title.substring(0, 20).replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${ticketId.slice(0, 8)}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.href = dataUrl;
         link.click();
       } catch (error) {
         console.error("Error downloading image:", error);
@@ -72,15 +74,18 @@ export const DigitalPass = ({
   const handleDownloadPDF = async () => {
     if (passRef.current) {
       try {
-        const canvas = await html2canvas(passRef.current, {
-            useCORS: true,
-            scale: 2,
-            scrollX: 0,
-            scrollY: 0,
+        const canvas = await toCanvas(passRef.current, {
+            cacheBust: true,
+            pixelRatio: 2,
+            backgroundColor: 'transparent',
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left'
+            }
         });
         const imgData = canvas.toDataURL('image/png');
 
-        // Use pt units.
+        // Use px units.
         const pdf = new jsPDF({
           orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
           unit: 'px',
