@@ -408,6 +408,8 @@ const ProducerProfile = () => {
     }
   };
 
+  const INVALID_JWT_ERROR = { code: 401, message: "Invalid JWT" } as const;
+
   const handleCollabRequest = async () => {
     if (!user || !profile || !producer) return;
 
@@ -417,17 +419,51 @@ const ProducerProfile = () => {
         body: { recipient_profile_id: producer.id }
       });
 
-      if (error) throw error;
+      if (error) {
+        const errorStatus = (error as { context?: { status?: number } })?.context?.status;
+        const isUnauthorized = errorStatus === 401 || (error.message || '').includes('401');
+
+        if (isUnauthorized) {
+          console.warn('send-collab-proposal returned auth error', INVALID_JWT_ERROR);
+
+          const { error: fallbackError } = await supabase
+            .from('collaboration_requests')
+            .insert({
+              sender_id: profile.id,
+              receiver_id: producer.id,
+              status: 'pending'
+            });
+
+          if (fallbackError) {
+            throw new Error(`${INVALID_JWT_ERROR.message}. ${fallbackError.message}`);
+          }
+
+          await createNotification({
+            userId: producer.id,
+            actorId: profile.id,
+            type: 'collaboration_request',
+            title: 'New Collaboration Request',
+            message: `${profile.group_name || profile.username || 'Someone'} sent you a collaboration request.`,
+            link: '/dashboard'
+          });
+
+          toast.success('Collab request sent. Email delivery may be delayed right now, but the in-app request was created.');
+          return;
+        }
+
+        throw error;
+      }
 
       if (data?.error) {
         toast.error(data.error);
       } else if (data?.success) {
-        toast.success(data.message || "Intro request sent successfully!");
+        toast.success(data.message || "Collab request sent successfully!");
       }
     } catch (error: unknown) {
       console.error("Error sending collaboration request:", error);
       const message = error instanceof Error ? error.message : "Failed to send request";
-      toast.error(message || "Failed to send request");
+      const isInvalidJwt = message.includes('401') || message.toLowerCase().includes('invalid jwt');
+      toast.error(isInvalidJwt ? `${INVALID_JWT_ERROR.message} (code: ${INVALID_JWT_ERROR.code}). Please sign in again and retry.` : (message || "Failed to send request"));
     } finally {
       setCollabLoading(false);
     }
@@ -643,7 +679,7 @@ const ProducerProfile = () => {
                             ) : (
                               <>
                                 <Handshake className="w-4 h-4 mr-2" />
-                                Send Intro
+                                Send Collab Request
                               </>
                             )}
                           </Button>

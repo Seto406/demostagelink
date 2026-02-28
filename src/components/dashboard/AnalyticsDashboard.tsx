@@ -4,10 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { motion } from "framer-motion";
-import { HelpCircle, Lock, BarChart3, AlertTriangle } from "lucide-react";
+import { HelpCircle, BarChart3, AlertTriangle } from "lucide-react";
 import { Tooltip as UiTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface AnalyticsDashboardProps {
   profileId: string;
@@ -25,9 +24,8 @@ interface ProducerShow {
   title: string;
 }
 
-export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: AnalyticsDashboardProps) => {
-  const navigate = useNavigate();
-  const [stats, setStats] = useState({ views: 0, clicks: 0, ctr: 0 });
+export const AnalyticsDashboard = ({ profileId }: AnalyticsDashboardProps) => {
+  const [stats, setStats] = useState({ views: 0, clicks: 0, reservations: 0, ctr: 0 });
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
@@ -36,24 +34,28 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
   const [rangeDays, setRangeDays] = useState<7 | 30>(7);
 
   const fetchData = useCallback(async () => {
-    if (!isPro) {
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
       const sinceDate = new Date();
       sinceDate.setDate(sinceDate.getDate() - rangeDays + 1);
       sinceDate.setHours(0, 0, 0, 0);
 
-      const [showsResponse, pendingTicketsResponse, eventsResponse] = await Promise.all([
-        supabase.from("shows").select("id, title").eq("producer_id", profileId).eq("status", "approved").order("created_at", { ascending: false }),
+      const [showsResponse, pendingTicketsResponse, reservationsResponse, eventsResponse] = await Promise.all([
+        supabase
+          .from("shows")
+          .select("id, title")
+          .eq("producer_id", profileId)
+          .order("created_at", { ascending: false }),
         supabase
           .from("tickets")
           .select("id, shows!inner(producer_id)", { count: "exact", head: true })
           .eq("status", "pending")
           .eq("shows.producer_id", profileId),
+        supabase
+          .from("tickets")
+          .select("id, show_id, created_at, shows!inner(producer_id)")
+          .eq("shows.producer_id", profileId)
+          .gte("created_at", sinceDate.toISOString()),
         (supabase.from("analytics_events" as never) as never)
           .select("event_type, show_id, created_at")
           .eq("group_id", profileId)
@@ -61,18 +63,20 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
           .order("created_at", { ascending: true }),
       ]);
 
-      if (showsResponse.data) {
-        setShows(showsResponse.data as ProducerShow[]);
-      }
+      if (showsResponse.data) setShows(showsResponse.data as ProducerShow[]);
       setPendingCount(pendingTicketsResponse.count || 0);
 
       const rawEvents = (eventsResponse.data || []) as Array<{ event_type: string; show_id: string | null; created_at: string }>;
+      const rawReservations = (reservationsResponse.data || []) as Array<{ show_id: string | null; created_at: string }>;
+
       const events = selectedShowId === "all" ? rawEvents : rawEvents.filter((e) => e.show_id === selectedShowId);
+      const reservations = selectedShowId === "all" ? rawReservations : rawReservations.filter((r) => r.show_id === selectedShowId);
 
       const views = events.filter((e) => e.event_type === "profile_view").length;
       const clicks = events.filter((e) => e.event_type === "ticket_click").length;
+      const reservationCount = reservations.length;
       const ctr = views > 0 ? (clicks / views) * 100 : 0;
-      setStats({ views, clicks, ctr });
+      setStats({ views, clicks, reservations: reservationCount, ctr });
 
       const dayBuckets: Record<string, number> = {};
       for (let i = rangeDays - 1; i >= 0; i--) {
@@ -95,24 +99,20 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
         }))
       );
     } catch {
-      setStats({ views: 0, clicks: 0, ctr: 0 });
+      setStats({ views: 0, clicks: 0, reservations: 0, ctr: 0 });
       setChartData([]);
     } finally {
       setLoading(false);
     }
-  }, [profileId, isPro, rangeDays, selectedShowId]);
+  }, [profileId, rangeDays, selectedShowId]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  if (!isPro) {
-    return <Card className="bg-card border-secondary/20 relative overflow-hidden"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center"><div className="bg-secondary/10 p-4 rounded-full mb-4"><Lock className="w-8 h-8 text-secondary" /></div><h3 className="font-serif text-2xl font-bold mb-2">Detailed Analytics Locked</h3><p className="text-muted-foreground max-w-md mb-6">Upgrade to Pro to see detailed profile views, ticket clicks, and click-through rates. Track your production's performance in real-time.</p><Button onClick={() => onUpsell ? onUpsell() : navigate("/settings")} variant="default" size="lg">Upgrade to Pro</Button></div><div className="p-6 opacity-20 filter blur-sm select-none pointer-events-none"><div className="grid md:grid-cols-3 gap-6 mb-6"><div className="h-24 bg-secondary/20 rounded-xl"></div><div className="h-24 bg-secondary/20 rounded-xl"></div><div className="h-24 bg-secondary/20 rounded-xl"></div></div><div className="h-64 bg-secondary/20 rounded-xl"></div></div></Card>;
-  }
-
   if (loading) return <div className="h-96 flex items-center justify-center"><BrandedLoader /></div>;
 
-  const hasData = stats.views > 0 || stats.clicks > 0 || pendingCount > 0;
+  const hasData = stats.views > 0 || stats.clicks > 0 || stats.reservations > 0 || pendingCount > 0;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-6">
@@ -137,9 +137,10 @@ export const AnalyticsDashboard = ({ profileId, isPro = false, onUpsell }: Analy
       </div>
 
       {!hasData ? <Card className="bg-card border-secondary/20"><CardContent className="py-16 text-center"><BarChart3 className="w-8 h-8 text-secondary/50 mx-auto mb-3" /><p className="text-muted-foreground">No analytics yet for the selected filters.</p></CardContent></Card> : <>
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-card border-secondary/20"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Profile Views</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{stats.views}</div></CardContent></Card>
         <Card className="bg-card border-secondary/20"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Ticket Clicks</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{stats.clicks}</div></CardContent></Card>
+        <Card className="bg-card border-secondary/20"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Reservations</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{stats.reservations}</div></CardContent></Card>
         <Card className="bg-card border-secondary/20"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">Click-Through Rate<UiTooltip><TooltipTrigger asChild><HelpCircle className="w-4 h-4 cursor-help" /></TooltipTrigger><TooltipContent><p className="max-w-xs">CTR = ticket clicks divided by profile views, within the selected show and time range.</p></TooltipContent></UiTooltip></CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-foreground">{stats.ctr.toFixed(1)}%</div></CardContent></Card>
       </div>
 

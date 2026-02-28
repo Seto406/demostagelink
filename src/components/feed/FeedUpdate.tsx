@@ -143,14 +143,23 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
   };
 
   const handleDelete = async () => {
+      if (!profile?.id) {
+        toast({ title: "Error", description: "Unable to verify account ownership. Please refresh and try again.", variant: "destructive" });
+        return;
+      }
+
       try {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .eq('profile_id', profile?.id);
+            .eq('profile_id', profile.id)
+            .select('id');
 
           if (error) throw error;
+          if (!data || data.length === 0) {
+            throw new Error("We couldn't delete this update because it is no longer owned by your account or your session has changed.");
+          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
