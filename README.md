@@ -175,3 +175,11 @@ This project is proprietary software owned by La Creneurs.
 ---
 
 *Built with ❤️ for Philippine theater*
+
+---
+
+## 🚀 Deployment Notes
+
+- `send-collab-proposal` now requires a valid logged-in Supabase session (`Authorization: Bearer <access_token>`). If a user session is missing/expired, the UI should prompt sign-in again.
+- Producer theater-group saves rely on `profiles.id` ownership for `theater_groups.owner_id`; apply the latest Supabase migration before deploying.
+- Producer edit modals now save unsaved drafts to `sessionStorage` per route + modal + user key, so transient refreshes won't drop in-progress form data.

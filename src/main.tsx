@@ -12,22 +12,12 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload(); // Force the browser to grab the brand new files
 });
 
-// Catch Hydration Mismatches (e.g. AdSense injection or Google Translate)
+// Catch Hydration Mismatches (e.g. browser extensions).
+// We avoid force reloading here because transient tab/background activity can trigger
+// false positives and wipe in-progress modal edits.
 window.addEventListener('error', (event) => {
   if (event.message?.includes('Minified React error #418') || event.message?.includes('Hydration failed')) {
-    const lastReload = sessionStorage.getItem('hydration_reload');
-    const now = Date.now();
-
-    // Prevent infinite loops: only reload if last reload was > 10 seconds ago
-    if (lastReload && now - parseInt(lastReload) < 10000) {
-      console.error('Hydration mismatch detected, but reload loop prevented.');
-      return;
-    }
-
-    console.warn('Hydration mismatch detected. Reloading...');
-    sessionStorage.setItem('hydration_reload', now.toString());
-    event.preventDefault();
-    window.location.reload();
+    console.warn('Hydration mismatch detected.', event.message);
   }
 });
 
