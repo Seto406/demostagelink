@@ -177,6 +177,19 @@ const ShowDetailsPage = () => {
 
   const isPast = show && show.date ? new Date(show.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
 
+  let isReservationClosed = false;
+  let deadlineDate = null;
+  if (show && show.date && !isPast) {
+      const showDateObj = new Date(show.date);
+      deadlineDate = new Date(showDateObj);
+      deadlineDate.setDate(deadlineDate.getDate() - 1);
+      deadlineDate.setHours(23, 59, 59, 999);
+
+      if (new Date() > deadlineDate) {
+          isReservationClosed = true;
+      }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -483,6 +496,11 @@ END:VCALENDAR`;
                              <p className="text-3xl font-serif font-bold text-white">
                                 {show.price && show.price > 0 ? `₱${show.price}` : "Free"}
                              </p>
+                             {deadlineDate && !isReservationClosed && !isPast && (show.price !== null && show.price !== undefined && show.price >= 0) && (
+                                 <p className="text-xs text-yellow-400/90 mt-1 font-medium">
+                                     Reserve by {deadlineDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                 </p>
+                             )}
                         </div>
 
                         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
@@ -490,6 +508,10 @@ END:VCALENDAR`;
                             {isPast ? (
                                 <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none text-lg font-serif px-8">
                                     Event Ended
+                                </Button>
+                            ) : isReservationClosed && (show.price !== null && show.price !== undefined && show.price >= 0) ? (
+                                <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none text-lg font-serif px-8">
+                                    Reservations Closed
                                 </Button>
                             ) : (show.price !== null && show.price !== undefined && show.price >= 0) ? (
                                 <Button

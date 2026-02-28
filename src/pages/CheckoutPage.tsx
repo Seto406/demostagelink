@@ -93,10 +93,23 @@ const CheckoutPage = () => {
 
       const details = showData as unknown as ShowDetails;
 
-      if (details.date && new Date(details.date) < new Date(new Date().setHours(0,0,0,0))) {
-        toast.error("This event has ended");
-        navigate(`/shows/${showId}`);
-        return;
+      if (details.date) {
+        if (new Date(details.date) < new Date(new Date().setHours(0,0,0,0))) {
+          toast.error("This event has ended");
+          navigate(`/show/${showId}`);
+          return;
+        }
+
+        const showDateObj = new Date(details.date);
+        const deadlineDate = new Date(showDateObj);
+        deadlineDate.setDate(deadlineDate.getDate() - 1);
+        deadlineDate.setHours(23, 59, 59, 999);
+
+        if (new Date() > deadlineDate) {
+          toast.error("Reservations for this event are closed");
+          navigate(`/show/${showId}`);
+          return;
+        }
       }
 
       setShow(details);
