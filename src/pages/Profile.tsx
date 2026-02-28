@@ -459,13 +459,21 @@ const Profile = () => {
     }
     if (!profile) return;
 
+    const { data: authData } = await supabase.auth.getUser();
+    const activeUserId = authData.user?.id;
+
+    if (!activeUserId) {
+      toast.error("Your session expired. Please login again.");
+      return;
+    }
+
     setFollowLoading(true);
 
     if (isFollowing) {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", user.id)
+            .eq("follower_id", activeUserId)
             .eq("following_id", profile.id);
 
         if (error) {
@@ -480,7 +488,7 @@ const Profile = () => {
         const { error } = await supabase
             .from("follows")
             .insert({
-                follower_id: user.id,
+                follower_id: activeUserId,
                 following_id: profile.id
             });
 

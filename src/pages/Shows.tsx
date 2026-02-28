@@ -654,16 +654,15 @@ const Shows = () => {
 
       if (activeTab === "upcoming") return startDate > today;
       if (activeTab === "ongoing") {
-        // Show in Ongoing if date range covers today
-        if (startDate <= today && endDate >= today) return true;
-        // OR if explicitly marked as ongoing and has started (even if end date passed)
-        if (show.production_status === "ongoing" && startDate <= today) return true;
-        return false;
+        const effectiveEndDate = endDate || startDate;
+        // Ongoing means production window still includes today and show is not explicitly completed.
+        if (show.production_status === "completed") return false;
+        return startDate <= today && effectiveEndDate >= today;
       }
       if (activeTab === "past") {
-        // Don't show in Past if it's considered Ongoing
-        if (show.production_status === "ongoing" && startDate <= today) return false;
-        return endDate < today;
+        const effectiveEndDate = endDate || startDate;
+        if (show.production_status === "completed") return true;
+        return effectiveEndDate < today;
       }
       return false;
     });
