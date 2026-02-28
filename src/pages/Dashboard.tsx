@@ -57,6 +57,7 @@ type MembershipApplication = {
   group_id: string;
   created_at: string;
   status: string;
+  member_name?: string;
   role_in_group?: string | null;
 };
 
@@ -238,7 +239,7 @@ const Dashboard = () => {
       // Fetch Member Applications
       const { data: memberData, error: memberError } = await supabase
         .from("group_members")
-        .select("id, user_id, group_id, created_at, status, role_in_group")
+        .select("id, user_id, group_id, created_at, status, member_name, role_in_group")
         .eq("group_id", selectedGroupId)
         .in("status", ["pending", "active"])
         .order("created_at", { ascending: false });
@@ -535,53 +536,7 @@ const Dashboard = () => {
 
     setIsUpdating(requestId);
 
-    // 1. Insert or Update group_members
-    const sender = applicantsByUserId[request.sender_id];
-
-    // Check if already a member
-    const { data: existingMember } = await supabase
-        .from("group_members")
-        .select("id")
-        .eq("user_id", request.sender_id)
-        .eq("group_id", selectedGroupId)
-        .maybeSingle();
-
-    if (existingMember) {
-        const { error: updateError } = await supabase
-            .from("group_members")
-            .update({
-                role_in_group: 'producer',
-                status: 'active',
-                member_name: sender?.username || "Collaborator"
-            })
-            .eq("id", existingMember.id);
-
-        if (updateError) {
-            console.error("Error updating group member:", updateError);
-            toast.error("Failed to update group member status.");
-            setIsUpdating(null);
-            return;
-        }
-    } else {
-        const { error: insertError } = await supabase
-            .from("group_members")
-            .insert({
-                user_id: request.sender_id,
-                group_id: selectedGroupId,
-                role_in_group: 'producer',
-                status: 'active',
-                member_name: sender?.username || "Collaborator"
-            });
-
-        if (insertError) {
-            console.error("Error inserting group member:", insertError);
-            toast.error("Failed to add producer to group members.");
-            setIsUpdating(null);
-            return;
-        }
-    }
-
-    // 2. Update request status
+    // Accept as a networking intro only (no automatic membership/role changes)
     const { error: updateError } = await supabase
         .from("collaboration_requests")
         .update({ status: 'accepted' })
@@ -591,25 +546,11 @@ const Dashboard = () => {
         console.error("Error updating request status:", updateError);
     }
 
-    // Update profile for the new producer
-    const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-            role: 'producer',
-            group_name: managedGroups.find(g => g.id === selectedGroupId)?.group_name
-        })
-        .eq("user_id", request.sender_id);
-
-    if (profileError) {
-        console.error("Error updating producer profile:", profileError);
-        toast.error("Collaborator approved, but profile update failed.");
-    }
-
     // Notification
     await supabase.from("notifications").insert({
         user_id: request.sender_id,
-        title: "Collab Request Accepted",
-        message: `Your collaboration request to ${managedGroups.find(g => g.id === selectedGroupId)?.group_name} was accepted!`,
+        title: "Intro Request Accepted",
+        message: `${managedGroups.find(g => g.id === selectedGroupId)?.group_name} accepted your intro request. You can now connect directly.`,
         type: "collab",
         link: `/producer/${selectedGroupId}`
     });
@@ -641,7 +582,7 @@ const Dashboard = () => {
     }
 
     setCollabRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.success("Collaborator approved!");
+    toast.success("Intro request accepted!");
     setIsUpdating(null);
   };
 
@@ -1023,7 +964,7 @@ const Dashboard = () => {
                          disabled={isUpdating === request.id}
                          onClick={() => handleApproveCollab(request.id)}
                        >
-                         <Check className="mr-1 h-4 w-4" /> Accept Collab
+                         <Check className="mr-1 h-4 w-4" /> Accept Intro
                        </Button>
                        <Button
                          size="sm"
@@ -1168,7 +1109,7 @@ const Dashboard = () => {
             ) : (
               activeMembers.map((member, index) => {
                 const profile = applicantsByUserId[member.user_id];
-                const name = profile?.username || member.role_in_group || "Member";
+                const name = profile?.username || member.member_name || member.role_in_group || "Member";
                 const initial = name.charAt(0).toUpperCase();
 
                 return (

@@ -154,13 +154,13 @@ const handler = async (req: Request): Promise<Response> => {
         // 2. Is Authorized Group Member
         const { data: membership } = await supabase
             .from("group_members")
-            .select("can_scan_tickets, role_in_group")
+            .select("id, role_in_group")
             .eq("user_id", profile.id)
             .eq("group_id", show.producer_id)
             .eq("status", "active")
             .single();
 
-        if (membership && (membership.can_scan_tickets || profile.role === 'admin')) {
+        if (membership) {
              isAuthorized = true;
         }
 
