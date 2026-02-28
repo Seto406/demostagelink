@@ -247,13 +247,21 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
+    const { data: authData } = await supabase.auth.getUser();
+    const activeUserId = authData.user?.id;
+
+    if (!activeUserId) {
+      toast.error("Your session expired. Please login again.");
+      return;
+    }
+
     setFollowLoading(true);
 
     if (isFollowing) {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", user.id)
+            .eq("follower_id", activeUserId)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -268,7 +276,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .insert({
-                follower_id: user.id,
+                follower_id: activeUserId,
                 following_id: producer.id
             });
 

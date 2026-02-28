@@ -388,15 +388,26 @@ export function FeedPost({ show, dataTour }: FeedPostProps) {
 
                 <div className="flex items-center gap-2">
                     <Link to={`/show/${show.id}`}>
-                        {show.price === 0 ? (
-                            <Button size="sm" variant="default" className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-medium">
-                                <Ticket className="w-4 h-4 mr-1" />
-                                Get Free Ticket
-                            </Button>
-                        ) : (
+                        {(show.price !== null && show.price !== undefined && show.price >= 0) ? (
+                            show.price === 0 ? (
+                                <Button size="sm" variant="default" className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-medium">
+                                    <Ticket className="w-4 h-4 mr-1" />
+                                    Get Free Ticket
+                                </Button>
+                            ) : (
+                                <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
+                                    <Ticket className="w-4 h-4 mr-1" />
+                                    Reserve for ₱25
+                                </Button>
+                            )
+                        ) : show.ticket_link ? (
                             <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
                                 <Ticket className="w-4 h-4 mr-1" />
-                                Reserve for ₱25
+                                Get Tickets
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="secondary" disabled>
+                                Unavailable
                             </Button>
                         )}
                     </Link>
