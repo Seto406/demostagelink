@@ -63,7 +63,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
       if (error) {
         console.error("Error fetching reviews:", error);
       } else {
-        let fetchedReviews = data as unknown as Review[];
+        const fetchedReviews = data as unknown as Review[];
 
         // Filter reviews based on approval status and user role
         let visibleReviews = fetchedReviews;

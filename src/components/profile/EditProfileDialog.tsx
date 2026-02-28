@@ -130,7 +130,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
     // Website URL validation
     if (websiteUrl) {
-      const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
       if (!urlPattern.test(websiteUrl)) {
         toast({
           title: "Invalid URL",
