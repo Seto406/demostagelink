@@ -58,12 +58,14 @@ type MembershipApplication = {
   created_at: string;
   status: string;
   role_in_group?: string | null;
+  member_name?: string | null;
 };
 
 type UnlinkedMember = {
   id: string;
   role_in_group: string | null;
   status: string;
+  member_name: string | null;
 };
 
 type CollaborationRequest = {
@@ -238,7 +240,7 @@ const Dashboard = () => {
       // Fetch Member Applications
       const { data: memberData, error: memberError } = await supabase
         .from("group_members")
-        .select("id, user_id, group_id, created_at, status, role_in_group")
+        .select("id, user_id, group_id, created_at, status, role_in_group, member_name")
         .eq("group_id", selectedGroupId)
         .in("status", ["pending", "active"])
         .order("created_at", { ascending: false });
@@ -272,7 +274,7 @@ const Dashboard = () => {
       // Fetch Unlinked Members (Manual Entries)
       const { data: unlinkedData, error: unlinkedError } = await supabase
         .from("group_members")
-        .select("id, status, role_in_group")
+        .select("id, status, role_in_group, member_name")
         .eq("group_id", selectedGroupId)
         .is("user_id", null);
 
@@ -1054,7 +1056,7 @@ const Dashboard = () => {
             ) : (
               applications.map((application, index) => {
                 const applicant = applicantsByUserId[application.user_id];
-                const name = applicant?.username || "Unknown User";
+                const name = applicant?.username || application.member_name || "Unknown User";
                 const initial = name.charAt(0).toUpperCase();
 
                 return (
@@ -1168,7 +1170,7 @@ const Dashboard = () => {
             ) : (
               activeMembers.map((member, index) => {
                 const profile = applicantsByUserId[member.user_id];
-                const name = profile?.username || member.role_in_group || "Member";
+                const name = profile?.username || member.member_name || member.role_in_group || "Member";
                 const initial = name.charAt(0).toUpperCase();
 
                 return (
@@ -1242,7 +1244,9 @@ const Dashboard = () => {
                  </h2>
                  <p className="text-xs text-muted-foreground">These members were added manually and are not linked to a user account.</p>
                </div>
-               {unlinkedMembers.map((member, index) => (
+               {unlinkedMembers.map((member, index) => {
+                 const memberName = member.member_name || "Unknown Member";
+                 return (
                    <div
                      key={member.id}
                      className={`flex min-h-[80px] flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between ${
@@ -1251,10 +1255,10 @@ const Dashboard = () => {
                    >
                      <div className="flex items-center gap-3">
                        <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">
-                         {"Unknown Member".charAt(0).toUpperCase()}
+                         {memberName.charAt(0).toUpperCase()}
                        </div>
                        <div>
-                         <p className="font-medium text-foreground">{"Unknown Member"}</p>
+                         <p className="font-medium text-foreground">{memberName}</p>
                          <p className="text-xs text-muted-foreground capitalize">{member.role_in_group || "Member"}</p>
                        </div>
                      </div>
@@ -1273,7 +1277,8 @@ const Dashboard = () => {
                        <LinkIcon className="mr-1 h-4 w-4" /> Link User
                      </Button>
                    </div>
-               ))}
+                 );
+               })}
             </div>
           )}
       </div>

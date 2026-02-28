@@ -29,6 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface GroupMember {
   id: string;
   role_in_group: string | null;
+  member_name: string | null;
   avatar_url: string | null;
   created_at: string;
   user_id: string | null;
@@ -97,7 +98,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
 
   const openEditModal = (member: GroupMember) => {
     setEditingMember(member);
-    setMemberName("Unknown Member");
+    setMemberName(member.member_name || "Unknown Member");
     setRoleInGroup(member.role_in_group || "");
     setAvatarPreview(member.avatar_url);
     setShowModal(true);
@@ -339,7 +340,9 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {members.map((member) => (
+          {members.map((member) => {
+            const displayName = member.member_name || "Unknown Member";
+            return (
             <div
               key={member.id}
               className="bg-background border border-secondary/20 p-4 ios-rounded flex items-center gap-4"
@@ -348,17 +351,17 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
                 {member.avatar_url ? (
                   <img
                     src={member.avatar_url}
-                    alt={"Unknown Member"}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-lg font-serif text-muted-foreground">
-                    {"Unknown Member".charAt(0).toUpperCase()}
+                    {displayName.charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">{"Unknown Member"}</p>
+                <p className="font-medium text-foreground truncate">{displayName}</p>
                 {member.role_in_group && (
                   <p className="text-sm text-muted-foreground truncate">{member.role_in_group}</p>
                 )}
@@ -384,7 +387,8 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
                 </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
