@@ -52,6 +52,9 @@ const Settings = () => {
   const { isPro, startTrial, isCheckingOut, isLoading: subLoading, daysLeft } = useSubscription();
   const { startTour } = useTour();
   
+  const [username, setUsername] = useState("");
+  const [usernameLoading, setUsernameLoading] = useState(false);
+
   // Password change state
   const [passwordModal, setPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -90,8 +93,39 @@ const Settings = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
+    } else if (profile?.username) {
+        setUsername(profile.username);
     }
-  }, [user, loading, navigate]);
+  }, [user, profile, loading, navigate]);
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user) return;
+      setUsernameLoading(true);
+
+      try {
+          const { error } = await supabase
+              .from("profiles")
+              .update({ username: username })
+              .eq("user_id", user.id);
+
+          if (error) throw error;
+
+          toast({
+              title: "Profile Updated",
+              description: "Your display name has been updated.",
+          });
+      } catch (error) {
+          console.error("Error updating profile:", error);
+          toast({
+              title: "Update Failed",
+              description: "Failed to update profile settings.",
+              variant: "destructive",
+          });
+      } finally {
+          setUsernameLoading(false);
+      }
+  };
 
   // Check for existing producer request
   useEffect(() => {
@@ -278,6 +312,48 @@ const Settings = () => {
           </motion.div>
 
           <div className="space-y-6">
+
+            {/* Profile Settings - ALL USERS */}
+            <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
+            >
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-xl bg-blue-500/10">
+                        <Users className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <h2 className="text-xl font-serif font-semibold text-foreground">
+                        Profile
+                    </h2>
+                </div>
+
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="username">Display Name</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="username"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Enter your display name"
+                                className="bg-background border-secondary/30"
+                            />
+                            <Button
+                                type="submit"
+                                disabled={usernameLoading || username === profile?.username}
+                                className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            >
+                                {usernameLoading ? "Saving..." : "Save"}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            This name will be displayed on your comments and reviews.
+                        </p>
+                    </div>
+                </form>
+            </motion.section>
 
             {/* Subscription - ONLY FOR PRODUCERS */}
             {isProducer && (

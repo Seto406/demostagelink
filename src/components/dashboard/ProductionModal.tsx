@@ -124,6 +124,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [cast, setCast] = useState<CastMember[]>([]);
   const [productionStatus, setProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
 
+  // Transcripts
+  const [transcriptUrl, setTranscriptUrl] = useState("");
+  const [transcriptContent, setTranscriptContent] = useState("");
+
   const [tempCastName, setTempCastName] = useState("");
   const [tempCastRole, setTempCastRole] = useState("");
 
@@ -162,6 +166,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setTempCastName("");
     setTempCastRole("");
     setProductionStatus("ongoing");
+    setTranscriptUrl("");
+    setTranscriptContent("");
     setPosterFile(null);
     setPosterPreview(null);
     setAdminAutoApprove(true);
@@ -284,6 +290,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setGenre(showToEdit.genre ? showToEdit.genre.split(',').map((g: string) => g.trim()) : []);
       setDirector(showToEdit.director || "");
       setPaymentInstructions(showToEdit.seo_metadata?.payment_instructions || "");
+      setTranscriptUrl(showToEdit.seo_metadata?.transcript_url || "");
+      setTranscriptContent(showToEdit.seo_metadata?.transcript_content || "");
       setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
 
     } else {
@@ -575,6 +583,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         schedule: validSlots, // Save the full array of slots
         formatted_date: displayDateString, // Save the friendly string
         formatted_show_time: displayTimeString, // Save the friendly time string
+        transcript_url: transcriptUrl || null,
+        transcript_content: transcriptContent || null,
       },
     };
 
@@ -783,6 +793,41 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                         />
                     </div>
               </div>
+            </div>
+
+            {/* Transcript Integration */}
+            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
+               <Label className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Transcript Integration</span>
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">New</Badge>
+               </Label>
+
+               <div className="space-y-2">
+                  <Label htmlFor="transcriptUrl" className="text-xs text-muted-foreground">Google Doc / Transcript Link</Label>
+                  <Input
+                     id="transcriptUrl"
+                     value={transcriptUrl}
+                     onChange={(e) => setTranscriptUrl(e.target.value)}
+                     placeholder="https://docs.google.com/document/d/..."
+                     className="bg-background border-secondary/30"
+                  />
+               </div>
+
+               <div className="space-y-2">
+                  <Label htmlFor="transcriptContent" className="text-xs text-muted-foreground">
+                     Transcript Text (for Search Indexing)
+                  </Label>
+                  <Textarea
+                     id="transcriptContent"
+                     value={transcriptContent}
+                     onChange={(e) => setTranscriptContent(e.target.value)}
+                     placeholder="Paste the full transcript text here to allow users to find your show by searching for specific lines or keywords."
+                     className="bg-background border-secondary/30 min-h-[100px]"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                     This content will be hidden from the main view but used for search functionality.
+                  </p>
+               </div>
             </div>
 
             <div className="space-y-2">
