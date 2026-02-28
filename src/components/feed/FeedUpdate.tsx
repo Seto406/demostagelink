@@ -146,7 +146,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
   };
 
   const handleDelete = async () => {
-      if (!user?.id || !profile?.id) {
+      if (!user?.id) {
         toast({ title: "Error", description: "You need to be signed in to delete a post.", variant: "destructive" });
         return;
       }
@@ -161,8 +161,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
             .from('posts')
             .delete()
             .select('id')
-            .eq('id', post.id)
-            .eq('profile_id', profile.id);
+            .eq('id', post.id);
 
           if (error) throw error;
           if (!data || data.length === 0) {
