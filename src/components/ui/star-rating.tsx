@@ -29,6 +29,7 @@ export const StarRating = ({
             key={index}
             type="button"
             disabled={readOnly}
+            aria-label={`Rate ${starValue} stars`}
             onClick={() => !readOnly && onRatingChange?.(starValue)}
             className={cn(
               "transition-all duration-200 focus:outline-none",
