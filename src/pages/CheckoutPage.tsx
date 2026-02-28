@@ -96,7 +96,7 @@ const CheckoutPage = () => {
       if (details.date) {
         if (new Date(details.date) < new Date(new Date().setHours(0,0,0,0))) {
           toast.error("This event has ended");
-          navigate(`/show/${showId}`);
+          navigate(`/shows/${showId}`);
           return;
         }
 
@@ -107,7 +107,7 @@ const CheckoutPage = () => {
 
         if (new Date() > deadlineDate) {
           toast.error("Reservations for this event are closed");
-          navigate(`/show/${showId}`);
+          navigate(`/shows/${showId}`);
           return;
         }
       }
