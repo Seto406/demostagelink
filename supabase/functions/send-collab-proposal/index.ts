@@ -20,6 +20,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
+        auth: {
+          persistSession: false,
+        },
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
         },
@@ -46,7 +49,12 @@ serve(async (req) => {
     // Initialize Admin Client
     const supabaseAdmin = createClient(
       SUPABASE_URL ?? "",
-      SUPABASE_SERVICE_ROLE_KEY ?? ""
+      SUPABASE_SERVICE_ROLE_KEY ?? "",
+      {
+        auth: {
+          persistSession: false,
+        },
+      }
     );
 
     // 1. Fetch Sender Profile
