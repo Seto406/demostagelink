@@ -1,6 +1,6 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -72,6 +72,7 @@ interface GroupMember {
 
 const ProducerProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
   const [producer, setProducer] = useState<Producer | null>(null);
   const [theaterGroup, setTheaterGroup] = useState<TheaterGroup | null>(null);
@@ -427,7 +428,9 @@ const ProducerProfile = () => {
         }
 
         if (errorStatus === 401 || (error.message || '').includes('401')) {
-          toast.error("Your session expired. Please sign in again and retry.");
+          await supabase.auth.signOut();
+          toast.error("Your session expired. Please sign in again.");
+          navigate('/login', { replace: true });
           return;
         }
 
@@ -443,7 +446,15 @@ const ProducerProfile = () => {
       console.error("Error sending collaboration request:", error);
       const message = error instanceof Error ? error.message : "Failed to send request";
       const isInvalidJwt = message.includes('401') || message.toLowerCase().includes('invalid jwt');
-      toast.error(isInvalidJwt ? "Your session expired. Please sign in again and retry." : (message || "Failed to send request"));
+
+      if (isInvalidJwt) {
+        await supabase.auth.signOut();
+        toast.error("Your session expired. Please sign in again.");
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      toast.error(message || "Failed to send request");
     } finally {
       setCollabLoading(false);
     }

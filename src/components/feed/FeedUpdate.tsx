@@ -149,19 +149,13 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
       }
 
       try {
-          await supabase.auth.refreshSession();
-
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .eq('profile_id', profile.id)
-            .select('id');
+            .eq('profile_id', profile.id);
 
           if (error) throw error;
-          if (!data || data.length === 0) {
-            throw new Error("We couldn't delete this update. Please sign in again and retry.");
-          }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
           if (onDelete) onDelete(post.id);
