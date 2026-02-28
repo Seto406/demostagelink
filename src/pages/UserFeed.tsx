@@ -33,6 +33,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
 import { useTour } from "@/contexts/TourContext";
+import { PullToRefresh } from "@/components/ui/pull-to-refresh";
 
 // Interfaces
 export interface FeedShow {
@@ -301,13 +302,18 @@ const UserFeed = () => {
       refetch();
   };
 
+  const handleRefresh = async () => {
+    await refetch();
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center"><BrandedLoader /></div>;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="pt-8 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
-        
-        {/* Feed (Center) */}
+      <PullToRefresh onRefresh={handleRefresh}>
+        <div className="pt-8 container mx-auto px-4 max-w-7xl flex flex-col lg:flex-row justify-center gap-8">
+
+          {/* Feed (Center) */}
         <main className="w-full max-w-2xl pb-24">
 
           {/* Post Creation Area - Visible only to Producers */}
@@ -451,6 +457,8 @@ const UserFeed = () => {
           )}
         </aside>
       </div>
+
+      </PullToRefresh>
 
       <Footer />
 
