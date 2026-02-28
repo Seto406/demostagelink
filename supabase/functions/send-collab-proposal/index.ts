@@ -16,12 +16,21 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
         global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
+          headers: { Authorization: authHeader },
         },
         auth: {
           persistSession: false,
@@ -31,10 +40,14 @@ serve(async (req) => {
 
     const {
       data: { user },
+      error: userError,
     } = await supabaseClient.auth.getUser();
 
-    if (!user) {
-      throw new Error("Unauthorized");
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: invalid or expired session" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const { recipient_profile_id } = await req.json();

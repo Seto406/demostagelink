@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Camera, Upload, X, Save } from "lucide-react";
+import { useDraftStorage } from "@/hooks/useDraftStorage";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -77,6 +78,28 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  const { didRestoreDraft, clearDraft } = useDraftStorage({
+    modalName: "editprofile",
+    userId: user?.id,
+    isOpen: open,
+    draft: { username, producerRole, description, websiteUrl },
+    onHydrate: (savedDraft) => {
+      setUsername(savedDraft.username ?? "");
+      setProducerRole(savedDraft.producerRole ?? "");
+      setDescription(savedDraft.description ?? "");
+      setWebsiteUrl(savedDraft.websiteUrl ?? "");
+    },
+  });
+
+  useEffect(() => {
+    if (didRestoreDraft) {
+      toast({
+        title: "Restored unsaved changes",
+        description: "We recovered your in-progress edits for this form.",
+      });
+    }
+  }, [didRestoreDraft]);
+
   const isDirty = useMemo(() => {
     if (!initialValues) return false;
     // Note: avatarUrl is intentionally excluded because avatar uploads are
@@ -96,10 +119,14 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         return;
       }
     }
+    if (!newOpen) {
+      clearDraft();
+    }
     onOpenChange(newOpen);
   };
 
   const handleDiscard = () => {
+    clearDraft();
     setShowDiscardAlert(false);
     onOpenChange(false);
   };
@@ -172,6 +199,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
+      clearDraft();
       onOpenChange(false);
     } catch (error: unknown) {
       if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === '23505') {

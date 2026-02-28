@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
 import { Pencil } from "lucide-react";
-import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 
 interface TheaterGroup {
   id: string;
@@ -431,8 +430,20 @@ const ProducerProfile = () => {
 
     setCollabLoading(true);
     try {
-      const { data, error } = await invokeFunctionWithSession<{ success?: boolean; error?: string; message?: string }>('send-collab-proposal', {
-        body: { recipient_profile_id: producer.id }
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        toast.error("Session expired, please sign in again.");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; message?: string }>('send-collab-proposal', {
+        body: { recipient_profile_id: producer.id },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (error) {
@@ -443,7 +454,7 @@ const ProducerProfile = () => {
         }
 
         if (errorStatus === 401 || (error.message || '').includes('401')) {
-          toast.error("We couldn’t verify your session for this request. Please try again.");
+          toast.error("Session expired, please sign in again.");
           return;
         }
 
@@ -461,7 +472,7 @@ const ProducerProfile = () => {
       const isInvalidJwt = message.includes('401') || message.toLowerCase().includes('invalid jwt');
 
       if (isInvalidJwt) {
-        toast.error("We couldn’t verify your session for this request. Please try again.");
+        toast.error("Session expired, please sign in again.");
         return;
       }
 

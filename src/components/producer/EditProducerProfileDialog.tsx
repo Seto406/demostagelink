@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Save, Loader2, Upload } from "lucide-react";
+import { useDraftStorage } from "@/hooks/useDraftStorage";
 
 interface TheaterGroup {
   id: string;
@@ -64,6 +65,7 @@ export const EditProducerProfileDialog = ({
   const [uploading, setUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
+  const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +103,41 @@ export const EditProducerProfileDialog = ({
     }
   }, [open, theaterGroup, producer]);
 
+  useEffect(() => {
+    if (!open || !user) return;
+
+    const resolveOwnerProfileId = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      setOwnerProfileId(data?.id ?? null);
+    };
+
+    resolveOwnerProfileId();
+  }, [open, user]);
+
+  const { didRestoreDraft, clearDraft } = useDraftStorage({
+    modalName: "theatergroupdetails",
+    userId: user?.id,
+    isOpen: open,
+    draft: { name, description, logoUrl, bannerUrl },
+    onHydrate: (savedDraft) => {
+      setName(savedDraft.name ?? "");
+      setDescription(savedDraft.description ?? "");
+      setLogoUrl(savedDraft.logoUrl ?? "");
+      setBannerUrl(savedDraft.bannerUrl ?? "");
+    },
+  });
+
+  useEffect(() => {
+    if (didRestoreDraft) {
+      toast.info("Restored unsaved changes");
+    }
+  }, [didRestoreDraft]);
+
   const isDirty = useMemo(() => {
     if (!initialValues) return false;
     return (
@@ -118,10 +155,14 @@ export const EditProducerProfileDialog = ({
         return;
       }
     }
+    if (!newOpen) {
+      clearDraft();
+    }
     onOpenChange(newOpen);
   };
 
   const handleDiscard = () => {
+    clearDraft();
     setShowDiscardAlert(false);
     onOpenChange(false);
   };
@@ -257,13 +298,15 @@ export const EditProducerProfileDialog = ({
 
       let groupId = theaterGroup?.id;
 
+      const effectiveOwnerId = ownerProfileId ?? user.id;
+
       if (!groupId) {
          // Check if exists in DB even if not passed in prop (double check)
          // Use limit(1) to handle potential duplicates gracefully without error
          const { data: existing } = await supabase
             .from('theater_groups')
             .select('id')
-            .eq('owner_id', user.id)
+            .eq('owner_id', effectiveOwnerId)
             .limit(1)
             .maybeSingle();
 
@@ -277,7 +320,7 @@ export const EditProducerProfileDialog = ({
         description: description.trim() || null,
         logo_url: logoUrl.trim() || null,
         banner_url: bannerUrl.trim() || null,
-        owner_id: user.id
+        owner_id: effectiveOwnerId
       };
 
       if (groupId) {
@@ -309,6 +352,7 @@ export const EditProducerProfileDialog = ({
       if (profileError) throw profileError;
 
       toast.success("Profile updated successfully");
+      clearDraft();
       onSuccess();
       onOpenChange(false);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
