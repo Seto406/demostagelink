@@ -65,6 +65,7 @@ interface FeedPostType {
   profile_id: string;
   profiles: {
     id: string;
+    user_id?: string | null;
     username: string | null;
     group_name: string | null;
     avatar_url: string | null;
@@ -173,6 +174,7 @@ const UserFeed = () => {
           profile_id,
           profiles:profile_id (
             id,
+            user_id,
             username,
             group_name,
             avatar_url,

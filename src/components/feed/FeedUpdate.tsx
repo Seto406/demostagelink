@@ -36,6 +36,7 @@ export interface FeedUpdateProps {
     profile_id: string;
     profiles: {
       id: string; // This is the profile ID
+      user_id?: string | null;
       username: string | null;
       group_name: string | null;
       avatar_url: string | null;
@@ -53,7 +54,9 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
   const [commentCount, setCommentCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
 
-  const isOwner = profile?.id === post.profile_id;
+  const isOwner =
+    profile?.id === post.profile_id ||
+    (!!user?.id && post.profiles?.user_id === user.id);
   const authorName = post.profiles?.group_name || post.profiles?.username || "Unknown User";
   const authorAvatar = post.profiles?.group_logo_url || post.profiles?.avatar_url;
   const initials = authorName.substring(0, 2).toUpperCase();
@@ -153,7 +156,6 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .eq('profile_id', profile.id)
             .select('id');
 
           if (error) throw error;
