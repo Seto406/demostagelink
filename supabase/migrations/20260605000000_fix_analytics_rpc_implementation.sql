@@ -29,13 +29,13 @@ BEGIN
   -- 1. Get total views (all time)
   SELECT COUNT(*) INTO total_views
   FROM analytics_events
-  WHERE group_id = effective_id
+  WHERE analytics_events.group_id = effective_id
   AND event_type = 'profile_view';
 
   -- 2. Get total clicks (all time)
   SELECT COUNT(*) INTO total_clicks
   FROM analytics_events
-  WHERE group_id = effective_id
+  WHERE analytics_events.group_id = effective_id
   AND event_type = 'ticket_click';
 
   -- 3. Calculate CTR
@@ -67,7 +67,7 @@ BEGIN
       COUNT(*) FILTER (WHERE event_type = 'ticket_click') as clicks,
       COUNT(*) FILTER (WHERE event_type = 'profile_view') as views
     FROM analytics_events
-    WHERE group_id = effective_id
+    WHERE analytics_events.group_id = effective_id
     AND created_at >= (CURRENT_DATE - INTERVAL '6 days')
     GROUP BY created_at::DATE
   ) AS daily_counts ON day_series.day = daily_counts.day;
