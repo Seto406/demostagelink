@@ -25,6 +25,7 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const postMediaBuckets = ["post-media", "social_updates"] as const;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -73,25 +74,32 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
         const fileExt = file.name.split('.').pop();
         const fileName = `${profile.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        // Attempt to upload to 'social_updates' bucket
-        // If it fails, we might need to fallback or error out.
-        const { error: uploadError } = await supabase.storage
-          .from('social_updates')
-          .upload(fileName, file);
+        let uploadedBucket: string | null = null;
+        let lastError: string | null = null;
 
-        if (uploadError) {
-            // Check if bucket exists error?
-            if (uploadError.message.includes("bucket not found")) {
-                 // Try to create it? We can't easily here.
-                 // Fallback to 'show-posters' just to make it work in demo?
-                 // No, that's bad practice.
-                 throw new Error("Storage bucket 'social_updates' not found. Please contact admin.");
-            }
+        for (const bucket of postMediaBuckets) {
+          const { error: uploadError } = await supabase.storage
+            .from(bucket)
+            .upload(fileName, file);
+
+          if (!uploadError) {
+            uploadedBucket = bucket;
+            break;
+          }
+
+          lastError = uploadError.message;
+
+          if (!uploadError.message.toLowerCase().includes("bucket not found")) {
             throw uploadError;
+          }
+        }
+
+        if (!uploadedBucket) {
+          throw new Error(lastError || "Failed to upload media. Please contact admin.");
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('social_updates')
+          .from(uploadedBucket)
           .getPublicUrl(fileName);
 
         mediaUrls.push(publicUrl);

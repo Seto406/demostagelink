@@ -33,6 +33,7 @@ const ShowDetailsPage = () => {
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [isTicketClaimed, setIsTicketClaimed] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
 
   useEffect(() => {
     setImageLoading(true);
@@ -123,6 +124,14 @@ const ShowDetailsPage = () => {
     checkTicketStatus();
   }, [user, show, profile]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return null;
     const date = new Date(dateString);
@@ -176,6 +185,21 @@ const ShowDetailsPage = () => {
   };
 
   const isPast = show && show.date ? new Date(show.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
+  const reservationDeadline = show?.date ? new Date(show.date) : null;
+  const msUntilDeadline = reservationDeadline ? reservationDeadline.getTime() - nowMs : null;
+  const hasUpcomingDeadline = typeof msUntilDeadline === "number" && msUntilDeadline > 0;
+
+  const formatCountdown = (ms: number) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    return `${minutes}m ${seconds}s`;
+  };
 
   if (loading) {
     return (
@@ -581,6 +605,16 @@ END:VCALENDAR`;
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
+
+                        {hasUpcomingDeadline && (
+                          <div className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/90">
+                            <p className="font-medium">Ticket Deadlines</p>
+                            <ul className="mt-1 space-y-1 text-white/80">
+                              <li>Reservation closes in: <span className="font-semibold text-white">{formatCountdown(msUntilDeadline)}</span></li>
+                              <li>Payment and ticket claiming should be completed before showtime.</li>
+                            </ul>
+                          </div>
+                        )}
                     </div>
                 </div>
             </div>
