@@ -150,7 +150,7 @@ export const DigitalPass = ({
             </div>
 
             {/* Content Section (Right/Bottom) */}
-            <div className="flex-1 p-5 flex flex-col justify-between relative bg-card">
+            <div className="flex-1 p-5 flex flex-col justify-between relative bg-card min-w-0">
                 {/* Perforated Edge (Visual separator for mobile, or decoration) */}
                 <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[1px] border-l-2 border-dashed border-secondary/30 -ml-[1px] z-10" />
 
@@ -177,11 +177,11 @@ export const DigitalPass = ({
                         </h3>
                     </Link>
 
-                    <p className="text-sm text-muted-foreground font-medium mb-3 truncate max-w-[250px]">
+                    <p className="text-sm text-muted-foreground font-medium mb-3 break-words">
                         {groupName}
                     </p>
 
-                    <div className="space-y-1.5 text-xs text-muted-foreground/80 mb-4">
+                    <div className="space-y-2 text-xs text-muted-foreground/80 mb-4">
                         {date && (
                             <div className="flex items-center gap-2">
                                 <Calendar className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
@@ -194,18 +194,18 @@ export const DigitalPass = ({
                         {(venue || city) && (
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
-                                <span className="line-clamp-1 break-words">{venue ? `${venue}, ${city}` : city}</span>
+                                <span className="break-words leading-relaxed">{venue ? `${venue}, ${city}` : city}</span>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Verification Section */}
-                <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-4">
+                <div className="mt-auto pt-4 border-t border-dashed border-secondary/20 flex flex-col gap-4 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">DUE AT VENUE</p>
-                             <p className="text-lg text-foreground font-bold leading-tight">
+                             <p className="text-2xl text-foreground font-bold leading-tight">
                                  ₱{balance.toFixed(2)}
                              </p>
                              <p className="text-[10px] text-muted-foreground mt-1">
@@ -214,9 +214,9 @@ export const DigitalPass = ({
                         </div>
 
                         {/* QR Code */}
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center gap-2 shrink-0">
                              <div className="bg-white p-2 rounded-md shrink-0 border border-secondary/20 shadow-sm">
-                                 <div style={{ height: "auto", margin: "0 auto", maxWidth: 64, width: "100%" }}>
+                                 <div style={{ height: "auto", margin: "0 auto", maxWidth: 90, width: "100%" }}>
                                     <QRCode
                                         size={256}
                                         style={{ height: "auto", maxWidth: "100%", width: "100%" }}
