@@ -143,8 +143,8 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
   };
 
   const handleDelete = async () => {
-      if (!profile?.id) {
-        toast({ title: "Error", description: "Unable to verify account ownership. Please refresh and try again.", variant: "destructive" });
+      if (!user?.id) {
+        toast({ title: "Error", description: "You need to be signed in to delete a post.", variant: "destructive" });
         return;
       }
 
@@ -153,13 +153,12 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
             .from('posts')
             .delete()
             .eq('id', post.id)
-            .eq('profile_id', profile.id)
             .select('id')
             .maybeSingle();
 
           if (error) throw error;
           if (!data) {
-            throw new Error("Delete could not be completed. Please make sure you're deleting your own update and try again.");
+            throw new Error("Delete could not be completed. The post may already be removed, or your session no longer has permission to delete it.");
           }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });
