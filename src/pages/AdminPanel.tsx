@@ -544,27 +544,28 @@ const AdminPanel = () => {
         title: "Broadcast Sent",
         description: `Notification sent to audience members.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Broadcast failed:", error);
 
       let errorMessage = "Failed to broadcast notification.";
 
       // Attempt to extract specific error message from Edge Function
       if (error && typeof error === 'object') {
-         if (error.context && error.context.status === 401) {
-            errorMessage = "Authentication expired. Please log in again.";
-         } else if (error.context && error.context.status === 403) {
-            errorMessage = "Unauthorized. Admin privileges required.";
-         } else if (error.message) {
-             // If the function returned a JSON error, it might be in the message
-             try {
-                const parsed = JSON.parse(error.message);
-                if (parsed.error) errorMessage = parsed.error;
-                else errorMessage = error.message;
-             } catch (e) {
-                errorMessage = error.message;
-             }
-         }
+        const err = error as { context?: { status?: number }; message?: string };
+
+        if (err.context?.status === 401) {
+          errorMessage = "Authentication expired. Please log in again.";
+        } else if (err.context?.status === 403) {
+          errorMessage = "Unauthorized. Admin privileges required.";
+        } else if (err.message) {
+          // If the function returned a JSON error, it might be in the message
+          try {
+            const parsed = JSON.parse(err.message) as { error?: string };
+            errorMessage = parsed.error || err.message;
+          } catch {
+            errorMessage = err.message;
+          }
+        }
       }
 
       toast({

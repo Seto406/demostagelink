@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck, Handshake } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandedLoader } from "@/components/ui/branded-loader";
@@ -78,7 +79,7 @@ const ProducerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [showProductionModal, setShowProductionModal] = useState(false);
-  const [showToEdit, setShowToEdit] = useState<any>(null);
+  const [showToEdit, setShowToEdit] = useState<Tables<"shows"> | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Follow State
