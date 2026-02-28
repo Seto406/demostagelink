@@ -149,6 +149,8 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
       }
 
       try {
+          await supabase.auth.refreshSession();
+
           const { data, error } = await supabase
             .from('posts')
             .delete()
@@ -158,7 +160,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
 
           if (error) throw error;
           if (!data || data.length === 0) {
-            throw new Error("We couldn't delete this update because it is no longer owned by your account or your session has changed.");
+            throw new Error("We couldn't delete this update. Please sign in again and retry.");
           }
 
           toast({ title: "Deleted", description: "Post deleted successfully." });

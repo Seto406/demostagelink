@@ -172,7 +172,7 @@ export const DigitalPass = ({
                     </div>
 
                     <Link to={`/show/${id}`} className="block group-hover:text-secondary transition-colors">
-                        <h3 className="font-serif text-xl font-bold text-foreground mb-1 line-clamp-2 break-words leading-tight">
+                        <h3 className="font-serif text-xl font-bold text-foreground mb-1 break-words leading-tight">
                             {title}
                         </h3>
                     </Link>
