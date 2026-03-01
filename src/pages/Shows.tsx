@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MapPin, Filter, X, Sparkles, ChevronDown, Ticket, Share2, Pencil, LayoutGrid, List } from "lucide-react";
+import { Search, Calendar, MapPin, Filter, X, Sparkles, Ticket, Share2, Pencil, LayoutGrid, List, Lightbulb, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +49,14 @@ const posterMap: Record<string, string> = {
   "Orosman at Zafira": posterOrosman,
   "Batang Rizal": posterBatangRizal,
 };
+
+const quickSearchSuggestions = [
+  "musical",
+  "comedy",
+  "Quezon City",
+  "university",
+  "weekend",
+];
 
 interface Show {
   id: string;
@@ -735,6 +743,10 @@ const Shows = () => {
     }
   };
 
+  const handleQuickSearch = (keyword: string) => {
+    setSearchQuery(keyword);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PullToRefresh onRefresh={handleRefresh}>
@@ -818,6 +830,33 @@ const Shows = () => {
                   </span>
                 )}
               </Button>
+            </div>
+
+            <div className="max-w-2xl mx-auto w-full rounded-xl border border-secondary/20 bg-card/40 backdrop-blur-sm px-4 py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Lightbulb className="w-3.5 h-3.5 text-secondary" />
+                  <span>Quick suggestions:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {quickSearchSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => handleQuickSearch(suggestion)}
+                      className="text-xs px-2.5 py-1 rounded-full border border-secondary/25 text-muted-foreground hover:text-foreground hover:border-secondary/60 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-white/5 flex items-start gap-2 text-xs text-muted-foreground">
+                <WandSparkles className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
+                <p>
+                  Pro tip: combine <span className="text-foreground">tab + city + type</span> filters to quickly narrow down what to watch next.
+                </p>
+              </div>
             </div>
 
             {/* Collapsible Filters (Desktop & Mobile Unified Logic) */}
