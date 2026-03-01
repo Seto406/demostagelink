@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users, Trash2 } from "lucide-react";
+import { Check, X, Handshake, Link as LinkIcon, User, Search, Settings, AlertTriangle, MapPin, Calendar, ExternalLink, Users, Trash2, Sparkles, Clock3, CircleX, BadgeCheck, TrendingUp, BellRing, ArrowRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "@/components/dashboard/UpsellModal";
 
@@ -740,6 +741,78 @@ const Dashboard = () => {
   const approvedShows = shows.filter(s => s.status === 'approved');
   const pendingShows = shows.filter(s => s.status === 'pending');
   const rejectedShows = shows.filter(s => s.status === 'rejected');
+  const profileCompletionScore = [selectedGroup?.founded_year, selectedGroup?.address, selectedGroup?.description]
+    .filter(Boolean).length;
+
+  const stats = [
+    {
+      label: "Live Productions",
+      value: approvedShows.length,
+      helper: approvedShows.length > 0 ? "Currently discoverable" : "Publish your first show",
+      icon: BadgeCheck,
+      accent: "text-emerald-300",
+    },
+    {
+      label: "Pending Review",
+      value: pendingShows.length,
+      helper: pendingShows.length > 0 ? "Awaiting approval" : "All clear for now",
+      icon: Clock3,
+      accent: "text-amber-300",
+    },
+    {
+      label: "Followers",
+      value: followers.length,
+      helper: followers.length > 0 ? "Audience building up" : "Share your public profile",
+      icon: Users,
+      accent: "text-sky-300",
+    },
+    {
+      label: "Rejected / Draft",
+      value: rejectedShows.length,
+      helper: rejectedShows.length > 0 ? "Needs updates" : "No blocked productions",
+      icon: CircleX,
+      accent: "text-rose-300",
+    },
+  ];
+
+  const membershipBacklog = applications.length + unlinkedMembers.length;
+  const operationalHealth = Math.min(
+    100,
+    Math.max(
+      20,
+      profileCompletionScore * 24 + approvedShows.length * 14 + (membershipBacklog === 0 ? 18 : 8) + (pendingShows.length === 0 ? 10 : 0)
+    )
+  );
+
+  const focusItems = [
+    {
+      title: "Profile completeness",
+      detail: `${profileCompletionScore}/3 essentials set`,
+      value: Math.round((profileCompletionScore / 3) * 100),
+      action: "Update profile",
+      onClick: () => setIsEditProfileOpen(true),
+    },
+    {
+      title: "Member queue",
+      detail: membershipBacklog > 0 ? `${membershipBacklog} people need attention` : "No pending member actions",
+      value: membershipBacklog > 0 ? Math.max(25, 100 - membershipBacklog * 15) : 100,
+      action: "Review members",
+      onClick: () => {
+        membersRef.current?.scrollIntoView({ behavior: "smooth" });
+        toast.info("Manage your team members and approvals here.");
+      },
+    },
+    {
+      title: "Season momentum",
+      detail: approvedShows.length > 0 ? `${approvedShows.length} live production(s)` : "No live productions yet",
+      value: Math.min(100, approvedShows.length * 35),
+      action: "Create production",
+      onClick: () => {
+        setShowToEdit(null);
+        setShowProductionModal(true);
+      },
+    },
+  ];
 
   const handleEditShow = (show: Show) => {
     setShowToEdit(show);
@@ -748,6 +821,99 @@ const Dashboard = () => {
 
   return (
     <div className="container mx-auto px-6 pb-8 pt-6 min-h-[calc(100vh-72px)]">
+      <div className="mb-6 rounded-2xl border border-secondary/20 bg-gradient-to-br from-secondary/10 via-card to-card/70 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.2)] backdrop-blur-md">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-secondary/80">Producer Command Center</p>
+            <h2 className="mt-1 flex items-center gap-2 text-2xl font-serif font-bold text-foreground">
+              <Sparkles className="h-5 w-5 text-secondary" />
+              {selectedGroup?.group_name || "Your Group"}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Track performance, manage members, and keep your season moving from one dashboard.
+            </p>
+          </div>
+          <Badge variant="secondary" className="h-fit self-start rounded-full border border-secondary/30 bg-secondary/15 px-3 py-1 text-xs">
+            Profile strength: {profileCompletionScore}/3
+          </Badge>
+        </div>
+      </div>
+
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+
+          return (
+            <Card key={stat.label} className="border-secondary/20 bg-card/60 backdrop-blur-md transition hover:border-secondary/35 hover:bg-card/80">
+              <CardContent className="p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                  <Icon className={`h-4 w-4 ${stat.accent}`} />
+                </div>
+                <p className="text-3xl font-semibold text-foreground">{stat.value}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{stat.helper}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="mb-8 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+        <Card className="border-secondary/20 bg-card/60 backdrop-blur-md">
+          <CardContent className="p-5 md:p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Operational Pulse</p>
+                <h3 className="mt-1 flex items-center gap-2 text-xl font-serif font-bold text-foreground">
+                  <TrendingUp className="h-5 w-5 text-secondary" /> Dashboard Health
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">A quick score based on profile quality, queue pressure, and production momentum.</p>
+              </div>
+              <Badge variant="outline" className="rounded-full border-secondary/35 bg-secondary/10 text-secondary">{operationalHealth}%</Badge>
+            </div>
+            <Progress value={operationalHealth} className="h-2.5 bg-secondary/20" indicatorClassName="bg-gradient-to-r from-secondary to-primary" />
+            <div className="mt-5 space-y-4">
+              {focusItems.map((item) => (
+                <div key={item.title} className="rounded-xl border border-secondary/20 bg-background/30 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.detail}</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-8 rounded-lg border border-secondary/25 text-xs" onClick={item.onClick}>
+                      {item.action} <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <Progress value={item.value} className="h-1.5 bg-secondary/15" indicatorClassName="bg-secondary" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-secondary/20 bg-card/60 backdrop-blur-md">
+          <CardContent className="p-5 md:p-6">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Action Feed</p>
+            <h3 className="mt-1 flex items-center gap-2 text-xl font-serif font-bold text-foreground">
+              <BellRing className="h-5 w-5 text-secondary" /> Priority Actions
+            </h3>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl border border-secondary/20 bg-background/30 p-3">
+                <p className="text-sm font-medium text-foreground">Pending submissions</p>
+                <p className="text-xs text-muted-foreground">{pendingShows.length > 0 ? `${pendingShows.length} production(s) are waiting for review.` : "No productions currently waiting for approval."}</p>
+              </div>
+              <div className="rounded-xl border border-secondary/20 bg-background/30 p-3">
+                <p className="text-sm font-medium text-foreground">Member approvals</p>
+                <p className="text-xs text-muted-foreground">{applications.length > 0 ? `${applications.length} application(s) need your decision.` : "No pending applications right now."}</p>
+              </div>
+              <div className="rounded-xl border border-secondary/20 bg-background/30 p-3">
+                <p className="text-sm font-medium text-foreground">Collaboration inbox</p>
+                <p className="text-xs text-muted-foreground">{collabRequests.length > 0 ? `${collabRequests.length} intro request(s) awaiting response.` : "No incoming collaboration requests."}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Zone 1: Brand Summary (Header) */}
       <div className="mb-8 grid gap-6 md:grid-cols-1">
@@ -882,16 +1048,16 @@ const Dashboard = () => {
               />
           )}
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="dashboard-tabs">
+          <Tabs value={activeTab} onValueChange={setActiveTab} data-tour="dashboard-tabs" className="rounded-2xl border border-secondary/20 bg-card/40 p-4 md:p-5">
               <TabsList className="grid w-full grid-cols-3 bg-secondary/10 p-1 rounded-xl">
                   <TabsTrigger value="approved" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                      Approved Shows ({approvedShows.length})
+                      Approved ({approvedShows.length})
                   </TabsTrigger>
                   <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                      Pending Review ({pendingShows.length})
+                      In Review ({pendingShows.length})
                   </TabsTrigger>
                   <TabsTrigger value="rejected" className="rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground">
-                      Rejected / Drafts ({rejectedShows.length})
+                      Draft / Rejected ({rejectedShows.length})
                   </TabsTrigger>
               </TabsList>
               <TabsContent value="approved" className="mt-4">
