@@ -17,14 +17,12 @@ Set these in **Vercel → Project Settings → Environment Variables**.
 - `VITE_SUPABASE_PROJECT_ID` (optional)
 
 ### Server-only variables (never use `VITE_` prefix)
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `ADMIN_ACTION_KEY`
-
-### Supabase Edge Function variables (`send-collab-proposal`)
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY` (required if email delivery is enabled)
+- `SITE_URL` (optional; defaults to `https://www.stagelink.show`)
+- `ADMIN_ACTION_KEY`
 
 ## 3) Admin flow
 - Frontend calls `/api/admin/*` endpoints.
@@ -39,4 +37,4 @@ Set these in **Vercel → Project Settings → Environment Variables**.
 
 ## 5) Supabase migrations and function config
 - Apply new SQL migrations in Supabase (SQL Editor or `supabase db push`) before production deploys.
-- `send-collab-proposal` is configured with `verify_jwt = false` in `supabase/config.toml`; the function validates user auth internally via `supabase.auth.getUser()`.
+- Collaboration proposals now run through Vercel API route `POST /api/send-collab-proposal`; no Supabase Edge Function deployment is required for this flow.

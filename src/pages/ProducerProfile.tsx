@@ -438,7 +438,7 @@ const ProducerProfile = () => {
       }
 
       if (!sessionData.session) {
-        toast.error("Please sign in to send a collaboration request.");
+        toast.error("Session expired, please sign in again.");
         return;
       }
 
@@ -448,26 +448,29 @@ const ProducerProfile = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string; message?: string }>('send-collab-proposal', {
-        body: { recipient_profile_id: producer.id },
+      const response = await fetch('/api/send-collab-proposal', {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ recipient_profile_id: producer.id }),
       });
 
-      if (error) {
-        const errorStatus = (error as { context?: { status?: number } })?.context?.status;
-        if (errorStatus === 409) {
+      const data = (await response.json().catch(() => ({}))) as { success?: boolean; error?: string; message?: string };
+
+      if (!response.ok) {
+        if (response.status === 429) {
           toast.info("You already have a pending collaboration request with this producer.");
           return;
         }
 
-        if (errorStatus === 401 || (error.message || '').includes('401')) {
+        if (response.status === 401) {
           toast.error("Session expired, please sign in again.");
           return;
         }
 
-        throw error;
+        throw new Error(data?.error || 'Failed to send request');
       }
 
       if (data?.error) {
