@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
+const isValidId = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trimmed);
+};
+
 const getJsonBody = (body: unknown): Record<string, unknown> => {
   if (!body) return {};
   if (typeof body === "string") {
@@ -16,6 +23,8 @@ const getJsonBody = (body: unknown): Record<string, unknown> => {
 };
 
 export default async function handler(req: any, res: any) {
+  const debug = process.env.NODE_ENV !== "production";
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
@@ -85,6 +94,8 @@ export default async function handler(req: any, res: any) {
   });
 
   try {
+    let requestMessage = "Collaboration request sent successfully";
+
     const { data: senderProfile, error: senderError } = await supabaseAdmin
       .from("profiles")
       .select("id, group_name, role, user_id, niche, university, producer_role")
@@ -111,33 +122,92 @@ export default async function handler(req: any, res: any) {
       return res.status(404).json({ error: "Recipient profile not found" });
     }
 
+    if (!isValidId(senderProfile.id) || !isValidId(recipientProfile.id)) {
+      return res.status(400).json({ error: "Invalid sender or recipient profile id." });
+    }
+
     if (senderProfile.id === recipientProfile.id) {
       return res.status(400).json({ error: "You cannot collaborate with yourself" });
     }
 
-    const { data: existingRequest, error: existingRequestError } = await supabaseAdmin
+    const { data: existingRequests, error: existingRequestError } = await supabaseAdmin
       .from("collaboration_requests")
-      .select("id")
-      .eq("sender_id", senderProfile.id)
-      .eq("receiver_id", recipientProfile.id)
-      .eq("status", "pending")
-      .maybeSingle();
+      .select("id, sender_id, receiver_id, status")
+      .or(
+        `and(sender_id.eq.${senderProfile.id},receiver_id.eq.${recipientProfile.id}),and(sender_id.eq.${recipientProfile.id},receiver_id.eq.${senderProfile.id})`,
+      )
+      .limit(2);
 
     if (existingRequestError) {
       console.error("Error checking existing request:", existingRequestError.message);
-    } else if (existingRequest) {
-      return res.status(429).json({ error: "You already have a pending collaboration request." });
-    }
+    } else if (existingRequests && existingRequests.length > 0) {
+      const pendingRequest = existingRequests.find((request) => request.status === "pending");
+      if (pendingRequest) {
+        return res.status(429).json({ error: "You already have a pending collaboration request." });
+      }
 
-    const { error: insertError } = await supabaseAdmin.from("collaboration_requests").insert({
-      sender_id: senderProfile.id,
-      receiver_id: recipientProfile.id,
-      status: "pending",
-    });
+      const reopenRequest = existingRequests[0];
+      let { error: reopenError } = await supabaseAdmin
+        .from("collaboration_requests")
+        .update({ status: "pending", updated_at: new Date().toISOString() })
+        .eq("id", reopenRequest.id);
 
-    if (insertError) {
-      console.error("Error inserting collaboration request:", insertError.message);
-      return res.status(500).json({ error: "Failed to record collaboration request" });
+      if (reopenError && reopenError.code === "42703") {
+        const fallbackUpdate = await supabaseAdmin
+          .from("collaboration_requests")
+          .update({ status: "pending" })
+          .eq("id", reopenRequest.id);
+        reopenError = fallbackUpdate.error;
+      }
+
+      if (reopenError) {
+        console.error("Error reopening collaboration request:", {
+          code: reopenError.code,
+          message: reopenError.message,
+          details: reopenError.details,
+          hint: reopenError.hint,
+        });
+
+        return res.status(500).json(
+          debug
+            ? {
+                error: "Failed to record collaboration request",
+                code: reopenError.code,
+                message: reopenError.message,
+                details: reopenError.details,
+                hint: reopenError.hint,
+              }
+            : { error: "Failed to record collaboration request" },
+        );
+      }
+
+      requestMessage = "Request sent (reopened)";
+    } else {
+      const { error: insertError } = await supabaseAdmin.from("collaboration_requests").insert({
+        sender_id: senderProfile.id,
+        receiver_id: recipientProfile.id,
+        status: "pending",
+      });
+
+      if (insertError) {
+        console.error("Error inserting collaboration request:", {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+        });
+        return res.status(500).json(
+          debug
+            ? {
+                error: "Failed to record collaboration request",
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint,
+              }
+            : { error: "Failed to record collaboration request" },
+        );
+      }
     }
 
     const senderName = senderProfile.group_name || "Someone";
@@ -182,18 +252,18 @@ export default async function handler(req: any, res: any) {
       if (recipientUserError) {
         console.error("Error fetching recipient user:", recipientUserError.message);
       }
-      return res.status(200).json({ success: true, message: "Request sent, but recipient email not found." });
+      return res.status(200).json({ success: true, message: `${requestMessage}, but recipient email not found.` });
     }
 
     const recipientEmail = recipientUser.user.email;
     const senderEmail = user.email;
 
     if (!recipientEmail || !senderEmail) {
-      return res.status(200).json({ success: true, message: "Request sent, but email addresses are incomplete." });
+      return res.status(200).json({ success: true, message: `${requestMessage}, but email addresses are incomplete.` });
     }
 
     if (!resendApiKey) {
-      return res.status(200).json({ success: true, message: "Request sent. Email delivery is not configured." });
+      return res.status(200).json({ success: true, message: `${requestMessage}. Email delivery is not configured.` });
     }
 
     const recipientGroupName = recipientProfile.group_name || "Theater Group";
@@ -264,10 +334,10 @@ export default async function handler(req: any, res: any) {
       console.error("Resend API error:", errorText);
       return res
         .status(200)
-        .json({ success: true, message: "Request sent, but email delivery failed.", emailSent: false });
+        .json({ success: true, message: `${requestMessage}, but email delivery failed.`, emailSent: false });
     }
 
-    return res.status(200).json({ success: true, message: "Collaboration request sent successfully", emailSent: true });
+    return res.status(200).json({ success: true, message: requestMessage, emailSent: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
     console.error("Error processing request:", message);
