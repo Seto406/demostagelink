@@ -11,10 +11,7 @@ import {
   TrendingUp, 
   LayoutDashboard,
   CalendarPlus,
-  PenLine,
-  Sparkles,
-  Theater,
-  Users
+  PenLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -331,36 +328,6 @@ const UserFeed = () => {
 
           {/* Feed (Center) */}
         <main className="w-full max-w-2xl pb-24">
-
-          {profile?.role !== "producer" && (
-            <Card className="mb-6 border-secondary/20 bg-gradient-to-br from-secondary/15 to-card/70 backdrop-blur-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="rounded-full p-2 bg-secondary/20 text-secondary">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="font-serif text-lg font-semibold">Find what to watch faster</h2>
-                    <p className="text-sm text-muted-foreground">Filter the feed by shows or updates to quickly discover performances and follow groups you love.</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <Button variant="outline" className="justify-start" onClick={() => navigate("/shows")}>
-                    <Theater className="w-4 h-4 mr-2" />
-                    Browse Shows
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => navigate("/directory")}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Discover Groups
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => navigate("/favorites")}>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Saved Picks
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {profile?.role !== "producer" && (
             <Card className="mb-4 border-secondary/20 bg-card/40 backdrop-blur-sm">
