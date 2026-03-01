@@ -433,7 +433,16 @@ const ProducerProfile = () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
 
-      const accessToken = sessionData.session?.access_token;
+      if (import.meta.env.DEV) {
+        console.log('[collab] session available:', Boolean(sessionData.session));
+      }
+
+      if (!sessionData.session) {
+        toast.error("Please sign in to send a collaboration request.");
+        return;
+      }
+
+      const accessToken = sessionData.session.access_token;
       if (!accessToken) {
         toast.error("Session expired, please sign in again.");
         return;

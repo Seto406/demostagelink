@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
@@ -16,6 +17,20 @@ serve(async (req) => {
   }
 
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Missing required function env vars: SUPABASE_URL and/or SUPABASE_ANON_KEY" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Missing required function env var: SUPABASE_SERVICE_ROLE_KEY" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader?.startsWith("Bearer ")) {
@@ -26,8 +41,8 @@ serve(async (req) => {
     }
 
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -44,6 +59,10 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
+      if (userError) {
+        console.error("Invalid session in send-collab-proposal", userError.message);
+      }
+
       return new Response(
         JSON.stringify({ error: "Unauthorized: invalid or expired session" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
