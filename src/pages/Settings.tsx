@@ -359,8 +359,10 @@ const Settings = () => {
                   <p className="font-semibold text-foreground">{isProducer ? "Producer" : isAdmin ? "Admin" : "Audience"}</p>
                 </div>
                 <div className="rounded-xl border border-secondary/20 bg-background/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Plan</p>
-                  <p className="font-semibold text-foreground">{isPro ? "Pro" : "Free"}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{isProducer ? "Plan" : "Access"}</p>
+                  <p className="font-semibold text-foreground">
+                    {isProducer ? (isPro ? "Pro" : "Starter") : "Standard"}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-secondary/20 bg-background/40 p-4">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notifications</p>
