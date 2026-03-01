@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,8 @@ import {
   Zap,
   Check,
   Bell,
+  UserCog,
+  Sparkles,
   Key,
   LogOut, 
   Trash2,
@@ -45,6 +47,34 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useTour } from "@/contexts/TourContext";
+
+interface SettingsActionRowProps {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  danger?: boolean;
+}
+
+const SettingsActionRow = ({ icon, title, description, onClick, danger = false }: SettingsActionRowProps) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center justify-between p-4 rounded-xl border transition-colors group text-left ${
+      danger
+        ? "bg-red-500/5 hover:bg-red-500/10 border-red-500/20"
+        : "bg-background/50 hover:bg-background/80 border-secondary/10"
+    }`}
+  >
+    <div className="flex items-center gap-3 min-w-0">
+      <div className={`shrink-0 ${danger ? "text-red-500" : "text-muted-foreground"}`}>{icon}</div>
+      <div className="min-w-0">
+        <p className={`font-medium ${danger ? "text-red-400" : "text-foreground"}`}>{title}</p>
+        <p className="text-sm text-muted-foreground truncate sm:text-clip">{description}</p>
+      </div>
+    </div>
+    <ChevronRight className={`w-5 h-5 shrink-0 transition-colors ${danger ? "text-red-500/80" : "text-muted-foreground group-hover:text-foreground"}`} />
+  </button>
+);
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -313,6 +343,28 @@ const Settings = () => {
 
           <div className="space-y-6">
 
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-4 sm:p-6"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-secondary/20 bg-background/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Account Type</p>
+                  <p className="font-semibold text-foreground">{isProducer ? "Producer" : isAdmin ? "Admin" : "Audience"}</p>
+                </div>
+                <div className="rounded-xl border border-secondary/20 bg-background/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Plan</p>
+                  <p className="font-semibold text-foreground">{isPro ? "Pro" : "Free"}</p>
+                </div>
+                <div className="rounded-xl border border-secondary/20 bg-background/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Notifications</p>
+                  <p className="font-semibold text-foreground">{notifyApprovals || notifyShows ? "Enabled" : "Muted"}</p>
+                </div>
+              </div>
+            </motion.section>
+
             {/* Profile Settings - ALL USERS */}
             <motion.section
                 initial={{ opacity: 0, y: 20 }}
@@ -329,10 +381,21 @@ const Settings = () => {
                     </h2>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                    <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
+                      <UserCog className="w-4 h-4 text-blue-400" />
+                      Keep your display name recognizable.
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
+                      <Sparkles className="w-4 h-4 text-secondary" />
+                      Changes appear across comments and reviews.
+                    </div>
+                </div>
+
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="username">Display Name</Label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <Input
                                 id="username"
                                 value={username}
@@ -343,7 +406,7 @@ const Settings = () => {
                             <Button
                                 type="submit"
                                 disabled={usernameLoading || username === profile?.username}
-                                className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                                className="bg-secondary text-secondary-foreground hover:bg-secondary/90 sm:min-w-[120px]"
                             >
                                 {usernameLoading ? "Saving..." : "Save"}
                             </Button>
@@ -520,7 +583,10 @@ const Settings = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <button
+                  <SettingsActionRow
+                    icon={<RotateCcw className="w-5 h-5" />}
+                    title="Restart Tour"
+                    description="View the app walkthrough again"
                     onClick={() => {
                       startTour();
                       navigate("/feed");
@@ -529,17 +595,7 @@ const Settings = () => {
                         description: "Welcome back to the tour!",
                       });
                     }}
-                    className="w-full flex items-center justify-between p-4 rounded-xl bg-background/50 hover:bg-background/80 border border-secondary/10 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <RotateCcw className="w-5 h-5 text-muted-foreground" />
-                      <div className="text-left">
-                        <p className="text-foreground font-medium">Restart Tour</p>
-                        <p className="text-sm text-muted-foreground">View the app walkthrough again</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </button>
+                  />
                 </div>
               </motion.section>
             )}
@@ -561,33 +617,19 @@ const Settings = () => {
               </div>
 
               <div className="space-y-3">
-                <button
+                <SettingsActionRow
+                  icon={<Key className="w-5 h-5" />}
+                  title="Change Password"
+                  description="Update your account password"
                   onClick={() => setPasswordModal(true)}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-background/50 hover:bg-background/80 border border-secondary/10 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Key className="w-5 h-5 text-muted-foreground" />
-                    <div className="text-left">
-                      <p className="text-foreground font-medium">Change Password</p>
-                      <p className="text-sm text-muted-foreground">Update your account password</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </button>
+                />
 
-                <button
+                <SettingsActionRow
+                  icon={<LogOut className="w-5 h-5" />}
+                  title="Sign Out"
+                  description="Sign out of your account"
                   onClick={handleSignOut}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-background/50 hover:bg-background/80 border border-secondary/10 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <LogOut className="w-5 h-5 text-muted-foreground" />
-                    <div className="text-left">
-                      <p className="text-foreground font-medium">Sign Out</p>
-                      <p className="text-sm text-muted-foreground">Sign out of your account</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                </button>
+                />
               </div>
             </motion.section>
 
