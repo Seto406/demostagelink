@@ -27,8 +27,18 @@ export default async function handler(req: any, res: any) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const siteUrl = process.env.SITE_URL ?? "https://www.stagelink.show";
 
-  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
-    return res.status(500).json({ error: "Server environment is not configured correctly" });
+  // Debug: return which required server env vars are missing
+  const missing = [
+    !supabaseUrl && "SUPABASE_URL",
+    !supabaseAnonKey && "SUPABASE_ANON_KEY",
+    !supabaseServiceRoleKey && "SUPABASE_SERVICE_ROLE_KEY",
+  ].filter(Boolean);
+
+  if (missing.length) {
+    return res.status(500).json({
+      error: "Server environment is not configured correctly",
+      missing,
+    });
   }
 
   const authHeader = req.headers.authorization;
@@ -86,7 +96,9 @@ export default async function handler(req: any, res: any) {
     }
 
     if (senderProfile.role !== "producer" && senderProfile.role !== "admin") {
-      return res.status(403).json({ error: "Only Producers and Admins can send collaboration requests" });
+      return res
+        .status(403)
+        .json({ error: "Only Producers and Admins can send collaboration requests" });
     }
 
     const { data: recipientProfile, error: recipientError } = await supabaseAdmin
@@ -162,7 +174,9 @@ export default async function handler(req: any, res: any) {
     }
 
     const adminAuth = (supabaseAdmin.auth as any).admin;
-    const { data: recipientUser, error: recipientUserError } = await adminAuth.getUserById(recipientProfile.user_id);
+    const { data: recipientUser, error: recipientUserError } = await adminAuth.getUserById(
+      recipientProfile.user_id,
+    );
 
     if (recipientUserError || !recipientUser.user) {
       if (recipientUserError) {
@@ -175,9 +189,7 @@ export default async function handler(req: any, res: any) {
     const senderEmail = user.email;
 
     if (!recipientEmail || !senderEmail) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Request sent, but email addresses are incomplete." });
+      return res.status(200).json({ success: true, message: "Request sent, but email addresses are incomplete." });
     }
 
     if (!resendApiKey) {
@@ -250,7 +262,9 @@ export default async function handler(req: any, res: any) {
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
       console.error("Resend API error:", errorText);
-      return res.status(200).json({ success: true, message: "Request sent, but email delivery failed.", emailSent: false });
+      return res
+        .status(200)
+        .json({ success: true, message: "Request sent, but email delivery failed.", emailSent: false });
     }
 
     return res.status(200).json({ success: true, message: "Collaboration request sent successfully", emailSent: true });
