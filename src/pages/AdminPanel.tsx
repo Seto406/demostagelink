@@ -27,7 +27,6 @@ import {
   Check, 
   XCircle, 
   Eye, 
-  EyeOff,
   Users, 
   Theater, 
   UserCheck,
@@ -138,6 +137,11 @@ interface Stats {
   rejectedShows: number;
 }
 
+const isLegacyStatsPayload = (payload: unknown): payload is Partial<Stats> => {
+  if (!payload || typeof payload !== "object") return false;
+  return "totalUsers" in payload || "pendingNewShows" in payload || "pendingRequests" in payload;
+};
+
 type FilterStatus = "all" | "pending" | "pending_new" | "pending_edit" | "approved" | "rejected" | "deleted";
 
 const ITEMS_PER_PAGE = 10;
@@ -180,12 +184,12 @@ const AdminPanel = () => {
   const [totalUserCount, setTotalUserCount] = useState(0);
   const [currentShowsPage, setCurrentShowsPage] = useState(1);
   const [totalShowsCount, setTotalShowsCount] = useState(0);
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "admin" | "producer" | "audience">("all");
 
   // Delete user state
   const [deleteUserModal, setDeleteUserModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
-  const [adminSecurityKey, setAdminSecurityKey] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -224,21 +228,26 @@ const AdminPanel = () => {
       const { data: statsData, error: statsError } = await supabase.rpc('get_admin_dashboard_stats');
 
       if (!statsError && statsData) {
-        // RPC returns camelCase keys matching our Stats interface
-        const rpcStats = statsData as unknown as Stats;
+        // Support both old and new RPC payload shapes before deciding to skip fallback queries.
+        if (isLegacyStatsPayload(statsData)) {
+          const rpcStats = statsData as Partial<Stats>;
+          setStats({
+            totalUsers: rpcStats.totalUsers || 0,
+            totalShows: rpcStats.totalShows || 0,
+            activeProducers: rpcStats.activeProducers || 0,
+            pendingRequests: rpcStats.pendingRequests || 0,
+            deletedShows: rpcStats.deletedShows || 0,
+            pendingNewShows: rpcStats.pendingNewShows || 0,
+            pendingEditedShows: (editRequestCount || 0) + (rpcStats.pendingEditedShows || 0),
+            approvedShows: rpcStats.approvedShows || 0,
+            rejectedShows: rpcStats.rejectedShows || 0,
+          });
+          return;
+        }
 
-        setStats({
-          totalUsers: rpcStats.totalUsers || 0,
-          totalShows: rpcStats.totalShows || 0,
-          activeProducers: rpcStats.activeProducers || 0,
-          pendingRequests: rpcStats.pendingRequests || 0,
-          deletedShows: rpcStats.deletedShows || 0,
-          pendingNewShows: rpcStats.pendingNewShows || 0,
-          pendingEditedShows: (editRequestCount || 0) + (rpcStats.pendingEditedShows || 0), // Merge legacy and new
-          approvedShows: rpcStats.approvedShows || 0,
-          rejectedShows: rpcStats.rejectedShows || 0
-        });
-        return;
+        // Newer payload shapes do not include all metrics needed by this dashboard,
+        // so we intentionally continue to fallback queries for complete counts.
+        console.warn("Admin stats RPC payload is non-legacy; using fallback aggregate queries:", statsData);
       }
 
       if (statsError) {
@@ -911,6 +920,19 @@ const AdminPanel = () => {
     }
   };
 
+  const filteredUsers = users.filter((userProfile) => {
+    const roleMatch = userRoleFilter === "all" || userProfile.role === userRoleFilter;
+    const query = userSearch.trim().toLowerCase();
+
+    if (!query) return roleMatch;
+
+    return roleMatch && [
+      userProfile.email || "",
+      userProfile.group_name || "",
+      userProfile.user_id,
+    ].some((value) => value.toLowerCase().includes(query));
+  });
+
   // Force delete user function
   // Force redeploy: Clean build cache trigger
   const handleForceDeleteUser = async () => {
@@ -933,22 +955,12 @@ const AdminPanel = () => {
         body: JSON.stringify({
           user_id: userToDelete.user_id,
           profile_id: userToDelete.id,
-          security_key: adminSecurityKey,
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        if (result?.error === "Invalid security key") {
-          toast({
-            title: "Invalid Security Key",
-            description: "The provided security key is incorrect.",
-            variant: "destructive",
-          });
-          return;
-        }
-
         throw new Error(result?.error || "Failed to delete user");
       }
 
@@ -959,7 +971,6 @@ const AdminPanel = () => {
       
       setDeleteUserModal(false);
       setUserToDelete(null);
-      setAdminSecurityKey("");
       fetchUsers();
       fetchStats();
     } catch (error) {
@@ -1155,7 +1166,13 @@ const AdminPanel = () => {
         <div className="p-6">
           {/* Stats Widget */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab("users")}
+              className={`bg-card/50 backdrop-blur-sm border shadow-sm hover:shadow-md transition-all rounded-xl p-4 text-left ${
+                activeTab === "users" ? "border-blue-500/50" : "border-secondary/20"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-blue-500" />
@@ -1165,8 +1182,17 @@ const AdminPanel = () => {
                   <p className="text-xl font-semibold text-foreground">{stats.totalUsers}</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("shows");
+                handleFilterChange("all");
+              }}
+              className={`bg-card/50 backdrop-blur-sm border shadow-sm hover:shadow-md transition-all rounded-xl p-4 text-left ${
+                activeTab === "shows" && filterStatus === "all" ? "border-primary/50" : "border-secondary/20"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
                   <Theater className="w-5 h-5 text-primary" />
@@ -1176,8 +1202,14 @@ const AdminPanel = () => {
                   <p className="text-xl font-semibold text-foreground">{stats.totalShows}</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("users")}
+              className={`bg-card/50 backdrop-blur-sm border shadow-sm hover:shadow-md transition-all rounded-xl p-4 text-left ${
+                activeTab === "users" ? "border-green-500/50" : "border-secondary/20"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                   <UserCheck className="w-5 h-5 text-green-500" />
@@ -1187,8 +1219,17 @@ const AdminPanel = () => {
                   <p className="text-xl font-semibold text-foreground">{stats.activeProducers}</p>
                 </div>
               </div>
-            </div>
-            <div className="bg-card/50 backdrop-blur-sm border border-secondary/20 shadow-sm hover:shadow-md transition-shadow rounded-xl p-4">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("shows");
+                handleFilterChange("pending_new");
+              }}
+              className={`bg-card/50 backdrop-blur-sm border shadow-sm hover:shadow-md transition-all rounded-xl p-4 text-left ${
+                activeTab === "shows" && filterStatus === "pending_new" ? "border-yellow-500/50" : "border-secondary/20"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-yellow-500" />
@@ -1198,8 +1239,19 @@ const AdminPanel = () => {
                   <p className="text-xl font-semibold text-foreground">{stats.pendingRequests}</p>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
+
+          {activeTab === "shows" && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">Quick filters</span>
+              <Button variant={filterStatus === "pending_new" ? "default" : "outline"} size="sm" onClick={() => handleFilterChange("pending_new")}>New</Button>
+              <Button variant={filterStatus === "pending_edit" ? "default" : "outline"} size="sm" onClick={() => handleFilterChange("pending_edit")}>Edits</Button>
+              <Button variant={filterStatus === "approved" ? "default" : "outline"} size="sm" onClick={() => handleFilterChange("approved")}>Approved</Button>
+              <Button variant={filterStatus === "rejected" ? "default" : "outline"} size="sm" onClick={() => handleFilterChange("rejected")}>Rejected</Button>
+              <Button variant={filterStatus === "deleted" ? "default" : "outline"} size="sm" onClick={() => handleFilterChange("deleted")}>Deleted</Button>
+            </div>
+          )}
 
           {activeTab === "settings" ? (
             <PaymentSettings />
@@ -1217,7 +1269,7 @@ const AdminPanel = () => {
               className="space-y-6"
             >
               {/* Show Filter Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <button
                   onClick={() => handleFilterChange("all")}
                   className={`bg-card border p-4 text-left transition-all rounded-xl ${
@@ -1235,6 +1287,15 @@ const AdminPanel = () => {
                 >
                   <p className="text-muted-foreground text-sm mb-1">New Pending</p>
                   <p className="text-2xl font-serif text-green-500">{stats.pendingNewShows}</p>
+                </button>
+                <button
+                  onClick={() => handleFilterChange("pending_edit")}
+                  className={`bg-card border p-4 text-left transition-all rounded-xl ${
+                    filterStatus === "pending_edit" ? "border-blue-500" : "border-secondary/20 hover:border-blue-500/50"
+                  }`}
+                >
+                  <p className="text-muted-foreground text-sm mb-1">Pending Edits</p>
+                  <p className="text-2xl font-serif text-blue-500">{stats.pendingEditedShows}</p>
                 </button>
                 <button
                   onClick={() => handleFilterChange("approved")}
@@ -1655,6 +1716,28 @@ const AdminPanel = () => {
                 <div className="text-muted-foreground text-center py-8">Loading users...</div>
               ) : (
                 <>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                    <Input
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search by email, group, or user ID"
+                      className="md:max-w-sm"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {(["all", "admin", "producer", "audience"] as const).map((role) => (
+                        <Button
+                          key={role}
+                          type="button"
+                          variant={userRoleFilter === role ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setUserRoleFilter(role)}
+                          className="capitalize"
+                        >
+                          {role}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
                   <table className="w-full min-w-[600px] caption-bottom text-sm">
                     <thead className="bg-muted/50">
@@ -1668,7 +1751,7 @@ const AdminPanel = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map((userProfile) => (
+                      {filteredUsers.map((userProfile) => (
                         <tr key={userProfile.user_id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                           <td className="p-4 text-muted-foreground text-sm font-mono">
                             {userProfile.user_id.slice(0, 8)}...
@@ -1734,6 +1817,13 @@ const AdminPanel = () => {
                           </td>
                         </tr>
                       ))}
+                      {filteredUsers.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                            No users match your search/filter.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2002,7 +2092,7 @@ const AdminPanel = () => {
               Delete User
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Please enter the StageLink Admin Security Key to confirm this action.
+              This action cannot be undone. This will permanently remove the user account and related records.
             </DialogDescription>
           </DialogHeader>
           {userToDelete && (
@@ -2012,35 +2102,12 @@ const AdminPanel = () => {
                 <p className="text-foreground font-medium">{userToDelete.group_name || "No group name"}</p>
                 <p className="text-xs text-muted-foreground font-mono">{userToDelete.user_id}</p>
               </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">
-                  StageLink Admin Security Key
-                </label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter StageLink Admin Security Key"
-                    value={adminSecurityKey}
-                    onChange={(e) => setAdminSecurityKey(e.target.value)}
-                    className="bg-background border-border pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
               <div className="flex gap-3 justify-end">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setDeleteUserModal(false);
                     setUserToDelete(null);
-                    setAdminSecurityKey("");
                   }}
                 >
                   Cancel
@@ -2048,7 +2115,6 @@ const AdminPanel = () => {
                 <Button
                   variant="destructive"
                   onClick={handleForceDeleteUser}
-                  disabled={!adminSecurityKey}
                 >
                   Confirm Delete
                 </Button>
