@@ -131,7 +131,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const senderIdCandidates = Array.from(
-      new Set([senderProfile.id, senderProfile.user_id, user.id].filter(isValidId)),
+      new Set([senderProfile.user_id, user.id, senderProfile.id].filter(isValidId)),
     );
 
     if (senderIdCandidates.length === 0) {
@@ -139,7 +139,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const receiverIdCandidates = Array.from(
-      new Set([recipientProfile.id, recipientProfile.user_id].filter(isValidId)),
+      new Set([recipientProfile.user_id, recipientProfile.id].filter(isValidId)),
     );
 
     if (receiverIdCandidates.length === 0) {
@@ -224,33 +224,41 @@ export default async function handler(req: any, res: any) {
 
       requestMessage = "Request sent (reopened)";
     } else {
-      let { error: insertError } = await supabaseAdmin.from("collaboration_requests").insert({
-        sender_id: existingSenderId,
-        receiver_id: existingReceiverId,
-        status: "pending",
-      });
+      const insertCandidatePairs: Array<{ senderId: string; receiverId: string }> = [];
+      const seenPairs = new Set<string>();
 
-      if (insertError?.code === "23503" && insertError.message?.includes("sender_id")) {
-        const userScopedSenderId = senderProfile.user_id || user.id;
-        if (isValidId(userScopedSenderId) && userScopedSenderId !== existingSenderId) {
-          const fallbackInsert = await supabaseAdmin.from("collaboration_requests").insert({
-            sender_id: userScopedSenderId,
-            receiver_id: recipientProfile.id,
-            status: "pending",
-          });
-          insertError = fallbackInsert.error;
+      for (const senderId of senderIdCandidates) {
+        for (const receiverId of receiverIdCandidates) {
+          const pairKey = `${senderId}:${receiverId}`;
+          if (seenPairs.has(pairKey)) continue;
+          seenPairs.add(pairKey);
+          insertCandidatePairs.push({ senderId, receiverId });
         }
       }
 
-      if (insertError?.code === "23503" && insertError.message?.includes("receiver_id")) {
-        const userScopedReceiverId = recipientProfile.user_id;
-        if (isValidId(userScopedReceiverId) && userScopedReceiverId !== existingReceiverId) {
-          const fallbackInsert = await supabaseAdmin.from("collaboration_requests").insert({
-            sender_id: existingSenderId,
-            receiver_id: userScopedReceiverId,
-            status: "pending",
-          });
-          insertError = fallbackInsert.error;
+      let insertError: {
+        code?: string;
+        message?: string;
+        details?: string;
+        hint?: string;
+      } | null = null;
+
+      for (const candidate of insertCandidatePairs) {
+        const { error } = await supabaseAdmin.from("collaboration_requests").insert({
+          sender_id: candidate.senderId,
+          receiver_id: candidate.receiverId,
+          status: "pending",
+        });
+
+        if (!error) {
+          insertError = null;
+          break;
+        }
+
+        insertError = error;
+
+        if (error.code !== "23503") {
+          break;
         }
       }
 
