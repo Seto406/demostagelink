@@ -20,7 +20,9 @@ import {
   Users,
   Eye,
   EyeOff,
-  RotateCcw
+  RotateCcw,
+  ExternalLink,
+  LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -321,6 +323,8 @@ const Settings = () => {
 
   const isProducer = profile?.role === "producer";
   const isAudience = profile?.role === "audience";
+  const profileRoute = profile?.id ? `/profile/${profile.id}` : "/profile";
+  const primaryWorkspaceRoute = isProducer || isAdmin ? "/dashboard" : "/feed";
 
   return (
     <div className="min-h-screen bg-background">
@@ -367,55 +371,78 @@ const Settings = () => {
 
             {/* Profile Settings - ALL USERS */}
             <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-card/50 backdrop-blur-xl border border-secondary/20 rounded-2xl p-6"
             >
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-xl bg-blue-500/10">
-                        <Users className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <h2 className="text-xl font-serif font-semibold text-foreground">
-                        Profile
-                    </h2>
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-blue-500/10">
+                    <Users className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-serif font-semibold text-foreground">Profile</h2>
+                    <p className="text-sm text-muted-foreground">Keep your public details polished and easy to recognize.</p>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  onClick={() => navigate(profileRoute)}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View profile
+                </Button>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                    <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
-                      <UserCog className="w-4 h-4 text-blue-400" />
-                      Keep your display name recognizable.
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
-                      <Sparkles className="w-4 h-4 text-secondary" />
-                      Changes appear across comments and reviews.
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
+                  <UserCog className="w-4 h-4 text-blue-400" />
+                  Use the same display name your audience already knows.
                 </div>
+                <div className="flex items-center gap-2 rounded-lg bg-background/50 border border-secondary/10 px-3 py-2 text-sm text-muted-foreground">
+                  <Sparkles className="w-4 h-4 text-secondary" />
+                  Name updates instantly apply to comments, likes, and reviews.
+                </div>
+              </div>
 
-                <form onSubmit={handleUpdateProfile} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="username">Display Name</Label>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <Input
-                                id="username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Enter your display name"
-                                className="bg-background border-secondary/30"
-                            />
-                            <Button
-                                type="submit"
-                                disabled={usernameLoading || username === profile?.username}
-                                className="bg-secondary text-secondary-foreground hover:bg-secondary/90 sm:min-w-[120px]"
-                            >
-                                {usernameLoading ? "Saving..." : "Save"}
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            This name will be displayed on your comments and reviews.
-                        </p>
-                    </div>
-                </form>
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Display Name</Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Enter your display name"
+                      className="bg-background border-secondary/30"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={usernameLoading || username === profile?.username}
+                      className="bg-secondary text-secondary-foreground hover:bg-secondary/90 sm:min-w-[120px]"
+                    >
+                      {usernameLoading ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This name appears anywhere your account interacts across StageLink.
+                  </p>
+                </div>
+              </form>
+
+              <div className="mt-5 pt-5 border-t border-secondary/10 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Button variant="outline" className="justify-start" onClick={() => navigate(profileRoute)}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open public profile
+                </Button>
+                <Button variant="outline" className="justify-start" onClick={() => navigate(primaryWorkspaceRoute)}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  {isProducer || isAdmin ? "Go to dashboard" : "Return to feed"}
+                </Button>
+              </div>
             </motion.section>
 
             {/* Subscription - ONLY FOR PRODUCERS */}
