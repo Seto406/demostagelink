@@ -138,27 +138,43 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Invalid sender id." });
     }
 
+    const receiverIdCandidates = Array.from(
+      new Set([recipientProfile.id, recipientProfile.user_id].filter(isValidId)),
+    );
+
+    if (receiverIdCandidates.length === 0) {
+      return res.status(400).json({ error: "Invalid recipient id." });
+    }
+
     let existingRequests: { id: string; sender_id: string; receiver_id: string; status: string }[] = [];
     let existingSenderId = senderIdCandidates[0];
+    let existingReceiverId = receiverIdCandidates[0];
     let existingRequestError: { message?: string } | null = null;
 
     for (const senderIdCandidate of senderIdCandidates) {
-      const { data, error } = await supabaseAdmin
-        .from("collaboration_requests")
-        .select("id, sender_id, receiver_id, status")
-        .or(
-          `and(sender_id.eq.${senderIdCandidate},receiver_id.eq.${recipientProfile.id}),and(sender_id.eq.${recipientProfile.id},receiver_id.eq.${senderIdCandidate})`,
-        )
-        .limit(2);
+      for (const receiverIdCandidate of receiverIdCandidates) {
+        const { data, error } = await supabaseAdmin
+          .from("collaboration_requests")
+          .select("id, sender_id, receiver_id, status")
+          .or(
+            `and(sender_id.eq.${senderIdCandidate},receiver_id.eq.${receiverIdCandidate}),and(sender_id.eq.${receiverIdCandidate},receiver_id.eq.${senderIdCandidate})`,
+          )
+          .limit(2);
 
-      if (error) {
-        existingRequestError = error;
-        continue;
+        if (error) {
+          existingRequestError = error;
+          continue;
+        }
+
+        if (data && data.length > 0) {
+          existingRequests = data;
+          existingSenderId = senderIdCandidate;
+          existingReceiverId = receiverIdCandidate;
+          break;
+        }
       }
 
-      if (data && data.length > 0) {
-        existingRequests = data;
-        existingSenderId = senderIdCandidate;
+      if (existingRequests.length > 0) {
         break;
       }
     }
@@ -210,7 +226,7 @@ export default async function handler(req: any, res: any) {
     } else {
       let { error: insertError } = await supabaseAdmin.from("collaboration_requests").insert({
         sender_id: existingSenderId,
-        receiver_id: recipientProfile.id,
+        receiver_id: existingReceiverId,
         status: "pending",
       });
 
@@ -220,6 +236,18 @@ export default async function handler(req: any, res: any) {
           const fallbackInsert = await supabaseAdmin.from("collaboration_requests").insert({
             sender_id: userScopedSenderId,
             receiver_id: recipientProfile.id,
+            status: "pending",
+          });
+          insertError = fallbackInsert.error;
+        }
+      }
+
+      if (insertError?.code === "23503" && insertError.message?.includes("receiver_id")) {
+        const userScopedReceiverId = recipientProfile.user_id;
+        if (isValidId(userScopedReceiverId) && userScopedReceiverId !== existingReceiverId) {
+          const fallbackInsert = await supabaseAdmin.from("collaboration_requests").insert({
+            sender_id: existingSenderId,
+            receiver_id: userScopedReceiverId,
             status: "pending",
           });
           insertError = fallbackInsert.error;
