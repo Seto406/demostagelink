@@ -197,7 +197,7 @@ export const EditProducerProfileDialog = ({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ group_logo_url: publicUrlWithTimestamp })
-        .eq('id', user.id);
+        .eq('id', ownerProfileId ?? user.id);
 
       if (updateError) throw updateError;
 
@@ -255,7 +255,7 @@ export const EditProducerProfileDialog = ({
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ group_banner_url: publicUrlWithTimestamp })
-        .eq('id', user.id);
+        .eq('id', ownerProfileId ?? user.id);
 
       if (updateError) throw updateError;
 
@@ -298,7 +298,12 @@ export const EditProducerProfileDialog = ({
 
       let groupId = theaterGroup?.id;
 
-      const effectiveOwnerId = ownerProfileId ?? user.id;
+      if (!ownerProfileId) {
+        toast.error("Your producer profile is not ready yet. Please complete profile setup and try again.");
+        return;
+      }
+
+      const effectiveOwnerId = ownerProfileId;
 
       if (!groupId) {
          // Check if exists in DB even if not passed in prop (double check)
@@ -347,7 +352,7 @@ export const EditProducerProfileDialog = ({
       const { error: profileError } = await supabase
         .from('profiles')
         .update(profileData)
-        .eq('id', user.id);
+        .eq('id', effectiveOwnerId);
 
       if (profileError) throw profileError;
 
