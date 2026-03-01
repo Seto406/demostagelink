@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck, Globe } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck, Globe, Sparkles } from "lucide-react";
 import { createNotification } from "@/lib/notifications";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -543,6 +543,9 @@ const Profile = () => {
 
   const isProducer = profile.role === "producer";
   const displayName = profile.username || (isOwnProfile && user?.email?.split('@')[0]) || "Anonymous User";
+  const joinedDate = new Date(profile.created_at);
+  const membershipYears = Math.max(1, new Date().getFullYear() - joinedDate.getFullYear());
+  const publicWebsiteLabel = profile.website_url?.replace(/^https?:\/\//, '');
 
   return (
     <div className="min-h-screen bg-background">
@@ -628,13 +631,13 @@ const Profile = () => {
                       className="flex items-center gap-1.5 justify-center md:justify-start hover:text-secondary transition-colors"
                     >
                       <Globe className="w-4 h-4" />
-                      {profile.website_url.replace(/^https?:\/\//, '')}
+                      {publicWebsiteLabel}
                     </a>
                  )}
                  <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
-                      Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      Joined {joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </div>
                     {profile.niche && (
                       <div className="flex items-center gap-1.5 capitalize">
@@ -645,28 +648,23 @@ const Profile = () => {
                  </div>
                </div>
 
-
                 {/* Stats Bar */}
-                <div className="flex items-center justify-center md:justify-start gap-6 text-sm mb-6 border-t border-b border-secondary/10 py-3 w-full md:w-fit px-4 md:px-0">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">{counts.passes}</span>
-                        <span className="text-muted-foreground">Passes</span>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 w-full">
+                  {[
+                    { label: "Passes", value: counts.passes },
+                    { label: "Followers", value: counts.followers },
+                    { label: "Following", value: counts.following },
+                    { label: "Reviews", value: counts.reviews },
+                    { label: "Years here", value: membershipYears }
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-xl border border-secondary/15 bg-background/70 px-3 py-2 md:py-3 text-center md:text-left"
+                    >
+                      <p className="text-lg font-semibold text-foreground leading-none">{item.value}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
                     </div>
-                    <div className="w-[1px] h-4 bg-secondary/20"></div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">{counts.followers}</span>
-                        <span className="text-muted-foreground">Followers</span>
-                    </div>
-                    <div className="w-[1px] h-4 bg-secondary/20"></div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">{counts.following}</span>
-                        <span className="text-muted-foreground">Following</span>
-                    </div>
-                    <div className="w-[1px] h-4 bg-secondary/20"></div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-foreground">{counts.reviews}</span>
-                        <span className="text-muted-foreground">Reviews</span>
-                    </div>
+                  ))}
                 </div>
 
                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
@@ -675,7 +673,7 @@ const Profile = () => {
                      <Button
                        variant="outline"
                        size="sm"
-                       className="border-secondary/30 hover:bg-secondary/10 hover:text-secondary"
+                       className="border-secondary/30 hover:bg-secondary/10 hover:text-secondary w-full sm:w-auto"
                        onClick={() => setEditOpen(true)}
                      >
                        <Pencil className="w-4 h-4 mr-2" />
@@ -689,7 +687,7 @@ const Profile = () => {
                         disabled={followLoading}
                         variant={isFollowing ? "outline" : "default"}
                         size="sm"
-                        className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
+                        className={`w-full sm:w-auto ${isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}`}
                       >
                         {followLoading ? (
                             "Processing..."
@@ -708,7 +706,7 @@ const Profile = () => {
                  )}
                  {isProducer && (
                    <Link to={`/producer/${profile.id}`}>
-                      <Button variant="default" size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                      <Button variant="default" size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 w-full sm:w-auto">
                         <Building2 className="w-4 h-4 mr-2" />
                         View Group Page
                       </Button>
@@ -721,25 +719,29 @@ const Profile = () => {
            {/* Tabs Section */}
            <div>
              <Tabs defaultValue={isOwnProfile ? "passes" : "following"} className="w-full">
-               <TabsList className={`grid w-full mb-6 bg-card border border-secondary/20 h-auto p-1 ${isOwnProfile ? "grid-cols-4" : "grid-cols-3"}`}>
+               <TabsList className={`grid w-full mb-6 bg-card/95 backdrop-blur-sm border border-secondary/20 h-auto p-1 sticky top-16 z-20 ${isOwnProfile ? "grid-cols-4" : "grid-cols-3"}`}>
                  {isOwnProfile && (
                    <TabsTrigger value="passes" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                       <TicketIcon className="w-4 h-4" />
                       <span className="hidden sm:inline">My Passes</span>
                       <span className="sm:hidden">Passes</span>
+                      <span className="ml-1 text-xs opacity-75">{counts.passes}</span>
                    </TabsTrigger>
                  )}
                  <TabsTrigger value="following" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Users className="w-4 h-4" />
                     Following
+                    <span className="text-xs opacity-75">{counts.following}</span>
                  </TabsTrigger>
                  <TabsTrigger value="followers" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Users className="w-4 h-4" />
                     Followers
+                    <span className="text-xs opacity-75">{counts.followers}</span>
                  </TabsTrigger>
                  <TabsTrigger value="reviews" className="flex items-center gap-2 py-3 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary">
                     <Star className="w-4 h-4" />
                     Reviews
+                    <span className="text-xs opacity-75">{counts.reviews}</span>
                  </TabsTrigger>
                </TabsList>
 
@@ -903,7 +905,8 @@ const Profile = () => {
                     <div className="text-center py-12 bg-card/50 border border-secondary/10 rounded-2xl">
                         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium text-foreground mb-2">No Followers Yet</h3>
-                        <p className="text-muted-foreground mb-6">Connect with others in the community.</p>
+                        <p className="text-muted-foreground mb-2">Connect with others in the community.</p>
+                        <p className="text-xs text-muted-foreground/80 inline-flex items-center gap-1"><Sparkles className="w-3 h-3" />A complete profile helps people discover you faster.</p>
                     </div>
                  )}
                </TabsContent>
