@@ -43,12 +43,17 @@ export default async function handler(req: any, res: any) {
 
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
   });
 
   const {
     data: { user },
     error: userError,
-  } = await userClient.auth.getUser(token);
+  } = await userClient.auth.getUser();
 
   if (userError || !user) {
     if (userError) {
@@ -155,9 +160,8 @@ export default async function handler(req: any, res: any) {
       console.error("Failed to create notification:", message);
     }
 
-    const { data: recipientUser, error: recipientUserError } = await supabaseAdmin.auth.admin.getUserById(
-      recipientProfile.user_id,
-    );
+    const adminAuth = (supabaseAdmin.auth as any).admin;
+    const { data: recipientUser, error: recipientUserError } = await adminAuth.getUserById(recipientProfile.user_id);
 
     if (recipientUserError || !recipientUser.user) {
       if (recipientUserError) {
