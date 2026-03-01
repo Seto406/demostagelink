@@ -1,0 +1,57 @@
+name: Email Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Resend test scenario"
+        required: true
+        default: "delivered"
+        type: choice
+        options:
+          - delivered
+          - bounced
+          - complained
+          - suppressed
+      test:
+        description: "Smoke test target"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - collab
+          - notification
+          - both
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run smoke test endpoint
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          ADMIN_ACTION_KEY: ${{ secrets.ADMIN_ACTION_KEY }}
+          SCENARIO: ${{ github.event.inputs.scenario }}
+          TEST_TARGET: ${{ github.event.inputs.test }}
+        run: |
+          set -euo pipefail
+
+          RAW_RESPONSE=$(curl --silent --show-error \
+            -X POST "${SITE_URL}/api/email-smoke-test" \
+            -H "Authorization: Bearer ${ADMIN_ACTION_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"scenario\":\"${SCENARIO}\",\"test\":\"${TEST_TARGET}\"}" \
+            --write-out "\n%{http_code}")
+
+          HTTP_CODE=$(echo "$RAW_RESPONSE" | tail -n1)
+          RESPONSE=$(echo "$RAW_RESPONSE" | sed '$d')
+
+          echo "$RESPONSE"
+
+          test "$HTTP_CODE" -eq 200
+
+          echo "$RESPONSE" | jq -e '
+            .success == true and
+            ((.results.collab.attempted | not) or .results.collab.success == true) and
+            ((.results.notification.attempted | not) or .results.notification.success == true)
+          ' > /dev/null
