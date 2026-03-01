@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
@@ -12,7 +11,10 @@ import {
   TrendingUp, 
   LayoutDashboard,
   CalendarPlus,
-  PenLine
+  PenLine,
+  Sparkles,
+  Theater,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +80,8 @@ type FeedItem =
   | { type: 'show'; data: FeedShow; created_at: string }
   | { type: 'post'; data: FeedPostType; created_at: string };
 
+type AudienceFeedFilter = "all" | "shows" | "updates";
+
 interface Producer {
   id: string;
   group_name: string | null;
@@ -99,6 +103,7 @@ const UserFeed = () => {
   const extendedProfile = profile as unknown as ExtendedProfile;
   const { isPro } = useSubscription();
   const { startTour } = useTour();
+  const [audienceFilter, setAudienceFilter] = useState<AudienceFeedFilter>("all");
 
   // Modals
   const [producerRequestModal, setProducerRequestModal] = useState(false);
@@ -223,6 +228,15 @@ const UserFeed = () => {
   });
 
   const feedItems = useMemo(() => data?.pages.flat() || [], [data]);
+  const visibleFeedItems = useMemo(() => {
+    if (audienceFilter === "shows") {
+      return feedItems.filter((item) => item.type === "show");
+    }
+    if (audienceFilter === "updates") {
+      return feedItems.filter((item) => item.type === "post");
+    }
+    return feedItems;
+  }, [feedItems, audienceFilter]);
 
   // Fetch producer's recent shows (Sidebar)
   const { data: recentShows } = useQuery({
@@ -318,6 +332,60 @@ const UserFeed = () => {
           {/* Feed (Center) */}
         <main className="w-full max-w-2xl pb-24">
 
+          {profile?.role !== "producer" && (
+            <Card className="mb-6 border-secondary/20 bg-gradient-to-br from-secondary/15 to-card/70 backdrop-blur-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="rounded-full p-2 bg-secondary/20 text-secondary">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-lg font-semibold">Find what to watch faster</h2>
+                    <p className="text-sm text-muted-foreground">Filter the feed by shows or updates to quickly discover performances and follow groups you love.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Button variant="outline" className="justify-start" onClick={() => navigate("/shows")}>
+                    <Theater className="w-4 h-4 mr-2" />
+                    Browse Shows
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => navigate("/directory")}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Discover Groups
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => navigate("/favorites")}>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Saved Picks
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {profile?.role !== "producer" && (
+            <Card className="mb-4 border-secondary/20 bg-card/40 backdrop-blur-sm">
+              <CardContent className="p-3">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "All", value: "all" as const },
+                    { label: "Shows", value: "shows" as const },
+                    { label: "Updates", value: "updates" as const },
+                  ].map((filter) => (
+                    <Button
+                      key={filter.value}
+                      size="sm"
+                      variant={audienceFilter === filter.value ? "default" : "outline"}
+                      className="rounded-full"
+                      onClick={() => setAudienceFilter(filter.value)}
+                    >
+                      {filter.label}
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Post Creation Area - Visible only to Producers */}
           {profile?.role === "producer" && (
             <Card className="mb-6 border-secondary/20 bg-card/50 backdrop-blur-sm">
@@ -362,7 +430,7 @@ const UserFeed = () => {
             <div className="flex justify-center py-12"><BrandedLoader size="md" /></div>
           ) : (
             <div className="grid grid-cols-1 gap-6 w-full">
-              {feedItems.map((item, index) => (
+              {visibleFeedItems.map((item, index) => (
                 <div key={`${item.type}-${item.data.id}`} data-tour={index === 0 ? "feed-post" : undefined}>
                   {item.type === 'show' ? (
                       <FeedPost
@@ -376,6 +444,15 @@ const UserFeed = () => {
                   {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
                 </div>
               ))}
+
+              {visibleFeedItems.length === 0 && (
+                <Card className="border-secondary/20 bg-card/30">
+                  <CardContent className="py-12 text-center">
+                    <p className="font-medium">No {audienceFilter === "shows" ? "shows" : audienceFilter === "updates" ? "updates" : "items"} in this section yet.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Try switching filters or pull down to refresh.</p>
+                  </CardContent>
+                </Card>
+              )}
 
               <div ref={observerTarget} className="py-8 text-center text-muted-foreground text-sm">
                 {isFetchingNextPage ? <BrandedLoader size="sm" /> : hasNextPage ? "Scroll for more" : "End of the stage."}
