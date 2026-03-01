@@ -428,17 +428,22 @@ const AdminPanel = () => {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchShows();
-      fetchProducerRequests();
       fetchStats();
     }
-  }, [isAdmin, filterStatus, fetchShows, fetchProducerRequests, fetchStats]);
+  }, [isAdmin, fetchStats]);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchUsers();
+    if (isAdmin && activeTab === "shows") {
+      fetchShows();
     }
-  }, [isAdmin, currentPage, fetchUsers]);
+  }, [isAdmin, activeTab, filterStatus, currentShowsPage, fetchShows]);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === "users") {
+      fetchUsers();
+      fetchProducerRequests();
+    }
+  }, [isAdmin, activeTab, currentPage, fetchUsers, fetchProducerRequests]);
 
   const handleLogout = async () => {
     await signOut();
@@ -1151,8 +1156,10 @@ const AdminPanel = () => {
               onClick={() => {
                 fetchStats();
                 if (activeTab === "shows") fetchShows();
-                else if (activeTab === "users") fetchUsers();
-                fetchProducerRequests();
+                else if (activeTab === "users") {
+                  fetchUsers();
+                  fetchProducerRequests();
+                }
               }}
               className="h-8 px-2 text-muted-foreground hover:text-foreground border-secondary/20"
               title="Refresh Data"
