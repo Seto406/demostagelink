@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, UserPlus, LayoutGrid, List } from "lucide-react";
+import { Search, Loader2, UserPlus, LayoutGrid, List, Lightbulb, WandSparkles, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProducerListSkeleton } from "@/components/ui/skeleton-loaders";
@@ -31,6 +31,7 @@ const ITEMS_PER_PAGE = 12;
 
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
 const niches = ["All", "Local/Community-based", "University Theater Group"];
+const quickDirectorySuggestions = ["Manila", "Quezon City", "University", "Community"];
 
 interface TheaterGroup {
   id: string;
@@ -235,6 +236,7 @@ const Directory = () => {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const hasActiveFilters = searchQuery || selectedCity !== "All" || selectedNiche !== "All";
 
   // Debounce search query
   useEffect(() => {
@@ -337,6 +339,32 @@ const Directory = () => {
         setPage(nextPage);
         fetchGroups(nextPage, true);
     }
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCity("All");
+    setSelectedNiche("All");
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    const isCity = cities.includes(suggestion);
+    if (isCity) {
+      setSelectedCity(suggestion);
+      return;
+    }
+
+    if (suggestion.toLowerCase().includes("university")) {
+      setSelectedNiche("University Theater Group");
+      return;
+    }
+
+    if (suggestion.toLowerCase().includes("community")) {
+      setSelectedNiche("Local/Community-based");
+      return;
+    }
+
+    setSearchQuery(suggestion);
   };
 
   const handleJoinRequest = async (e: React.MouseEvent, group: TheaterGroup) => {
@@ -536,6 +564,45 @@ const Directory = () => {
                   {niche}
                 </button>
               ))}
+            </div>
+
+            <div className="max-w-3xl mx-auto w-full rounded-xl border border-secondary/20 bg-card/40 backdrop-blur-sm px-4 py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Lightbulb className="w-3.5 h-3.5 text-secondary" />
+                  <span>Quick suggestions:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {quickDirectorySuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => applySuggestion(suggestion)}
+                      className="text-xs px-2.5 py-1 rounded-full border border-secondary/25 text-muted-foreground hover:text-foreground hover:border-secondary/60 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground flex items-start gap-2">
+                  <WandSparkles className="w-3.5 h-3.5 text-secondary mt-0.5 shrink-0" />
+                  Combine city and type filters to find the most relevant theater groups faster.
+                </p>
+
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
           </motion.div>
 
