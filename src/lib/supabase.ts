@@ -1,8 +1,50 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../integrations/supabase/types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+declare global {
+  interface Window {
+    __APP_CONFIG__?: {
+      VITE_SUPABASE_URL?: string;
+      VITE_SUPABASE_ANON_KEY?: string;
+      SUPABASE_URL?: string;
+      SUPABASE_ANON_KEY?: string;
+    };
+    __SUPABASE_URL__?: string;
+    __SUPABASE_ANON_KEY__?: string;
+  }
+}
+
+const resolveSupabaseUrl = () => {
+  return (
+    import.meta.env.VITE_SUPABASE_URL ||
+    window.__APP_CONFIG__?.VITE_SUPABASE_URL ||
+    window.__APP_CONFIG__?.SUPABASE_URL ||
+    window.__SUPABASE_URL__
+  );
+};
+
+const resolveSupabaseAnonKey = () => {
+  return (
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    window.__APP_CONFIG__?.VITE_SUPABASE_ANON_KEY ||
+    window.__APP_CONFIG__?.SUPABASE_ANON_KEY ||
+    window.__SUPABASE_ANON_KEY__
+  );
+};
+
+const SUPABASE_URL = resolveSupabaseUrl()?.trim();
+const SUPABASE_ANON_KEY = resolveSupabaseAnonKey()?.trim();
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  const missing = [!SUPABASE_URL && 'VITE_SUPABASE_URL', !SUPABASE_ANON_KEY && 'VITE_SUPABASE_ANON_KEY']
+    .filter(Boolean)
+    .join(', ');
+
+  throw new Error(
+    `Missing Supabase client configuration (${missing}). ` +
+      'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or provide them via window.__APP_CONFIG__).'
+  );
+}
 
 // Time-Traveler Logic: fetch interceptor to handle clock skew
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
