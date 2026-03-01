@@ -41,6 +41,7 @@ export default async function handler(req: any, res: any) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
+  // Attach the caller token to all auth requests and resolve the current user from that session.
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false },
     global: {
