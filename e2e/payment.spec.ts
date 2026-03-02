@@ -6,13 +6,23 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+const hasRealValue = (value?: string) => {
+  if (!value) return false;
+  return !value.startsWith('your_') && !value.includes('your-project-ref');
+};
 
 test.describe('Payment E2E Flow', () => {
   let showId;
   let supabase;
 
   test.beforeAll(async () => {
+    if (!hasRealValue(SUPABASE_URL) || !hasRealValue(SUPABASE_ANON_KEY)) {
+      test.skip(true, 'Skipping payment E2E: missing Supabase env configuration');
+      return;
+    }
+
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     // Fetch a valid show with price > 0 (paid shows allow guest checkout)
     const { data: shows } = await supabase.from('shows').select('id').gt('price', 0).limit(1);
