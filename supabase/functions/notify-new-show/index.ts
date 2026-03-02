@@ -15,9 +15,9 @@ interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE';
   table: string;
   schema: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   record: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   old_record: any;
 }
 

@@ -40,7 +40,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 🔥 THE GAME CHANGER: This forcefully aborts frozen background network requests 
+// 🔥 THE GAME CHANGER: This forcefully aborts frozen background network requests
 const withTimeout = <T,>(promise: Promise<T>, ms: number = 5000): Promise<T> => {
   let timeoutId: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -115,13 +115,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       try {
         const { data: { session }, error } = await withTimeout(supabase.auth.getSession());
-        
+
         if (error) throw error;
 
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          
+
           if (session?.user) {
             await fetchProfile(session.user.id, session.user.user_metadata);
           }
@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const win = window as any;
     if (typeof window !== "undefined" && win.PlaywrightTest) {
         if (win.PlaywrightUser) setUser(win.PlaywrightUser);
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (!mounted) return;
-      
+
       if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/reset-password") {
         navigate("/reset-password?type=recovery");
       }
@@ -243,7 +243,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setSession(null);
     setProfile(null);
-    
+
     try {
       // Ping the server to destroy the session, but only give it 2 seconds max
       await withTimeout(supabase.auth.signOut(), 2000);

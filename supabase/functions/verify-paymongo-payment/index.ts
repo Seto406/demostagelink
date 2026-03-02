@@ -34,7 +34,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     let payment: any = null;
     let user: User | null = null;
 

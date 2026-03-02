@@ -13,7 +13,7 @@ export const trackEvent = async (
     const { data: { user } } = await supabase.auth.getUser();
 
     // Casting to any because the types are not updated with the new table yet
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const { error } = await (supabase.from('analytics_events' as any) as any).insert({
       event_type: eventType,
       group_id: groupId,
