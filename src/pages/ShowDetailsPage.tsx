@@ -31,6 +31,7 @@ const ShowDetailsPage = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshReviews, setRefreshReviews] = useState(0);
+  const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, reviewCount: 0 });
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [isTicketClaimed, setIsTicketClaimed] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
@@ -674,8 +675,13 @@ END:VCALENDAR`;
 
                    {/* Reviews */}
                    <section className="pt-8 border-t border-secondary/10">
-                        <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center justify-between mb-8 gap-3 flex-wrap">
                             <h2 className="text-2xl font-serif font-bold text-foreground">Audience Reviews</h2>
+                            {reviewSummary.reviewCount > 0 && (
+                              <p className="text-sm text-muted-foreground">
+                                {reviewSummary.averageRating.toFixed(1)} average from {reviewSummary.reviewCount} reviews
+                              </p>
+                            )}
                         </div>
                         <ReviewForm
                           showId={show.id}
@@ -688,6 +694,7 @@ END:VCALENDAR`;
                               refreshTrigger={refreshReviews}
                               isUpcoming={show.date ? new Date(show.date) > new Date() : false}
                               producerId={typeof show.producer_id === 'object' && show.producer_id ? show.producer_id.id : (typeof show.producer_id === 'string' ? show.producer_id : undefined)}
+                              onSummaryChange={setReviewSummary}
                             />
                         </div>
                    </section>
