@@ -335,7 +335,8 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
                 onClick={() => setUserType("audience")}
-                className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-secondary hover:shadow-[0_0_30px_hsl(43_72%_52%/0.2)] transition-all duration-300 text-left group"
+                className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-secondary hover:shadow-[0_0_30px_hsl(43_72%_52%/0.2)] focus-visible:outline-none focus-visible:border-secondary focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 transition-all duration-300 text-left group"
+                aria-label="Join as an Audience Member"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-3xl">🎟️</span>
@@ -355,7 +356,8 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2, duration: 0.3 }}
                 onClick={() => setUserType("producer")}
-                className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-primary hover:shadow-[0_0_30px_hsl(0_100%_25%/0.3)] transition-all duration-300 text-left group"
+                className="w-full p-6 rounded-2xl border border-secondary/30 bg-card/50 backdrop-blur-xl hover:border-primary hover:shadow-[0_0_30px_hsl(0_100%_25%/0.3)] focus-visible:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 transition-all duration-300 text-left group"
+                aria-label="Join as a Theater Group"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-3xl">🎭</span>
@@ -380,7 +382,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
               Already have an account?{" "}
               <button
                 onClick={() => setAuthMode("login")}
-                className="text-secondary cursor-pointer hover:underline"
+                className="text-secondary cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
               >
                 Log in
               </button>
@@ -395,7 +397,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
             {authMode === "signup" && userType && (
               <button
                 onClick={() => setUserType(null)}
-                className="text-secondary text-sm mb-6 hover:underline"
+                className="text-secondary text-sm mb-6 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
               >
                 ← Back
               </button>
@@ -469,7 +471,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -541,7 +543,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                   <button
                     type="button"
                     onClick={() => navigate("/reset-password")}
-                    className="text-xs text-secondary hover:underline mt-2 block ml-auto"
+                    className="text-xs text-secondary hover:underline mt-2 block ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
                   >
                     Forgot password?
                   </button>
@@ -565,7 +567,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
                         aria-label="Toggle confirm password visibility"
                       >
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -648,7 +650,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                       setUserType(null);
                       setConfirmPassword("");
                     }}
-                    className="text-secondary cursor-pointer hover:underline"
+                    className="text-secondary cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
                   >
                     Sign up
                   </button>
@@ -661,7 +663,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                       setAuthMode("login");
                       setConfirmPassword("");
                     }}
-                    className="text-secondary cursor-pointer hover:underline"
+                    className="text-secondary cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 rounded-sm"
                   >
                     Log in
                   </button>
