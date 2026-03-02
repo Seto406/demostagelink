@@ -44,6 +44,8 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [saving, setSaving] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
 
+  const bioMaxLength = 280;
+
   // Local avatar preview (optimistic UI or just reflecting prop)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -153,6 +155,15 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         });
         return;
       }
+    }
+
+    if (description.length > bioMaxLength) {
+      toast({
+        title: "Bio is too long",
+        description: `Please keep your bio within ${bioMaxLength} characters.`,
+        variant: "destructive",
+      });
+      return;
     }
 
     // Website URL validation
@@ -404,31 +415,32 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
 
           {/* Basic Info */}
           <div>
-             <Label htmlFor="username">Username / Display Name</Label>
+             <Label htmlFor="username">Display Name</Label>
              <Input
                id="username"
                value={username}
                onChange={(e) => setUsername(e.target.value)}
-               placeholder="Enter your username"
+               placeholder="How people see your name"
                className="mt-1 bg-background border-secondary/30"
              />
              <p className="text-xs text-muted-foreground mt-1">
-               This is how you will appear in comments and reviews.
+               This is shown on your profile, comments, and reviews.
              </p>
           </div>
 
           {/* Bio / Description */}
           <div>
-             <Label htmlFor="description">Bio / Description</Label>
+             <Label htmlFor="description">Bio</Label>
              <Textarea
                id="description"
                value={description}
                onChange={(e) => setDescription(e.target.value)}
-               placeholder="Tell us about yourself..."
+               placeholder="Share a short intro about your theater interests..."
+               maxLength={bioMaxLength}
                className="mt-1 bg-background border-secondary/30 min-h-[100px]"
              />
              <p className="text-xs text-muted-foreground mt-1">
-               A short bio for your profile.
+               Keep it short and useful for other theatergoers. {description.length}/{bioMaxLength}
              </p>
           </div>
 

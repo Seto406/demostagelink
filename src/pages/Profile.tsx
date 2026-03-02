@@ -545,7 +545,10 @@ const Profile = () => {
   const displayName = profile.username || (isOwnProfile && user?.email?.split('@')[0]) || "Anonymous User";
   const joinedDate = new Date(profile.created_at);
   const membershipYears = Math.max(1, new Date().getFullYear() - joinedDate.getFullYear());
-  const publicWebsiteLabel = profile.website_url?.replace(/^https?:\/\//, '');
+  const publicWebsiteLabel = profile.website_url?.replace(/^https?:\/\//, "");
+  const latestReviewDate = reviews[0]?.created_at
+    ? new Date(reviews[0].created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -666,6 +669,12 @@ const Profile = () => {
                     </div>
                   ))}
                 </div>
+
+               {latestReviewDate && (
+                 <p className="text-xs text-muted-foreground mb-5 text-center md:text-left">
+                   Last review posted on {latestReviewDate}
+                 </p>
+               )}
 
                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                  {isOwnProfile && (

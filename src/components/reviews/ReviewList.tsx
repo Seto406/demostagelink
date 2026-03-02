@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { StarRating } from "@/components/ui/star-rating";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +17,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+type ReviewSort = "recent" | "highest" | "lowest";
 
 interface Review {
   id: string;
@@ -38,15 +40,16 @@ interface ReviewListProps {
   refreshTrigger: number;
   isUpcoming?: boolean;
   producerId?: string;
+  onSummaryChange?: (summary: { averageRating: number; reviewCount: number }) => void;
 }
 
-export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: ReviewListProps) => {
-  const { user, profile } = useAuth();
+export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onSummaryChange }: ReviewListProps) => {
+  const { profile } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<ReviewSort>("recent");
 
-  // Determine if the current user has moderation rights
-  const canModerate = profile && (profile.role === 'admin' || (producerId && profile.id === producerId));
+  const canModerate = profile && (profile.role === "admin" || (producerId && profile.id === producerId));
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -64,14 +67,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
         console.error("Error fetching reviews:", error);
       } else {
         const fetchedReviews = data as unknown as Review[];
-
-        // Filter reviews based on approval status and user role
-        let visibleReviews = fetchedReviews;
-
-        if (!canModerate) {
-          visibleReviews = fetchedReviews.filter(review => review.is_approved);
-        }
-
+        const visibleReviews = canModerate ? fetchedReviews : fetchedReviews.filter((review) => review.is_approved);
         setReviews(visibleReviews);
       }
     } catch (err) {
@@ -85,19 +81,41 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
     fetchReviews();
   }, [fetchReviews, refreshTrigger]);
 
+  const publicReviews = useMemo(() => reviews.filter((review) => review.is_approved), [reviews]);
+
+  const sortedReviews = useMemo(() => {
+    const sortable = [...reviews];
+
+    if (sortBy === "highest") {
+      return sortable.sort((a, b) => b.rating - a.rating || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    if (sortBy === "lowest") {
+      return sortable.sort((a, b) => a.rating - b.rating || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    return sortable.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [reviews, sortBy]);
+
+  const averageRating = useMemo(() => {
+    if (!publicReviews.length) return 0;
+    const total = publicReviews.reduce((sum, review) => sum + review.rating, 0);
+    return total / publicReviews.length;
+  }, [publicReviews]);
+
+  useEffect(() => {
+    onSummaryChange?.({
+      averageRating,
+      reviewCount: publicReviews.length,
+    });
+  }, [averageRating, publicReviews.length, onSummaryChange]);
+
   const handleHideReview = async (reviewId: string) => {
     try {
-      const { error } = await supabase
-        .from("reviews")
-        .update({ is_approved: false })
-        .eq("id", reviewId);
-
+      const { error } = await supabase.from("reviews").update({ is_approved: false }).eq("id", reviewId);
       if (error) throw error;
-
       toast.success("Review hidden from public view");
-
-      // Update local state
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, is_approved: false } : r));
+      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, is_approved: false } : r)));
     } catch (error) {
       console.error("Error hiding review:", error);
       toast.error("Failed to hide review");
@@ -106,17 +124,10 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
-      const { error } = await supabase
-        .from("reviews")
-        .delete()
-        .eq("id", reviewId);
-
+      const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
       if (error) throw error;
-
       toast.success("Review deleted permanently");
-
-      // Update local state
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
     } catch (error) {
       console.error("Error deleting review:", error);
       toast.error("Failed to delete review");
@@ -137,8 +148,34 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
 
   return (
     <div className="space-y-6">
-      {reviews.map((review) => (
-        <div key={review.id} className={`border-b border-secondary/10 pb-6 last:border-0 last:pb-0 ${!review.is_approved ? 'opacity-60 bg-secondary/5 p-4 rounded-lg' : ''}`}>
+      {!isUpcoming && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-secondary/10 bg-card/60">
+          <div>
+            <p className="text-sm text-muted-foreground">Audience rating</p>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">{averageRating.toFixed(1)}</span>
+              <StarRating rating={averageRating} readOnly size={14} />
+              <span className="text-xs text-muted-foreground">({publicReviews.length} reviews)</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="review-sort" className="text-xs text-muted-foreground">Sort</label>
+            <select
+              id="review-sort"
+              className="h-9 rounded-md border border-secondary/20 bg-background px-3 text-sm"
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as ReviewSort)}
+            >
+              <option value="recent">Most recent</option>
+              <option value="highest">Highest rated</option>
+              <option value="lowest">Lowest rated</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {sortedReviews.map((review) => (
+        <div key={review.id} className={`border-b border-secondary/10 pb-6 last:border-0 last:pb-0 ${!review.is_approved ? "opacity-60 bg-secondary/5 p-4 rounded-lg" : ""}`}>
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
               {review.profiles?.avatar_url ? (
@@ -157,7 +194,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId }: R
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                 <div>
                   <h4 className="font-medium text-foreground flex items-center gap-2">
-                    {review.profiles?.username || review.profiles?.group_name || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ''}`.trim() : "Audience Member")}
+                    {review.profiles?.username || review.profiles?.group_name || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ""}`.trim() : "Audience Member")}
                     {!review.is_approved && (
                       <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold uppercase tracking-wider">Moderated</span>
                     )}
