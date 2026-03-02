@@ -197,25 +197,23 @@ const ProducerProfile = () => {
         setFollowerCount(count);
       }
 
-      // Fetch following count (supports both follower_id = profiles.id and follower_id = auth.users.id)
-      if (profileData?.id || profileData?.user_id) {
-          const followerIds = [profileData?.id, profileData?.user_id].filter((value): value is string => Boolean(value));
+      // Fetch following count for the current profile
+      if (profileData?.id) {
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .in("follower_id", followerIds);
+            .eq("follower_id", profileData.id);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
           }
       }
 
-      if (user) {
-        const followerIds = [profile?.id, user.id].filter((value): value is string => Boolean(value));
+      if (user && profileData?.id) {
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .in("follower_id", followerIds)
+            .eq("follower_id", profileData.id)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -251,9 +249,9 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerIds = [profile?.id, user.id].filter((value, index, array): value is string => Boolean(value) && array.indexOf(value) === index);
+    const followerId = profile?.id;
 
-    if (followerIds.length === 0) {
+    if (!followerId) {
       toast.error("Your session expired. Please login again.");
       return;
     }
@@ -264,7 +262,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .in("follower_id", followerIds)
+            .eq("follower_id", followerId)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -276,26 +274,12 @@ const ProducerProfile = () => {
             toast.success("Unfollowed group");
         }
     } else {
-        let error = null;
-
-        for (const followerId of followerIds) {
-          const followResult = await supabase
-            .from("follows")
-            .insert({
-              follower_id: followerId,
-              following_id: producer.id
-            });
-
-          error = followResult.error;
-
-          if (!error) {
-            break;
-          }
-
-          if ((error as { code?: string }).code !== '23503') {
-            break;
-          }
-        }
+        const { error } = await supabase
+          .from("follows")
+          .insert({
+            follower_id: followerId,
+            following_id: producer.id
+          });
 
         if (error) {
             console.error("Error following:", error);
