@@ -87,6 +87,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [acceptsConsent, setAcceptsConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState(false);
@@ -247,6 +248,12 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
           navigate("/verify-email");
         }
       } else {
+        if (rememberMe) {
+          localStorage.setItem("rememberedLoginEmail", email);
+        } else {
+          localStorage.removeItem("rememberedLoginEmail");
+        }
+
         const { error } = await signIn(email, password);
         if (error) {
           triggerShake();
@@ -299,6 +306,18 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
       case "strong": return <ShieldCheck className="w-4 h-4" />;
     }
   };
+
+  useEffect(() => {
+    if (authMode !== "login") {
+      return;
+    }
+
+    const rememberedEmail = localStorage.getItem("rememberedLoginEmail");
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [authMode]);
 
   return (
     <div className={className}>
@@ -452,6 +471,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                 label="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
 
@@ -463,6 +483,7 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                     label="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={authMode === "login" ? "current-password" : "new-password"}
                     required
                     minLength={8}
                   />
@@ -538,13 +559,24 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
                 )}
 
                 {authMode === "login" && (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/reset-password")}
-                    className="text-xs text-secondary hover:underline mt-2 block ml-auto"
-                  >
-                    Forgot password?
-                  </button>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <Label htmlFor="rememberMe" className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                      <Checkbox
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      Remember me
+                    </Label>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate("/reset-password")}
+                      className="text-xs text-secondary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                 )}
               </div>
 
