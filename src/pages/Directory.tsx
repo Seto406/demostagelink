@@ -25,8 +25,8 @@ import feuTheaterGuildLogo from "@/assets/groups/feu-theater-guild.jpg";
 import pnuThespianLogo from "@/assets/groups/pnu-thespian.jpg";
 import dulaangUpLogo from "@/assets/groups/dulaang-up.jpg";
 
-// Toggle to control visibility of demo placeholder groups
-const SHOW_DEMO_GROUPS = true;
+// Keep directory empty when there are no real groups.
+const SHOW_DEMO_GROUPS = false;
 const ITEMS_PER_PAGE = 12;
 
 const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati"];
