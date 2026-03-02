@@ -371,26 +371,41 @@ const AdminPanel = () => {
     setLoadingUsers(true);
 
     try {
-      const { data, error } = await supabase.rpc('get_admin_user_list', {
-        page_number: currentPage,
-        page_size: ITEMS_PER_PAGE
-      });
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE - 1;
+
+      let query = supabase
+        .from("profiles")
+        .select("id, user_id, email, role, group_name, created_at", { count: "exact" });
+
+      if (userRoleFilter !== "all") {
+        query = query.eq("role", userRoleFilter);
+      }
+
+      const normalizedSearch = userSearch.trim();
+      if (normalizedSearch) {
+        const escapedSearch = normalizedSearch
+          .replace(/\\/g, "\\\\")
+          .replace(/,/g, "\\,")
+          .replace(/%/g, "\\%")
+          .replace(/_/g, "\\_");
+        const likeTerm = `%${escapedSearch}%`;
+
+        query = query.or(
+          `email.ilike.${likeTerm},group_name.ilike.${likeTerm},user_id::text.ilike.${likeTerm}`
+        );
+      }
+
+      const { data, count, error } = await query
+        .order("created_at", { ascending: false })
+        .range(start, end);
 
       if (error) throw error;
 
-      // Parse the response from RPC (JSON)
-      // The RPC returns { users: [...], total_count: number }
-      const result = data as unknown as { users: UserProfile[], total_count: number };
-
       if (!mounted.current) return;
 
-      if (result && result.users) {
-        setUsers(result.users);
-        setTotalUserCount(Number(result.total_count));
-      } else {
-        setUsers([]);
-        setTotalUserCount(0);
-      }
+      setUsers((data as UserProfile[]) || []);
+      setTotalUserCount(count || 0);
     } catch (error) {
       if (!mounted.current) return;
       console.error("Error fetching users:", error);
@@ -402,7 +417,7 @@ const AdminPanel = () => {
     } finally {
       if (mounted.current) setLoadingUsers(false);
     }
-  }, [currentPage]);
+  }, [currentPage, userRoleFilter, userSearch]);
 
   // Fetch producer requests
   const fetchProducerRequests = useCallback(async () => {
@@ -443,7 +458,18 @@ const AdminPanel = () => {
       fetchUsers();
       fetchProducerRequests();
     }
-  }, [isAdmin, activeTab, currentPage, fetchUsers, fetchProducerRequests]);
+  }, [isAdmin, activeTab, fetchUsers, fetchProducerRequests]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [userSearch, userRoleFilter]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalUserCount / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalUserCount, currentPage]);
 
   const handleLogout = async () => {
     await signOut();
@@ -925,23 +951,12 @@ const AdminPanel = () => {
     }
   };
 
-  const filteredUsers = users.filter((userProfile) => {
-    const roleMatch = userRoleFilter === "all" || userProfile.role === userRoleFilter;
-    const query = userSearch.trim().toLowerCase();
-
-    if (!query) return roleMatch;
-
-    return roleMatch && [
-      userProfile.email || "",
-      userProfile.group_name || "",
-      userProfile.user_id,
-    ].some((value) => value.toLowerCase().includes(query));
-  });
-
   // Force delete user function
   // Force redeploy: Clean build cache trigger
   const handleForceDeleteUser = async () => {
     if (!userToDelete) return;
+
+    const deletingUserId = userToDelete.user_id;
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -969,15 +984,20 @@ const AdminPanel = () => {
         throw new Error(result?.error || "Failed to delete user");
       }
 
+      // Optimistic UI update so deleted users disappear immediately.
+      setUsers((prev) => prev.filter((profile) => profile.user_id !== deletingUserId));
+      setTotalUserCount((prev) => Math.max(0, prev - 1));
+
       toast({
         title: "User Deleted",
         description: "User has been removed from Auth and all associated data deleted.",
       });
-      
+
       setDeleteUserModal(false);
       setUserToDelete(null);
-      fetchUsers();
-      fetchStats();
+
+      // Then re-sync against the backend for pagination and counts.
+      await Promise.all([fetchUsers(), fetchStats()]);
     } catch (error) {
       console.error("Error deleting user:", error);
       toast({
@@ -1758,7 +1778,7 @@ const AdminPanel = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map((userProfile) => (
+                      {users.map((userProfile) => (
                         <tr key={userProfile.user_id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
                           <td className="p-4 text-muted-foreground text-sm font-mono">
                             {userProfile.user_id.slice(0, 8)}...
@@ -1824,10 +1844,10 @@ const AdminPanel = () => {
                           </td>
                         </tr>
                       ))}
-                      {filteredUsers.length === 0 && (
+                      {users.length === 0 && (
                         <tr>
                           <td colSpan={6} className="p-6 text-center text-muted-foreground">
-                            No users match your search/filter.
+                            No users found for the current filters.
                           </td>
                         </tr>
                       )}
