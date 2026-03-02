@@ -43,7 +43,7 @@ serve(async (req) => {
       throw new Error("Only admins can delete users");
     }
 
-    const { user_id, security_key } = await req.json();
+    const { user_id, profile_id, security_key } = await req.json();
 
     // Validate Security Key
     const validKey = Deno.env.get("ADMIN_ACTION_KEY");
@@ -67,8 +67,22 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Delete the user from Auth (this will cascade delete the profile if set up correctly,
-    // but the client-side code handles manual deletion of related records for safety)
+    // Remove profile record explicitly to handle environments with legacy schema drift
+    // where profiles.user_id may not cascade on auth.users deletion.
+    const profileDeleteQuery = supabaseAdmin.from("profiles").delete();
+    const { error: profileDeleteError } = profile_id
+      ? await profileDeleteQuery.or(`user_id.eq.${user_id},id.eq.${profile_id}`)
+      : await profileDeleteQuery.eq("user_id", user_id);
+
+    if (profileDeleteError) {
+      console.error("Delete profile error:", profileDeleteError);
+      return new Response(
+        JSON.stringify({ error: profileDeleteError.message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Delete the user from Auth
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
       user_id
     );

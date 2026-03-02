@@ -61,6 +61,22 @@ export default async function handler(req, res) {
     }
   }
 
+  // Clean up profile records explicitly before deleting auth user.
+  // Some environments have legacy schema drift where profiles.user_id is not
+  // enforced with ON DELETE CASCADE, which can leave orphaned records visible
+  // in the admin dashboard after auth deletion.
+  const profileDeleteQuery = supabaseAdmin
+    .from("profiles")
+    .delete();
+
+  const { error: profileDeleteError } = profileId
+    ? await profileDeleteQuery.or(`user_id.eq.${userId},id.eq.${profileId}`)
+    : await profileDeleteQuery.eq("user_id", userId);
+
+  if (profileDeleteError) {
+    return res.status(400).json({ error: profileDeleteError.message });
+  }
+
   const { error: requestsError } = await supabaseAdmin
     .from("producer_requests")
     .delete()
