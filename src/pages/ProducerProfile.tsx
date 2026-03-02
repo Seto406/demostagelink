@@ -55,7 +55,7 @@ interface Show {
   city: string | null;
   poster_url: string | null;
   production_status: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   producer?: any;
 }
 
@@ -625,12 +625,12 @@ const ProducerProfile = () => {
             <Link to="/directory" className="text-secondary hover:text-secondary/80 text-sm mb-4 inline-block">
               ← Back to Directory
             </Link>
-            
+
             <div className="bg-card border border-secondary/20 p-8 md:p-12 rounded-2xl" data-tour="profile-header">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shrink-0 border-2 border-secondary/30">
                   {displayLogo ? (
-                    <img 
+                    <img
                       src={displayLogo}
                       alt={displayName || "Producer"}
                       className="w-full h-full object-cover"
@@ -641,7 +641,7 @@ const ProducerProfile = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex-1 w-full">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                       <div>
@@ -741,13 +741,13 @@ const ProducerProfile = () => {
                         ) : null
                       )}
                   </div>
-                  
+
                   {displayDescription && (
                     <p className="text-muted-foreground mb-6 max-w-2xl">
                       {displayDescription}
                     </p>
                   )}
-                  
+
                   <div className="flex flex-wrap gap-6 text-sm">
                     {producer.founded_year && (
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -764,11 +764,11 @@ const ProducerProfile = () => {
                       <span>{followingCount} Following</span>
                     </div>
                   </div>
-                  
+
                   {(producer.facebook_url || producer.instagram_url) && (
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
                       {producer.facebook_url && (
-                        <a 
+                        <a
                           href={`/external-redirect?url=${encodeURIComponent(producer.facebook_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -779,7 +779,7 @@ const ProducerProfile = () => {
                         </a>
                       )}
                       {producer.instagram_url && (
-                        <a 
+                        <a
                           href={`/external-redirect?url=${encodeURIComponent(producer.instagram_url)}`}
                           target="_blank"
                           rel="noopener noreferrer"

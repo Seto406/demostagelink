@@ -360,7 +360,7 @@ export const EditProducerProfileDialog = ({
       clearDraft();
       onSuccess();
       onOpenChange(false);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     } catch (error: any) {
       console.error("Error updating profile:", error);
       // Handle conflict errors (409 Conflict or 23505 Unique Violation)

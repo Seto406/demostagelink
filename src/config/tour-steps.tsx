@@ -9,6 +9,7 @@ interface BasicVsPremiumProps {
 }
 
 // Helper for "Basic vs Premium" content
+// eslint-disable-next-line react-refresh/only-export-components
 const BasicVsPremiumContent = ({
   featureName,
   basicPoints,
@@ -49,6 +50,7 @@ interface MutualBenefitProps {
   summary: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 const MutualBenefitContent = ({
   title,
   benefits,

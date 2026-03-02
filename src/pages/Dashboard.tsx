@@ -318,7 +318,7 @@ const Dashboard = () => {
 
           if (aborted) return;
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
           followersWithProfiles = (followsData || []).map((f: any) => ({
             id: f.id,
             follower_id: f.follower_id,

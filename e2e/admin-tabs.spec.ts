@@ -9,16 +9,16 @@ test('Admin Panel - New vs Edited Shows', async ({ page }) => {
 
   // 2. Inject Mock Admin User via window object (Bypassing Auth0/Supabase Auth)
   await page.addInitScript(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     (window as any).PlaywrightTest = true;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     (window as any).PlaywrightUser = {
       id: 'admin-user-id',
       aud: 'authenticated',
       role: 'authenticated',
       email: 'admin@example.com',
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     (window as any).PlaywrightProfile = {
       id: 'admin-profile-id',
       user_id: 'admin-user-id',
