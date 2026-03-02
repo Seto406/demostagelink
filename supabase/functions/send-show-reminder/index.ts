@@ -13,6 +13,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+interface EmailSendResult {
+  email: string;
+  show: string;
+  status: number;
+  id?: string;
+  error?: string;
+}
+
 interface Show {
   id: string;
   title: string;
@@ -33,6 +41,10 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const { showId } = await req.json().catch(() => ({}));
+
+    if (!RESEND_API_KEY) {
+      throw new Error("Missing RESEND_API_KEY");
+    }
 
     // 1. Authentication & Authorization
     const authHeader = req.headers.get("Authorization");
@@ -167,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      const ticketPromises = (tickets || []).map((ticket) => limit(async () => {
+      const ticketPromises = (tickets || []).map((ticket) => limit(async (): Promise<EmailSendResult | null> => {
         const email = emailMap.get(ticket.user_id);
 
         if (!email) {
@@ -217,6 +229,20 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         const emailData = await emailRes.json();
+
+        if (!emailRes.ok) {
+          const resendError = typeof emailData?.message === "string"
+            ? emailData.message
+            : `Resend returned status ${emailRes.status}`;
+          console.error(`Failed to send reminder email to ${email}:`, resendError);
+          return {
+            email,
+            show: show.title,
+            status: emailRes.status,
+            error: resendError,
+          };
+        }
+
         return {
           email,
           show: show.title,
@@ -225,27 +251,32 @@ const handler = async (req: Request): Promise<Response> => {
         };
       }));
 
-      // After sending to all tickets, update show metadata
-      await Promise.all(ticketPromises);
+      // After sending to all tickets, update show metadata only when all sends succeeded
+      const ticketResults = (await Promise.all(ticketPromises)).filter((result): result is EmailSendResult => result !== null);
+      const failedSends = ticketResults.filter((result) => result.error);
 
-      // Update show metadata to prevent duplicate reminders
-      const currentMetadata = show.seo_metadata || {};
-      const { error: updateError } = await supabase
-        .from("shows")
-        .update({
-            seo_metadata: {
-                ...currentMetadata,
-                reminder_sent: true,
-                reminder_sent_at: new Date().toISOString()
-            }
-        })
-        .eq("id", show.id);
+      if (failedSends.length === 0) {
+        // Update show metadata to prevent duplicate reminders
+        const currentMetadata = show.seo_metadata || {};
+        const { error: updateError } = await supabase
+          .from("shows")
+          .update({
+              seo_metadata: {
+                  ...currentMetadata,
+                  reminder_sent: true,
+                  reminder_sent_at: new Date().toISOString()
+              }
+          })
+          .eq("id", show.id);
 
-      if (updateError) {
-          console.error(`Failed to update reminder status for show ${show.id}:`, updateError);
+        if (updateError) {
+            console.error(`Failed to update reminder status for show ${show.id}:`, updateError);
+        }
+      } else {
+        console.warn(`Skipping reminder_sent flag for show ${show.id}; ${failedSends.length} send(s) failed.`);
       }
 
-      return ticketPromises;
+      return ticketResults;
     });
 
     const resultsNested = await Promise.all(showPromises);
