@@ -464,3 +464,77 @@ This section answers the practical question: **what can be executed end-to-end n
 8. Reminder subscription model + opt-in UI controls.
 9. Reminder scheduler worker (24h/2h) + delivery logs.
 10. Producer funnel query endpoint + baseline dashboard cards.
+
+## 10. All Phases Execution Blueprint (Added)
+
+This section covers **all phases** with an execution-ready sequence so teams can move beyond Phase A without re-planning.
+
+### Phase A (Now): Audience Identity & Social Proof
+
+**Build Scope**
+- Profile identity updates (display name, bio, validation).
+- Review visibility upgrades (aggregate rating, review sorting, moderation basics).
+- Social modules (Popular this week, Recently reviewed, Recently listed).
+
+**Release Checklist**
+- [ ] Profile edits + profile social proof card live.
+- [ ] Review sort options + moderation report flow live.
+- [ ] Social modules visible on Home and City discovery pages.
+- [ ] Telemetry for review interactions and module CTR enabled.
+
+**Exit Criteria**
+- Discovery-to-detail CTR increases versus baseline.
+- Review participation rate and review impressions trend up for active shows.
+
+### Phase B (Next): Discovery & Retention
+
+**Build Scope**
+- Recommendation v1 using city, favorites, and behavior data.
+- Follow + reminder notifications (in-app and email fallback).
+- Unified loading/empty/error/retry states across key discovery surfaces.
+
+**Release Checklist**
+- [ ] Recommendation service endpoint + ranked feed placements live.
+- [ ] Reminder subscriptions and scheduler (24h/2h) live.
+- [ ] Follow graph notifications for new shows live.
+- [ ] Shared UX reliability components integrated into top discovery pages.
+
+**Exit Criteria**
+- Reminder opt-in reaches target and opt-out remains within acceptable threshold.
+- 7-day and 30-day return visits improve relative to baseline.
+- Error retry success rate improves on unstable paths.
+
+### Phase C (Then): Producer Growth Tools
+
+**Build Scope**
+- Producer funnel metrics (impression → detail → ticket click).
+- Segment + trend reporting (city, source, new vs returning).
+- Outcome-tied dashboard CTAs with attribution.
+
+**Release Checklist**
+- [ ] Funnel dashboard with filters and weekly trend view live.
+- [ ] Conversion signal cards (reminder uplift, review effect) live.
+- [ ] Producer CTA tracking instrumentation live.
+- [ ] Producer dashboard onboarding guidance for first-time users live.
+
+**Exit Criteria**
+- Weekly active producers using analytics reaches target.
+- Producer CTA adoption correlates with conversion movement.
+- Producer activation improves for new listing creators.
+
+### Cross-Phase Dependencies (Must Stay Green)
+- Event taxonomy and data contracts stable across frontend/backend/data.
+- Notification deliverability monitoring and retry policies active.
+- Query performance budgets enforced for discovery and dashboard surfaces.
+- KPI definitions and dashboards aligned before each phase release gate.
+
+### Practical Delivery Sequence Across All Phases
+1. Finish remaining Phase A social modules and moderation polish.
+2. Ship Phase B recommendation and reminder pipeline with conservative defaults.
+3. Harden reliability states and retention telemetry in the same Phase B window.
+4. Launch Phase C funnel analytics baseline, then iterate with advanced insights.
+
+### Program Governance Cadence
+- Weekly: product-engineering-data KPI review and blocker triage.
+- Bi-weekly: producer feedback interviews tied to dashboard feature usage.
+- Monthly: phase gate review against MVP cutline (must-have vs should-have).
