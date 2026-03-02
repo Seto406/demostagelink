@@ -20,19 +20,36 @@ import Footer from "@/components/layout/Footer";
 interface ScheduleSlot {
   date?: string;
   time?: string;
+  deadline?: string;
 }
 
-const getReservationCutoff = (show: ShowDetails): Date | null => {
-  const metadata = (show.seo_metadata || {}) as { schedule_slots?: ScheduleSlot[] };
-  const slots = Array.isArray(metadata.schedule_slots) ? metadata.schedule_slots : [];
+type DeadlineMode = "automated" | "manual";
 
+const getReservationCutoff = (show: ShowDetails): Date | null => {
+  const metadata = (show.seo_metadata || {}) as { schedule?: ScheduleSlot[]; schedule_slots?: ScheduleSlot[]; deadline_mode?: DeadlineMode };
+  const slots = Array.isArray(metadata.schedule)
+    ? metadata.schedule
+    : Array.isArray(metadata.schedule_slots)
+      ? metadata.schedule_slots
+      : [];
+
+  const deadlineMode = metadata.deadline_mode === "manual" ? "manual" : "automated";
   const candidateDates: Date[] = [];
 
   slots.forEach((slot) => {
     if (!slot?.date) return;
+
+    if (deadlineMode === "manual" && slot.deadline) {
+      const manualDeadline = new Date(slot.deadline);
+      if (!Number.isNaN(manualDeadline.getTime())) {
+        candidateDates.push(manualDeadline);
+        return;
+      }
+    }
+
     const time = slot.time && /^\d{2}:\d{2}$/.test(slot.time) ? slot.time : "23:59";
-    const parsed = new Date(`${slot.date}T${time}:00`);
-    if (!Number.isNaN(parsed.getTime())) candidateDates.push(parsed);
+    const automatedDeadline = new Date(`${slot.date}T${time}:00`);
+    if (!Number.isNaN(automatedDeadline.getTime())) candidateDates.push(automatedDeadline);
   });
 
   if (candidateDates.length === 0 && show.date) {
