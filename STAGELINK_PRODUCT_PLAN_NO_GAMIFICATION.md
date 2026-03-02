@@ -351,3 +351,116 @@
 1. StageLink can instrument outbound ticket-click events consistently across show detail experiences.
 2. Existing favorites and city-based discovery data are available for recommendation seeding.
 3. Notification infrastructure can support at least in-app delivery and one fallback channel (email).
+
+## 9. Execution Plan: What Can Be Delivered Fully
+
+This section answers the practical question: **what can be executed end-to-end now** with clear ownership and done criteria.
+
+### Execution Principle
+- Prioritize work that has direct conversion impact, limited external dependencies, and measurable outcomes within 90 days.
+- Ship in vertical slices (schema/API/UI/telemetry together) instead of layer-by-layer handoffs.
+
+### Workstreams We Can Execute Fully (End-to-End)
+
+#### Workstream 1: Audience Identity + Review Visibility (Phase A)
+**Can be delivered fully:** Yes.
+
+**Includes**
+- Profile fields: display name + bio + validation.
+- Review sorting (most recent/most helpful/hybrid default).
+- Review count + rating prominence on show and profile surfaces.
+
+**Why this is fully executable now**
+- Uses existing profile/review foundations.
+- No blocking third-party dependency.
+- Impact can be measured quickly through review visibility and click behavior.
+
+**Definition of Done**
+- Migrations applied.
+- APIs and UI components shipped.
+- Telemetry events available in analytics.
+- QA scenarios pass for create/edit/view/sort/report flows.
+
+#### Workstream 2: Social Discovery Modules (Phase A)
+**Can be delivered fully:** Yes.
+
+**Includes**
+- Recently listed module.
+- Recently reviewed module.
+- Popular this week module with weighted ranking + editorial fallback.
+
+**Why this is fully executable now**
+- Inputs already exist (shows, favorites/clicks, reviews).
+- Modules can be implemented with current card and feed UI patterns.
+
+**Definition of Done**
+- Daily refresh/ranking job running.
+- Module APIs stable and paginated.
+- Home + city surfaces integrated.
+- Empty states and fallback logic validated.
+
+#### Workstream 3: Reminder Notifications (Phase B subset)
+**Can be delivered fully:** Yes (MVP scope).
+
+**Includes**
+- Reminder opt-in from show/favorites.
+- Scheduled sends at 24h and 2h.
+- In-app notification + email fallback.
+
+**Why this is fully executable now**
+- Existing notification and email function patterns are available.
+- Scheduling is deterministic and does not require advanced ML.
+
+**Definition of Done**
+- Subscription table + delivery logs implemented.
+- Reminder jobs running reliably.
+- User controls for opt-in/opt-out functional.
+- Delivery success/failure telemetry visible.
+
+#### Workstream 4: Producer Funnel Baseline (Phase C foundation)
+**Can be delivered fully:** Yes (baseline, not advanced attribution).
+
+**Includes**
+- Funnel metrics: impression → detail view → ticket click.
+- Filters: show/date range/city.
+- Weekly trend cards with simple insights.
+
+**Why this is fully executable now**
+- Uses first-party events already in product flow.
+- Can avoid external partner-level reconciliation in MVP.
+
+**Definition of Done**
+- Event model finalized and documented.
+- Aggregation queries power dashboard charts.
+- Producers can filter and export baseline insights.
+- Metric definitions aligned across product/data.
+
+### Workstreams That Are Partial Now (Need Follow-on)
+- Advanced recommendation modeling beyond rules + lightweight scoring.
+- Multi-touch attribution requiring external ticketing partner integrations.
+- Predictive producer recommendations based on larger historical datasets.
+
+### Recommended Execution Sequence (12-Week)
+- **Weeks 1–3:** Workstream 1 (Identity + Reviews).
+- **Weeks 3–5:** Workstream 2 (Social Modules).
+- **Weeks 5–8:** Workstream 3 (Reminders).
+- **Weeks 8–12:** Workstream 4 (Producer Funnel Baseline).
+
+### Team Ownership Model
+- **Product:** scope, KPI definitions, release gates.
+- **Frontend:** profile/review UX, modules, reminder controls, producer dashboard views.
+- **Backend:** APIs, ranking logic, scheduler, notification fanout, analytics endpoints.
+- **Data:** event schema, scoring tables, aggregation jobs, KPI dashboards.
+- **QA:** scenario coverage, state reliability, regression suite for discovery and notifications.
+
+### Immediate Next 10 Tickets (Execution Ready)
+1. Profile schema migration (display_name, bio, constraints).
+2. Profile settings form update with validation and save states.
+3. Review sorting API/query params + hybrid default ranking.
+4. Show details review block redesign (rating + helpfulness metadata).
+5. “Recently listed” API + UI module integration.
+6. “Recently reviewed” API + UI module integration.
+7. “Popular this week” weighted scoring job + API.
+8. Reminder subscription model + opt-in UI controls.
+9. Reminder scheduler worker (24h/2h) + delivery logs.
+10. Producer funnel query endpoint + baseline dashboard cards.
