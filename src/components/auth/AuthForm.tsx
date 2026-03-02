@@ -250,8 +250,10 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
       } else {
         if (rememberMe) {
           localStorage.setItem("rememberedLoginEmail", email);
+          localStorage.setItem("rememberedLoginPassword", password);
         } else {
           localStorage.removeItem("rememberedLoginEmail");
+          localStorage.removeItem("rememberedLoginPassword");
         }
 
         const { error } = await signIn(email, password);
@@ -313,8 +315,15 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
     }
 
     const rememberedEmail = localStorage.getItem("rememberedLoginEmail");
+    const rememberedPassword = localStorage.getItem("rememberedLoginPassword");
+
     if (rememberedEmail) {
       setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+
+    if (rememberedPassword) {
+      setPassword(rememberedPassword);
       setRememberMe(true);
     }
   }, [authMode]);
