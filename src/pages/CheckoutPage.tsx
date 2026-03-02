@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, CreditCard, Lock, Ticket, Upload, Loader2, QrCode, ZoomIn, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,9 +18,11 @@ import Footer from "@/components/layout/Footer";
 
 
 interface ScheduleSlot {
+  id?: string;
   date?: string;
   time?: string;
   deadline?: string;
+  seat_limit?: number;
 }
 
 type DeadlineMode = "automated" | "manual";
@@ -63,6 +65,7 @@ const getReservationCutoff = (show: ShowDetails): Date | null => {
 
 const CheckoutPage = () => {
   const { showId } = useParams<{ showId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [show, setShow] = useState<ShowDetails | null>(null);
@@ -76,6 +79,8 @@ const CheckoutPage = () => {
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(searchParams.get("slotId"));
+  const [slotReservations, setSlotReservations] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Cleanup preview URL on unmount or change
@@ -218,6 +223,62 @@ const CheckoutPage = () => {
     setPaymentProofPreview(null);
   };
 
+
+
+  const showSlots = (() => {
+    const metadata = (show?.seo_metadata || {}) as { schedule?: ScheduleSlot[] };
+    const slots = Array.isArray(metadata.schedule) ? metadata.schedule : [];
+    return slots
+      .filter((slot) => !!slot?.date)
+      .map((slot, index) => ({
+        id: slot.id || `${slot.date || "date"}-${slot.time || "time"}-${index}`,
+        date: slot.date || "",
+        time: slot.time || "",
+        seatLimit: typeof slot.seat_limit === "number" && slot.seat_limit > 0 ? slot.seat_limit : 50,
+      }));
+  })();
+
+  useEffect(() => {
+    if (!show?.id || showSlots.length === 0) {
+      setSlotReservations({});
+      return;
+    }
+
+    const fetchCounts = async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("slot_id")
+        .eq("show_id", show.id)
+        .in("status", ["pending", "confirmed"]);
+
+      if (error) {
+        console.error("Failed fetching slot reservations", error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      for (const row of data || []) {
+        const id = (row as { slot_id?: string | null }).slot_id;
+        if (!id) continue;
+        counts[id] = (counts[id] || 0) + 1;
+      }
+      setSlotReservations(counts);
+    };
+
+    fetchCounts();
+    const timer = window.setInterval(fetchCounts, 10000);
+    return () => window.clearInterval(timer);
+  }, [show?.id, showSlots.length]);
+
+  useEffect(() => {
+    if (showSlots.length === 1) {
+      setSelectedSlotId(showSlots[0].id);
+      return;
+    }
+
+    if (selectedSlotId && showSlots.some((slot) => slot.id === selectedSlotId)) return;
+    setSelectedSlotId(showSlots.length > 0 ? showSlots[0].id : null);
+  }, [showSlots, selectedSlotId]);
   const handleManualSubmit = async () => {
     if (!show || !show.price) return;
 
@@ -235,6 +296,20 @@ const CheckoutPage = () => {
     if (!user && (!guestName || !guestEmail)) {
         toast.error("Please provide your name and email.");
         return;
+    }
+
+    if (showSlots.length > 1 && !selectedSlotId) {
+      toast.error("Please pick a time slot before submitting payment.");
+      return;
+    }
+
+    const chosenSlot = showSlots.find((slot) => slot.id === selectedSlotId);
+    if (chosenSlot) {
+      const seatsLeft = chosenSlot.seatLimit - (slotReservations[chosenSlot.id] || 0);
+      if (seatsLeft <= 0) {
+        toast.error("Selected time slot is already sold out.");
+        return;
+      }
     }
 
     setProcessing(true);
@@ -264,7 +339,9 @@ const CheckoutPage = () => {
                 price: reservationFee,
                 proof_url: proofUrl,
                 guest_email: user?.email || guestEmail,
-                guest_name: guestName
+                guest_name: guestName,
+                slot_id: chosenSlot?.id || null,
+                slot_label: chosenSlot ? `${chosenSlot.date} ${chosenSlot.time || ""}`.trim() : null
             }
         });
 
@@ -376,6 +453,29 @@ const CheckoutPage = () => {
                         )}
                         {reservationCutoff && (
                             <p className="text-xs text-muted-foreground">Reservations close on {reservationCutoff.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}.</p>
+                        )}
+                        {showSlots.length > 0 && (
+                          <div className="space-y-2 pt-2">
+                            <Label>Time Slot</Label>
+                            <div className="grid gap-2">
+                              {showSlots.map((slot) => {
+                                const left = slot.seatLimit - (slotReservations[slot.id] || 0);
+                                const soldOut = left <= 0;
+                                return (
+                                  <button
+                                    key={slot.id}
+                                    type="button"
+                                    onClick={() => !soldOut && setSelectedSlotId(slot.id)}
+                                    disabled={soldOut}
+                                    className={`rounded-md border p-2 text-left text-sm ${selectedSlotId === slot.id ? "border-primary bg-primary/10" : "border-border"} ${soldOut ? "opacity-50" : "hover:bg-muted"}`}
+                                  >
+                                    <div>{new Date(`${slot.date}T${slot.time || "19:00"}`).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</div>
+                                    <div className="text-xs text-muted-foreground">{soldOut ? "Sold out" : `${left} seats left`}</div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                     </CardContent>
                 </Card>
@@ -535,7 +635,7 @@ const CheckoutPage = () => {
                             className="w-full text-lg h-12"
                             size="lg"
                             onClick={handleManualSubmit}
-                            disabled={reservationClosed || processing || !proofFile || (!user && (!guestName || !guestEmail))}
+                            disabled={reservationClosed || processing || !proofFile || (showSlots.length > 1 && !selectedSlotId) || (!user && (!guestName || !guestEmail))}
                         >
                             {processing ? (
                                 <>

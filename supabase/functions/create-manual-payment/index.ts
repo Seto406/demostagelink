@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { show_id, user_id, proof_url, guest_email, guest_name } = await req.json();
+    const { show_id, user_id, proof_url, guest_email, guest_name, slot_id, slot_label } = await req.json();
 
     if (!show_id) throw new Error("Missing show_id");
     if (!proof_url) throw new Error("Missing proof of payment");
@@ -24,7 +24,7 @@ serve(async (req) => {
     const { data: show, error: showError } = await supabaseAdmin
         .from("shows")
         .select(`
-            id, title, price, reservation_fee, producer_id, status,
+            id, title, price, reservation_fee, producer_id, status, seo_metadata,
             profiles:producer_id ( niche )
         `)
         .eq("id", show_id)
@@ -32,6 +32,35 @@ serve(async (req) => {
 
     if (showError || !show) throw new Error("Show not found");
     if (show.status !== 'approved') throw new Error("Show not available");
+
+    const scheduleSlots = Array.isArray((show.seo_metadata as Record<string, unknown> | null)?.schedule)
+      ? (((show.seo_metadata as Record<string, unknown>).schedule as Record<string, unknown>[]))
+      : [];
+
+    if (scheduleSlots.length > 1 && !slot_id) {
+      throw new Error("A time slot is required for this show.");
+    }
+
+    if (slot_id) {
+      const targetSlot = scheduleSlots.find((slot) => slot?.id === slot_id);
+      if (!targetSlot) throw new Error("Selected slot no longer exists.");
+
+      const seatLimit = typeof targetSlot.seat_limit === "number" && targetSlot.seat_limit > 0
+        ? targetSlot.seat_limit
+        : 50;
+
+      const { count: reservedCount, error: slotCountError } = await supabaseAdmin
+        .from("tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("show_id", show.id)
+        .eq("slot_id", slot_id)
+        .in("status", ["pending", "confirmed"]);
+
+      if (slotCountError) throw slotCountError;
+      if ((reservedCount || 0) >= seatLimit) {
+        throw new Error("Selected slot is already sold out.");
+      }
+    }
 
     let fee = 0;
     if (show.reservation_fee) {
@@ -94,7 +123,9 @@ serve(async (req) => {
         status: "pending", // Pending approval
         payment_id: payment.id,
         customer_email: guest_email,
-        customer_name: guest_name
+        customer_name: guest_name,
+        slot_id: slot_id || null,
+        slot_label: slot_label || null,
       })
       .select()
       .single();

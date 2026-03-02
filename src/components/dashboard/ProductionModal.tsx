@@ -47,9 +47,11 @@ interface CastMember {
 }
 
 interface ScheduleSlot {
+  id: string;
   date: string;
   time: string;
   deadline?: string;
+  seat_limit?: number;
 }
 
 type DeadlineMode = "automated" | "manual";
@@ -96,7 +98,7 @@ const convertRangeToSlots = (start: string, end: string, selectedDays: string[])
 
     // Safety check to prevent infinite loops if dates are invalid
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
-        return [{ date: start || "", time: "" }];
+        return [{ id: crypto.randomUUID(), date: start || "", time: "" }];
     }
 
     // Limit the loop to avoid performance issues (e.g. max 365 days)
@@ -105,12 +107,13 @@ const convertRangeToSlots = (start: string, end: string, selectedDays: string[])
         if (safetyCounter++ > 365) break;
         if (targetDays.includes(d.getDay())) {
             slots.push({
+                id: crypto.randomUUID(),
                 date: format(d, "yyyy-MM-dd"),
                 time: ""
             });
         }
     }
-    return slots.length > 0 ? slots : [{ date: start, time: "" }];
+    return slots.length > 0 ? slots : [{ id: crypto.randomUUID(), date: start, time: "" }];
 };
 
 export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: ProductionModalProps & { showToEdit?: Tables<"shows"> }) {
@@ -123,7 +126,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [description, setDescription] = useState("");
 
   // Schedule State (New List Format)
-  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ date: "", time: "", deadline: "" }]);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
   const [deadlineMode, setDeadlineMode] = useState<DeadlineMode>("automated");
 
   const [venue, setVenue] = useState("");
@@ -183,7 +186,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const resetForm = useCallback(() => {
     setTitle("");
     setDescription("");
-    setScheduleSlots([{ date: "", time: "", deadline: "" }]);
+    setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
     setDeadlineMode("automated");
     setVenue("");
     setCity("");
@@ -244,7 +247,12 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
       if (Array.isArray(scheduleData)) {
           const parsedSlots = scheduleData as ScheduleSlot[];
-          setScheduleSlots(parsedSlots.map((slot) => ({ ...slot, deadline: typeof slot?.deadline === "string" ? slot.deadline : "" })));
+          setScheduleSlots(parsedSlots.map((slot) => ({
+            ...slot,
+            id: typeof slot?.id === "string" && slot.id ? slot.id : crypto.randomUUID(),
+            deadline: typeof slot?.deadline === "string" ? slot.deadline : "",
+            seat_limit: typeof slot?.seat_limit === "number" && slot.seat_limit > 0 ? slot.seat_limit : 50,
+          })));
           const hasManualDeadline = parsedSlots.some((slot) => typeof slot?.deadline === "string" && slot.deadline.trim());
           setDeadlineMode(hasManualDeadline ? "manual" : "automated");
       } else if (scheduleData && typeof scheduleData === 'object' && scheduleData.startDate) {
@@ -254,7 +262,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               scheduleData.endDate,
               scheduleData.selectedDays || []
           );
-          setScheduleSlots(convertedSlots.map((slot) => ({ ...slot, deadline: "" })));
+          setScheduleSlots(convertedSlots.map((slot) => ({ ...slot, deadline: "", seat_limit: 50 })));
           setDeadlineMode("automated");
       } else {
           // Fallback to main date column
@@ -280,12 +288,12 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
           // Check if dateStr looks like a single date "yyyy-MM-dd"
           if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-               setScheduleSlots([{ date: dateStr, time: timeStr, deadline: "" }]);
+               setScheduleSlots([{ id: crypto.randomUUID(), date: dateStr, time: timeStr, deadline: "", seat_limit: 50 }]);
                setDeadlineMode("automated");
           } else {
               // Try to parse text date or just default
               // Reset to empty if unstructured
-               setScheduleSlots([{ date: "", time: timeStr, deadline: "" }]);
+               setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: timeStr, deadline: "", seat_limit: 50 }]);
                setDeadlineMode("automated");
           }
       }
@@ -424,12 +432,17 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   // Schedule Handlers
   const handleSlotChange = (index: number, field: keyof ScheduleSlot, value: string) => {
       const newSlots = [...scheduleSlots];
-      newSlots[index] = { ...newSlots[index], [field]: value };
+      if (field === "seat_limit") {
+        const parsed = Number(value);
+        newSlots[index] = { ...newSlots[index], seat_limit: Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1 };
+      } else {
+        newSlots[index] = { ...newSlots[index], [field]: value };
+      }
       setScheduleSlots(newSlots);
   };
 
   const addSlot = () => {
-      setScheduleSlots([...scheduleSlots, { date: "", time: "", deadline: "" }]);
+      setScheduleSlots([...scheduleSlots, { id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
   };
 
   const removeSlot = (index: number) => {
@@ -554,9 +567,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     const validSlots = scheduleSlots
       .filter(s => s.date)
       .map((slot) => ({
+        id: slot.id,
         date: slot.date,
         time: slot.time,
         deadline: deadlineMode === "manual" ? (slot.deadline || "") : "",
+        seat_limit: slot.seat_limit && slot.seat_limit > 0 ? slot.seat_limit : 50,
       }));
 
     // Sort slots by date
@@ -789,7 +804,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   </div>
 
                   {scheduleSlots.map((slot, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_130px_1fr_auto] gap-2 items-end">
+                      <div key={slot.id} className="grid grid-cols-1 md:grid-cols-[1fr_130px_120px_1fr_auto] gap-2 items-end">
                            <div className="space-y-1 flex-1">
                                <Label className="text-xs">Date</Label>
                                <Input
@@ -808,6 +823,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                                   onChange={(e) => handleSlotChange(index, 'time', e.target.value)}
                                   className="bg-background border-secondary/30"
                                />
+                           </div>
+                           <div className="space-y-1 w-[120px]">
+                              <Label className="text-xs">Seat Limit</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={slot.seat_limit ?? 50}
+                                onChange={(e) => handleSlotChange(index, 'seat_limit', e.target.value)}
+                                className="bg-background border-secondary/30"
+                              />
                            </div>
                            <div className="space-y-1">
                               <Label className="text-xs">Deadline</Label>

@@ -951,6 +951,8 @@ export type Database = {
           updated_at: string | null
           user_id: string
           payment_id: string | null
+          slot_id: string | null
+          slot_label: string | null
         }
         Insert: {
           access_code?: string | null
@@ -962,6 +964,8 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           payment_id?: string | null
+          slot_id?: string | null
+          slot_label?: string | null
         }
         Update: {
           access_code?: string | null
@@ -973,6 +977,8 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           payment_id?: string | null
+          slot_id?: string | null
+          slot_label?: string | null
         }
         Relationships: [
           {
