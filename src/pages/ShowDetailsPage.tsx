@@ -21,6 +21,13 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 
+interface SlotMetadata {
+  id?: string;
+  date?: string;
+  time?: string;
+  seat_limit?: number;
+}
+
 const ShowDetailsPage = () => {
   const { user, profile } = useAuth();
   const { id } = useParams<{ id: string }>();
@@ -35,6 +42,8 @@ const ShowDetailsPage = () => {
   const [buyingTicket, setBuyingTicket] = useState(false);
   const [isTicketClaimed, setIsTicketClaimed] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [slotReservations, setSlotReservations] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setImageLoading(true);
@@ -124,6 +133,71 @@ const ShowDetailsPage = () => {
 
     checkTicketStatus();
   }, [user, show, profile]);
+
+  const scheduleSlots = (() => {
+    const raw = (show as unknown as { seo_metadata?: { schedule?: SlotMetadata[] } })?.seo_metadata?.schedule;
+    if (!Array.isArray(raw)) return [];
+
+    return raw
+      .filter((slot) => !!slot?.date)
+      .map((slot, index) => {
+        const fallbackId = `${slot.date || "date"}-${slot.time || "time"}-${index}`;
+        return {
+          id: slot.id || fallbackId,
+          date: slot.date || "",
+          time: slot.time || "",
+          seatLimit: typeof slot.seat_limit === "number" && slot.seat_limit > 0 ? slot.seat_limit : 50,
+        };
+      });
+  })();
+
+  useEffect(() => {
+    if (!show?.id || scheduleSlots.length === 0) {
+      setSlotReservations({});
+      return;
+    }
+
+    const fetchReservations = async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("slot_id")
+        .eq("show_id", show.id)
+        .in("status", ["pending", "confirmed"]);
+
+      if (error) {
+        console.error("Failed to fetch slot reservations", error);
+        return;
+      }
+
+      const counts: Record<string, number> = {};
+      for (const row of data || []) {
+        const slotId = (row as { slot_id?: string | null }).slot_id;
+        if (!slotId) continue;
+        counts[slotId] = (counts[slotId] || 0) + 1;
+      }
+      setSlotReservations(counts);
+    };
+
+    fetchReservations();
+    const timer = window.setInterval(fetchReservations, 10000);
+    return () => window.clearInterval(timer);
+  }, [show?.id, scheduleSlots.length]);
+
+  useEffect(() => {
+    if (scheduleSlots.length === 0) {
+      setSelectedSlotId(null);
+      return;
+    }
+
+    if (scheduleSlots.length === 1) {
+      setSelectedSlotId(scheduleSlots[0].id);
+      return;
+    }
+
+    if (!selectedSlotId || !scheduleSlots.some((slot) => slot.id === selectedSlotId)) {
+      setSelectedSlotId(scheduleSlots[0].id);
+    }
+  }, [scheduleSlots, selectedSlotId]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -302,6 +376,20 @@ END:VCALENDAR`;
       trackEvent('ticket_click', groupId, show.id);
     }
 
+    if (scheduleSlots.length > 1 && !selectedSlotId) {
+      toast.error("Please select a showtime first");
+      return;
+    }
+
+    const selectedSlot = scheduleSlots.find((slot) => slot.id === selectedSlotId);
+    if (selectedSlot) {
+      const seatsLeft = selectedSlot.seatLimit - (slotReservations[selectedSlot.id] || 0);
+      if (seatsLeft <= 0) {
+        toast.error("Selected timeslot is sold out");
+        return;
+      }
+    }
+
     if (show?.price === 0) {
       if (!user || !profile) {
         toast.error("Please log in to get a ticket");
@@ -316,7 +404,8 @@ END:VCALENDAR`;
           .insert({
             user_id: profile.id,
             show_id: show.id,
-            status: "confirmed"
+            status: "confirmed",
+            slot_id: selectedSlot?.id || null
           });
 
         if (error) throw error;
@@ -333,7 +422,8 @@ END:VCALENDAR`;
     }
 
     // Navigate to checkout page for paid tickets
-    navigate(`/checkout/${show.id}`);
+    const slotParam = selectedSlot?.id ? `?slotId=${encodeURIComponent(selectedSlot.id)}` : "";
+    navigate(`/checkout/${show.id}${slotParam}`);
   };
 
   return (
@@ -499,6 +589,30 @@ END:VCALENDAR`;
                                 </Button>
                             </a>
                         </div>
+                    )}
+
+                    {scheduleSlots.length > 0 && (
+                      <div className="w-full rounded-lg border border-white/20 bg-white/5 p-4 space-y-2">
+                        <p className="text-xs uppercase tracking-wider text-white/70">Showtime & Seats</p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {scheduleSlots.map((slot) => {
+                            const left = slot.seatLimit - (slotReservations[slot.id] || 0);
+                            const soldOut = left <= 0;
+                            return (
+                              <button
+                                key={slot.id}
+                                type="button"
+                                onClick={() => !soldOut && setSelectedSlotId(slot.id)}
+                                disabled={soldOut}
+                                className={`rounded-md border px-3 py-2 text-left transition ${selectedSlotId === slot.id ? "border-primary bg-primary/10" : "border-white/20 bg-white/5"} ${soldOut ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10"}`}
+                              >
+                                <p className="text-sm font-medium text-white">{new Date(`${slot.date}T${slot.time || "19:00"}`).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                                <p className="text-xs text-white/70">{soldOut ? "Sold out" : `${left} seats left`}</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
 
                     {/* Price & Actions */}
