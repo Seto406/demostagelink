@@ -39,3 +39,23 @@ Instead, user value is centered on:
 * Expand analytics beyond basic views/clicks to practical producer insights.
 * Add clearer conversion signals and trend summaries.
 * Strengthen producer-facing calls to action tied to measurable outcomes.
+
+## 5. Polished Feature Idea: Producer-Controlled Deadlines
+Producers should be able to define their own operational deadlines so every schedule reflects real production constraints.
+
+### Problem to Solve
+Producer workflows vary across shows. Some use auto-managed timelines, while others need strict custom cutoffs per schedule.
+
+### Proposed Capability
+* Add a **deadline mode** setting for producers:
+  * **Automated Deadline:** System calculates and applies deadlines using platform rules.
+  * **Manual Deadline:** Producer sets the deadline directly.
+* Make deadline ownership explicit at the schedule level:
+  * Every schedule stores one active deadline.
+  * If automated mode is selected, the deadline is generated and updated by system logic.
+  * If manual mode is selected, the producer controls and edits the deadline.
+
+### Product Value
+* Gives producers control without forcing one rigid workflow.
+* Keeps schedule expectations clear for teams and collaborators.
+* Reduces missed milestones by making deadlines visible and intentional.

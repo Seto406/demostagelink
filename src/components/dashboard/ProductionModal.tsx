@@ -49,7 +49,10 @@ interface CastMember {
 interface ScheduleSlot {
   date: string;
   time: string;
+  deadline?: string;
 }
+
+type DeadlineMode = "automated" | "manual";
 
 const METRO_MANILA_CITIES = [
   "Manila", "Quezon City", "Caloocan", "Las Piñas", "Makati", "Malabon",
@@ -62,6 +65,21 @@ const parseDateLocal = (dateStr: string) => {
     if (!dateStr) return new Date();
     const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day);
+};
+
+
+const getAutomatedDeadline = (slot: ScheduleSlot) => {
+  if (!slot.date) return "";
+  const base = parseDateLocal(slot.date);
+
+  if (slot.time && /^\d{2}:\d{2}$/.test(slot.time)) {
+    const [h, m] = slot.time.split(":").map(Number);
+    base.setHours(h, m, 0, 0);
+  } else {
+    base.setHours(23, 59, 0, 0);
+  }
+
+  return format(base, "yyyy-MM-dd'T'HH:mm");
 };
 
 // Helper function to convert legacy range format to slots
@@ -105,7 +123,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [description, setDescription] = useState("");
 
   // Schedule State (New List Format)
-  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ date: "", time: "" }]);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ date: "", time: "", deadline: "" }]);
+  const [deadlineMode, setDeadlineMode] = useState<DeadlineMode>("automated");
 
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("");
@@ -164,7 +183,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const resetForm = useCallback(() => {
     setTitle("");
     setDescription("");
-    setScheduleSlots([{ date: "", time: "" }]);
+    setScheduleSlots([{ date: "", time: "", deadline: "" }]);
+    setDeadlineMode("automated");
     setVenue("");
     setCity("");
     setNiche("local");
@@ -223,8 +243,10 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       const scheduleData = showToEdit.seo_metadata?.schedule;
 
       if (Array.isArray(scheduleData)) {
-          // New format: direct assignment
-          setScheduleSlots(scheduleData);
+          const parsedSlots = scheduleData as ScheduleSlot[];
+          setScheduleSlots(parsedSlots.map((slot) => ({ ...slot, deadline: typeof slot?.deadline === "string" ? slot.deadline : "" })));
+          const hasManualDeadline = parsedSlots.some((slot) => typeof slot?.deadline === "string" && slot.deadline.trim());
+          setDeadlineMode(hasManualDeadline ? "manual" : "automated");
       } else if (scheduleData && typeof scheduleData === 'object' && scheduleData.startDate) {
           // Legacy format: Convert range to slots
           const convertedSlots = convertRangeToSlots(
@@ -232,7 +254,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               scheduleData.endDate,
               scheduleData.selectedDays || []
           );
-          setScheduleSlots(convertedSlots);
+          setScheduleSlots(convertedSlots.map((slot) => ({ ...slot, deadline: "" })));
+          setDeadlineMode("automated");
       } else {
           // Fallback to main date column
           const dateStr = showToEdit.date || "";
@@ -257,11 +280,13 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
           // Check if dateStr looks like a single date "yyyy-MM-dd"
           if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-               setScheduleSlots([{ date: dateStr, time: timeStr }]);
+               setScheduleSlots([{ date: dateStr, time: timeStr, deadline: "" }]);
+               setDeadlineMode("automated");
           } else {
               // Try to parse text date or just default
               // Reset to empty if unstructured
-               setScheduleSlots([{ date: "", time: timeStr }]);
+               setScheduleSlots([{ date: "", time: timeStr, deadline: "" }]);
+               setDeadlineMode("automated");
           }
       }
 
@@ -404,7 +429,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   };
 
   const addSlot = () => {
-      setScheduleSlots([...scheduleSlots, { date: "", time: "" }]);
+      setScheduleSlots([...scheduleSlots, { date: "", time: "", deadline: "" }]);
   };
 
   const removeSlot = (index: number) => {
@@ -526,7 +551,13 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     if (!duration) duration = null;
 
     // Filter out empty slots
-    const validSlots = scheduleSlots.filter(s => s.date);
+    const validSlots = scheduleSlots
+      .filter(s => s.date)
+      .map((slot) => ({
+        date: slot.date,
+        time: slot.time,
+        deadline: deadlineMode === "manual" ? (slot.deadline || "") : "",
+      }));
 
     // Sort slots by date
     validSlots.sort((a, b) => parseDateLocal(a.date).getTime() - parseDateLocal(b.date).getTime());
@@ -600,6 +631,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         ...restMetadata,
         payment_instructions: paymentInstructions || null,
         schedule: validSlots, // Save the full array of slots
+        deadline_mode: deadlineMode,
         formatted_date: displayDateString, // Save the friendly string
         formatted_show_time: displayTimeString, // Save the friendly time string
         transcript_url: transcriptUrl || null,
@@ -743,8 +775,21 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               </div>
 
               <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Deadline Mode</Label>
+                    <Select value={deadlineMode} onValueChange={(value) => setDeadlineMode(value as DeadlineMode)}>
+                      <SelectTrigger className="bg-background border-secondary/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-secondary/30">
+                        <SelectItem value="automated">Automated (same as schedule time)</SelectItem>
+                        <SelectItem value="manual">Manual (set per schedule)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {scheduleSlots.map((slot, index) => (
-                      <div key={index} className="flex gap-2 items-end">
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_130px_1fr_auto] gap-2 items-end">
                            <div className="space-y-1 flex-1">
                                <Label className="text-xs">Date</Label>
                                <Input
@@ -763,6 +808,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                                   onChange={(e) => handleSlotChange(index, 'time', e.target.value)}
                                   className="bg-background border-secondary/30"
                                />
+                           </div>
+                           <div className="space-y-1">
+                              <Label className="text-xs">Deadline</Label>
+                              <Input
+                                type="datetime-local"
+                                value={deadlineMode === "manual" ? (slot.deadline || "") : getAutomatedDeadline(slot)}
+                                onChange={(e) => handleSlotChange(index, 'deadline', e.target.value)}
+                                disabled={deadlineMode === "automated"}
+                                className="bg-background border-secondary/30"
+                              />
                            </div>
                            <Button
                                 type="button"
