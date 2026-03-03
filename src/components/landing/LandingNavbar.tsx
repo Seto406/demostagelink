@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 import stagelinkLogo from "@/assets/stagelink-logo-mask.png";
 
 const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
@@ -17,6 +19,10 @@ const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: stri
 };
 
 const LandingNavbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const closeMenu = () => setIsMenuOpen(false);
+
   return (
     <motion.header
       initial={{ y: -100 }}
@@ -25,13 +31,12 @@ const LandingNavbar = () => {
       className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-secondary/20"
     >
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-center sm:justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 sm:gap-3">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3" onClick={closeMenu}>
             <img 
               src={stagelinkLogo} 
-              alt=""
-              aria-hidden="true"
+              alt="StageLink logo"
               className="h-8 sm:h-10 w-auto"
             />
             <span className="text-lg sm:text-xl font-sans font-bold text-foreground tracking-tight">
@@ -74,8 +79,64 @@ const LandingNavbar = () => {
                 Explore Shows
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
+
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-secondary/20 py-4 animate-fade-in">
+            <nav className="flex flex-col gap-2">
+              <a
+                href="#features"
+                onClick={(e) => {
+                  scrollToSection(e, "features");
+                  closeMenu();
+                }}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                Features
+              </a>
+              <a
+                href="#pricing"
+                onClick={(e) => {
+                  scrollToSection(e, "pricing");
+                  closeMenu();
+                }}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                Pricing
+              </a>
+              <a
+                href="#faq"
+                onClick={(e) => {
+                  scrollToSection(e, "faq");
+                  closeMenu();
+                }}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                FAQ
+              </a>
+              <Link
+                to="/about"
+                onClick={closeMenu}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                About
+              </Link>
+              <Link to="/login" onClick={closeMenu}>
+                <Button className="mt-2 w-full">Explore Shows</Button>
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </motion.header>
   );

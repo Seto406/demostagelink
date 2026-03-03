@@ -34,17 +34,21 @@ const resolveSupabaseAnonKey = () => {
 
 const SUPABASE_URL = resolveSupabaseUrl()?.trim();
 const SUPABASE_ANON_KEY = resolveSupabaseAnonKey()?.trim();
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!hasSupabaseConfig) {
   const missing = [!SUPABASE_URL && 'VITE_SUPABASE_URL', !SUPABASE_ANON_KEY && 'VITE_SUPABASE_ANON_KEY']
     .filter(Boolean)
     .join(', ');
 
-  throw new Error(
+  console.error(
     `Missing Supabase client configuration (${missing}). ` +
       'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or provide them via window.__APP_CONFIG__).'
   );
 }
+
+const SAFE_SUPABASE_URL = SUPABASE_URL || 'https://invalid-project.supabase.co';
+const SAFE_SUPABASE_ANON_KEY = SUPABASE_ANON_KEY || 'missing-supabase-anon-key';
 
 // Time-Traveler Logic: fetch interceptor to handle clock skew
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -87,7 +91,7 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
   return response;
 };
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export const supabase = createClient<Database>(SAFE_SUPABASE_URL, SAFE_SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
