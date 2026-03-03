@@ -108,6 +108,7 @@ const getGroupName = (show: Show) => {
 interface UserProfile {
   id: string | null;
   user_id: string;
+  username?: string | null;
   email?: string | null;
   role: "audience" | "producer" | "admin";
   group_name: string | null;
@@ -424,6 +425,7 @@ const AdminPanel = () => {
         if (!normalizedSearch) return true;
 
         return (
+          (userProfile.username || "").toLowerCase().includes(normalizedSearch) ||
           (userProfile.email || "").toLowerCase().includes(normalizedSearch) ||
           (userProfile.group_name || "").toLowerCase().includes(normalizedSearch) ||
           userProfile.user_id.toLowerCase().includes(normalizedSearch)
@@ -1884,7 +1886,7 @@ const AdminPanel = () => {
                             aria-label="Select all users"
                           />
                         </th>
-                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium">Username</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Email</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Group Name</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Role</th>
@@ -1910,12 +1912,12 @@ const AdminPanel = () => {
                                     return prev.filter((userId) => userId !== userProfile.user_id);
                                   });
                                 }}
-                                aria-label={`Select user ${userProfile.user_id}`}
+                                aria-label={`Select user ${userProfile.username || userProfile.user_id}`}
                               />
                             ) : null}
                           </td>
-                          <td className="p-4 text-muted-foreground text-sm font-mono">
-                            {userProfile.user_id.slice(0, 8)}...
+                          <td className="p-4 text-muted-foreground text-sm">
+                            {userProfile.username || "—"}
                           </td>
                           <td className="p-4 text-foreground text-sm">
                             {userProfile.email || "—"}
@@ -2262,7 +2264,7 @@ const AdminPanel = () => {
                 <div className="space-y-1 mt-2 max-h-40 overflow-y-auto">
                   {usersToDelete.map((userProfile) => (
                     <div key={userProfile.user_id} className="text-sm">
-                      <p className="text-foreground font-medium">{userProfile.group_name || "No group name"}</p>
+                      <p className="text-foreground font-medium">{userProfile.username || userProfile.group_name || "No username"}</p>
                       <p className="text-xs text-muted-foreground font-mono">{userProfile.user_id}</p>
                     </div>
                   ))}
