@@ -86,7 +86,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: requestsError.message });
   }
 
-  const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  // Force hard-delete so the auth UID is removed entirely.
+  // Supabase's default behavior can soft-delete and leave a tombstoned UID.
+  const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId, false);
   if (deleteUserError) {
     return res.status(400).json({ error: deleteUserError.message });
   }
