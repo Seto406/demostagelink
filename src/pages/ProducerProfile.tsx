@@ -658,77 +658,77 @@ const ProducerProfile = () => {
                           )}
                       </div>
 
-                      <Button
-                        onClick={handleFollow}
-                        disabled={followLoading}
-                        variant={isFollowing ? "outline" : "default"}
-                        className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
-                        data-tour="profile-follow"
-                      >
-                        {followLoading ? (
-                            "Processing..."
-                        ) : isFollowing ? (
-                            <>
-                                <UserCheck className="w-4 h-4 mr-2" />
-                                Following
-                            </>
-                        ) : (
-                            <>
-                                <UserPlus className="w-4 h-4 mr-2" />
-                                Follow
-                            </>
-                        )}
-                      </Button>
-
-                      {user && profile && producer && profile.id !== producer.id && (
-                        profile.role === 'producer' ? (
-                          <Button
-                            onClick={handleCollabRequest}
-                            disabled={collabLoading}
-                            variant="default"
-                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 ml-2"
-                          >
-                            {collabLoading ? (
-                              "Sending..."
-                            ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          onClick={handleFollow}
+                          disabled={followLoading}
+                          variant={isFollowing ? "outline" : "default"}
+                          className={isFollowing ? "border-secondary/50 text-secondary hover:bg-secondary/10" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"}
+                          data-tour="profile-follow"
+                        >
+                          {followLoading ? (
+                              "Processing..."
+                          ) : isFollowing ? (
                               <>
-                                <Handshake className="w-4 h-4 mr-2" />
-                                Send Collab Request
+                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  Following
                               </>
-                            )}
-                          </Button>
-                        ) : profile.role === 'audience' ? (
-                          <>
-                            {hasApplied ? (
-                              applicationStatus === 'active' ? (
-                                <div className="ml-2">
+                          ) : (
+                              <>
+                                  <UserPlus className="w-4 h-4 mr-2" />
+                                  Follow
+                              </>
+                          )}
+                        </Button>
+
+                        {user && profile && producer && profile.id !== producer.id && (
+                          profile.role === 'producer' ? (
+                            <Button
+                              onClick={handleCollabRequest}
+                              disabled={collabLoading}
+                              variant="default"
+                              className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            >
+                              {collabLoading ? (
+                                "Sending..."
+                              ) : (
+                                <>
+                                  <Handshake className="w-4 h-4 mr-2" />
+                                  Send Collab Request
+                                </>
+                              )}
+                            </Button>
+                          ) : profile.role === 'audience' ? (
+                            <>
+                              {hasApplied ? (
+                                applicationStatus === 'active' ? (
                                   <Badge variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/30 border-primary/20 h-9 px-3">
                                     Member
                                   </Badge>
-                                </div>
+                                ) : (
+                                  <Button
+                                    disabled
+                                    variant="outline"
+                                    className="border-primary/50 text-primary hover:bg-primary/10"
+                                  >
+                                    Application {applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}
+                                  </Button>
+                                )
                               ) : (
                                 <Button
-                                  disabled
+                                  onClick={handleJoinRequest}
+                                  disabled={joinLoading || hasApplied}
                                   variant="outline"
-                                  className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
+                                  className="border-primary/50 text-primary hover:bg-primary/10"
                                 >
-                                  Application {applicationStatus ? applicationStatus.charAt(0).toUpperCase() + applicationStatus.slice(1) : 'Pending'}
+                                  <UserPlus className="w-4 h-4 mr-2" />
+                                  Join as Member
                                 </Button>
-                              )
-                            ) : (
-                              <Button
-                                onClick={handleJoinRequest}
-                                disabled={joinLoading || hasApplied}
-                                variant="outline"
-                                className="border-primary/50 text-primary hover:bg-primary/10 ml-2"
-                              >
-                                <UserPlus className="w-4 h-4 mr-2" />
-                                Join as Member
-                              </Button>
-                            )}
-                          </>
-                        ) : null
-                      )}
+                              )}
+                            </>
+                          ) : null
+                        )}
+                      </div>
                   </div>
 
                   {displayDescription && (
