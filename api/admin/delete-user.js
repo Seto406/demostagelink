@@ -90,7 +90,17 @@ export default async function handler(req, res) {
   // Supabase's default behavior can soft-delete and leave a tombstoned UID.
   const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId, false);
   if (deleteUserError) {
-    return res.status(400).json({ error: deleteUserError.message });
+    const normalizedMessage = (deleteUserError.message || "").toLowerCase();
+    const userAlreadyMissing =
+      normalizedMessage.includes("user not found") ||
+      normalizedMessage.includes("not found");
+
+    // Treat already-missing auth records as a successful cleanup.
+    // This allows admins to remove stale profile rows that no longer have
+    // matching auth.users entries.
+    if (!userAlreadyMissing) {
+      return res.status(400).json({ error: deleteUserError.message });
+    }
   }
 
   return res.status(200).json({ success: true, message: "User deleted successfully" });
