@@ -22,6 +22,7 @@ const Navbar = () => {
     ? [
         { path: "/feed", label: "Home", icon: House, matchPath: "/feed" },
         ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
+        ...(isAdmin ? [{ path: "/admin", label: "Admin", icon: Shield, matchPath: "/admin" }] : []),
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
         { path: "/favorites", label: "Favorites", icon: Star, matchPath: "/favorites" },
