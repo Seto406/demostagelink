@@ -13,6 +13,12 @@ interface CreateNotificationParams {
   link?: string;
 }
 
+interface NotifyAdminsOfNewUserLoginParams {
+  newUserId: string;
+  username?: string | null;
+  role: "audience" | "producer" | "admin";
+}
+
 export const createNotification = async ({
   userId,
   actorId,
@@ -68,5 +74,44 @@ export const createNotification = async ({
   } catch (error) {
     console.error('Failed to create notification:', error);
     // Don't block the UI if notification fails
+  }
+};
+
+export const notifyAdminsOfNewUserLogin = async ({
+  newUserId,
+  username,
+  role,
+}: NotifyAdminsOfNewUserLoginParams) => {
+  try {
+    const { data: admins, error: adminLookupError } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("role", "admin");
+
+    if (adminLookupError || !admins?.length) {
+      if (adminLookupError) {
+        console.error("Failed to fetch admins for new-user notification:", adminLookupError);
+      }
+      return;
+    }
+
+    const displayName = username?.trim() || "A new user";
+    const title = "New user logged in";
+    const message = `${displayName} just logged in for the first time as ${role}.`;
+
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.user_id,
+          actorId: newUserId,
+          type: "admin_new_user_login",
+          title,
+          message,
+          link: "/admin",
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error("Failed to notify admins of a new user login:", error);
   }
 };
