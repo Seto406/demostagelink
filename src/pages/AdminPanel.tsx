@@ -56,6 +56,7 @@ import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InvitationHub } from "@/components/admin/InvitationHub";
 import { PaymentSettings } from "@/components/admin/PaymentSettings";
 import { PaymentApprovals } from "@/components/admin/PaymentApprovals";
@@ -200,7 +201,9 @@ const AdminPanel = () => {
 
   // Delete user state
   const [deleteUserModal, setDeleteUserModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [usersToDelete, setUsersToDelete] = useState<UserProfile[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [deletingUsers, setDeletingUsers] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -499,6 +502,12 @@ const AdminPanel = () => {
       setCurrentPage(totalPages);
     }
   }, [totalUserCount, currentPage]);
+
+  useEffect(() => {
+    setSelectedUserIds((prev) =>
+      prev.filter((userId) => users.some((userProfile) => userProfile.user_id === userId && userProfile.role !== "admin"))
+    );
+  }, [users]);
 
   const handleLogout = async () => {
     await signOut();
@@ -985,10 +994,15 @@ const AdminPanel = () => {
 
   // Force delete user function
   // Force redeploy: Clean build cache trigger
-  const handleForceDeleteUser = async () => {
-    if (!userToDelete) return;
+  const promptDeleteUsers = (targets: UserProfile[]) => {
+    if (targets.length === 0) return;
+    setUsersToDelete(targets);
+    setDeleteUserModal(true);
+  };
 
-    const deletingUserId = userToDelete.user_id;
+  const handleForceDeleteUsers = async () => {
+    if (usersToDelete.length === 0) return;
+    setDeletingUsers(true);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -998,35 +1012,60 @@ const AdminPanel = () => {
         throw new Error("Admin session not found");
       }
 
-      const response = await fetch("/api/admin/delete-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          user_id: userToDelete.user_id,
-          profile_id: userToDelete.id,
-        }),
-      });
+      const deleteResults = await Promise.allSettled(
+        usersToDelete.map(async (userProfile) => {
+          const response = await fetch("/api/admin/delete-user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              user_id: userProfile.user_id,
+              profile_id: userProfile.id,
+            }),
+          });
 
-      const result = await response.json();
+          const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result?.error || "Failed to delete user");
+          if (!response.ok) {
+            throw new Error(result?.error || `Failed to delete user ${userProfile.user_id}`);
+          }
+
+          return userProfile.user_id;
+        })
+      );
+
+      const deletedUserIds = deleteResults
+        .filter((result): result is PromiseFulfilledResult<string> => result.status === "fulfilled")
+        .map((result) => result.value);
+
+      const failedDeletes = deleteResults.filter((result) => result.status === "rejected");
+
+      if (deletedUserIds.length > 0) {
+        setUsers((prev) => prev.filter((profile) => !deletedUserIds.includes(profile.user_id)));
+        setSelectedUserIds((prev) => prev.filter((userId) => !deletedUserIds.includes(userId)));
+        setTotalUserCount((prev) => Math.max(0, prev - deletedUserIds.length));
+
+        toast({
+          title: deletedUserIds.length === 1 ? "User Deleted" : "Users Deleted",
+          description:
+            deletedUserIds.length === 1
+              ? "User has been removed from Auth and all associated data deleted."
+              : `${deletedUserIds.length} users have been removed from Auth and all associated data deleted.`,
+        });
       }
 
-      // Optimistic UI update so deleted users disappear immediately.
-      setUsers((prev) => prev.filter((profile) => profile.user_id !== deletingUserId));
-      setTotalUserCount((prev) => Math.max(0, prev - 1));
-
-      toast({
-        title: "User Deleted",
-        description: "User has been removed from Auth and all associated data deleted.",
-      });
+      if (failedDeletes.length > 0) {
+        toast({
+          title: "Some deletions failed",
+          description: `${failedDeletes.length} user account(s) could not be deleted. Please try again.`,
+          variant: "destructive",
+        });
+      }
 
       setDeleteUserModal(false);
-      setUserToDelete(null);
+      setUsersToDelete([]);
 
       // Then re-sync against the backend for pagination and counts.
       await Promise.all([fetchUsers(), fetchStats()]);
@@ -1037,6 +1076,8 @@ const AdminPanel = () => {
         description: "Failed to delete user. Check console for details.",
         variant: "destructive",
       });
+    } finally {
+      setDeletingUsers(false);
     }
   };
 
@@ -1797,12 +1838,52 @@ const AdminPanel = () => {
                           {role}
                         </Button>
                       ))}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        disabled={selectedUserIds.length === 0}
+                        onClick={() => {
+                          const selectedUsers = users.filter(
+                            (userProfile) => selectedUserIds.includes(userProfile.user_id) && userProfile.role !== "admin"
+                          );
+                          promptDeleteUsers(selectedUsers);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete Selected ({selectedUserIds.length})
+                      </Button>
                     </div>
                   </div>
                   <div className="bg-card border border-secondary/20 overflow-hidden overflow-x-auto rounded-xl">
                   <table className="w-full min-w-[600px] caption-bottom text-sm">
                     <thead className="bg-muted/50">
                       <tr>
+                        <th className="text-left p-4 text-muted-foreground text-sm font-medium w-12">
+                          <Checkbox
+                            checked={
+                              users.filter((userProfile) => userProfile.role !== "admin").length > 0 &&
+                              selectedUserIds.length === users.filter((userProfile) => userProfile.role !== "admin").length
+                                ? true
+                                : selectedUserIds.length > 0
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedUserIds(
+                                  users
+                                    .filter((userProfile) => userProfile.role !== "admin")
+                                    .map((userProfile) => userProfile.user_id)
+                                );
+                                return;
+                              }
+
+                              setSelectedUserIds([]);
+                            }}
+                            aria-label="Select all users"
+                          />
+                        </th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">User ID</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Email</th>
                         <th className="text-left p-4 text-muted-foreground text-sm font-medium">Group Name</th>
@@ -1814,6 +1895,25 @@ const AdminPanel = () => {
                     <tbody>
                       {users.map((userProfile) => (
                         <tr key={userProfile.user_id} className="border-t border-secondary/10 hover:bg-muted/50 transition-colors">
+                          <td className="p-4">
+                            {userProfile.role !== "admin" ? (
+                              <Checkbox
+                                checked={selectedUserIds.includes(userProfile.user_id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedUserIds((prev) => {
+                                    if (checked) {
+                                      return prev.includes(userProfile.user_id)
+                                        ? prev
+                                        : [...prev, userProfile.user_id];
+                                    }
+
+                                    return prev.filter((userId) => userId !== userProfile.user_id);
+                                  });
+                                }}
+                                aria-label={`Select user ${userProfile.user_id}`}
+                              />
+                            ) : null}
+                          </td>
                           <td className="p-4 text-muted-foreground text-sm font-mono">
                             {userProfile.user_id.slice(0, 8)}...
                           </td>
@@ -1861,10 +1961,7 @@ const AdminPanel = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => {
-                                    setUserToDelete(userProfile);
-                                    setDeleteUserModal(true);
-                                  }}
+                                  onClick={() => promptDeleteUsers([userProfile])}
                                   className="text-orange-500 hover:text-orange-400 hover:bg-orange-500/10"
                                   title="Delete User"
                                 >
@@ -1880,7 +1977,7 @@ const AdminPanel = () => {
                       ))}
                       {users.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                          <td colSpan={7} className="p-6 text-center text-muted-foreground">
                             No users found for the current filters.
                           </td>
                         </tr>
@@ -2150,34 +2247,44 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Delete User
+              {usersToDelete.length > 1 ? "Delete Users" : "Delete User"}
             </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently remove the user account and related records.
+              This action cannot be undone. This will permanently remove {usersToDelete.length > 1 ? "these user accounts" : "the user account"} and related records.
             </DialogDescription>
           </DialogHeader>
-          {userToDelete && (
+          {usersToDelete.length > 0 && (
             <div className="space-y-4 py-4">
               <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="text-sm text-muted-foreground">User to delete:</p>
-                <p className="text-foreground font-medium">{userToDelete.group_name || "No group name"}</p>
-                <p className="text-xs text-muted-foreground font-mono">{userToDelete.user_id}</p>
+                <p className="text-sm text-muted-foreground">
+                  {usersToDelete.length > 1 ? "Users to delete:" : "User to delete:"}
+                </p>
+                <div className="space-y-1 mt-2 max-h-40 overflow-y-auto">
+                  {usersToDelete.map((userProfile) => (
+                    <div key={userProfile.user_id} className="text-sm">
+                      <p className="text-foreground font-medium">{userProfile.group_name || "No group name"}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{userProfile.user_id}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setDeleteUserModal(false);
-                    setUserToDelete(null);
+                    setUsersToDelete([]);
                   }}
+                  disabled={deletingUsers}
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={handleForceDeleteUser}
+                  onClick={handleForceDeleteUsers}
+                  disabled={deletingUsers}
                 >
-                  Confirm Delete
+                  {deletingUsers ? "Deleting..." : "Confirm Delete"}
                 </Button>
               </div>
             </div>
