@@ -83,8 +83,11 @@ serve(async (req) => {
     }
 
     // Delete the user from Auth
+    // Force hard-delete so the auth UID is removed entirely.
+    // Supabase's default behavior can soft-delete and leave a tombstoned UID.
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(
-      user_id
+      user_id,
+      false,
     );
 
     if (deleteError) {
