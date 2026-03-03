@@ -68,6 +68,9 @@ pnpm install
 
 # Start development server
 pnpm dev
+
+# Run a local health check (lint + typecheck)
+pnpm health:check
 ```
 
 ### Environment Variables (Vercel)
