@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreatableSelect } from "@/components/ui/creatable-select";
+import { schools } from "@/data/schools";
 import { toast } from "sonner";
 import { Save, Loader2, Upload } from "lucide-react";
 import { useDraftStorage } from "@/hooks/useDraftStorage";
@@ -492,13 +494,16 @@ export const EditProducerProfileDialog = ({
             {niche === "university" && (
               <div className="space-y-2">
                 <Label htmlFor="university">University / Institution</Label>
-                <Input
-                  id="university"
+                <CreatableSelect
+                  options={schools}
                   value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                  placeholder="e.g. University of the Philippines Diliman"
+                  onChange={setUniversity}
+                  placeholder="Select or type university"
                   className="bg-background border-secondary/30"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Choose from the list or type your institution if it&apos;s not available.
+                </p>
               </div>
             )}
 
