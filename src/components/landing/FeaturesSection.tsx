@@ -59,7 +59,9 @@ const FeaturesSection = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="features" ref={ref} className="py-24 bg-muted/30">
+    <section id="features" ref={ref} className="relative py-24 bg-muted/30 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_hsl(var(--secondary)/0.14),_transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_hsl(var(--primary)/0.12),_transparent_35%)]" />
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <motion.div
@@ -88,15 +90,16 @@ const FeaturesSection = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
-              className="bg-card rounded-2xl p-8 border border-secondary/20 hover:border-secondary/40 transition-all duration-300 group hover:shadow-lg hover:shadow-primary/10 w-full max-w-sm"
+              className="relative overflow-hidden bg-card/85 backdrop-blur-sm rounded-2xl p-8 border border-secondary/20 hover:border-secondary/50 transition-all duration-300 group hover:shadow-xl hover:shadow-primary/15 hover:-translate-y-1 w-full max-w-sm"
             >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-secondary/10 via-transparent to-primary/10" />
               <div className={`w-14 h-14 ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 <feature.icon className="w-7 h-7 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
+              <h3 className="relative text-xl font-semibold text-foreground mb-3">
                 {feature.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="relative text-muted-foreground leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>

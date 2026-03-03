@@ -14,9 +14,12 @@ export const CinematicLanding = () => {
           className="w-full h-full object-cover"
         />
         {/* Gradients/Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background/90" />
-        <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/70 to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_hsl(var(--secondary)/0.3),_transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_hsl(var(--primary)/0.22),_transparent_45%)]" />
       </div>
+
+      <div className="pointer-events-none absolute inset-0 z-[1] opacity-30 [background-image:linear-gradient(hsl(var(--foreground)/0.08)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.08)_1px,transparent_1px)] [background-size:60px_60px]" />
 
       {/* Live Ticker */}
       <div className="fixed bottom-0 left-0 w-full z-30">
@@ -32,9 +35,12 @@ export const CinematicLanding = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
+            <span className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-background/50 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-secondary backdrop-blur">
+              Manila Theater Network
+            </span>
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-6 leading-tight drop-shadow-lg">
               The Stage <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-yellow-200">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary via-yellow-100 to-secondary">
                 Is Yours.
               </span>
             </h1>
@@ -68,9 +74,11 @@ export const CinematicLanding = () => {
         >
           <div className="relative">
             {/* Glow Effect behind card */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-secondary to-primary rounded-2xl blur opacity-30 animate-pulse" />
+            <div className="absolute -inset-1.5 bg-gradient-to-r from-secondary via-primary to-secondary rounded-2xl blur-md opacity-40" />
 
-            <div className="relative bg-card/40 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl">
+            <div className="relative overflow-hidden bg-card/55 backdrop-blur-xl border border-white/15 p-8 rounded-2xl shadow-2xl">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-secondary/25 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-12 -left-8 h-28 w-28 rounded-full bg-primary/20 blur-2xl" />
               <AuthForm />
             </div>
           </div>
