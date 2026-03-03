@@ -44,6 +44,8 @@ interface EditProducerProfileDialogProps {
     description?: string | null;
     group_logo_url?: string | null;
     group_banner_url?: string | null;
+    founded_year?: number | null;
+    address?: string | null;
   } | null;
   theaterGroup: TheaterGroup | null;
   onSuccess: () => void;
@@ -61,6 +63,8 @@ export const EditProducerProfileDialog = ({
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [foundedYear, setFoundedYear] = useState("");
+  const [address, setAddress] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -74,30 +78,38 @@ export const EditProducerProfileDialog = ({
     description: string;
     logoUrl: string;
     bannerUrl: string;
+    foundedYear: string;
+    address: string;
   } | null>(null);
 
   useEffect(() => {
     if (open) {
-      let values = { name: "", description: "", logoUrl: "", bannerUrl: "" };
+      let values = { name: "", description: "", logoUrl: "", bannerUrl: "", foundedYear: "", address: "" };
       if (theaterGroup) {
         values = {
             name: theaterGroup.name || "",
             description: theaterGroup.description || "",
             logoUrl: theaterGroup.logo_url || "",
-            bannerUrl: theaterGroup.banner_url || ""
+            bannerUrl: theaterGroup.banner_url || "",
+            foundedYear: producer?.founded_year ? String(producer.founded_year) : "",
+            address: producer?.address || ""
         };
       } else if (producer) {
         values = {
             name: producer.group_name || "",
             description: producer.description || "",
             logoUrl: producer.group_logo_url || "",
-            bannerUrl: producer.group_banner_url || ""
+            bannerUrl: producer.group_banner_url || "",
+            foundedYear: producer.founded_year ? String(producer.founded_year) : "",
+            address: producer.address || ""
         };
       }
       setName(values.name);
       setDescription(values.description);
       setLogoUrl(values.logoUrl);
       setBannerUrl(values.bannerUrl);
+      setFoundedYear(values.foundedYear);
+      setAddress(values.address);
       setInitialValues(values);
       setShowDiscardAlert(false);
     }
@@ -123,12 +135,14 @@ export const EditProducerProfileDialog = ({
     modalName: "theatergroupdetails",
     userId: user?.id,
     isOpen: open,
-    draft: { name, description, logoUrl, bannerUrl },
+    draft: { name, description, logoUrl, bannerUrl, foundedYear, address },
     onHydrate: (savedDraft) => {
       setName(savedDraft.name ?? "");
       setDescription(savedDraft.description ?? "");
       setLogoUrl(savedDraft.logoUrl ?? "");
       setBannerUrl(savedDraft.bannerUrl ?? "");
+      setFoundedYear(savedDraft.foundedYear ?? "");
+      setAddress(savedDraft.address ?? "");
     },
   });
 
@@ -144,9 +158,11 @@ export const EditProducerProfileDialog = ({
       name !== initialValues.name ||
       description !== initialValues.description ||
       logoUrl !== initialValues.logoUrl ||
-      bannerUrl !== initialValues.bannerUrl
+      bannerUrl !== initialValues.bannerUrl ||
+      foundedYear !== initialValues.foundedYear ||
+      address !== initialValues.address
     );
-  }, [name, description, logoUrl, bannerUrl, initialValues]);
+  }, [name, description, logoUrl, bannerUrl, foundedYear, address, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -290,6 +306,13 @@ export const EditProducerProfileDialog = ({
       return;
     }
 
+    const parsedFoundedYear = foundedYear.trim() ? Number(foundedYear.trim()) : null;
+    const currentYear = new Date().getFullYear();
+    if (parsedFoundedYear !== null && (!Number.isInteger(parsedFoundedYear) || parsedFoundedYear < 1800 || parsedFoundedYear > currentYear)) {
+      toast.error(`Founding year must be between 1800 and ${currentYear}`);
+      return;
+    }
+
     setSaving(true);
     try {
       // 1. Upsert into theater_groups
@@ -347,6 +370,8 @@ export const EditProducerProfileDialog = ({
         description: description.trim() || null,
         group_logo_url: logoUrl.trim() || null,
         group_banner_url: bannerUrl.trim() || null,
+        founded_year: parsedFoundedYear,
+        address: address.trim() || null,
       };
 
       const { error: profileError } = await supabase
@@ -409,6 +434,32 @@ export const EditProducerProfileDialog = ({
                 placeholder="Tell us about your group..."
                 className="bg-background border-secondary/30 min-h-[100px]"
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="foundedYear">Founding Year</Label>
+                <Input
+                  id="foundedYear"
+                  type="number"
+                  min={1800}
+                  max={new Date().getFullYear()}
+                  value={foundedYear}
+                  onChange={(e) => setFoundedYear(e.target.value)}
+                  placeholder="e.g. 2012"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Location</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="City, venue, or district"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
