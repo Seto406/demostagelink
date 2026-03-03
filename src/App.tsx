@@ -53,7 +53,16 @@ const TestNotifications = lazy(() => import("./pages/TestNotifications"));
 const ExternalRedirect = lazy(() => import("./pages/ExternalRedirect"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Avoid aggressive refetch bursts when users return to the tab.
+      // This keeps in-progress UI state (like open dialogs) more stable.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  },
+});
 
 // Component to initialize toast handler
 const ToastHandlerInit = () => {
