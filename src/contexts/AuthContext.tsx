@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef, useC
 import { useNavigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyAdminsOfNewUserLogin } from "@/lib/notifications";
 
 interface Profile {
   id: string;
@@ -90,7 +91,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (createResponse.data) {
-        setProfile(createResponse.data as unknown as Profile);
+        const createdProfile = createResponse.data as unknown as Profile;
+        setProfile(createdProfile);
+
+        notifyAdminsOfNewUserLogin({
+          newUserId: userId,
+          username: createdProfile.username,
+          role: createdProfile.role,
+        });
+
         localStorage.removeItem("pendingUserRole");
       }
     } catch (error) {
