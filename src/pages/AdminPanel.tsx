@@ -107,11 +107,21 @@ const getGroupName = (show: Show) => {
 interface UserProfile {
   id: string | null;
   user_id: string;
-  email?: string;
+  email?: string | null;
   role: "audience" | "producer" | "admin";
   group_name: string | null;
   created_at: string;
 }
+
+const isUserProfileRecord = (value: unknown): value is UserProfile => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<UserProfile>;
+  return (
+    typeof candidate.user_id === "string" &&
+    typeof candidate.role === "string" &&
+    typeof candidate.created_at === "string"
+  );
+};
 
 interface ProducerRequest {
   id: string;
@@ -372,41 +382,59 @@ const AdminPanel = () => {
     setLoadingUsers(true);
 
     try {
-      const start = (currentPage - 1) * ITEMS_PER_PAGE;
-      const end = start + ITEMS_PER_PAGE - 1;
+      const PAGE_SIZE = 1000;
+      const MAX_PAGES = 25;
 
-      let query = supabase
-        .from("profiles")
-        .select("id, user_id, email, role, group_name, created_at", { count: "exact" });
+      let pageNumber = 1;
+      let totalCount = 0;
+      const mergedUsers: UserProfile[] = [];
 
-      if (userRoleFilter !== "all") {
-        query = query.eq("role", userRoleFilter);
+      while (pageNumber <= MAX_PAGES) {
+        const { data, error } = await supabase.rpc("get_admin_user_list", {
+          page_number: pageNumber,
+          page_size: PAGE_SIZE,
+        });
+
+        if (error) throw error;
+        if (!data || typeof data !== "object") break;
+
+        const payload = data as { users?: unknown[]; total_count?: number };
+        const pageUsers = Array.isArray(payload.users)
+          ? payload.users.filter(isUserProfileRecord)
+          : [];
+
+        mergedUsers.push(...pageUsers);
+        totalCount = typeof payload.total_count === "number" ? payload.total_count : mergedUsers.length;
+
+        if (pageUsers.length < PAGE_SIZE || mergedUsers.length >= totalCount) {
+          break;
+        }
+
+        pageNumber += 1;
       }
 
-      const normalizedSearch = userSearch.trim();
-      if (normalizedSearch) {
-        const escapedSearch = normalizedSearch
-          .replace(/\\/g, "\\\\")
-          .replace(/,/g, "\\,")
-          .replace(/%/g, "\\%")
-          .replace(/_/g, "\\_");
-        const likeTerm = `%${escapedSearch}%`;
+      const normalizedSearch = userSearch.trim().toLowerCase();
+      const filteredUsers = mergedUsers.filter((userProfile) => {
+        const roleMatches = userRoleFilter === "all" || userProfile.role === userRoleFilter;
+        if (!roleMatches) return false;
 
-        query = query.or(
-          `email.ilike.${likeTerm},group_name.ilike.${likeTerm},user_id::text.ilike.${likeTerm}`
+        if (!normalizedSearch) return true;
+
+        return (
+          (userProfile.email || "").toLowerCase().includes(normalizedSearch) ||
+          (userProfile.group_name || "").toLowerCase().includes(normalizedSearch) ||
+          userProfile.user_id.toLowerCase().includes(normalizedSearch)
         );
-      }
+      });
 
-      const { data, count, error } = await query
-        .order("created_at", { ascending: false })
-        .range(start, end);
-
-      if (error) throw error;
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const paginatedUsers = filteredUsers.slice(start, end);
 
       if (!mounted.current) return;
 
-      setUsers((data as UserProfile[]) || []);
-      setTotalUserCount(count || 0);
+      setUsers(paginatedUsers);
+      setTotalUserCount(filteredUsers.length);
     } catch (error) {
       if (!mounted.current) return;
       console.error("Error fetching users:", error);
