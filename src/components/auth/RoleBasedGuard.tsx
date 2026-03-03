@@ -8,7 +8,7 @@ interface RoleBasedGuardProps {
   allowedRoles?: string[];
 }
 
-export const RoleBasedGuard = ({ children, allowedRoles = ["producer"] }: RoleBasedGuardProps) => {
+export const RoleBasedGuard = ({ children, allowedRoles = ["producer", "admin"] }: RoleBasedGuardProps) => {
   const { user, profile, loading, refreshProfile } = useAuth();
   const [checkingProfile, setCheckingProfile] = useState(false);
 
