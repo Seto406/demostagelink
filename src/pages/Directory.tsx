@@ -738,16 +738,9 @@ const Directory = () => {
                         </Link>
                       ) : (
                         <div className={cn(
-                          "block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col relative",
+                          "block bg-card border border-secondary/20 transition-all duration-300 hover:border-secondary/50 hover:shadow-[0_0_30px_hsl(43_72%_52%/0.1)] group rounded-xl overflow-hidden h-full flex flex-col",
                           group.is_premium && "border-primary/50 shadow-[0_0_20px_hsl(43_72%_52%/0.15)] ring-1 ring-primary/30"
                         )}>
-                          {group.is_premium && (
-                             <div className="absolute top-3 right-3 z-10">
-                                <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] uppercase tracking-wider shadow-md animate-pulse-glow">
-                                    Featured
-                                </Badge>
-                             </div>
-                          )}
                           <Link
                             to={`/producer/${group.id}`}
                             className="block p-6 flex-1"
@@ -770,7 +763,12 @@ const Directory = () => {
                                 <span className="text-2xl font-serif text-secondary font-bold">{(group.group_name?.[0] || 'T').toUpperCase()}</span>
                                 )}
                               </div>
-                              <div className="flex flex-col items-end gap-1">
+                              <div className="flex flex-col items-end gap-1 text-right">
+                                {group.is_premium && (
+                                  <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] uppercase tracking-wider shadow-md animate-pulse-glow mb-1">
+                                    Featured
+                                  </Badge>
+                                )}
                                 <span className="text-xs text-secondary uppercase tracking-wider">
                                   {getNicheLabel(group.niche)}
                                 </span>
