@@ -33,6 +33,28 @@ const cities = ["All", "Mandaluyong", "Taguig", "Manila", "Quezon City", "Makati
 const niches = ["All", "Local/Community-based", "University Theater Group"];
 const quickDirectorySuggestions = ["Manila", "Quezon City", "University", "Community"];
 
+const normalizeNicheFilter = (value: string | null) => {
+  if (!value) return "All";
+
+  const normalized = value.trim().toLowerCase();
+  if (["local", "local/community", "local/community-based", "community"].includes(normalized)) {
+    return "Local/Community-based";
+  }
+
+  if (["university", "university theater", "university theater group"].includes(normalized)) {
+    return "University Theater Group";
+  }
+
+  return "All";
+};
+
+const normalizeCityFilter = (value: string | null) => {
+  if (!value) return "All";
+
+  const matchedCity = cities.find((city) => city.toLowerCase() === value.trim().toLowerCase());
+  return matchedCity || "All";
+};
+
 interface TheaterGroup {
   id: string;
   user_id?: string;
@@ -223,8 +245,8 @@ const Directory = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [joiningGroupId, setJoiningGroupId] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "All");
-  const [selectedNiche, setSelectedNiche] = useState(searchParams.get("niche") || "All");
+  const [selectedCity, setSelectedCity] = useState(normalizeCityFilter(searchParams.get("city")));
+  const [selectedNiche, setSelectedNiche] = useState(normalizeNicheFilter(searchParams.get("niche")));
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [groups, setGroups] = useState<TheaterGroup[]>([]);
@@ -253,6 +275,15 @@ const Directory = () => {
     if (selectedNiche !== "All") params.set("niche", selectedNiche);
     setSearchParams(params, { replace: true });
   }, [selectedCity, selectedNiche, setSearchParams]);
+
+  // Keep filter state in sync with URL params (e.g. browser back/forward or direct links)
+  useEffect(() => {
+    const cityFromUrl = normalizeCityFilter(searchParams.get("city"));
+    const nicheFromUrl = normalizeNicheFilter(searchParams.get("niche"));
+
+    setSelectedCity((current) => (current === cityFromUrl ? current : cityFromUrl));
+    setSelectedNiche((current) => (current === nicheFromUrl ? current : nicheFromUrl));
+  }, [searchParams]);
 
   // Fetch producer profiles
   const fetchGroups = useCallback(async (currentPage: number, isLoadMore: boolean) => {
