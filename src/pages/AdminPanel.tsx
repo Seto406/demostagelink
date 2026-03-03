@@ -753,15 +753,50 @@ const AdminPanel = () => {
       return;
     }
 
-    // Update request status
-    const { error: requestError } = await supabase
+    const reviewPayload = {
+      status: "approved",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user?.id ?? null,
+    };
+
+    // Update request status. If older production schema is missing reviewed_by, fallback to status-only update.
+    let { error: requestError } = await supabase
       .from("producer_requests")
-      .update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
-      .eq("id", request.id);
+      .update(reviewPayload)
+      .eq("id", request.id)
+      .eq("status", "pending");
+
+    if (requestError && requestError.message?.includes("reviewed_by")) {
+      const fallback = await supabase
+        .from("producer_requests")
+        .update({
+          status: "approved",
+          reviewed_at: reviewPayload.reviewed_at,
+        })
+        .eq("id", request.id)
+        .eq("status", "pending");
+
+      requestError = fallback.error;
+    }
 
     if (requestError) {
       console.error("Error updating request:", requestError);
-    } else {
+      const { error: deleteError } = await supabase
+        .from("producer_requests")
+        .delete()
+        .eq("id", request.id);
+
+      if (deleteError) {
+        toast({
+          title: "Request Approval Partially Applied",
+          description: "The user was promoted, but we could not remove the pending request.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    {
       // Send email
       const { error: emailError } = await supabase.functions.invoke("send-producer-status-email", {
         body: {
@@ -794,18 +829,48 @@ const AdminPanel = () => {
   };
 
   const handleRejectRequest = async (request: ProducerRequest) => {
-    const { error } = await supabase
+    const reviewPayload = {
+      status: "rejected",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user?.id ?? null,
+    };
+
+    let { error } = await supabase
       .from("producer_requests")
-      .update({ status: "rejected", reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
-      .eq("id", request.id);
+      .update(reviewPayload)
+      .eq("id", request.id)
+      .eq("status", "pending");
+
+    if (error && error.message?.includes("reviewed_by")) {
+      const fallback = await supabase
+        .from("producer_requests")
+        .update({
+          status: "rejected",
+          reviewed_at: reviewPayload.reviewed_at,
+        })
+        .eq("id", request.id)
+        .eq("status", "pending");
+
+      error = fallback.error;
+    }
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reject request.",
-        variant: "destructive",
-      });
-    } else {
+      const { error: deleteError } = await supabase
+        .from("producer_requests")
+        .delete()
+        .eq("id", request.id);
+
+      if (deleteError) {
+        toast({
+          title: "Error",
+          description: "Failed to reject request.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    {
       // Send email
       const { error: emailError } = await supabase.functions.invoke("send-producer-status-email", {
         body: {
