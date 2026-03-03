@@ -40,6 +40,10 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
   const [producerRole, setProducerRole] = useState("");
   const [description, setDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [xUrl, setXUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDiscardAlert, setShowDiscardAlert] = useState(false);
@@ -54,6 +58,10 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     producerRole: string;
     description: string;
     websiteUrl: string;
+    facebookUrl: string;
+    instagramUrl: string;
+    xUrl: string;
+    tiktokUrl: string;
   } | null>(null);
 
   useEffect(() => {
@@ -62,18 +70,30 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       const initialProducerRole = profile.producer_role || "";
       const initialDescription = profile.description || "";
       const initialWebsiteUrl = profile.website_url || "";
+      const initialFacebookUrl = profile.facebook_url || "";
+      const initialInstagramUrl = profile.instagram_url || "";
+      const initialXUrl = profile.x_url || "";
+      const initialTiktokUrl = profile.tiktok_url || "";
 
       setUsername(initialUsername);
       setProducerRole(initialProducerRole);
       setDescription(initialDescription);
       setWebsiteUrl(initialWebsiteUrl);
+      setFacebookUrl(initialFacebookUrl);
+      setInstagramUrl(initialInstagramUrl);
+      setXUrl(initialXUrl);
+      setTiktokUrl(initialTiktokUrl);
       setAvatarUrl(profile.avatar_url || null);
 
       setInitialValues({
         username: initialUsername,
         producerRole: initialProducerRole,
         description: initialDescription,
-        websiteUrl: initialWebsiteUrl
+        websiteUrl: initialWebsiteUrl,
+        facebookUrl: initialFacebookUrl,
+        instagramUrl: initialInstagramUrl,
+        xUrl: initialXUrl,
+        tiktokUrl: initialTiktokUrl
       });
       setShowDiscardAlert(false);
     }
@@ -84,12 +104,16 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     modalName: "editprofile",
     userId: user?.id,
     isOpen: open,
-    draft: { username, producerRole, description, websiteUrl },
+    draft: { username, producerRole, description, websiteUrl, facebookUrl, instagramUrl, xUrl, tiktokUrl },
     onHydrate: (savedDraft) => {
       setUsername(savedDraft.username ?? "");
       setProducerRole(savedDraft.producerRole ?? "");
       setDescription(savedDraft.description ?? "");
       setWebsiteUrl(savedDraft.websiteUrl ?? "");
+      setFacebookUrl(savedDraft.facebookUrl ?? "");
+      setInstagramUrl(savedDraft.instagramUrl ?? "");
+      setXUrl(savedDraft.xUrl ?? "");
+      setTiktokUrl(savedDraft.tiktokUrl ?? "");
     },
   });
 
@@ -110,9 +134,13 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       username !== initialValues.username ||
       producerRole !== initialValues.producerRole ||
       description !== initialValues.description ||
-      websiteUrl !== initialValues.websiteUrl
+      websiteUrl !== initialValues.websiteUrl ||
+      facebookUrl !== initialValues.facebookUrl ||
+      instagramUrl !== initialValues.instagramUrl ||
+      xUrl !== initialValues.xUrl ||
+      tiktokUrl !== initialValues.tiktokUrl
     );
-  }, [username, producerRole, description, websiteUrl, initialValues]);
+  }, [username, producerRole, description, websiteUrl, facebookUrl, instagramUrl, xUrl, tiktokUrl, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -166,27 +194,36 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
       return;
     }
 
-    // Website URL validation
-    if (websiteUrl) {
+    const validateOptionalHttpUrl = (value: string, label: string) => {
+      if (!value) return true;
+
       const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-      if (!urlPattern.test(websiteUrl)) {
+      if (!urlPattern.test(value)) {
         toast({
           title: "Invalid URL",
-          description: "Please enter a valid URL for your portfolio.",
+          description: `Please enter a valid URL for ${label}.`,
           variant: "destructive",
         });
-        return;
+        return false;
       }
 
-      if (!websiteUrl.startsWith('http://') && !websiteUrl.startsWith('https://')) {
-          toast({
-            title: "Invalid URL",
-            description: "URL must start with http:// or https://",
-             variant: "destructive",
-          });
-          return;
-       }
-    }
+      if (!value.startsWith('http://') && !value.startsWith('https://')) {
+        toast({
+          title: "Invalid URL",
+          description: "URL must start with http:// or https://",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      return true;
+    };
+
+    if (!validateOptionalHttpUrl(websiteUrl, "your portfolio")) return;
+    if (!validateOptionalHttpUrl(facebookUrl, "your Facebook link")) return;
+    if (!validateOptionalHttpUrl(instagramUrl, "your Instagram link")) return;
+    if (!validateOptionalHttpUrl(xUrl, "your X link")) return;
+    if (!validateOptionalHttpUrl(tiktokUrl, "your TikTok link")) return;
 
     setSaving(true);
     try {
@@ -195,6 +232,10 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
         producer_role: producerRole || null,
         description: description || null,
         website_url: websiteUrl || null,
+        facebook_url: facebookUrl || null,
+        instagram_url: instagramUrl || null,
+        x_url: xUrl || null,
+        tiktok_url: tiktokUrl || null,
       };
 
       const { error } = await supabase
@@ -457,6 +498,52 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
              <p className="text-xs text-muted-foreground mt-1">
                Link to your personal website or portfolio.
              </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="facebookUrl">Facebook URL (Optional)</Label>
+              <Input
+                id="facebookUrl"
+                value={facebookUrl}
+                onChange={(e) => setFacebookUrl(e.target.value)}
+                placeholder="https://facebook.com/your-page"
+                className="mt-1 bg-background border-secondary/30"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="instagramUrl">Instagram URL (Optional)</Label>
+              <Input
+                id="instagramUrl"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                placeholder="https://instagram.com/your-handle"
+                className="mt-1 bg-background border-secondary/30"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="xUrl">X URL (Optional)</Label>
+              <Input
+                id="xUrl"
+                value={xUrl}
+                onChange={(e) => setXUrl(e.target.value)}
+                placeholder="https://x.com/your-handle"
+                className="mt-1 bg-background border-secondary/30"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="tiktokUrl">TikTok URL (Optional)</Label>
+              <Input
+                id="tiktokUrl"
+                value={tiktokUrl}
+                onChange={(e) => setTiktokUrl(e.target.value)}
+                placeholder="https://tiktok.com/@your-handle"
+                className="mt-1 bg-background border-secondary/30"
+              />
+            </div>
           </div>
 
           {profile?.role === 'producer' && (

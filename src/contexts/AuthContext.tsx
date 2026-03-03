@@ -19,6 +19,8 @@ interface Profile {
   avatar_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  x_url: string | null;
+  tiktok_url: string | null;
   address: string | null;
   university: string | null;
   has_completed_tour?: boolean | null;

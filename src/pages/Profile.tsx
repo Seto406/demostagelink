@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck, Globe, Sparkles } from "lucide-react";
+import { MapPin, Calendar, Building2, Pencil, Mail, Star, Users, Ticket as TicketIcon, History, Clock, UserPlus, UserCheck, Globe, Sparkles, Facebook, Instagram, Twitter, Link as LinkIcon } from "lucide-react";
+import { toSafeExternalUrl } from "@/lib/security";
 import { createNotification } from "@/lib/notifications";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +32,10 @@ interface ProfileData {
   producer_role?: string | null;
   description?: string | null;
   website_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  x_url?: string | null;
+  tiktok_url?: string | null;
 }
 
 // Interfaces for fetched data
@@ -546,6 +551,10 @@ const Profile = () => {
   const joinedDate = new Date(profile.created_at);
   const membershipYears = Math.max(1, new Date().getFullYear() - joinedDate.getFullYear());
   const publicWebsiteLabel = profile.website_url?.replace(/^https?:\/\//, "");
+  const safeFacebookUrl = toSafeExternalUrl(profile.facebook_url);
+  const safeInstagramUrl = toSafeExternalUrl(profile.instagram_url);
+  const safeXUrl = toSafeExternalUrl(profile.x_url);
+  const safeTiktokUrl = toSafeExternalUrl(profile.tiktok_url);
   const latestReviewDate = reviews[0]?.created_at
     ? new Date(reviews[0].created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : null;
@@ -628,7 +637,7 @@ const Profile = () => {
                  )}
                  {profile.website_url && (
                     <a
-                      href={profile.website_url}
+                      href={`/external-redirect?url=${encodeURIComponent(profile.website_url)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1.5 justify-center md:justify-start hover:text-secondary transition-colors"
@@ -636,6 +645,30 @@ const Profile = () => {
                       <Globe className="w-4 h-4" />
                       {publicWebsiteLabel}
                     </a>
+                 )}
+                 {(safeFacebookUrl || safeInstagramUrl || safeXUrl || safeTiktokUrl) && (
+                   <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                     {safeFacebookUrl && (
+                       <a href={`/external-redirect?url=${encodeURIComponent(safeFacebookUrl)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-secondary transition-colors">
+                         <Facebook className="w-4 h-4" /> Facebook
+                       </a>
+                     )}
+                     {safeInstagramUrl && (
+                       <a href={`/external-redirect?url=${encodeURIComponent(safeInstagramUrl)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-secondary transition-colors">
+                         <Instagram className="w-4 h-4" /> Instagram
+                       </a>
+                     )}
+                     {safeXUrl && (
+                       <a href={`/external-redirect?url=${encodeURIComponent(safeXUrl)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-secondary transition-colors">
+                         <Twitter className="w-4 h-4" /> X
+                       </a>
+                     )}
+                     {safeTiktokUrl && (
+                       <a href={`/external-redirect?url=${encodeURIComponent(safeTiktokUrl)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-secondary transition-colors">
+                         <LinkIcon className="w-4 h-4" /> TikTok
+                       </a>
+                     )}
+                   </div>
                  )}
                  <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     <div className="flex items-center gap-1.5">

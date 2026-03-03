@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Calendar, MapPin, Users, Facebook, Instagram, UserPlus, UserCheck, Handshake } from "lucide-react";
+import { Calendar, MapPin, Users, Facebook, Instagram, Twitter, Link as LinkIcon, UserPlus, UserCheck, Handshake } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { trackEvent } from "@/lib/analytics";
@@ -41,6 +41,8 @@ interface Producer {
   group_banner_url: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  x_url: string | null;
+  tiktok_url: string | null;
   map_screenshot_url: string | null;
   university: string | null;
   producer_role: string | null;
@@ -132,7 +134,7 @@ const ProducerProfile = () => {
 
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, map_screenshot_url, university, producer_role, is_premium")
+        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, x_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium")
         .eq("id", id)
         .maybeSingle();
 
@@ -529,6 +531,8 @@ const ProducerProfile = () => {
   const displayDescription = theaterGroup?.description || producer.description;
   const safeFacebookUrl = toSafeExternalUrl(producer.facebook_url);
   const safeInstagramUrl = toSafeExternalUrl(producer.instagram_url);
+  const safeXUrl = toSafeExternalUrl(producer.x_url);
+  const safeTiktokUrl = toSafeExternalUrl(producer.tiktok_url);
   const safeMapImageUrl = toSafeExternalUrl(producer.map_screenshot_url);
   const safeMapEmbedUrl = parseMapEmbedSrc(producer.map_screenshot_url);
 
@@ -754,7 +758,7 @@ const ProducerProfile = () => {
                     </div>
                   </div>
 
-                  {(safeFacebookUrl || safeInstagramUrl) && (
+                  {(safeFacebookUrl || safeInstagramUrl || safeXUrl || safeTiktokUrl) && (
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
                       {safeFacebookUrl && (
                         <a
@@ -776,6 +780,28 @@ const ProducerProfile = () => {
                         >
                           <Instagram className="w-5 h-5" />
                           <span className="text-sm">Instagram</span>
+                        </a>
+                      )}
+                      {safeXUrl && (
+                        <a
+                          href={`/external-redirect?url=${encodeURIComponent(safeXUrl)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                        >
+                          <Twitter className="w-5 h-5" />
+                          <span className="text-sm">X</span>
+                        </a>
+                      )}
+                      {safeTiktokUrl && (
+                        <a
+                          href={`/external-redirect?url=${encodeURIComponent(safeTiktokUrl)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                        >
+                          <LinkIcon className="w-5 h-5" />
+                          <span className="text-sm">TikTok</span>
                         </a>
                       )}
                     </div>

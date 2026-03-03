@@ -51,6 +51,10 @@ interface EditProducerProfileDialogProps {
     address?: string | null;
     niche?: "local" | "university" | null;
     university?: string | null;
+    facebook_url?: string | null;
+    instagram_url?: string | null;
+    x_url?: string | null;
+    tiktok_url?: string | null;
   } | null;
   theaterGroup: TheaterGroup | null;
   onSuccess: () => void;
@@ -72,6 +76,10 @@ export const EditProducerProfileDialog = ({
   const [address, setAddress] = useState("");
   const [niche, setNiche] = useState<"local" | "university">("local");
   const [university, setUniversity] = useState("");
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [xUrl, setXUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -89,11 +97,15 @@ export const EditProducerProfileDialog = ({
     address: string;
     niche: "local" | "university";
     university: string;
+    facebookUrl: string;
+    instagramUrl: string;
+    xUrl: string;
+    tiktokUrl: string;
   } | null>(null);
 
   useEffect(() => {
     if (open) {
-      let values = { name: "", description: "", logoUrl: "", bannerUrl: "", foundedYear: "", address: "", niche: "local" as "local" | "university", university: "" };
+      let values = { name: "", description: "", logoUrl: "", bannerUrl: "", foundedYear: "", address: "", niche: "local" as "local" | "university", university: "", facebookUrl: "", instagramUrl: "", xUrl: "", tiktokUrl: "" };
       if (theaterGroup) {
         values = {
             name: theaterGroup.name || "",
@@ -103,7 +115,11 @@ export const EditProducerProfileDialog = ({
             foundedYear: producer?.founded_year ? String(producer.founded_year) : "",
             address: producer?.address || "",
             niche: producer?.niche || "local",
-            university: producer?.university || ""
+            university: producer?.university || "",
+            facebookUrl: producer?.facebook_url || "",
+            instagramUrl: producer?.instagram_url || "",
+            xUrl: producer?.x_url || "",
+            tiktokUrl: producer?.tiktok_url || ""
         };
       } else if (producer) {
         values = {
@@ -114,7 +130,11 @@ export const EditProducerProfileDialog = ({
             foundedYear: producer.founded_year ? String(producer.founded_year) : "",
             address: producer.address || "",
             niche: producer.niche || "local",
-            university: producer.university || ""
+            university: producer.university || "",
+            facebookUrl: producer.facebook_url || "",
+            instagramUrl: producer.instagram_url || "",
+            xUrl: producer.x_url || "",
+            tiktokUrl: producer.tiktok_url || ""
         };
       }
       setName(values.name);
@@ -125,6 +145,10 @@ export const EditProducerProfileDialog = ({
       setAddress(values.address);
       setNiche(values.niche);
       setUniversity(values.university);
+      setFacebookUrl(values.facebookUrl);
+      setInstagramUrl(values.instagramUrl);
+      setXUrl(values.xUrl);
+      setTiktokUrl(values.tiktokUrl);
       setInitialValues(values);
       setShowDiscardAlert(false);
     }
@@ -150,7 +174,7 @@ export const EditProducerProfileDialog = ({
     modalName: "theatergroupdetails",
     userId: user?.id,
     isOpen: open,
-    draft: { name, description, logoUrl, bannerUrl, foundedYear, address, niche, university },
+    draft: { name, description, logoUrl, bannerUrl, foundedYear, address, niche, university, facebookUrl, instagramUrl, xUrl, tiktokUrl },
     onHydrate: (savedDraft) => {
       setName(savedDraft.name ?? "");
       setDescription(savedDraft.description ?? "");
@@ -160,6 +184,10 @@ export const EditProducerProfileDialog = ({
       setAddress(savedDraft.address ?? "");
       setNiche((savedDraft.niche as "local" | "university") ?? "local");
       setUniversity(savedDraft.university ?? "");
+      setFacebookUrl(savedDraft.facebookUrl ?? "");
+      setInstagramUrl(savedDraft.instagramUrl ?? "");
+      setXUrl(savedDraft.xUrl ?? "");
+      setTiktokUrl(savedDraft.tiktokUrl ?? "");
     },
   });
 
@@ -179,9 +207,13 @@ export const EditProducerProfileDialog = ({
       foundedYear !== initialValues.foundedYear ||
       address !== initialValues.address ||
       niche !== initialValues.niche ||
-      university !== initialValues.university
+      university !== initialValues.university ||
+      facebookUrl !== initialValues.facebookUrl ||
+      instagramUrl !== initialValues.instagramUrl ||
+      xUrl !== initialValues.xUrl ||
+      tiktokUrl !== initialValues.tiktokUrl
     );
-  }, [name, description, logoUrl, bannerUrl, foundedYear, address, niche, university, initialValues]);
+  }, [name, description, logoUrl, bannerUrl, foundedYear, address, niche, university, facebookUrl, instagramUrl, xUrl, tiktokUrl, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -337,6 +369,21 @@ export const EditProducerProfileDialog = ({
       return;
     }
 
+    const optionalUrls = [
+      { label: "Facebook", value: facebookUrl },
+      { label: "Instagram", value: instagramUrl },
+      { label: "X", value: xUrl },
+      { label: "TikTok", value: tiktokUrl },
+    ];
+
+    for (const url of optionalUrls) {
+      if (!url.value.trim()) continue;
+      if (!url.value.startsWith("http://") && !url.value.startsWith("https://")) {
+        toast.error(`${url.label} URL must start with http:// or https://`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // 1. Upsert into theater_groups
@@ -398,6 +445,10 @@ export const EditProducerProfileDialog = ({
         address: address.trim() || null,
         niche,
         university: niche === "university" ? university.trim() : null,
+        facebook_url: facebookUrl.trim() || null,
+        instagram_url: instagramUrl.trim() || null,
+        x_url: xUrl.trim() || null,
+        tiktok_url: tiktokUrl.trim() || null,
       };
 
       const { error: profileError } = await supabase
@@ -522,6 +573,49 @@ export const EditProducerProfileDialog = ({
                     : "Add the venue, district, or city where your group is usually based."}
                 </p>
               </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="facebookUrl">Facebook URL (Optional)</Label>
+                <Input
+                  id="facebookUrl"
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  placeholder="https://facebook.com/your-page"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagramUrl">Instagram URL (Optional)</Label>
+                <Input
+                  id="instagramUrl"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://instagram.com/your-handle"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="xUrl">X URL (Optional)</Label>
+                <Input
+                  id="xUrl"
+                  value={xUrl}
+                  onChange={(e) => setXUrl(e.target.value)}
+                  placeholder="https://x.com/your-handle"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tiktokUrl">TikTok URL (Optional)</Label>
+                <Input
+                  id="tiktokUrl"
+                  value={tiktokUrl}
+                  onChange={(e) => setTiktokUrl(e.target.value)}
+                  placeholder="https://tiktok.com/@your-handle"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="logoUrl">Logo</Label>

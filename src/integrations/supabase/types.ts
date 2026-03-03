@@ -616,6 +616,7 @@ export type Database = {
           has_completed_tour: boolean | null
           id: string
           instagram_url: string | null
+          tiktok_url: string | null
           map_screenshot_url: string | null
           niche: Database["public"]["Enums"]["niche_type"] | null
           rank: string | null
@@ -628,6 +629,7 @@ export type Database = {
           group_logo_url: string | null
           group_banner_url: string | null
           producer_role: string | null
+          x_url: string | null
         }
         Insert: {
           address?: string | null
@@ -640,6 +642,7 @@ export type Database = {
           has_completed_tour?: boolean | null
           id?: string
           instagram_url?: string | null
+          tiktok_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           rank?: string | null
@@ -652,6 +655,8 @@ export type Database = {
           group_logo_url?: string | null
           group_banner_url?: string | null
           producer_role?: string | null
+          x_url?: string | null
+          tiktok_url?: string | null
         }
         Update: {
           address?: string | null
@@ -664,6 +669,7 @@ export type Database = {
           has_completed_tour?: boolean | null
           id?: string
           instagram_url?: string | null
+          tiktok_url?: string | null
           map_screenshot_url?: string | null
           niche?: Database["public"]["Enums"]["niche_type"] | null
           rank?: string | null
@@ -676,6 +682,7 @@ export type Database = {
           group_logo_url?: string | null
           group_banner_url?: string | null
           producer_role?: string | null
+          x_url?: string | null
         }
         Relationships: []
       }
