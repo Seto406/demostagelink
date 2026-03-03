@@ -49,20 +49,30 @@ const ResetPassword = () => {
     setIsSubmitting(true);
 
     try {
-      // Send branded email via our edge function (it handles link generation)
+      const redirectTo = `${window.location.origin}/reset-password?type=recovery`;
+
+      // Preferred: branded email via edge function.
+      // Fallback: native Supabase reset email so users aren't blocked if the function fails.
       const { data, error } = await supabase.functions.invoke("send-password-reset", {
         body: {
           email,
-          redirectTo: `${window.location.origin}/reset-password?type=recovery`,
+          redirectTo,
         },
       });
 
-      if (error) {
-        throw new Error(error.message || "Failed to send reset email");
-      }
+      if (error || data?.error) {
+        console.warn("send-password-reset edge function failed, using native reset flow", {
+          invokeError: error?.message,
+          functionError: data?.error,
+        });
 
-      if (data?.error) {
-        throw new Error(data.error);
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+
+        if (resetError) {
+          throw new Error(resetError.message || "Failed to send reset email");
+        }
       }
 
       setEmailSent(true);
