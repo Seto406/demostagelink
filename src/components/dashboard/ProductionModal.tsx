@@ -52,6 +52,8 @@ interface ScheduleSlot {
   time: string;
   deadline?: string;
   seat_limit?: number;
+  venue?: string;
+  city?: string;
 }
 
 type DeadlineMode = "automated" | "manual";
@@ -126,7 +128,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [description, setDescription] = useState("");
 
   // Schedule State (New List Format)
-  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50, venue: "", city: "" }]);
   const [deadlineMode, setDeadlineMode] = useState<DeadlineMode>("automated");
 
   const [venue, setVenue] = useState("");
@@ -186,7 +188,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const resetForm = useCallback(() => {
     setTitle("");
     setDescription("");
-    setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
+    setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50, venue: "", city: "" }]);
     setDeadlineMode("automated");
     setVenue("");
     setCity("");
@@ -252,6 +254,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
             id: typeof slot?.id === "string" && slot.id ? slot.id : crypto.randomUUID(),
             deadline: typeof slot?.deadline === "string" ? slot.deadline : "",
             seat_limit: typeof slot?.seat_limit === "number" && slot.seat_limit > 0 ? slot.seat_limit : 50,
+            venue: typeof slot?.venue === "string" ? slot.venue : "",
+            city: typeof slot?.city === "string" ? slot.city : "",
           })));
           const hasManualDeadline = parsedSlots.some((slot) => typeof slot?.deadline === "string" && slot.deadline.trim());
           setDeadlineMode(hasManualDeadline ? "manual" : "automated");
@@ -262,7 +266,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               scheduleData.endDate,
               scheduleData.selectedDays || []
           );
-          setScheduleSlots(convertedSlots.map((slot) => ({ ...slot, deadline: "", seat_limit: 50 })));
+          setScheduleSlots(convertedSlots.map((slot) => ({ ...slot, deadline: "", seat_limit: 50, venue: "", city: "" })));
           setDeadlineMode("automated");
       } else {
           // Fallback to main date column
@@ -288,12 +292,12 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
           // Check if dateStr looks like a single date "yyyy-MM-dd"
           if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-               setScheduleSlots([{ id: crypto.randomUUID(), date: dateStr, time: timeStr, deadline: "", seat_limit: 50 }]);
+               setScheduleSlots([{ id: crypto.randomUUID(), date: dateStr, time: timeStr, deadline: "", seat_limit: 50, venue: "", city: "" }]);
                setDeadlineMode("automated");
           } else {
               // Try to parse text date or just default
               // Reset to empty if unstructured
-               setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: timeStr, deadline: "", seat_limit: 50 }]);
+               setScheduleSlots([{ id: crypto.randomUUID(), date: "", time: timeStr, deadline: "", seat_limit: 50, venue: "", city: "" }]);
                setDeadlineMode("automated");
           }
       }
@@ -442,7 +446,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   };
 
   const addSlot = () => {
-      setScheduleSlots([...scheduleSlots, { id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50 }]);
+      setScheduleSlots([...scheduleSlots, { id: crypto.randomUUID(), date: "", time: "", deadline: "", seat_limit: 50, venue: "", city: "" }]);
   };
 
   const removeSlot = (index: number) => {
@@ -572,6 +576,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         time: slot.time,
         deadline: deadlineMode === "manual" ? (slot.deadline || "") : "",
         seat_limit: slot.seat_limit && slot.seat_limit > 0 ? slot.seat_limit : 50,
+        venue: slot.venue?.trim() || "",
+        city: slot.city?.trim() || "",
       }));
 
     // Sort slots by date
@@ -804,8 +810,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   </div>
 
                   {scheduleSlots.map((slot, index) => (
-                      <div key={slot.id} className="grid grid-cols-1 md:grid-cols-[1fr_130px_120px_1fr_auto] gap-2 items-end">
-                           <div className="space-y-1 flex-1">
+                      <div key={slot.id} className="space-y-2 rounded-md border border-secondary/20 bg-background/50 p-3">
+                        <div className="grid grid-cols-1 md:grid-cols-[1fr_130px_120px_1fr_auto] gap-2 items-end">
+                           <div className="space-y-1">
                                <Label className="text-xs">Date</Label>
                                <Input
                                   type="date"
@@ -854,6 +861,36 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                            >
                                <Trash2 className="w-4 h-4" />
                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Schedule Venue (optional)</Label>
+                            <CreatableSelect
+                              options={venues}
+                              value={slot.venue || ""}
+                              onChange={(value) => handleSlotChange(index, "venue", value)}
+                              placeholder={venue ? `Default: ${venue}` : "Set venue for this schedule"}
+                              className="bg-background border-secondary/30"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Schedule City (optional)</Label>
+                            <Select
+                              value={slot.city || "inherit"}
+                              onValueChange={(value) => handleSlotChange(index, "city", value === "inherit" ? "" : value)}
+                            >
+                              <SelectTrigger className="bg-background border-secondary/30">
+                                <SelectValue placeholder={city ? `Default: ${city}` : "Select city for this schedule"} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover border-secondary/30 max-h-60">
+                                <SelectItem value="inherit">Use default city</SelectItem>
+                                {METRO_MANILA_CITIES.map((c) => (
+                                  <SelectItem key={`${slot.id}-${c}`} value={c}>{c}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
                       </div>
                   ))}
                   <Button
@@ -869,7 +906,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
               <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-secondary/10">
                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="city">Default City *</Label>
                       <Select value={city} onValueChange={setCity}>
                         <SelectTrigger className="bg-background border-secondary/30">
                           <SelectValue placeholder="Select city" />
@@ -882,7 +919,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                       </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="venue">Venue *</Label>
+                        <Label htmlFor="venue">Default Venue *</Label>
                         <CreatableSelect
                         options={venues}
                         value={venue}
@@ -892,6 +929,9 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                         />
                     </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                You can keep one default location for the whole show, then override venue/city per schedule when dates happen in different places.
+              </p>
             </div>
 
             {/* Transcript Integration */}
