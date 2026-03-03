@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Save, Loader2, Upload } from "lucide-react";
 import { useDraftStorage } from "@/hooks/useDraftStorage";
@@ -46,6 +47,8 @@ interface EditProducerProfileDialogProps {
     group_banner_url?: string | null;
     founded_year?: number | null;
     address?: string | null;
+    niche?: "local" | "university" | null;
+    university?: string | null;
   } | null;
   theaterGroup: TheaterGroup | null;
   onSuccess: () => void;
@@ -65,6 +68,8 @@ export const EditProducerProfileDialog = ({
   const [bannerUrl, setBannerUrl] = useState("");
   const [foundedYear, setFoundedYear] = useState("");
   const [address, setAddress] = useState("");
+  const [niche, setNiche] = useState<"local" | "university">("local");
+  const [university, setUniversity] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -80,11 +85,13 @@ export const EditProducerProfileDialog = ({
     bannerUrl: string;
     foundedYear: string;
     address: string;
+    niche: "local" | "university";
+    university: string;
   } | null>(null);
 
   useEffect(() => {
     if (open) {
-      let values = { name: "", description: "", logoUrl: "", bannerUrl: "", foundedYear: "", address: "" };
+      let values = { name: "", description: "", logoUrl: "", bannerUrl: "", foundedYear: "", address: "", niche: "local" as "local" | "university", university: "" };
       if (theaterGroup) {
         values = {
             name: theaterGroup.name || "",
@@ -92,7 +99,9 @@ export const EditProducerProfileDialog = ({
             logoUrl: theaterGroup.logo_url || "",
             bannerUrl: theaterGroup.banner_url || "",
             foundedYear: producer?.founded_year ? String(producer.founded_year) : "",
-            address: producer?.address || ""
+            address: producer?.address || "",
+            niche: producer?.niche || "local",
+            university: producer?.university || ""
         };
       } else if (producer) {
         values = {
@@ -101,7 +110,9 @@ export const EditProducerProfileDialog = ({
             logoUrl: producer.group_logo_url || "",
             bannerUrl: producer.group_banner_url || "",
             foundedYear: producer.founded_year ? String(producer.founded_year) : "",
-            address: producer.address || ""
+            address: producer.address || "",
+            niche: producer.niche || "local",
+            university: producer.university || ""
         };
       }
       setName(values.name);
@@ -110,6 +121,8 @@ export const EditProducerProfileDialog = ({
       setBannerUrl(values.bannerUrl);
       setFoundedYear(values.foundedYear);
       setAddress(values.address);
+      setNiche(values.niche);
+      setUniversity(values.university);
       setInitialValues(values);
       setShowDiscardAlert(false);
     }
@@ -135,7 +148,7 @@ export const EditProducerProfileDialog = ({
     modalName: "theatergroupdetails",
     userId: user?.id,
     isOpen: open,
-    draft: { name, description, logoUrl, bannerUrl, foundedYear, address },
+    draft: { name, description, logoUrl, bannerUrl, foundedYear, address, niche, university },
     onHydrate: (savedDraft) => {
       setName(savedDraft.name ?? "");
       setDescription(savedDraft.description ?? "");
@@ -143,6 +156,8 @@ export const EditProducerProfileDialog = ({
       setBannerUrl(savedDraft.bannerUrl ?? "");
       setFoundedYear(savedDraft.foundedYear ?? "");
       setAddress(savedDraft.address ?? "");
+      setNiche((savedDraft.niche as "local" | "university") ?? "local");
+      setUniversity(savedDraft.university ?? "");
     },
   });
 
@@ -160,9 +175,11 @@ export const EditProducerProfileDialog = ({
       logoUrl !== initialValues.logoUrl ||
       bannerUrl !== initialValues.bannerUrl ||
       foundedYear !== initialValues.foundedYear ||
-      address !== initialValues.address
+      address !== initialValues.address ||
+      niche !== initialValues.niche ||
+      university !== initialValues.university
     );
-  }, [name, description, logoUrl, bannerUrl, foundedYear, address, initialValues]);
+  }, [name, description, logoUrl, bannerUrl, foundedYear, address, niche, university, initialValues]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
@@ -313,6 +330,11 @@ export const EditProducerProfileDialog = ({
       return;
     }
 
+    if (niche === "university" && !university.trim()) {
+      toast.error("University name is required for university theater groups");
+      return;
+    }
+
     setSaving(true);
     try {
       // 1. Upsert into theater_groups
@@ -372,6 +394,8 @@ export const EditProducerProfileDialog = ({
         group_banner_url: bannerUrl.trim() || null,
         founded_year: parsedFoundedYear,
         address: address.trim() || null,
+        niche,
+        university: niche === "university" ? university.trim() : null,
       };
 
       const { error: profileError } = await supabase
@@ -438,6 +462,19 @@ export const EditProducerProfileDialog = ({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
+                <Label htmlFor="niche">Group Type</Label>
+                <Select value={niche} onValueChange={(value) => setNiche(value as "local" | "university")}>
+                  <SelectTrigger id="niche" className="bg-background border-secondary/30">
+                    <SelectValue placeholder="Select group type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border-secondary/30">
+                    <SelectItem value="local">Local / Community</SelectItem>
+                    <SelectItem value="university">University</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="foundedYear">Founding Year</Label>
                 <Input
                   id="foundedYear"
@@ -450,17 +487,36 @@ export const EditProducerProfileDialog = ({
                   className="bg-background border-secondary/30"
                 />
               </div>
+            </div>
+
+            {niche === "university" && (
               <div className="space-y-2">
-                <Label htmlFor="address">Location</Label>
+                <Label htmlFor="university">University / Institution</Label>
+                <Input
+                  id="university"
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
+                  placeholder="e.g. University of the Philippines Diliman"
+                  className="bg-background border-secondary/30"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+                <Label htmlFor="address">{niche === "university" ? "Primary Campus Venue" : "Primary Venue / Location"}</Label>
                 <Input
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="City, venue, or district"
+                  placeholder={niche === "university" ? "e.g. Abelardo Hall Auditorium" : "e.g. PETA Theater Center, Quezon City"}
                   className="bg-background border-secondary/30"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {niche === "university"
+                    ? "Add the campus theater or main rehearsal/performance venue."
+                    : "Add the venue, district, or city where your group is usually based."}
+                </p>
               </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="logoUrl">Logo</Label>
