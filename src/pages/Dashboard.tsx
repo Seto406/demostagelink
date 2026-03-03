@@ -833,9 +833,6 @@ const Dashboard = () => {
               Track performance, manage members, and keep your season moving from one dashboard.
             </p>
           </div>
-          <Badge variant="secondary" className="h-fit self-start rounded-full border border-secondary/30 bg-secondary/15 px-3 py-1 text-xs">
-            Profile strength: {profileCompletionScore}/3
-          </Badge>
         </div>
       </div>
 
