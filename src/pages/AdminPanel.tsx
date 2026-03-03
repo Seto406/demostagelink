@@ -595,6 +595,9 @@ const AdminPanel = () => {
 
         if (err.context?.status === 401) {
           errorMessage = "Authentication expired. Please log in again.";
+
+          // Recover from stale/invalid auth state so follow-up actions don't keep failing.
+          await signOut();
         } else if (err.context?.status === 403) {
           errorMessage = "Unauthorized. Admin privileges required.";
         } else if (err.message) {
