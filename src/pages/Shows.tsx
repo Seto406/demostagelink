@@ -83,8 +83,13 @@ interface Show {
     id: string;
     group_name: string | null;
     avatar_url: string | null;
+    niche: "local" | "university" | null;
   } | null;
 }
+
+const getEffectiveNiche = (show: Show): "local" | "university" | null => {
+  return show.niche ?? show.producer_id?.niche ?? null;
+};
 
 // Enhanced Show Card component with 3D tilt
 const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ show, index }, ref) => {
@@ -514,7 +519,7 @@ const Shows = () => {
     const fetchFilterMetadata = async () => {
       const { data, error } = await supabase
         .from("shows")
-        .select("city, genre, niche")
+        .select("city, genre, niche, producer_id:profiles!producer_id ( niche )")
         .eq("status", "approved");
 
       if (error) {
@@ -530,8 +535,8 @@ const Shows = () => {
         if (s.genre) genres.add(s.genre);
       });
 
-      const hasUniversity = data.some((s) => s.niche === "university");
-      const hasLocal = data.some((s) => s.niche === "local");
+      const hasUniversity = data.some((s) => s.niche === "university" || s.producer_id?.niche === "university");
+      const hasLocal = data.some((s) => s.niche === "local" || s.producer_id?.niche === "local");
 
       const genreList = Array.from(genres).sort();
       if (hasLocal) genreList.push("Local/Community");
@@ -569,7 +574,8 @@ const Shows = () => {
           producer_id:profiles!producer_id (
             id,
             group_name,
-            avatar_url
+            avatar_url,
+            niche
           )
         `)
         .eq("status", "approved")
@@ -620,9 +626,9 @@ const Shows = () => {
     // 3. Genre/Niche Filter
     if (selectedGenre !== "All") {
       if (selectedGenre === "Local/Community") {
-        result = result.filter((s) => s.niche === "local");
+        result = result.filter((s) => getEffectiveNiche(s) === "local");
       } else if (selectedGenre === "University Theater") {
-        result = result.filter((s) => s.niche === "university");
+        result = result.filter((s) => getEffectiveNiche(s) === "university");
       } else {
         result = result.filter((s) => s.genre === selectedGenre);
       }
