@@ -10,7 +10,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "health:check": "pnpm lint && pnpm exec tsc --noEmit"
   },
   "engines": {
     "node": ">=20",
