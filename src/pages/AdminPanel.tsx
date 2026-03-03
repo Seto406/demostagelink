@@ -53,6 +53,7 @@ import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
 import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
+import { isUniversityTheaterGroup } from "@/lib/groupClassification";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -736,7 +737,11 @@ const AdminPanel = () => {
     // Update user role to producer
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({ role: "producer", group_name: request.group_name })
+      .update({
+        role: "producer",
+        group_name: request.group_name,
+        niche: isUniversityTheaterGroup(request.group_name) ? "university" : "local",
+      })
       .eq("user_id", request.user_id);
 
     if (profileError) {
