@@ -52,6 +52,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
 import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
+import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -1699,12 +1700,14 @@ const AdminPanel = () => {
                                   {request.profiles?.map_screenshot_url && (
                                      <div className="space-y-1">
                                         <p className="text-[10px] text-muted-foreground">Map/Location</p>
-                                        {request.profiles.map_screenshot_url.startsWith('<iframe') ? (
+                                        {parseMapEmbedSrc(request.profiles.map_screenshot_url) ? (
                                            <div className="text-xs text-muted-foreground italic">Embedded Map</div>
-                                        ) : (
-                                            <a href={request.profiles.map_screenshot_url} target="_blank" rel="noopener noreferrer">
-                                              <img src={request.profiles.map_screenshot_url} alt="Map" className="h-16 w-auto rounded object-cover border border-secondary/20" />
+                                        ) : toSafeExternalUrl(request.profiles.map_screenshot_url) ? (
+                                            <a href={toSafeExternalUrl(request.profiles.map_screenshot_url) || '#'} target="_blank" rel="noopener noreferrer">
+                                              <img src={toSafeExternalUrl(request.profiles.map_screenshot_url) || ''} alt="Map" className="h-16 w-auto rounded object-cover border border-secondary/20" />
                                             </a>
+                                        ) : (
+                                           <div className="text-xs text-muted-foreground italic">Invalid map URL blocked</div>
                                         )}
                                      </div>
                                   )}

@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { ExternalLink, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { toSafeExternalUrl } from "@/lib/security";
 
 const ExternalRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -16,22 +17,9 @@ const ExternalRedirect = () => {
   const [safeTargetUrl, setSafeTargetUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!rawTargetUrl) {
-      setIsValidUrl(false);
-      return;
-    }
-
-    try {
-      const url = new URL(rawTargetUrl);
-      if (url.protocol === 'http:' || url.protocol === 'https:') {
-        setSafeTargetUrl(rawTargetUrl);
-        setIsValidUrl(true);
-      } else {
-        setIsValidUrl(false);
-      }
-    } catch {
-      setIsValidUrl(false);
-    }
+    const safeUrl = toSafeExternalUrl(rawTargetUrl);
+    setSafeTargetUrl(safeUrl);
+    setIsValidUrl(Boolean(safeUrl));
   }, [rawTargetUrl]);
 
   useEffect(() => {
