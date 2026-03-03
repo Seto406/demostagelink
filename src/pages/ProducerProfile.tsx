@@ -198,23 +198,23 @@ const ProducerProfile = () => {
         setFollowerCount(count);
       }
 
-      // Fetch following count for the current profile
-      if (profileData?.id) {
+      // Fetch following count for the current signed-in user
+      if (user?.id) {
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .eq("follower_id", profileData.id);
+            .eq("follower_id", user.id);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
           }
       }
 
-      if (user && profileData?.id) {
+      if (user) {
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .eq("follower_id", profileData.id)
+            .eq("follower_id", user.id)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -250,7 +250,7 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerId = profile?.id;
+    const followerId = user?.id;
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
