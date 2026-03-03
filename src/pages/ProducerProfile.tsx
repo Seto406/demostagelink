@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { createNotification } from "@/lib/notifications";
 import { EditProducerProfileDialog } from "@/components/producer/EditProducerProfileDialog";
 import { Pencil } from "lucide-react";
+import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
 
 interface TheaterGroup {
   id: string;
@@ -526,6 +527,10 @@ const ProducerProfile = () => {
   const displayBanner = theaterGroup?.banner_url || producer.group_banner_url;
   const displayName = theaterGroup?.name || producer.group_name || "Unnamed Group";
   const displayDescription = theaterGroup?.description || producer.description;
+  const safeFacebookUrl = toSafeExternalUrl(producer.facebook_url);
+  const safeInstagramUrl = toSafeExternalUrl(producer.instagram_url);
+  const safeMapImageUrl = toSafeExternalUrl(producer.map_screenshot_url);
+  const safeMapEmbedUrl = parseMapEmbedSrc(producer.map_screenshot_url);
 
   return (
     <div className="min-h-screen bg-background">
@@ -749,11 +754,11 @@ const ProducerProfile = () => {
                     </div>
                   </div>
 
-                  {(producer.facebook_url || producer.instagram_url) && (
+                  {(safeFacebookUrl || safeInstagramUrl) && (
                     <div className="flex gap-4 mt-4 pt-4 border-t border-secondary/20">
-                      {producer.facebook_url && (
+                      {safeFacebookUrl && (
                         <a
-                          href={`/external-redirect?url=${encodeURIComponent(producer.facebook_url)}`}
+                          href={`/external-redirect?url=${encodeURIComponent(safeFacebookUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -762,9 +767,9 @@ const ProducerProfile = () => {
                           <span className="text-sm">Facebook</span>
                         </a>
                       )}
-                      {producer.instagram_url && (
+                      {safeInstagramUrl && (
                         <a
-                          href={`/external-redirect?url=${encodeURIComponent(producer.instagram_url)}`}
+                          href={`/external-redirect?url=${encodeURIComponent(safeInstagramUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -780,7 +785,7 @@ const ProducerProfile = () => {
             </div>
           </motion.div>
 
-          {producer.map_screenshot_url && (
+          {(safeMapEmbedUrl || safeMapImageUrl) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -792,15 +797,19 @@ const ProducerProfile = () => {
                 Location
               </h2>
               <div className="bg-card border border-secondary/20 rounded-xl overflow-hidden shadow-sm">
-                {producer.map_screenshot_url.startsWith("<iframe") ? (
-                   <div
-                     className="w-full aspect-video [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:border-0"
-                     dangerouslySetInnerHTML={{ __html: producer.map_screenshot_url }}
-                   />
+                {safeMapEmbedUrl ? (
+                  <iframe
+                    src={safeMapEmbedUrl}
+                    title="Location Map"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    sandbox="allow-scripts allow-same-origin allow-popups"
+                    className="w-full aspect-video border-0"
+                  />
                 ) : (
                   <div className="w-full h-64 md:h-80 bg-muted relative">
                     <img
-                      src={producer.map_screenshot_url}
+                      src={safeMapImageUrl || undefined}
                       alt="Location Map"
                       className="w-full h-full object-cover"
                     />

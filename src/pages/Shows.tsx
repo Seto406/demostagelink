@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toSafeExternalUrl } from "@/lib/security";
 import { ShowCardSkeleton as SkeletonCard } from "@/components/ui/skeleton-loaders";
 import { TiltCard } from "@/components/ui/tilt-card";
 import { PullToRefresh } from "@/components/ui/pull-to-refresh";
@@ -100,6 +101,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
 
   const isPast = show.date ? new Date(show.date) < new Date(new Date().setHours(0, 0, 0, 0)) : false;
   const isProducerOrAdmin = user && ((profile?.role === 'producer' && profile?.id === show.producer_id?.id) || profile?.role === 'admin');
+  const safeTicketLink = toSafeExternalUrl(show.ticket_link);
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -335,7 +337,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               </div>
 
               {/* Buy Ticket Button */}
-              {show.ticket_link && (
+              {safeTicketLink && (
                 <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto">
                   {isPast ? (
                     <Button
@@ -353,7 +355,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        window.open(show.ticket_link || '', '_blank');
+                        window.open(safeTicketLink, '_blank', 'noopener,noreferrer');
                       }}
                     >
                       <Ticket className="w-3 h-3 mr-1" />
