@@ -1939,7 +1939,7 @@ const AdminPanel = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handlePromoteUser(userProfile.user_id, userProfile.group_name || "New Producer")}
-                                    className="text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                    className="w-[140px] justify-start text-green-500 hover:text-green-400 hover:bg-green-500/10"
                                     title="Promote to Producer"
                                   >
                                     <ChevronUp className="w-4 h-4 mr-1" />
@@ -1950,7 +1950,7 @@ const AdminPanel = () => {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleDemoteUser(userProfile.user_id)}
-                                    className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                    className="w-[140px] justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10"
                                     title="Demote to Audience"
                                   >
                                     <ChevronDown className="w-4 h-4 mr-1" />
