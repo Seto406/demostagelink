@@ -21,6 +21,7 @@ import { SystemStability } from "@/components/SystemStability";
 import ScrollToTop from "@/components/ui/scroll-to-top";
 import Navbar from "@/components/layout/Navbar";
 import { RoleBasedGuard } from "@/components/auth/RoleBasedGuard";
+import { toast } from "@/hooks/use-toast";
 
 // Lazy load pages
 const Index = lazy(() => import("./pages/Index"));
@@ -131,10 +132,29 @@ const AppRoutes = () => {
 };
 
 const AppLayout = () => {
-  const { loading } = useAuth();
+  const { loading, user, profile } = useAuth();
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   const isLandingPage = location.pathname === "/";
+
+  useEffect(() => {
+    if (loading || !user || !profile) return;
+
+    const missingUsername = !profile.username?.trim();
+    const missingProducerProfile = profile.role === "producer" && !profile.group_name?.trim();
+
+    if (!missingUsername && !missingProducerProfile) return;
+
+    const reminderKey = `profile-setup-reminder:${user.id}`;
+    if (sessionStorage.getItem(reminderKey) === "shown") return;
+
+    toast({
+      title: "Complete your profile",
+      description: "Please add your username and basic profile details in Settings so others can recognize you.",
+    });
+
+    sessionStorage.setItem(reminderKey, "shown");
+  }, [loading, user, profile]);
 
   return (
     <>
