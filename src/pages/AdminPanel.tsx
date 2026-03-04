@@ -51,7 +51,6 @@ import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
 import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
-import { isUniversityTheaterGroup } from "@/lib/groupClassification";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -693,25 +692,6 @@ const AdminPanel = () => {
   };
 
   const handleApproveRequest = async (request: ProducerRequest) => {
-    // Update user role to producer
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        role: "producer",
-        group_name: request.group_name,
-        niche: isUniversityTheaterGroup(request.group_name) ? "university" : "local",
-      })
-      .eq("user_id", request.user_id);
-
-    if (profileError) {
-      toast({
-        title: "Error",
-        description: "Failed to approve request.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const reviewPayload = {
       status: "approved",
       reviewed_at: new Date().toISOString(),
@@ -748,7 +728,7 @@ const AdminPanel = () => {
       if (deleteError) {
         toast({
           title: "Request Approval Partially Applied",
-          description: "The user was promoted, but we could not remove the pending request.",
+          description: "Request was approved, but we could not remove the pending request.",
           variant: "destructive",
         });
         return;
@@ -769,7 +749,7 @@ const AdminPanel = () => {
         console.error("Failed to send approval email:", emailError);
         toast({
           title: "Email Delivery Failed",
-          description: "Producer approved, but email notification failed.",
+          description: "Request approved, but email notification failed.",
           variant: "destructive",
         });
       }
@@ -777,7 +757,7 @@ const AdminPanel = () => {
 
     toast({
       title: "Request Approved",
-      description: `${request.group_name} is now a Producer.`,
+      description: `${request.group_name} request has been approved.`,
     });
 
     // Update local state immediately
