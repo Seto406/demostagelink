@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { shakeVariants } from "@/hooks/use-shake";
 import { Eye, EyeOff, Check, X, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { findMatchingTestAccount } from "@/lib/testAccounts";
 
 type UserType = "audience" | "producer" | null;
 type AuthMode = "login" | "signup";
@@ -130,6 +131,38 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
   const triggerShake = () => {
     setFormError(true);
     setTimeout(() => setFormError(false), 500);
+  };
+
+  const tryProvisionTestAccount = async (inputEmail: string, inputPassword: string) => {
+    const matchingAccount = findMatchingTestAccount(inputEmail, inputPassword);
+    if (!matchingAccount) {
+      return { recovered: false, error: null as Error | null };
+    }
+
+    const generatedUsername = `qa_${matchingAccount.role}_${Date.now().toString().slice(-6)}`;
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: matchingAccount.email,
+      password: matchingAccount.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/verify-email`,
+        data: {
+          role: matchingAccount.role,
+          first_name: "QA",
+          username: generatedUsername,
+        },
+      },
+    });
+
+    if (signUpError && !/already registered/i.test(signUpError.message)) {
+      return { recovered: false, error: signUpError };
+    }
+
+    const { error: retrySignInError } = await signIn(matchingAccount.email, matchingAccount.password);
+    if (retrySignInError) {
+      return { recovered: false, error: retrySignInError };
+    }
+
+    return { recovered: true, error: null as Error | null };
   };
 
   const handleGoogleLogin = async () => {
@@ -258,10 +291,22 @@ export const AuthForm = ({ initialMode = "login", className, hideLogo = false }:
 
         const { error } = await signIn(email, password);
         if (error) {
+          const { recovered, error: recoveryError } = await tryProvisionTestAccount(email, password);
+
+          if (recovered) {
+            toast({
+              title: "Welcome back!",
+              description: "QA account is now ready and you have been logged in.",
+            });
+            navigate("/", { replace: true });
+            setIsSubmitting(false);
+            return;
+          }
+
           triggerShake();
           toast({
             title: "Login failed",
-            description: error.message,
+            description: recoveryError?.message || error.message,
             variant: "destructive",
           });
         } else {
