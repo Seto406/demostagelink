@@ -179,33 +179,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // Ignore transient null sessions from browser/tab lifecycle noise.
+      // This avoids brief auth/profile flickers when users switch back to the tab.
+      if (!currentSession) {
+        return;
+      }
+
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
         // Run quietly in background without forcing a loading screen
         fetchProfile(currentSession.user.id, currentSession.user.user_metadata);
-      } else {
-        setProfile(null);
       }
     });
-
-    // Clean background recovery for ghost states
-    const handleFocus = () => {
-      if (mounted && user && !profile && !loading) {
-        console.log("Tab focus: Healing ghost state...");
-        fetchProfile(user.id, user.user_metadata);
-        supabase.auth.getSession(); // Ping Supabase internally
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
 
     return () => {
       mounted = false;
       clearTimeout(failsafeTimer);
       subscription.unsubscribe();
-      window.removeEventListener("focus", handleFocus);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
