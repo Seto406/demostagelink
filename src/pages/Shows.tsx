@@ -646,9 +646,18 @@ const Shows = () => {
       if (show.seo_metadata?.schedule?.startDate) {
         startDate = show.seo_metadata.schedule.startDate;
         endDate = show.seo_metadata.schedule.endDate;
-      } else if (show.date && /^\d{4}-\d{2}-\d{2}$/.test(show.date)) {
-        startDate = show.date;
-        endDate = show.date;
+      } else if (show.date) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(show.date)) {
+          startDate = show.date;
+          endDate = show.date;
+        } else {
+          const parsedDate = new Date(show.date);
+          if (!Number.isNaN(parsedDate.getTime())) {
+            const normalizedDate = parsedDate.toISOString().split("T")[0];
+            startDate = normalizedDate;
+            endDate = normalizedDate;
+          }
+        }
       }
 
       // If we have a date filter (From Date), apply it
