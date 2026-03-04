@@ -30,8 +30,6 @@ import {
   Users, 
   Theater, 
   UserCheck,
-  ChevronUp,
-  ChevronDown,
   Image as ImageIcon,
   Trash2,
   RotateCcw,
@@ -115,6 +113,11 @@ interface UserProfile {
   group_name: string | null;
   created_at: string;
 }
+
+const TEST_ACCOUNTS = [
+  { email: "dev.audience@test.com", password: "audience123" },
+  { email: "dev.producer@test.com", password: "producer123" },
+] as const;
 
 const isUserProfileRecord = (value: unknown): value is UserProfile => {
   if (!value || typeof value !== "object") return false;
@@ -686,50 +689,6 @@ const AdminPanel = () => {
         description: "Failed to send reminders.",
         variant: "destructive",
       });
-    }
-  };
-
-  const handlePromoteUser = async (userId: string, groupName: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ role: "producer", group_name: groupName })
-      .eq("user_id", userId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to promote user.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "User Promoted",
-        description: "User is now a Producer.",
-      });
-      fetchUsers();
-      fetchStats();
-    }
-  };
-
-  const handleDemoteUser = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ role: "audience", group_name: null })
-      .eq("user_id", userId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to demote user.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "User Demoted",
-        description: "User is now an Audience member.",
-      });
-      fetchUsers();
-      fetchStats();
     }
   };
 
@@ -1890,6 +1849,18 @@ const AdminPanel = () => {
                 <div className="text-muted-foreground text-center py-8">Loading users...</div>
               ) : (
                 <>
+                  <div className="mb-4 rounded-xl border border-secondary/20 bg-card p-4">
+                    <p className="text-sm font-medium text-foreground">Test accounts</p>
+                    <p className="text-xs text-muted-foreground mb-3">Use these credentials for QA login testing.</p>
+                    <div className="space-y-2">
+                      {TEST_ACCOUNTS.map((account) => (
+                        <div key={account.email} className="rounded-md border border-secondary/20 bg-muted/30 px-3 py-2 text-sm">
+                          <span className="font-medium text-foreground">{account.email}</span>
+                          <span className="text-muted-foreground"> / {account.password}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
                     <Input
                       value={userSearch}
@@ -2006,29 +1977,6 @@ const AdminPanel = () => {
                           <td className="p-4">
                             {userProfile.role !== "admin" && (
                               <div className="flex items-center gap-2">
-                                {userProfile.role === "audience" ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handlePromoteUser(userProfile.user_id, userProfile.group_name || "New Producer")}
-                                    className="w-[140px] justify-start text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                    title="Promote to Producer"
-                                  >
-                                    <ChevronUp className="w-4 h-4 mr-1" />
-                                    Promote
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDemoteUser(userProfile.user_id)}
-                                    className="w-[140px] justify-start text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                                    title="Demote to Audience"
-                                  >
-                                    <ChevronDown className="w-4 h-4 mr-1" />
-                                    Demote
-                                  </Button>
-                                )}
                                 {/* Force Delete Button */}
                                 <Button
                                   variant="ghost"
