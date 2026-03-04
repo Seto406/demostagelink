@@ -467,7 +467,8 @@ const Profile = () => {
     }
     if (!profile) return;
 
-    const followerId = currentUserProfile?.id;
+    // follows.follower_id is auth.users.id (not profiles.id)
+    const followerId = user.id;
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
