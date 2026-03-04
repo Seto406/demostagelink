@@ -78,6 +78,7 @@ interface ProductionDraft {
   productionStatus: "ongoing" | "completed" | "draft";
   transcriptUrl: string;
   transcriptContent: string;
+  pamphletPdfUrl: string;
 }
 
 type DeadlineMode = "automated" | "manual";
@@ -179,6 +180,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   // Transcripts
   const [transcriptUrl, setTranscriptUrl] = useState("");
   const [transcriptContent, setTranscriptContent] = useState("");
+  const [pamphletPdfFile, setPamphletPdfFile] = useState<File | null>(null);
+  const [pamphletPdfUrl, setPamphletPdfUrl] = useState("");
 
   const [tempCastName, setTempCastName] = useState("");
   const [tempCastRole, setTempCastRole] = useState("");
@@ -236,6 +239,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setProductionStatus("ongoing");
     setTranscriptUrl("");
     setTranscriptContent("");
+    setPamphletPdfFile(null);
+    setPamphletPdfUrl("");
     setPosterFile(null);
     setPosterPreview(null);
     setAdminAutoApprove(true);
@@ -374,6 +379,8 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setPaymentInstructions(showToEdit.seo_metadata?.payment_instructions || "");
       setTranscriptUrl(showToEdit.seo_metadata?.transcript_url || "");
       setTranscriptContent(showToEdit.seo_metadata?.transcript_content || "");
+      setPamphletPdfUrl(showToEdit.seo_metadata?.pamphlet_pdf_url || "");
+      setPamphletPdfFile(null);
       setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
 
     } else {
@@ -415,6 +422,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         }
         if (typeof draft.transcriptUrl === "string") setTranscriptUrl(draft.transcriptUrl);
         if (typeof draft.transcriptContent === "string") setTranscriptContent(draft.transcriptContent);
+        if (typeof draft.pamphletPdfUrl === "string") setPamphletPdfUrl(draft.pamphletPdfUrl);
       } catch (error) {
         console.warn("Failed to restore production draft", error);
         localStorage.removeItem(PRODUCTION_DRAFT_KEY);
@@ -446,6 +454,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       productionStatus,
       transcriptUrl,
       transcriptContent,
+      pamphletPdfUrl,
     };
 
     localStorage.setItem(PRODUCTION_DRAFT_KEY, JSON.stringify(draft));
@@ -472,7 +481,35 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     productionStatus,
     transcriptUrl,
     transcriptContent,
+    pamphletPdfUrl,
   ]);
+
+  const handlePamphletSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a PDF file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a PDF smaller than 10MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPamphletPdfFile(file);
+    setPamphletPdfUrl("");
+    e.target.value = "";
+  };
 
   const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -648,6 +685,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
     setUploading(true);
     let finalPosterUrl: string | null = null;
+    let finalPamphletPdfUrl: string | null = null;
 
     try {
       // Get the producer's theater group ID
@@ -674,6 +712,27 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         finalPosterUrl = publicUrl;
       } else if (showToEdit && posterPreview === showToEdit.poster_url) {
         finalPosterUrl = showToEdit.poster_url;
+      }
+
+      if (pamphletPdfFile) {
+        const safeName = pamphletPdfFile.name.replace(/[^a-z0-9._-]/gi, "-");
+        const fileName = `${user.id}/pamphlets/${Date.now()}-${safeName}`;
+
+        const { error: uploadPdfError } = await supabase.storage
+          .from("show-posters")
+          .upload(fileName, pamphletPdfFile, { upsert: false, contentType: "application/pdf" });
+
+        if (uploadPdfError) throw new Error(`Failed to upload pamphlet PDF: ${uploadPdfError.message}`);
+
+        const { data: { publicUrl: pamphletPublicUrl } } = supabase.storage
+          .from("show-posters")
+          .getPublicUrl(fileName);
+
+        finalPamphletPdfUrl = pamphletPublicUrl;
+      } else if (pamphletPdfUrl) {
+        finalPamphletPdfUrl = pamphletPdfUrl;
+      } else {
+        finalPamphletPdfUrl = null;
       }
 
     // Construct Duration String
@@ -789,6 +848,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         formatted_show_time: displayTimeString, // Save the friendly time string
         transcript_url: transcriptUrl || null,
         transcript_content: transcriptContent || null,
+        pamphlet_pdf_url: finalPamphletPdfUrl,
       },
     };
 
@@ -1098,6 +1158,26 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   <p className="text-[10px] text-muted-foreground">
                      This content will be hidden from the main view but used for search functionality.
                   </p>
+               </div>
+
+               <div className="space-y-2">
+                  <Label htmlFor="pamphletPdf" className="text-xs text-muted-foreground">
+                    Private Pamphlet PDF (unlocks after check-in)
+                  </Label>
+                  <Input
+                    id="pamphletPdf"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePamphletSelect}
+                    className="bg-background border-secondary/30"
+                  />
+                  {pamphletPdfFile ? (
+                    <p className="text-[10px] text-muted-foreground">Selected: {pamphletPdfFile.name}</p>
+                  ) : pamphletPdfUrl ? (
+                    <p className="text-[10px] text-muted-foreground">Current file is already uploaded for this show.</p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground">Upload a private PDF handout. It will not appear publicly on the show page.</p>
+                  )}
                </div>
             </div>
 

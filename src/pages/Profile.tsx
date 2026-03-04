@@ -44,6 +44,7 @@ interface TicketData {
   show_id: string;
   status: string | null;
   access_code: string | null;
+  checked_in_at?: string | null;
   shows: {
     id: string;
     title: string;
@@ -303,6 +304,7 @@ const Profile = () => {
               show_id,
               status,
               access_code,
+              checked_in_at,
               shows (
                 id,
                 title,
@@ -821,6 +823,8 @@ const Profile = () => {
                                         ticketPrice={ticket.shows?.price}
                                         reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
                                         paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                                        pamphletPdfUrl={(ticket.shows?.seo_metadata as { pamphlet_pdf_url?: string } | null)?.pamphlet_pdf_url}
+                                        pamphletUnlocked={Boolean(ticket.checked_in_at) || ticket.status === 'used'}
                                     />
                                 ))}
                             </div>
@@ -857,6 +861,8 @@ const Profile = () => {
                                         ticketPrice={ticket.shows?.price}
                                         reservationFee={ticket.shows?.reservation_fee ?? calculateReservationFee(ticket.shows?.price || 0, ticket.shows?.profiles?.niche || null)}
                                         paymentInstructions={(ticket.shows?.seo_metadata as { payment_instructions?: string } | null)?.payment_instructions}
+                                        pamphletPdfUrl={(ticket.shows?.seo_metadata as { pamphlet_pdf_url?: string } | null)?.pamphlet_pdf_url}
+                                        pamphletUnlocked={Boolean(ticket.checked_in_at) || ticket.status === 'used'}
                                     />
                                 ))}
                              </div>

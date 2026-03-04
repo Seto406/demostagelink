@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Download, Image, FileText, CheckCircle2 } from "lucide-react";
+import { Calendar, MapPin, Download, Image, FileText, CheckCircle2, Lock } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
@@ -26,6 +26,8 @@ interface DigitalPassProps {
   ticketPrice?: number | null;
   reservationFee?: number | null;
   paymentInstructions?: string | null;
+  pamphletPdfUrl?: string | null;
+  pamphletUnlocked?: boolean;
 }
 
 export const DigitalPass = ({
@@ -42,6 +44,8 @@ export const DigitalPass = ({
   ticketPrice,
   reservationFee,
   paymentInstructions,
+  pamphletPdfUrl,
+  pamphletUnlocked = false,
 }: DigitalPassProps) => {
   const passRef = useRef<HTMLDivElement>(null);
   const paidAmount = reservationFee ?? 25;
@@ -236,6 +240,23 @@ export const DigitalPass = ({
                         <div className="text-xs bg-muted/50 p-2 rounded border border-secondary/20">
                             <span className="font-semibold text-secondary block mb-1">Payment Instructions:</span>
                             <span className="text-muted-foreground whitespace-pre-wrap">{paymentInstructions}</span>
+                        </div>
+                    )}
+                    {pamphletPdfUrl && (
+                        <div className="pt-2">
+                            {pamphletUnlocked ? (
+                                <a href={pamphletPdfUrl} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" size="sm" className="w-full md:w-auto">
+                                        <FileText className="w-3.5 h-3.5 mr-2" />
+                                        Open Show Pamphlet
+                                    </Button>
+                                </a>
+                            ) : (
+                                <div className="text-[11px] bg-muted/50 p-2 rounded border border-secondary/20 text-muted-foreground flex items-start gap-2">
+                                    <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                    <span>Pamphlet unlocks after check-in.</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
