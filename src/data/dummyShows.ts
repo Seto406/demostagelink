@@ -13,6 +13,7 @@ export interface ShowDetails {
   city: string | null;
   ticket_link: string | null;
   poster_url: string | null;
+  video_url: string | null;
   niche: "local" | "university" | null;
   status: "pending" | "approved" | "rejected";
   created_at: string;
@@ -52,6 +53,7 @@ export const dummyShows: ShowDetails[] = [
     city: "Makati",
     ticket_link: "https://ticketworld.com.ph",
     poster_url: "https://upload.wikimedia.org/wikipedia/en/5/52/Mula_sa_Buwan_2022_Poster.jpg",
+    video_url: "https://youtu.be/dQw4w9WgXcQ",
     niche: "local",
     status: "approved",
     created_at: new Date().toISOString(),
@@ -86,6 +88,7 @@ export const dummyShows: ShowDetails[] = [
     city: "Pasay",
     ticket_link: "https://ticketworld.com.ph",
     poster_url: "https://upload.wikimedia.org/wikipedia/en/8/87/Ang_Huling_El_Bimbo_Musical_Poster.jpg",
+    video_url: null,
     niche: "local",
     status: "approved",
     created_at: new Date().toISOString(),
@@ -120,6 +123,7 @@ export const dummyShows: ShowDetails[] = [
     city: "Quezon City",
     ticket_link: "https://ticket2me.net",
     poster_url: "https://ticket2me.net/images/posters/dekada70.jpg", // Fallback if broken: https://upload.wikimedia.org/wikipedia/en/thumb/8/84/Dekada_70_film_poster.jpg/220px-Dekada_70_film_poster.jpg
+    video_url: null,
     niche: "local",
     status: "approved",
     created_at: new Date().toISOString(),
@@ -153,6 +157,7 @@ export const dummyShows: ShowDetails[] = [
     city: "Test City",
     ticket_link: null,
     poster_url: null,
+    video_url: null,
     niche: "local",
     status: "approved",
     created_at: new Date().toISOString(),

@@ -27,6 +27,9 @@ import { PostCommentSection } from "./PostCommentSection";
 import { cn } from "@/lib/utils";
 import { createNotification } from "@/lib/notifications";
 
+
+const isLikelyVideoUrl = (url: string) => /\.(mp4|webm|ogg|mov|m4v)(\?|$)/i.test(url) || /\/video\//i.test(url);
+
 export interface FeedUpdateProps {
   post: {
     id: string;
@@ -241,24 +244,44 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
            {post.media_urls && post.media_urls.length > 0 && (
                <div className="w-full rounded-lg overflow-hidden border border-secondary/20 bg-black/5">
                    {post.media_urls.length === 1 ? (
-                       <img
-                          src={post.media_urls[0]}
-                          alt="Post attachment"
-                          className="w-full h-auto max-h-[500px] object-contain"
-                          loading="lazy"
-                       />
+                       isLikelyVideoUrl(post.media_urls[0]) ? (
+                         <video
+                           src={post.media_urls[0]}
+                           className="w-full h-auto max-h-[500px] object-contain"
+                           controls
+                           preload="metadata"
+                           playsInline
+                         />
+                       ) : (
+                         <img
+                            src={post.media_urls[0]}
+                            alt="Post attachment"
+                            className="w-full h-auto max-h-[500px] object-contain"
+                            loading="lazy"
+                         />
+                       )
                    ) : (
                        <Carousel className="w-full">
                            <CarouselContent>
                                {post.media_urls.map((url, idx) => (
                                    <CarouselItem key={idx}>
                                        <div className="p-1">
-                                            <img
+                                            {isLikelyVideoUrl(url) ? (
+                                              <video
+                                                src={url}
+                                                className="w-full h-auto max-h-[500px] object-contain rounded-md"
+                                                controls
+                                                preload="metadata"
+                                                playsInline
+                                              />
+                                            ) : (
+                                              <img
                                                 src={url}
                                                 alt={`Slide ${idx + 1}`}
                                                 className="w-full h-auto max-h-[500px] object-contain rounded-md"
                                                 loading="lazy"
-                                            />
+                                              />
+                                            )}
                                        </div>
                                    </CarouselItem>
                                ))}

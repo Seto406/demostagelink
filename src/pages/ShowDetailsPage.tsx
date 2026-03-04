@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
+import { toTrailerEmbedUrl } from "@/lib/security";
 
 interface SlotMetadata {
   id?: string;
@@ -133,6 +134,8 @@ const ShowDetailsPage = () => {
 
     checkTicketStatus();
   }, [user, show, profile]);
+
+  const trailerEmbedUrl = toTrailerEmbedUrl(show?.video_url);
 
   const scheduleSlots = (() => {
     const raw = (show as unknown as { seo_metadata?: { schedule?: SlotMetadata[] } })?.seo_metadata?.schedule;
@@ -747,6 +750,22 @@ END:VCALENDAR`;
                <div className="lg:col-span-7 space-y-12">
 
                    {/* About */}
+
+                   {/* Trailer */}
+                   {trailerEmbedUrl && (
+                     <section>
+                       <h2 className="text-2xl font-serif font-bold text-foreground mb-6">Trailer</h2>
+                       <div className="aspect-video w-full overflow-hidden rounded-xl border border-secondary/10 bg-card/50">
+                         <iframe
+                           src={trailerEmbedUrl}
+                           title={`${show.title} trailer`}
+                           className="h-full w-full border-0"
+                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                           allowFullScreen
+                         />
+                       </div>
+                     </section>
+                   )}
                    <section>
                         <h2 className="text-2xl font-serif font-bold text-foreground mb-6">About the Show</h2>
                         <div className="prose prose-lg prose-invert max-w-none text-muted-foreground bg-card/50 p-6 rounded-xl border border-secondary/10">

@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "./UpsellModal";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toSafeTrailerUrl } from "@/lib/security";
 
 interface ProductionModalProps {
   open: boolean;
@@ -165,6 +166,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [collectBalanceOnsite, setCollectBalanceOnsite] = useState(true);
   const [genre, setGenre] = useState<string[]>([]);
   const [director, setDirector] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
 
   // Duration State
   const [hours, setHours] = useState("");
@@ -224,6 +226,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setCollectBalanceOnsite(true);
     setGenre([]);
     setDirector("");
+    setVideoUrl("");
     setHours("");
     setMinutes("");
     setTags([]);
@@ -367,6 +370,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
       setGenre(showToEdit.genre ? showToEdit.genre.split(',').map((g: string) => g.trim()) : []);
       setDirector(showToEdit.director || "");
+      setVideoUrl(showToEdit.video_url || "");
       setPaymentInstructions(showToEdit.seo_metadata?.payment_instructions || "");
       setTranscriptUrl(showToEdit.seo_metadata?.transcript_url || "");
       setTranscriptContent(showToEdit.seo_metadata?.transcript_content || "");
@@ -737,6 +741,17 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     }
 
     const validLinks = externalLinks.filter(l => l.trim() !== "");
+    const safeTrailerUrl = videoUrl.trim() ? toSafeTrailerUrl(videoUrl) : null;
+
+    if (videoUrl.trim() && !safeTrailerUrl) {
+      toast({
+        title: "Invalid trailer URL",
+        description: "Please use a valid YouTube or Vimeo link.",
+        variant: "destructive",
+      });
+      setUploading(false);
+      return;
+    }
 
     const { display_date, ...restMetadata } = (showToEdit?.seo_metadata || {}) as Record<string, unknown>;
 
@@ -762,6 +777,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       genre: genre.length > 0 ? genre.join(", ") : null,
       director: director || null,
       duration,
+      video_url: safeTrailerUrl,
       tags: tags.length > 0 ? tags : null,
       cast_members: cast.length > 0 ? (cast as unknown as Json) : null,
       seo_metadata: {
@@ -1299,6 +1315,19 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                 placeholder="Director name"
                 className="bg-background border-secondary/30"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video-url">Trailer URL</Label>
+              <Input
+                id="video-url"
+                type="url"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://youtu.be/... or https://vimeo.com/..."
+                className="bg-background border-secondary/30"
+              />
+              <p className="text-xs text-muted-foreground">YouTube or Vimeo links only.</p>
             </div>
 
             <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10 relative z-0">
