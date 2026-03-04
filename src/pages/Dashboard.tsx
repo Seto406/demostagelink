@@ -104,7 +104,7 @@ type Show = Database["public"]["Tables"]["shows"]["Row"] & {
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, effectiveRole } = useAuth();
   const { isPro, isLoading: isSubscriptionLoading } = useSubscription();
   const [managedGroups, setManagedGroups] = useState<ManagedGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -716,7 +716,7 @@ const Dashboard = () => {
   };
 
   // Hard Lock: Immediate redirect for non-producers to prevent flicker
-  if (!loading && profile && profile.role !== 'producer') {
+  if (!loading && profile && effectiveRole !== 'producer') {
     return <Navigate to="/feed" replace />;
   }
 
