@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export const useSubscription = () => {
-  const { user, isAdmin, adminProModeOverride } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
@@ -64,8 +64,7 @@ export const useSubscription = () => {
     }
   };
 
-  const baseIsPro = subscription?.status === 'active' || subscription?.status === 'trialing';
-  const isPro = isAdmin && adminProModeOverride !== null ? adminProModeOverride : baseIsPro;
+  const isPro = subscription?.status === 'active' || subscription?.status === 'trialing';
 
   // Calculate days left
   let daysLeft = 0;
