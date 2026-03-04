@@ -943,16 +943,16 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       <Dialog open={open} onOpenChange={(val) => {
         onOpenChange(val);
       }}>
-        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
+        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+          <DialogHeader className="space-y-2 border-b border-secondary/20 pb-4">
             {showToEdit ? <DialogTitle className="font-serif text-xl">Edit Production</DialogTitle> : <DialogTitle className="font-serif text-xl">Post New Production</DialogTitle>}
             <DialogDescription>
               Submit your show details. It will appear on the feed after approval.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+            <div className="space-y-2 rounded-lg border border-secondary/20 bg-muted/20 p-4">
               <Label htmlFor="title">Show Title *</Label>
               <Input
                 id="title"
@@ -964,7 +964,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-lg border border-secondary/20 bg-muted/20 p-4">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -1096,7 +1096,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-secondary/10">
+              <div className="grid grid-cols-1 gap-4 mt-4 border-t border-secondary/10 pt-4 md:grid-cols-2">
                    <div className="space-y-2">
                       <Label htmlFor="city">Default City *</Label>
                       <Select value={city} onValueChange={setCity}>
@@ -1181,7 +1181,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-lg border border-secondary/20 bg-muted/20 p-4">
               <Label htmlFor="paymentInstructions">Payment Instructions</Label>
               <Textarea
                 id="paymentInstructions"
@@ -1196,7 +1196,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="niche">Type</Label>
                 <Select value={niche} onValueChange={(val) => setNiche(val as "local" | "university")}>
@@ -1240,7 +1240,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="price">Ticket Price (PHP)</Label>
@@ -1338,7 +1338,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Genre</Label>
                 <div onKeyDown={(e) => e.key === 'Enter' && e.stopPropagation()}>
@@ -1443,7 +1443,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   </div>
                 ))}
 
-                <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-end">
+                <div className="grid grid-cols-1 gap-2 items-end sm:grid-cols-[1fr,1fr,auto]">
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Name</Label>
                     <Input
