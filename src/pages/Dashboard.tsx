@@ -166,6 +166,7 @@ const Dashboard = () => {
     let aborted = false;
 
     const fetchManagedGroups = async () => {
+      if (showProductionModal) return;
       if (!profile) return;
       if (managedGroups.length === 0) setIsLoading(true);
 
@@ -204,12 +205,13 @@ const Dashboard = () => {
     return () => { aborted = true; };
     // Use profile.user_id to prevent re-runs on every profile object change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.user_id, refreshKey]);
+  }, [profile?.user_id, refreshKey, showProductionModal]);
 
   useEffect(() => {
     let aborted = false;
 
     const fetchApplications = async () => {
+      if (showProductionModal) return;
       if (!selectedGroupId) {
         if (!aborted) {
           setApplications([]);
@@ -399,7 +401,7 @@ const Dashboard = () => {
     fetchApplications();
 
     return () => { aborted = true; };
-  }, [selectedGroupId, user, refreshKey, profile]);
+  }, [selectedGroupId, user, refreshKey, profile, showProductionModal]);
 
   const handleApproval = async (applicationId: string) => {
     if (!selectedGroupId) return;
