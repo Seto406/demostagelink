@@ -20,7 +20,6 @@ import { HealthCheckGate } from "@/components/health-check-gate";
 import { SystemStability } from "@/components/SystemStability";
 import ScrollToTop from "@/components/ui/scroll-to-top";
 import Navbar from "@/components/layout/Navbar";
-import { AdminTestingToolbar } from "@/components/layout/AdminTestingToolbar";
 import { RoleBasedGuard } from "@/components/auth/RoleBasedGuard";
 import { toast } from "@/hooks/use-toast";
 
@@ -170,7 +169,6 @@ const AppLayout = () => {
     <>
       <GlobalTour />
       {!loading && !isLoginPage && !isLandingPage && <Navbar />}
-      {!loading && !isLoginPage && <AdminTestingToolbar />}
       <main className={!loading && !isLoginPage && !isLandingPage ? "pt-[72px]" : undefined}>
         <AppRoutes />
       </main>
