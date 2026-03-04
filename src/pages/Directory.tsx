@@ -67,6 +67,27 @@ interface TheaterGroup {
   is_premium?: boolean;
 }
 
+interface TheaterGroupFallbackRow {
+  id: string;
+  owner_id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  is_premium?: boolean | null;
+  profiles:
+    | {
+        user_id: string;
+        niche: "local" | "university" | null;
+        address: string | null;
+      }
+    | {
+        user_id: string;
+        niche: "local" | "university" | null;
+        address: string | null;
+      }[]
+    | null;
+}
+
 // Demo theater groups for display when no real data
 // Helper for niche labels
 const getNicheLabel = (niche: string | null) => {
@@ -330,11 +351,54 @@ const Directory = () => {
             console.error("Error fetching groups:", error);
             if (!isLoadMore) setGroups([]);
         } else {
-            const mappedData = (data || []).map(p => ({
+            let mappedData = (data || []).map(p => ({
                 ...p,
                 city: p.address || undefined,
                 logo: p.group_logo_url
             })) as TheaterGroup[];
+
+            // Fallback source: some deployments store directory data in theater_groups.
+            if (mappedData.length === 0) {
+              let fallbackQuery = supabase
+                .from("theater_groups")
+                .select("id, owner_id, name, description, logo_url, is_premium, profiles!theater_groups_owner_id_fkey(user_id, niche, address)")
+                .order("is_premium", { ascending: false })
+                .order("name", { ascending: true });
+
+              if (debouncedSearchQuery) {
+                fallbackQuery = fallbackQuery.ilike("name", `%${debouncedSearchQuery}%`);
+              }
+
+              const { data: fallbackData, error: fallbackError } = await fallbackQuery.range(from, to);
+
+              if (fallbackError) {
+                console.error("Error fetching theater_groups fallback:", fallbackError);
+              } else {
+                mappedData = ((fallbackData || []) as TheaterGroupFallbackRow[])
+                  .map((group) => {
+                    const profile = Array.isArray(group.profiles) ? group.profiles[0] : group.profiles;
+                    return {
+                      id: group.owner_id,
+                      user_id: profile?.user_id,
+                      group_name: group.name,
+                      description: group.description,
+                      niche: profile?.niche || null,
+                      city: profile?.address || undefined,
+                      address: profile?.address,
+                      logo: group.logo_url || undefined,
+                      is_premium: Boolean(group.is_premium),
+                    };
+                  })
+                  .filter((group) => {
+                    const nicheMatches =
+                      selectedNiche === "All" ||
+                      (selectedNiche === "Local/Community-based" && group.niche === "local") ||
+                      (selectedNiche === "University Theater Group" && group.niche === "university");
+                    const cityMatches = selectedCity === "All" || group.address?.toLowerCase().includes(selectedCity.toLowerCase());
+                    return nicheMatches && cityMatches;
+                  });
+              }
+            }
 
             const hasNextPage = mappedData.length > ITEMS_PER_PAGE;
             const newGroups = hasNextPage ? mappedData.slice(0, ITEMS_PER_PAGE) : mappedData;
