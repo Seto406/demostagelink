@@ -51,7 +51,6 @@ import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
 import { invokeFunctionWithSession } from "@/lib/invoke-function-with-session";
 import { parseMapEmbedSrc, toSafeExternalUrl } from "@/lib/security";
-import { TEST_ACCOUNTS } from "@/lib/testAccounts";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -113,6 +112,11 @@ interface UserProfile {
   group_name: string | null;
   created_at: string;
 }
+
+const TEST_ACCOUNTS = [
+  { email: "dev.audience@test.com", password: "audience123" },
+  { email: "dev.producer@test.com", password: "producer123" },
+] as const;
 
 const isUserProfileRecord = (value: unknown): value is UserProfile => {
   if (!value || typeof value !== "object") return false;
