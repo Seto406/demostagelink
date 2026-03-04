@@ -33,12 +33,18 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
+  effectiveRole: "audience" | "producer" | "admin" | null;
+  adminViewRoleOverride: "audience" | "producer" | null;
+  adminProModeOverride: boolean | null;
   signUp: (email: string, password: string, role: "audience" | "producer", firstName: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfileState: (updates: Partial<Profile>) => void;
+  setAdminViewRoleOverride: (role: "audience" | "producer" | null) => void;
+  setAdminProModeOverride: (mode: boolean | null) => void;
+  clearAdminTestingOverrides: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,6 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [adminViewRoleOverride, setAdminViewRoleOverrideState] = useState<"audience" | "producer" | null>(null);
+  const [adminProModeOverride, setAdminProModeOverrideState] = useState<boolean | null>(null);
 
   const hasInitialized = useRef(false);
 
@@ -265,19 +273,85 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = profile?.role === "admin";
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedRole = localStorage.getItem("adminViewRoleOverride");
+    const storedProMode = localStorage.getItem("adminProModeOverride");
+
+    if (storedRole === "audience" || storedRole === "producer") {
+      setAdminViewRoleOverrideState(storedRole);
+    }
+
+    if (storedProMode === "true") {
+      setAdminProModeOverrideState(true);
+    }
+
+    if (storedProMode === "false") {
+      setAdminProModeOverrideState(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminViewRoleOverrideState(null);
+      setAdminProModeOverrideState(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("adminViewRoleOverride");
+        localStorage.removeItem("adminProModeOverride");
+      }
+    }
+  }, [isAdmin]);
+
+  const setAdminViewRoleOverride = useCallback((role: "audience" | "producer" | null) => {
+    if (!isAdmin) return;
+    setAdminViewRoleOverrideState(role);
+
+    if (typeof window === "undefined") return;
+    if (!role) {
+      localStorage.removeItem("adminViewRoleOverride");
+      return;
+    }
+    localStorage.setItem("adminViewRoleOverride", role);
+  }, [isAdmin]);
+
+  const setAdminProModeOverride = useCallback((mode: boolean | null) => {
+    if (!isAdmin) return;
+    setAdminProModeOverrideState(mode);
+
+    if (typeof window === "undefined") return;
+    if (mode === null) {
+      localStorage.removeItem("adminProModeOverride");
+      return;
+    }
+    localStorage.setItem("adminProModeOverride", String(mode));
+  }, [isAdmin]);
+
+  const clearAdminTestingOverrides = useCallback(() => {
+    setAdminViewRoleOverride(null);
+    setAdminProModeOverride(null);
+  }, [setAdminViewRoleOverride, setAdminProModeOverride]);
+
+  const effectiveRole = (isAdmin && adminViewRoleOverride) ? adminViewRoleOverride : (profile?.role ?? null);
+
   const value = useMemo(() => ({
     user,
     session,
     profile,
     loading,
     isAdmin,
+    effectiveRole,
+    adminViewRoleOverride,
+    adminProModeOverride,
     signUp,
     signIn,
     signInWithGoogle,
     signOut,
     refreshProfile,
-    updateProfileState
-  }), [user, session, profile, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState]);
+    updateProfileState,
+    setAdminViewRoleOverride,
+    setAdminProModeOverride,
+    clearAdminTestingOverrides,
+  }), [user, session, profile, loading, isAdmin, effectiveRole, adminViewRoleOverride, adminProModeOverride, signUp, signIn, signInWithGoogle, signOut, refreshProfile, updateProfileState, setAdminViewRoleOverride, setAdminProModeOverride, clearAdminTestingOverrides]);
 
   if (loading) {
     return (

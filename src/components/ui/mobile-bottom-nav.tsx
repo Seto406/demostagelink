@@ -22,7 +22,7 @@ const publicNavItems: NavItem[] = [
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const { scrollY } = useScroll();
-  const { user, profile } = useAuth();
+  const { user, effectiveRole } = useAuth();
   const [isVisible, setIsVisible] = React.useState(true);
   const [lastScrollY, setLastScrollY] = React.useState(0);
 
@@ -67,9 +67,9 @@ export const MobileBottomNav: React.FC = () => {
       { icon: Calendar, label: "Directory", path: "/directory" },
     ];
 
-    if (profile?.role === "producer") {
+    if (effectiveRole === "producer") {
       baseItems.push({ icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" });
-    } else if (profile?.role === "admin") {
+    } else if (effectiveRole === "admin") {
       baseItems.push({ icon: LayoutDashboard, label: "Admin", path: "/admin" });
     } else {
       // Audience users get Profile/Settings
@@ -77,7 +77,7 @@ export const MobileBottomNav: React.FC = () => {
     }
 
     return baseItems;
-  }, [user, profile]);
+  }, [user, effectiveRole]);
 
   // Don't show on dashboard, admin, login, reset-password, verify-email pages
   const excludedPaths = ["/dashboard", "/admin", "/login", "/reset-password", "/verify-email"];
