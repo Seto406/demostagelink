@@ -735,6 +735,24 @@ const AdminPanel = () => {
       }
     }
 
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({
+        role: "producer",
+        group_name: request.group_name,
+      })
+      .eq("user_id", request.user_id);
+
+    if (profileError) {
+      console.error("Error upgrading user role:", profileError);
+      toast({
+        title: "Request Approval Failed",
+        description: "Request was reviewed, but we could not upgrade the user role.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     {
       // Send email
       const { error: emailError } = await supabase.functions.invoke("send-producer-status-email", {
