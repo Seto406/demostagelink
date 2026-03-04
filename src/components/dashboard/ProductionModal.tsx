@@ -56,6 +56,29 @@ interface ScheduleSlot {
   city?: string;
 }
 
+interface ProductionDraft {
+  title: string;
+  description: string;
+  scheduleSlots: ScheduleSlot[];
+  deadlineMode: DeadlineMode;
+  venue: string;
+  city: string;
+  niche: "local" | "university";
+  externalLinks: string[];
+  price: string;
+  paymentInstructions: string;
+  collectBalanceOnsite: boolean;
+  genre: string[];
+  director: string;
+  hours: string;
+  minutes: string;
+  tags: string[];
+  cast: CastMember[];
+  productionStatus: "ongoing" | "completed" | "draft";
+  transcriptUrl: string;
+  transcriptContent: string;
+}
+
 type DeadlineMode = "automated" | "manual";
 
 const METRO_MANILA_CITIES = [
@@ -63,6 +86,8 @@ const METRO_MANILA_CITIES = [
   "Mandaluyong", "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay",
   "Pasig", "San Juan", "Taguig", "Valenzuela", "Pateros"
 ].sort();
+
+const PRODUCTION_DRAFT_KEY = "production_modal_draft_v1";
 
 // Helper function to safely parse YYYY-MM-DD as local date
 const parseDateLocal = (dateStr: string) => {
@@ -212,6 +237,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setPosterPreview(null);
     setAdminAutoApprove(true);
     initializedRef.current = null;
+    localStorage.removeItem(PRODUCTION_DRAFT_KEY);
   }, []);
 
   // Ensure blob URLs are revoked when component unmounts or preview changes
@@ -347,12 +373,102 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
 
     } else {
-      // It's a new show, just ensure clean state (which resetForm did, but good to be explicit)
-      // We already called resetForm when closing, but if opened directly...
-      // resetForm() is called in the !open block above when it closes.
-      // So if we are here, we are opening fresh.
+      try {
+        const draftRaw = localStorage.getItem(PRODUCTION_DRAFT_KEY);
+        if (!draftRaw) return;
+
+        const draft = JSON.parse(draftRaw) as Partial<ProductionDraft>;
+        if (draft.title) setTitle(draft.title);
+        if (draft.description) setDescription(draft.description);
+        if (Array.isArray(draft.scheduleSlots) && draft.scheduleSlots.length > 0) {
+          setScheduleSlots(draft.scheduleSlots.map((slot) => ({
+            ...slot,
+            id: typeof slot?.id === "string" && slot.id ? slot.id : crypto.randomUUID(),
+            date: typeof slot?.date === "string" ? slot.date : "",
+            time: typeof slot?.time === "string" ? slot.time : "",
+            deadline: typeof slot?.deadline === "string" ? slot.deadline : "",
+            seat_limit: typeof slot?.seat_limit === "number" && slot.seat_limit > 0 ? slot.seat_limit : 50,
+            venue: typeof slot?.venue === "string" ? slot.venue : "",
+            city: typeof slot?.city === "string" ? slot.city : "",
+          })));
+        }
+        if (draft.deadlineMode === "manual" || draft.deadlineMode === "automated") setDeadlineMode(draft.deadlineMode);
+        if (draft.venue) setVenue(draft.venue);
+        if (draft.city) setCity(draft.city);
+        if (draft.niche === "local" || draft.niche === "university") setNiche(draft.niche);
+        if (Array.isArray(draft.externalLinks) && draft.externalLinks.length > 0) setExternalLinks(draft.externalLinks);
+        if (typeof draft.price === "string") setPrice(draft.price);
+        if (typeof draft.paymentInstructions === "string") setPaymentInstructions(draft.paymentInstructions);
+        if (typeof draft.collectBalanceOnsite === "boolean") setCollectBalanceOnsite(draft.collectBalanceOnsite);
+        if (Array.isArray(draft.genre)) setGenre(draft.genre);
+        if (typeof draft.director === "string") setDirector(draft.director);
+        if (typeof draft.hours === "string") setHours(draft.hours);
+        if (typeof draft.minutes === "string") setMinutes(draft.minutes);
+        if (Array.isArray(draft.tags)) setTags(draft.tags);
+        if (Array.isArray(draft.cast)) setCast(draft.cast);
+        if (draft.productionStatus === "ongoing" || draft.productionStatus === "completed" || draft.productionStatus === "draft") {
+          setProductionStatus(draft.productionStatus);
+        }
+        if (typeof draft.transcriptUrl === "string") setTranscriptUrl(draft.transcriptUrl);
+        if (typeof draft.transcriptContent === "string") setTranscriptContent(draft.transcriptContent);
+      } catch (error) {
+        console.warn("Failed to restore production draft", error);
+        localStorage.removeItem(PRODUCTION_DRAFT_KEY);
+      }
     }
   }, [showToEdit, open, resetForm]);
+
+  useEffect(() => {
+    if (!open || showToEdit) return;
+
+    const draft: ProductionDraft = {
+      title,
+      description,
+      scheduleSlots,
+      deadlineMode,
+      venue,
+      city,
+      niche,
+      externalLinks,
+      price,
+      paymentInstructions,
+      collectBalanceOnsite,
+      genre,
+      director,
+      hours,
+      minutes,
+      tags,
+      cast,
+      productionStatus,
+      transcriptUrl,
+      transcriptContent,
+    };
+
+    localStorage.setItem(PRODUCTION_DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    open,
+    showToEdit,
+    title,
+    description,
+    scheduleSlots,
+    deadlineMode,
+    venue,
+    city,
+    niche,
+    externalLinks,
+    price,
+    paymentInstructions,
+    collectBalanceOnsite,
+    genre,
+    director,
+    hours,
+    minutes,
+    tags,
+    cast,
+    productionStatus,
+    transcriptUrl,
+    transcriptContent,
+  ]);
 
   const handlePosterSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -751,7 +867,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       <Dialog open={open} onOpenChange={(val) => {
         onOpenChange(val);
       }}>
-        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="bg-card border-secondary/30 max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             {showToEdit ? <DialogTitle className="font-serif text-xl">Edit Production</DialogTitle> : <DialogTitle className="font-serif text-xl">Post New Production</DialogTitle>}
             <DialogDescription>
@@ -811,7 +927,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
                   {scheduleSlots.map((slot, index) => (
                       <div key={slot.id} className="space-y-2 rounded-md border border-secondary/20 bg-background/50 p-3">
-                        <div className="grid grid-cols-1 md:grid-cols-[1fr_130px_120px_1fr_auto] gap-2 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_130px_120px_1fr_auto] gap-2 items-end">
                            <div className="space-y-1">
                                <Label className="text-xs">Date</Label>
                                <Input
@@ -822,7 +938,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                                   required={index === 0}
                                />
                            </div>
-                           <div className="space-y-1 w-32">
+                           <div className="space-y-1">
                                <Label className="text-xs">Time</Label>
                                <Input
                                   type="time"
@@ -831,7 +947,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                                   className="bg-background border-secondary/30"
                                />
                            </div>
-                           <div className="space-y-1 w-[120px]">
+                           <div className="space-y-1">
                               <Label className="text-xs">Seat Limit</Label>
                               <Input
                                 type="number"
