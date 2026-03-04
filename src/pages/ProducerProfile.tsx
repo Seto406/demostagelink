@@ -132,11 +132,36 @@ const ProducerProfile = () => {
         }
       }
 
-      const { data: profileData, error: profileError } = await supabase
+      const profileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, x_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium";
+      const fallbackProfileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium";
+
+      const isMissingXUrlColumnError = (error: { code?: string; message?: string } | null) =>
+        error?.code === "42703" || error?.message?.includes("profiles.x_url") || false;
+
+      const initialProfileSelect = localStorage.getItem("profiles_x_url_available") === "false"
+        ? fallbackProfileSelectColumns
+        : profileSelectColumns;
+
+      let { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, x_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium")
+        .select(initialProfileSelect)
         .eq("id", id)
         .maybeSingle();
+
+      if (isMissingXUrlColumnError(profileError)) {
+        localStorage.setItem("profiles_x_url_available", "false");
+
+        const fallbackResult = await supabase
+          .from("profiles")
+          .select(fallbackProfileSelectColumns)
+          .eq("id", id)
+          .maybeSingle();
+
+        profileData = fallbackResult.data ? { ...fallbackResult.data, x_url: null } : null;
+        profileError = fallbackResult.error;
+      } else if (!profileError && initialProfileSelect === profileSelectColumns) {
+        localStorage.setItem("profiles_x_url_available", "true");
+      }
 
       if (profileError) {
         console.error("Error fetching producer:", profileError);
