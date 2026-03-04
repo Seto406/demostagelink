@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { StarRating } from "@/components/ui/star-rating";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { User, EyeOff, Trash2 } from "lucide-react";
+import { User, Trash2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -22,6 +23,7 @@ type ReviewSort = "recent" | "highest" | "lowest";
 
 interface Review {
   id: string;
+  user_id: string;
   rating: number;
   comment: string | null;
   created_at: string;
@@ -48,6 +50,10 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<ReviewSort>("recent");
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editingRating, setEditingRating] = useState(5);
+  const [editingComment, setEditingComment] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const canModerate = profile && (profile.role === "admin" || (producerId && profile.id === producerId));
 
@@ -110,15 +116,52 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
     });
   }, [averageRating, publicReviews.length, onSummaryChange]);
 
-  const handleHideReview = async (reviewId: string) => {
+  const handleEditStart = (review: Review) => {
+    setEditingReviewId(review.id);
+    setEditingRating(review.rating);
+    setEditingComment(review.comment || "");
+  };
+
+  const handleEditCancel = () => {
+    setEditingReviewId(null);
+    setEditingRating(5);
+    setEditingComment("");
+  };
+
+  const handleEditSave = async (reviewId: string) => {
+    setIsSavingEdit(true);
     try {
-      const { error } = await supabase.from("reviews").update({ is_approved: false }).eq("id", reviewId);
+      const updatePayload: { rating?: number; comment: string | null } = {
+        comment: editingComment.trim() || null,
+      };
+
+      if (!isUpcoming) {
+        updatePayload.rating = editingRating;
+      }
+
+      const { error } = await supabase.from("reviews").update(updatePayload).eq("id", reviewId);
+
       if (error) throw error;
-      toast.success("Review hidden from public view");
-      setReviews((prev) => prev.map((r) => (r.id === reviewId ? { ...r, is_approved: false } : r)));
+
+      setReviews((prev) =>
+        prev.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                comment: updatePayload.comment,
+                rating: updatePayload.rating ?? review.rating,
+              }
+            : review,
+        ),
+      );
+
+      toast.success("Review updated");
+      handleEditCancel();
     } catch (error) {
-      console.error("Error hiding review:", error);
-      toast.error("Failed to hide review");
+      console.error("Error updating review:", error);
+      toast.error("Failed to update review");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -128,6 +171,9 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
       if (error) throw error;
       toast.success("Review deleted permanently");
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      if (editingReviewId === reviewId) {
+        handleEditCancel();
+      }
     } catch (error) {
       console.error("Error deleting review:", error);
       toast.error("Failed to delete review");
@@ -174,91 +220,127 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
         </div>
       )}
 
-      {sortedReviews.map((review) => (
-        <div key={review.id} className={`border-b border-secondary/10 pb-6 last:border-0 last:pb-0 ${!review.is_approved ? "opacity-60 bg-secondary/5 p-4 rounded-lg" : ""}`}>
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0">
-              {review.profiles?.avatar_url ? (
-                <img
-                  src={review.profiles.avatar_url}
-                  alt={review.profiles.group_name || "User"}
-                  className="w-10 h-10 rounded-full object-cover border border-secondary/30"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center border border-secondary/30">
-                  <User className="w-5 h-5 text-secondary" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                <div>
-                  <h4 className="font-medium text-foreground flex items-center gap-2">
-                    {review.profiles?.username || review.profiles?.group_name || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ""}`.trim() : "Audience Member")}
-                    {!review.is_approved && (
-                      <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold uppercase tracking-wider">Moderated</span>
-                    )}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  {!isUpcoming && <StarRating rating={review.rating} readOnly size={16} />}
+      {sortedReviews.map((review) => {
+        const canEditOwnReview = profile?.id === review.user_id;
+        const isEditing = editingReviewId === review.id;
 
-                  {canModerate && (
-                    <div className="flex items-center gap-1">
-                      {review.is_approved && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-muted-foreground hover:text-yellow-500"
-                          onClick={() => handleHideReview(review.id)}
-                          title="Hide Review"
-                        >
-                          <EyeOff className="w-3 h-3" />
-                        </Button>
+        return (
+          <div key={review.id} className={`border-b border-secondary/10 pb-6 last:border-0 last:pb-0 ${!review.is_approved ? "opacity-60 bg-secondary/5 p-4 rounded-lg" : ""}`}>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                {review.profiles?.avatar_url ? (
+                  <img
+                    src={review.profiles.avatar_url}
+                    alt={review.profiles.group_name || "User"}
+                    className="w-10 h-10 rounded-full object-cover border border-secondary/30"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center border border-secondary/30">
+                    <User className="w-5 h-5 text-secondary" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <div>
+                    <h4 className="font-medium text-foreground flex items-center gap-2">
+                      {review.profiles?.username || review.profiles?.group_name || (review.profiles?.first_name ? `${review.profiles.first_name} ${review.profiles.last_name || ""}`.trim() : "Audience Member")}
+                      {!review.is_approved && (
+                        <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/30 font-semibold uppercase tracking-wider">Moderated</span>
                       )}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {!isUpcoming && <StarRating rating={isEditing ? editingRating : review.rating} readOnly size={16} />}
 
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                    {(canModerate || canEditOwnReview) && (
+                      <div className="flex items-center gap-1">
+                        {canEditOwnReview && !isEditing && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                            title="Delete Review"
+                            className="h-6 w-6 text-muted-foreground hover:text-secondary"
+                            title="Edit Review"
+                            onClick={() => handleEditStart(review)}
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Pencil className="w-3 h-3" />
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Review?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently remove the review.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteReview(review.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
+                        )}
+
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                              title="Delete Review"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Review?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently remove the review.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteReview(review.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {isEditing ? (
+                  <div className="space-y-3">
+                    {!isUpcoming && (
+                      <div>
+                        <label className="block text-xs text-muted-foreground mb-2">Rating</label>
+                        <StarRating rating={editingRating} onRatingChange={setEditingRating} size={20} />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-2">Comment</label>
+                      <Textarea
+                        value={editingComment}
+                        onChange={(event) => setEditingComment(event.target.value)}
+                        className="bg-background border-secondary/30 min-h-[90px]"
+                        placeholder="Update your review..."
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => handleEditSave(review.id)} disabled={isSavingEdit}>
+                        {isSavingEdit ? "Saving..." : "Save changes"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleEditCancel} disabled={isSavingEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  review.comment && (
+                    <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
+                      {review.comment}
+                    </p>
+                  )
+                )}
               </div>
-              {review.comment && (
-                <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
-                  {review.comment}
-                </p>
-              )}
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
