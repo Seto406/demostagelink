@@ -9,7 +9,7 @@ interface RoleBasedGuardProps {
 }
 
 export const RoleBasedGuard = ({ children, allowedRoles = ["producer", "admin"] }: RoleBasedGuardProps) => {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile, effectiveRole } = useAuth();
   const [checkingProfile, setCheckingProfile] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const RoleBasedGuard = ({ children, allowedRoles = ["producer", "admin"] 
     return <FullPageLoader />;
   }
 
-  if (!profile || !allowedRoles.includes(profile.role)) {
+  if (!profile || !effectiveRole || !allowedRoles.includes(effectiveRole)) {
     return <Navigate to="/feed" replace />;
   }
 

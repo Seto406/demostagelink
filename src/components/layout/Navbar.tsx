@@ -12,7 +12,7 @@ import { SearchBar } from "@/components/search/SearchBar";
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, effectiveRole, signOut } = useAuth();
   const { unreadCount, newNotificationSignal } = useNotifications();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBellShaking, setIsBellShaking] = useState(false);
@@ -21,7 +21,7 @@ const Navbar = () => {
   const centerNavLinks = user
     ? [
         { path: "/feed", label: "Home", icon: House, matchPath: "/feed" },
-        ...(profile?.role === 'producer' ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
+        ...(effectiveRole === 'producer' ? [{ path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, matchPath: "/dashboard" }] : []),
         ...(isAdmin ? [{ path: "/admin", label: "Admin", icon: Shield, matchPath: "/admin" }] : []),
         { path: "/shows", label: "Shows", icon: Film, matchPath: "/shows" },
         { path: "/directory", label: "Directory", icon: Users, matchPath: "/directory" },
@@ -94,7 +94,7 @@ const Navbar = () => {
     <>
       <nav
         className={`fixed top-0 left-0 right-0 z-50 h-[72px] border-b bg-background/70 backdrop-blur-md ${
-          profile?.role === "producer" ? "border-amber-500/50" : "border-secondary/20"
+          effectiveRole === "producer" ? "border-amber-500/50" : "border-secondary/20"
         }`}
       >
         <div className="container mx-auto h-full px-4 sm:px-6">
@@ -237,7 +237,7 @@ const Navbar = () => {
                       </Button>
                     </Link>
                   )}
-                  {canAccessManagement && profile?.role === 'producer' && (
+                  {canAccessManagement && effectiveRole === 'producer' && (
                     <div className="rounded-xl border border-secondary/20 bg-card/50 p-3 backdrop-blur-md">
                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Management</p>
                       <Link to="/dashboard" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
