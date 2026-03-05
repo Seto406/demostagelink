@@ -99,23 +99,10 @@ const ProducerProfile = () => {
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
-  const getCurrentProfileId = useCallback(async () => {
-    if (profile?.id) return profile.id;
-    if (!user?.id) return null;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Error resolving current profile ID:", error);
-      return null;
-    }
-
-    return data?.id ?? null;
-  }, [profile?.id, user?.id]);
+  const getCurrentFollowerId = useCallback(() => {
+    // follows.follower_id now references auth.users.id
+    return user?.id ?? null;
+  }, [user?.id]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -245,7 +232,7 @@ const ProducerProfile = () => {
       }
 
       // Fetch following count for the current signed-in user
-      const currentProfileId = await getCurrentProfileId();
+          const currentProfileId = getCurrentFollowerId();
 
       if (currentProfileId) {
           const { count: followingCountData, error: followingCountError } = await supabase
@@ -259,7 +246,7 @@ const ProducerProfile = () => {
       }
 
       if (user) {
-        const currentProfileId = await getCurrentProfileId();
+        const currentProfileId = getCurrentFollowerId();
         if (!currentProfileId) {
           setLoading(false);
           return;
@@ -281,7 +268,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user, authLoading, refreshKey, profile?.id, getCurrentProfileId]);
+  }, [id, user, authLoading, refreshKey, profile?.id, getCurrentFollowerId]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
@@ -304,7 +291,7 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerId = await getCurrentProfileId();
+    const followerId = getCurrentFollowerId();
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
