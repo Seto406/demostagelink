@@ -81,7 +81,7 @@ const SettingsActionRow = ({ icon, title, description, onClick, danger = false }
 const Settings = () => {
   const navigate = useNavigate();
   const { user, profile, signOut, loading, isAdmin } = useAuth();
-  const { isPro, startTrial, isCheckingOut, isLoading: subLoading, daysLeft } = useSubscription();
+  const { isPro, startTrial, isCheckingOut, isLoading: subLoading, daysLeft, isExpiringSoon } = useSubscription();
   const { startTour } = useTour();
   
   const [username, setUsername] = useState("");
@@ -481,6 +481,11 @@ const Settings = () => {
                         ? "You have access to all premium features."
                         : "Start your 30-day free trial to unlock advanced analytics and more."}
                     </p>
+                    {isPro && isExpiringSoon && (
+                      <p className="mt-2 text-sm text-amber-500">
+                        Premium reminder: Your plan ends in {daysLeft} day{daysLeft === 1 ? "" : "s"}. Renew this month to stay on Premium, or do nothing to return to Basic automatically.
+                      </p>
+                    )}
                   </div>
 
                   {!isPro ? (
