@@ -272,6 +272,7 @@ const Directory = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const [groups, setGroups] = useState<TheaterGroup[]>([]);
+  const [membershipStatuses, setMembershipStatuses] = useState<Record<string, "pending" | "active">>({});
   const [loading, setLoading] = useState(true);
 
   // Pagination State
@@ -406,6 +407,31 @@ const Directory = () => {
 
             setHasMore(hasNextPage);
 
+            if (user && profile?.role === 'audience' && newGroups.length > 0) {
+              const groupIds = newGroups.map((group) => group.id);
+              const { data: memberships, error: membershipsError } = await supabase
+                .from('group_members')
+                .select('group_id, status')
+                .eq('user_id', user.id)
+                .in('group_id', groupIds)
+                .in('status', ['pending', 'active']);
+
+              if (membershipsError) {
+                console.error('Error fetching membership statuses:', membershipsError);
+              } else {
+                const nextStatuses = (memberships || []).reduce<Record<string, "pending" | "active">>((acc, membership) => {
+                  if (membership.status === 'pending' || membership.status === 'active') {
+                    acc[membership.group_id] = membership.status;
+                  }
+                  return acc;
+                }, {});
+
+                setMembershipStatuses((prev) => (isLoadMore ? { ...prev, ...nextStatuses } : nextStatuses));
+              }
+            } else if (!isLoadMore) {
+              setMembershipStatuses({});
+            }
+
             if (isLoadMore) {
                 setGroups(prev => [...prev, ...newGroups]);
             } else {
@@ -418,7 +444,7 @@ const Directory = () => {
         setLoading(false);
         setIsFetchingMore(false);
     }
-  }, [debouncedSearchQuery, selectedNiche, selectedCity]);
+  }, [debouncedSearchQuery, selectedNiche, selectedCity, profile?.role, user]);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -533,10 +559,12 @@ const Directory = () => {
 
       if (existingMember) {
         if (existingMember.status === 'pending') {
+          setMembershipStatuses((prev) => ({ ...prev, [group.id]: 'pending' }));
           toast.info("You already have a pending application.");
           setJoiningGroupId(null);
           return;
         } else if (existingMember.status === 'active') {
+          setMembershipStatuses((prev) => ({ ...prev, [group.id]: 'active' }));
           toast.info("You are already a member of this group.");
           setJoiningGroupId(null);
           return;
@@ -565,6 +593,7 @@ const Directory = () => {
       });
 
       toast.success(`Application sent to ${group.group_name}!`);
+      setMembershipStatuses((prev) => ({ ...prev, [group.id]: 'pending' }));
     } catch (error: unknown) {
       console.error("Error sending membership application:", error);
       const message = error instanceof Error ? error.message : "Failed to send application";
@@ -865,12 +894,16 @@ const Directory = () => {
                                       className="w-full"
                                       data-tour={index === 0 ? "directory-join-btn" : undefined}
                                       onClick={(e) => handleJoinRequest(e, group)}
-                                      disabled={joiningGroupId === group.id || group.accepting_members === false}
+                                      disabled={joiningGroupId === group.id || group.accepting_members === false || membershipStatuses[group.id] === 'pending' || membershipStatuses[group.id] === 'active'}
                                   >
                                       {joiningGroupId === group.id ? (
                                           <Loader2 className="w-4 h-4 animate-spin" />
                                       ) : group.accepting_members === false ? (
                                           "Membership Closed"
+                                      ) : membershipStatuses[group.id] === 'pending' ? (
+                                          "Application Ongoing"
+                                      ) : membershipStatuses[group.id] === 'active' ? (
+                                          "Already a Member"
                                       ) : (
                                           <>
                                               <UserPlus className="w-4 h-4 mr-2" />
