@@ -177,13 +177,9 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
         deleteQuery = deleteQuery.eq("user_id", profile.id);
       }
 
-      const { data, error } = await deleteQuery.select("id");
+      const { error } = await deleteQuery;
 
       if (error) throw error;
-
-      if (!data?.length) {
-        throw new Error("Review was not deleted. Please try again.");
-      }
 
       toast.success("Review deleted permanently");
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
