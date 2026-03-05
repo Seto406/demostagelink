@@ -74,6 +74,7 @@ const ShowDetailsPage = () => {
             username,
             description,
             founded_year,
+            address,
             niche,
             group_logo_url,
             avatar_url
@@ -534,6 +535,12 @@ END:VCALENDAR`;
                                 <p className="font-medium text-lg">
                                     {show.theater_group?.name || show.producer_id?.group_name || show.producer_id?.username}
                                 </p>
+                                {(show.producer_id?.founded_year || show.producer_id?.address || show.city) && (
+                                    <p className="text-sm text-white/70">
+                                        {show.producer_id?.founded_year ? `Founded ${show.producer_id.founded_year}` : "Founded year unavailable"}
+                                        {(show.producer_id?.address || show.city) ? ` • ${show.producer_id?.address || show.city}` : ""}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}

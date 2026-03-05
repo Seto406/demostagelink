@@ -31,6 +31,7 @@ export interface ShowDetails {
     username: string | null;
     description: string | null;
     founded_year: number | null;
+    address?: string | null;
     niche: "local" | "university" | null;
     avatar_url?: string | null;
     group_logo_url?: string | null;
