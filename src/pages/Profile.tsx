@@ -467,8 +467,9 @@ const Profile = () => {
     }
     if (!profile) return;
 
-    // follows.follower_id is auth.users.id (not profiles.id)
-    const followerId = user.id;
+    // follower_id may reference either profiles.id or auth.users.id depending on deployed schema.
+    const followerIdCandidates = [currentUserProfile?.id, user.id].filter((value): value is string => Boolean(value));
+    const followerId = followerIdCandidates[0];
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
@@ -481,7 +482,7 @@ const Profile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", followerId)
+            .in("follower_id", followerIdCandidates)
             .eq("following_id", profile.id);
 
         if (error) {
@@ -493,15 +494,26 @@ const Profile = () => {
             toast.success("Unfollowed user");
         }
     } else {
-        const { error } = await supabase
-            .from("follows")
-            .insert({
-                follower_id: followerId,
-                following_id: profile.id
-            });
+        let followError: unknown = null;
 
-        if (error) {
-            console.error("Error following:", error);
+        for (const candidateId of followerIdCandidates) {
+          const { error } = await supabase
+              .from("follows")
+              .insert({
+                  follower_id: candidateId,
+                  following_id: profile.id
+              });
+
+          if (!error) {
+            followError = null;
+            break;
+          }
+
+          followError = error;
+        }
+
+        if (followError) {
+            console.error("Error following:", followError);
             toast.error("Failed to follow user");
         } else {
             setIsFollowing(true);

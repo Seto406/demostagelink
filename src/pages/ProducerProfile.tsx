@@ -99,10 +99,10 @@ const ProducerProfile = () => {
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
-  const getCurrentFollowerId = useCallback(() => {
-    // follows.follower_id now references auth.users.id
-    return user?.id ?? null;
-  }, [user?.id]);
+  const getFollowerIdCandidates = useCallback(() => {
+    // follower_id can be either profiles.id or auth.users.id depending on the active DB schema.
+    return [profile?.id, user?.id].filter((value): value is string => Boolean(value));
+  }, [profile?.id, user?.id]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -232,13 +232,13 @@ const ProducerProfile = () => {
       }
 
       // Fetch following count for the current signed-in user
-          const currentProfileId = getCurrentFollowerId();
+      const followerIds = getFollowerIdCandidates();
 
-      if (currentProfileId) {
+      if (followerIds.length > 0) {
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .eq("follower_id", currentProfileId);
+            .in("follower_id", followerIds);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
@@ -246,8 +246,7 @@ const ProducerProfile = () => {
       }
 
       if (user) {
-        const currentProfileId = getCurrentFollowerId();
-        if (!currentProfileId) {
+        if (followerIds.length === 0) {
           setLoading(false);
           return;
         }
@@ -255,7 +254,7 @@ const ProducerProfile = () => {
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .eq("follower_id", currentProfileId)
+            .in("follower_id", followerIds)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -268,7 +267,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user, authLoading, refreshKey, profile?.id, getCurrentFollowerId]);
+  }, [id, user, authLoading, refreshKey, profile?.id, getFollowerIdCandidates]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
@@ -291,7 +290,8 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerId = getCurrentFollowerId();
+    const followerIdCandidates = getFollowerIdCandidates();
+    const followerId = followerIdCandidates[0];
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
@@ -304,7 +304,7 @@ const ProducerProfile = () => {
         const { error } = await supabase
             .from("follows")
             .delete()
-            .eq("follower_id", followerId)
+            .in("follower_id", followerIdCandidates)
             .eq("following_id", producer.id);
 
         if (error) {
@@ -316,15 +316,26 @@ const ProducerProfile = () => {
             toast.success("Unfollowed group");
         }
     } else {
-        const { error } = await supabase
-          .from("follows")
-          .insert({
-            follower_id: followerId,
-            following_id: producer.id
-          });
+        let followError: unknown = null;
 
-        if (error) {
-            console.error("Error following:", error);
+        for (const candidateId of followerIdCandidates) {
+          const { error } = await supabase
+            .from("follows")
+            .insert({
+              follower_id: candidateId,
+              following_id: producer.id
+            });
+
+          if (!error) {
+            followError = null;
+            break;
+          }
+
+          followError = error;
+        }
+
+        if (followError) {
+            console.error("Error following:", followError);
             toast.error("Failed to follow group");
         } else {
             setIsFollowing(true);
