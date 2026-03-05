@@ -77,6 +77,8 @@ export const useSubscription = () => {
       }
   }
 
+  const isExpiringSoon = isPro && daysLeft > 0 && daysLeft <= 5;
+
   return {
     subscription,
     isLoading,
@@ -84,5 +86,6 @@ export const useSubscription = () => {
     startTrial,
     isCheckingOut,
     daysLeft,
+    isExpiringSoon,
   };
 };
