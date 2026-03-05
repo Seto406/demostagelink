@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { useAuth } from "@/contexts/AuthContext";
+import { ADSENSE_CLIENT, AD_SLOTS, isAdsenseSlotConfigured } from "@/config/ads";
 
 const Footer = () => {
   const { profile } = useAuth();
@@ -75,7 +76,12 @@ const Footer = () => {
 
         {(!profile || profile.role !== "producer") && (
           <div className="mt-8 sm:mt-12">
-            <AdBanner format="horizontal" variant="placeholder" />
+            <AdBanner
+              format="horizontal"
+              variant={isAdsenseSlotConfigured(AD_SLOTS.footerHorizontal) ? "adsense" : "placeholder"}
+              adClient={ADSENSE_CLIENT}
+              adSlot={AD_SLOTS.footerHorizontal}
+            />
           </div>
         )}
 

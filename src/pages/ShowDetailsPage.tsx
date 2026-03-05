@@ -19,6 +19,7 @@ import { ReviewList } from "@/components/reviews/ReviewList";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/hooks/use-favorites";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { ADSENSE_CLIENT, AD_SLOTS, isAdsenseSlotConfigured } from "@/config/ads";
 import { dummyShows, ShowDetails, CastMember } from "@/data/dummyShows";
 import { toTrailerEmbedUrl } from "@/lib/security";
 
@@ -920,7 +921,12 @@ END:VCALENDAR`;
                     )}
 
                     {/* Ad Banner */}
-                    <AdBanner format="box" variant="placeholder" />
+                    <AdBanner
+                        format="box"
+                        variant={isAdsenseSlotConfigured(AD_SLOTS.showDetailsBox) ? "adsense" : "placeholder"}
+                        adClient={ADSENSE_CLIENT}
+                        adSlot={AD_SLOTS.showDetailsBox}
+                    />
                </div>
           </div>
       </div>
