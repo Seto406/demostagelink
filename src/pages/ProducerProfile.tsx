@@ -47,6 +47,7 @@ interface Producer {
   university: string | null;
   producer_role: string | null;
   is_premium?: boolean;
+  accepting_members?: boolean;
 }
 
 interface Show {
@@ -132,8 +133,8 @@ const ProducerProfile = () => {
         }
       }
 
-      const profileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, x_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium";
-      const fallbackProfileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium";
+      const profileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, x_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium, accepting_members";
+      const fallbackProfileSelectColumns = "id, user_id, group_name, description, founded_year, niche, avatar_url, group_logo_url, group_banner_url, facebook_url, instagram_url, tiktok_url, map_screenshot_url, university, producer_role, is_premium, accepting_members";
 
       const isMissingXUrlColumnError = (error: { code?: string; message?: string } | null) =>
         error?.code === "42703" || error?.message?.includes("profiles.x_url") || false;
@@ -339,6 +340,11 @@ const ProducerProfile = () => {
 
   const handleJoinRequest = async () => {
     if (!user || !profile || !producer) return;
+
+    if (producer.accepting_members === false) {
+      toast.info("This group is not accepting new member requests right now.");
+      return;
+    }
 
     setJoinLoading(true);
     try {
@@ -746,12 +752,18 @@ const ProducerProfile = () => {
                               ) : (
                                 <Button
                                   onClick={handleJoinRequest}
-                                  disabled={joinLoading || hasApplied}
+                                  disabled={joinLoading || hasApplied || producer.accepting_members === false}
                                   variant="outline"
                                   className="border-primary/50 text-primary hover:bg-primary/10"
                                 >
-                                  <UserPlus className="w-4 h-4 mr-2" />
-                                  Join as Member
+                                  {producer.accepting_members === false ? (
+                                    "Membership Closed"
+                                  ) : (
+                                    <>
+                                      <UserPlus className="w-4 h-4 mr-2" />
+                                      Join as Member
+                                    </>
+                                  )}
                                 </Button>
                               )}
                             </>
