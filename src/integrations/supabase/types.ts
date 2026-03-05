@@ -606,6 +606,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accepting_members: boolean
           address: string | null
           avatar_url: string | null
           created_at: string
@@ -632,6 +633,7 @@ export type Database = {
           x_url: string | null
         }
         Insert: {
+          accepting_members?: boolean
           address?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -659,6 +661,7 @@ export type Database = {
           tiktok_url?: string | null
         }
         Update: {
+          accepting_members?: boolean
           address?: string | null
           avatar_url?: string | null
           created_at?: string

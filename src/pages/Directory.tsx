@@ -65,6 +65,7 @@ interface TheaterGroup {
   logo?: string;
   address?: string | null;
   is_premium?: boolean;
+  accepting_members?: boolean;
 }
 
 interface TheaterGroupFallbackRow {
@@ -317,7 +318,7 @@ const Directory = () => {
     try {
         let query = supabase
             .from("profiles")
-            .select("id, user_id, group_name, description, niche, address, group_logo_url, is_premium")
+            .select("id, user_id, group_name, description, niche, address, group_logo_url, is_premium, accepting_members")
             .eq("role", "producer")
             .not("group_name", "is", null)
             .order("is_premium", { ascending: false })
@@ -477,6 +478,12 @@ const Directory = () => {
 
     setJoiningGroupId(group.id);
     try {
+      if (group.accepting_members === false) {
+        toast.info("This group is not accepting new member requests right now.");
+        setJoiningGroupId(null);
+        return;
+      }
+
       // Check Basic Tier limit for the group
       if (!group.is_premium) {
         const startOfMonth = new Date();
@@ -858,10 +865,12 @@ const Directory = () => {
                                       className="w-full"
                                       data-tour={index === 0 ? "directory-join-btn" : undefined}
                                       onClick={(e) => handleJoinRequest(e, group)}
-                                      disabled={joiningGroupId === group.id}
+                                      disabled={joiningGroupId === group.id || group.accepting_members === false}
                                   >
                                       {joiningGroupId === group.id ? (
                                           <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : group.accepting_members === false ? (
+                                          "Membership Closed"
                                       ) : (
                                           <>
                                               <UserPlus className="w-4 h-4 mr-2" />

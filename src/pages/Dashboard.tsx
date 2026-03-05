@@ -39,6 +39,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "@/components/dashboard/UpsellModal";
+import { Switch } from "@/components/ui/switch";
 
 type ManagedGroup = {
   id: string;
@@ -50,6 +51,7 @@ type ManagedGroup = {
   description: string | null;
   founded_year: number | null;
   address: string | null;
+  accepting_members: boolean;
 };
 
 type MembershipApplication = {
@@ -172,7 +174,7 @@ const Dashboard = () => {
 
       const { data: groups, error: groupsError } = await supabase
         .from("profiles")
-        .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description, founded_year, address")
+        .select("id, user_id, group_name, avatar_url, group_logo_url, group_banner_url, description, founded_year, address, accepting_members")
         .eq("user_id", profile.user_id)
         .not("group_name", "is", null);
 
@@ -740,6 +742,34 @@ const Dashboard = () => {
   }
 
   const selectedGroup = managedGroups.find((group) => group.id === selectedGroupId);
+
+  const handleAcceptingMembersToggle = async (enabled: boolean) => {
+    if (!selectedGroupId) return;
+
+    try {
+      setIsUpdating("accepting-members");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ accepting_members: enabled })
+        .eq("id", selectedGroupId);
+
+      if (error) throw error;
+
+      setManagedGroups((current) =>
+        current.map((group) =>
+          group.id === selectedGroupId ? { ...group, accepting_members: enabled } : group
+        )
+      );
+
+      toast.success(enabled ? "Group is now accepting member requests." : "Member requests are now paused.");
+    } catch (error) {
+      console.error("Error updating membership acceptance setting:", error);
+      toast.error("Failed to update member request setting.");
+    } finally {
+      setIsUpdating(null);
+    }
+  };
   const approvedShows = shows.filter(s => s.status === 'approved');
   const pendingShows = shows.filter(s => s.status === 'pending');
   const rejectedShows = shows.filter(s => s.status === 'rejected');
@@ -1149,9 +1179,25 @@ const Dashboard = () => {
 
           <div className="overflow-hidden rounded-xl border border-secondary/20 bg-card/60 backdrop-blur-md" ref={membersRef}>
             <div className="bg-secondary/5 px-6 py-3 border-b border-secondary/20">
-                 <h2 className="font-serif font-bold text-lg text-muted-foreground">
-                   Member Applications
-                 </h2>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <h2 className="font-serif font-bold text-lg text-muted-foreground">
+                    Member Applications
+                  </h2>
+                  <div className="flex items-center gap-3 rounded-lg border border-secondary/20 bg-background/60 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Accept new members</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedGroup?.accepting_members ? "Join requests are open." : "Join requests are paused."}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={selectedGroup?.accepting_members ?? true}
+                      onCheckedChange={handleAcceptingMembersToggle}
+                      disabled={isUpdating === "accepting-members"}
+                      aria-label="Toggle accepting new members"
+                    />
+                  </div>
+                </div>
             </div>
             {applications.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground">
