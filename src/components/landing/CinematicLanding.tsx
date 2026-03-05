@@ -21,8 +21,6 @@ export const CinematicLanding = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_hsl(var(--primary)/0.22),_transparent_45%)]" />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 z-[1] opacity-30 [background-image:linear-gradient(hsl(var(--foreground)/0.08)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.08)_1px,transparent_1px)] [background-size:60px_60px]" />
-
       <div className="fixed bottom-0 left-0 z-30 w-full">
         <TheaterMarquee />
       </div>
