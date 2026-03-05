@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import { ExternalLink, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { toSafeExternalUrl } from "@/lib/security";
+import { ADSENSE_CLIENT, AD_SLOTS, isAdsenseSlotConfigured } from "@/config/ads";
 
 const ExternalRedirect = () => {
   const [searchParams] = useSearchParams();
@@ -83,7 +84,12 @@ const ExternalRedirect = () => {
 
           {/* Advertisement Space */}
           <div className="w-full max-w-md mx-auto">
-            <AdBanner format="box" variant="placeholder" />
+            <AdBanner
+              format="box"
+              variant={isAdsenseSlotConfigured(AD_SLOTS.externalRedirectBox) ? "adsense" : "placeholder"}
+              adClient={ADSENSE_CLIENT}
+              adSlot={AD_SLOTS.externalRedirectBox}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">

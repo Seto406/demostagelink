@@ -6,6 +6,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import Footer from "@/components/layout/Footer";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AdBanner } from "@/components/ads/AdBanner";
+import { ADSENSE_CLIENT, AD_SLOTS, isAdsenseSlotConfigured } from "@/config/ads";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   TrendingUp, 
@@ -408,7 +409,14 @@ const UserFeed = () => {
                       <FeedUpdate post={item.data as FeedPostType} onDelete={() => refetch()} />
                   )}
 
-                  {index === 1 && !isPro && <AdBanner format="horizontal" adClient="ca-pub-xxx" adSlot="xxx" />}
+                  {index === 1 && !isPro && (
+                    <AdBanner
+                      format="horizontal"
+                      variant={isAdsenseSlotConfigured(AD_SLOTS.feedHorizontal) ? "adsense" : "placeholder"}
+                      adClient={ADSENSE_CLIENT}
+                      adSlot={AD_SLOTS.feedHorizontal}
+                    />
+                  )}
                 </div>
               ))}
 

@@ -18,8 +18,8 @@ To display Google Ads on your website, follow these steps:
     ```html
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
     ```
-4.  Open `index.html` in your project.
-5.  Uncomment the AdSense script section in the `<head>` and replace `ca-pub-YOUR_PUBLISHER_ID` with your actual ID.
+4.  Open `index.html` in your project and verify the AdSense script is present in the `<head>`.
+5.  Set `VITE_ADSENSE_CLIENT` in your `.env` to your publisher ID if you need to override the default.
 
 ### Step 3: Create Ad Units
 1.  In AdSense, go to **Ads > By ad unit**.
@@ -31,7 +31,17 @@ To display Google Ads on your website, follow these steps:
     -   `data-ad-slot` (e.g., `1234567890`)
 
 ### Step 4: Update the Code
-Use the `AdBanner` component in your pages (e.g., `src/pages/UserFeed.tsx`) with the `adsense` variant.
+Set your slot IDs in `.env`:
+
+```bash
+VITE_ADSENSE_SLOT_FEED_HORIZONTAL=1234567890
+VITE_ADSENSE_SLOT_SHOWS_HORIZONTAL=2345678901
+VITE_ADSENSE_SLOT_SHOW_DETAILS_BOX=3456789012
+VITE_ADSENSE_SLOT_EXTERNAL_REDIRECT_BOX=4567890123
+VITE_ADSENSE_SLOT_FOOTER_HORIZONTAL=5678901234
+```
+
+Use the `AdBanner` component in your pages (e.g., `src/pages/UserFeed.tsx`) with the `adsense` variant. StageLink also supports environment-based slot wiring from `src/config/ads.ts`.
 
 ```tsx
 <AdBanner
