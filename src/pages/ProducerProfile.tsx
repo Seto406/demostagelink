@@ -1,5 +1,5 @@
 import { ProductionModal } from "@/components/dashboard/ProductionModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
@@ -97,6 +97,24 @@ const ProducerProfile = () => {
   const [joinLoading, setJoinLoading] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+
+  const getCurrentProfileId = useCallback(async () => {
+    if (profile?.id) return profile.id;
+    if (!user?.id) return null;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error resolving current profile ID:", error);
+      return null;
+    }
+
+    return data?.id ?? null;
+  }, [profile?.id, user?.id]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -226,11 +244,13 @@ const ProducerProfile = () => {
       }
 
       // Fetch following count for the current signed-in user
-      if (user?.id) {
+      const currentProfileId = await getCurrentProfileId();
+
+      if (currentProfileId) {
           const { count: followingCountData, error: followingCountError } = await supabase
             .from("follows")
             .select("*", { count: 'exact', head: true })
-            .eq("follower_id", user.id);
+            .eq("follower_id", currentProfileId);
 
           if (!followingCountError && followingCountData !== null) {
               setFollowingCount(followingCountData);
@@ -238,10 +258,16 @@ const ProducerProfile = () => {
       }
 
       if (user) {
+        const currentProfileId = await getCurrentProfileId();
+        if (!currentProfileId) {
+          setLoading(false);
+          return;
+        }
+
         const { data: followData, error: followError } = await supabase
             .from("follows")
             .select("id")
-            .eq("follower_id", user.id)
+            .eq("follower_id", currentProfileId)
             .eq("following_id", id)
             .maybeSingle();
 
@@ -254,7 +280,7 @@ const ProducerProfile = () => {
     };
 
     fetchProducerData();
-  }, [id, user, authLoading, refreshKey, profile?.id]);
+  }, [id, user, authLoading, refreshKey, profile?.id, getCurrentProfileId]);
 
   const getNicheLabel = (niche: string | null, university: string | null) => {
     if (niche === "university" && university) {
@@ -277,7 +303,7 @@ const ProducerProfile = () => {
     }
     if (!producer) return;
 
-    const followerId = user?.id;
+    const followerId = await getCurrentProfileId();
 
     if (!followerId) {
       toast.error("Your session expired. Please login again.");
