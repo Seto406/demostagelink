@@ -100,9 +100,12 @@ const ProducerProfile = () => {
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
   const getFollowerIdCandidates = useCallback(() => {
-    // follower_id can be either profiles.id or auth.users.id depending on the active DB schema.
-    return [profile?.id, user?.id].filter((value): value is string => Boolean(value));
-  }, [profile?.id, user?.id]);
+    // follower_id can be either auth.users.id (new schema) or profiles.id (legacy schema).
+    // Prioritize auth.users.id first to satisfy RLS policies that enforce auth.uid() = follower_id.
+    return [user?.id, profile?.id].filter((value, index, values): value is string => {
+      return Boolean(value) && values.indexOf(value) === index;
+    });
+  }, [user?.id, profile?.id]);
 
   useEffect(() => {
     if (authLoading) return;
