@@ -73,8 +73,8 @@ const LandingFooter = () => {
             <ul className="space-y-3">
               <li><Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">Producer Login</Link></li>
               <li><Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">Submit a Show</Link></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Success Stories</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Resources</a></li>
+              <li><Link to="/shows" className="text-muted-foreground hover:text-foreground transition-colors">Success Stories</Link></li>
+              <li><Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">Resources</Link></li>
             </ul>
           </div>
 
