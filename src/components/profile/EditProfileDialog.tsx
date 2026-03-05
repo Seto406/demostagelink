@@ -197,20 +197,21 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
     const validateOptionalHttpUrl = (value: string, label: string) => {
       if (!value) return true;
 
-      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
-      if (!urlPattern.test(value)) {
+      if (!value.startsWith('http://') && !value.startsWith('https://')) {
         toast({
           title: "Invalid URL",
-          description: `Please enter a valid URL for ${label}.`,
+          description: "URL must start with http:// or https://",
           variant: "destructive",
         });
         return false;
       }
 
-      if (!value.startsWith('http://') && !value.startsWith('https://')) {
+      try {
+        new URL(value);
+      } catch {
         toast({
           title: "Invalid URL",
-          description: "URL must start with http:// or https://",
+          description: `Please enter a valid URL for ${label}.`,
           variant: "destructive",
         });
         return false;
