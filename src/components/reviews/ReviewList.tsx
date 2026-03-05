@@ -167,8 +167,24 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
 
   const handleDeleteReview = async (reviewId: string) => {
     try {
-      const { error } = await supabase.from("reviews").delete().eq("id", reviewId);
+      if (!profile?.id) {
+        throw new Error("You must be signed in to delete a review");
+      }
+
+      let deleteQuery = supabase.from("reviews").delete().eq("id", reviewId);
+
+      if (!canModerate) {
+        deleteQuery = deleteQuery.eq("user_id", profile.id);
+      }
+
+      const { data, error } = await deleteQuery.select("id");
+
       if (error) throw error;
+
+      if (!data?.length) {
+        throw new Error("Review was not deleted. Please try again.");
+      }
+
       toast.success("Review deleted permanently");
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
       if (editingReviewId === reviewId) {
