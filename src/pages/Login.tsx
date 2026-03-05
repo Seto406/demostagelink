@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrandedLoader } from "@/components/ui/branded-loader";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -9,7 +9,9 @@ import { ArrowLeft } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, profile, loading } = useAuth();
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
 
   // Redirect if already logged in
   useEffect(() => {
@@ -67,7 +69,7 @@ const Login = () => {
 
         {/* Auth Form */}
         <div className="w-full">
-          <AuthForm hideLogo={true} />
+          <AuthForm hideLogo={true} initialMode={initialMode} />
         </div>
       </div>
     </div>

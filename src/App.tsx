@@ -105,7 +105,9 @@ const AppRoutes = () => {
           <Route path="/directory" element={<Directory />} />
           <Route path="/shows" element={<Shows />} />
           <Route path="/about" element={<About />} />
+          <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Navigate to="/login?mode=signup" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<RequireAuth><RoleBasedGuard><Dashboard /></RoleBasedGuard></RequireAuth>} />
