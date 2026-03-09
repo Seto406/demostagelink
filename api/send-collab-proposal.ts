@@ -22,6 +22,11 @@ const getJsonBody = (body: unknown): Record<string, unknown> => {
   return {};
 };
 
+const isValidEmail = (value: unknown): value is string => {
+  if (typeof value !== "string") return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+};
+
 export default async function handler(req: any, res: any) {
   const debug = process.env.NODE_ENV !== "production";
 
@@ -328,10 +333,85 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ success: true, message: `${requestMessage}, but recipient email not found.` });
     }
 
-    const recipientEmail = recipientUser.user.email;
+    const recipientEmails = new Set<string>();
+    if (isValidEmail(recipientUser.user.email)) {
+      recipientEmails.add(recipientUser.user.email.trim().toLowerCase());
+    }
+
+    const memberUserIds = new Set<string>();
+
+    const { data: theaterGroups, error: theaterGroupsError } = await supabaseAdmin
+      .from("theater_groups")
+      .select("id")
+      .eq("owner_id", recipientProfile.id);
+
+    if (theaterGroupsError) {
+      console.error("Error fetching recipient theater groups:", theaterGroupsError.message);
+    }
+
+    const theaterGroupIds = Array.from(
+      new Set((theaterGroups || []).map((group) => group.id).filter(isValidId)),
+    );
+
+    if (theaterGroupIds.length > 0) {
+      const { data: normalizedMembers, error: normalizedMembersError } = await supabaseAdmin
+        .from("group_members")
+        .select("user_id")
+        .in("theater_group_id", theaterGroupIds)
+        .eq("status", "accepted")
+        .not("user_id", "is", null);
+
+      if (normalizedMembersError) {
+        if (normalizedMembersError.code !== "42703") {
+          console.error("Error fetching normalized recipient group members:", normalizedMembersError.message);
+        }
+      } else {
+        for (const member of normalizedMembers || []) {
+          if (isValidId(member.user_id) && member.user_id !== recipientProfile.user_id) {
+            memberUserIds.add(member.user_id);
+          }
+        }
+      }
+    }
+
+    const { data: legacyMembers, error: legacyMembersError } = await supabaseAdmin
+      .from("group_members")
+      .select("user_id")
+      .eq("group_id", recipientProfile.id)
+      .eq("status", "accepted")
+      .not("user_id", "is", null);
+
+    if (legacyMembersError) {
+      if (legacyMembersError.code !== "42703") {
+        console.error("Error fetching legacy recipient group members:", legacyMembersError.message);
+      }
+    } else {
+      for (const member of legacyMembers || []) {
+        if (isValidId(member.user_id) && member.user_id !== recipientProfile.user_id) {
+          memberUserIds.add(member.user_id);
+        }
+      }
+    }
+
+    if (memberUserIds.size > 0) {
+      const { data: memberEmails, error: memberEmailsError } = await supabaseAdmin.rpc("get_user_emails", {
+        user_ids: Array.from(memberUserIds),
+      });
+
+      if (memberEmailsError) {
+        console.error("Error fetching recipient group member emails:", memberEmailsError.message);
+      } else {
+        for (const row of memberEmails || []) {
+          if (isValidEmail(row?.email)) {
+            recipientEmails.add(row.email.trim().toLowerCase());
+          }
+        }
+      }
+    }
+
     const senderEmail = user.email;
 
-    if (!recipientEmail || !senderEmail) {
+    if (recipientEmails.size === 0 || !senderEmail) {
       return res.status(200).json({ success: true, message: `${requestMessage}, but email addresses are incomplete.` });
     }
 
@@ -395,7 +475,7 @@ export default async function handler(req: any, res: any) {
       },
       body: JSON.stringify({
         from: "StageLink <hello@stagelink.show>",
-        to: [recipientEmail],
+        to: Array.from(recipientEmails),
         reply_to: senderEmail,
         subject: `🤝 New Theater Collaboration Inquiry: ${senderName} x ${recipientGroupName}`,
         html,
