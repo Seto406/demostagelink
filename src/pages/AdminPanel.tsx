@@ -208,6 +208,7 @@ const AdminPanel = () => {
   const [usersToDelete, setUsersToDelete] = useState<UserProfile[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [deletingUsers, setDeletingUsers] = useState(false);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -517,6 +518,37 @@ const AdminPanel = () => {
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleToggleUserRole = async (userProfile: UserProfile) => {
+    if (userProfile.role === "admin") return;
+
+    const nextRole = userProfile.role === "producer" ? "audience" : "producer";
+    setUpdatingRoleUserId(userProfile.user_id);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ role: nextRole })
+      .eq("user_id", userProfile.user_id);
+
+    if (error) {
+      console.error("Error updating user role:", error);
+      toast({
+        title: "Role Update Failed",
+        description: "Could not update this user's role. Please try again.",
+        variant: "destructive",
+      });
+      setUpdatingRoleUserId(null);
+      return;
+    }
+
+    toast({
+      title: nextRole === "producer" ? "User Promoted" : "User Demoted",
+      description: `${userProfile.email || userProfile.user_id} is now ${nextRole}.`,
+    });
+
+    await Promise.all([fetchUsers(), fetchStats()]);
+    setUpdatingRoleUserId(null);
   };
 
   const sendNotification = async (showId: string, showTitle: string, status: "approved" | "rejected", producerId: string) => {
@@ -1976,6 +2008,17 @@ const AdminPanel = () => {
                             {userProfile.role !== "admin" && (
                               <div className="flex items-center gap-2">
                                 {/* Force Delete Button */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleToggleUserRole(userProfile)}
+                                  disabled={updatingRoleUserId === userProfile.user_id}
+                                  className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10"
+                                  title={userProfile.role === "producer" ? "Demote to Audience" : "Promote to Producer"}
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </Button>
+
                                 <Button
                                   variant="ghost"
                                   size="sm"
