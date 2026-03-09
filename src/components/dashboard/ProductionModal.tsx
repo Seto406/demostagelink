@@ -35,6 +35,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "./UpsellModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toSafeTrailerUrl } from "@/lib/security";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface ProductionModalProps {
   open: boolean;
@@ -76,8 +79,6 @@ interface ProductionDraft {
   tags: string[];
   cast: CastMember[];
   productionStatus: "ongoing" | "completed" | "draft";
-  transcriptUrl: string;
-  transcriptContent: string;
   pamphletPdfUrl: string;
 }
 
@@ -177,9 +178,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
   const [cast, setCast] = useState<CastMember[]>([]);
   const [productionStatus, setProductionStatus] = useState<"ongoing" | "completed" | "draft">("ongoing");
 
-  // Transcripts
-  const [transcriptUrl, setTranscriptUrl] = useState("");
-  const [transcriptContent, setTranscriptContent] = useState("");
+  const [schedulePickerOpen, setSchedulePickerOpen] = useState(false);
   const [pamphletPdfFile, setPamphletPdfFile] = useState<File | null>(null);
   const [pamphletPdfUrl, setPamphletPdfUrl] = useState("");
 
@@ -237,8 +236,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     setTempCastName("");
     setTempCastRole("");
     setProductionStatus("ongoing");
-    setTranscriptUrl("");
-    setTranscriptContent("");
     setPamphletPdfFile(null);
     setPamphletPdfUrl("");
     setPosterFile(null);
@@ -377,8 +374,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       setDirector(showToEdit.director || "");
       setVideoUrl(showToEdit.video_url || "");
       setPaymentInstructions(showToEdit.seo_metadata?.payment_instructions || "");
-      setTranscriptUrl(showToEdit.seo_metadata?.transcript_url || "");
-      setTranscriptContent(showToEdit.seo_metadata?.transcript_content || "");
       setPamphletPdfUrl(showToEdit.seo_metadata?.pamphlet_pdf_url || "");
       setPamphletPdfFile(null);
       setCast((showToEdit.cast_members as unknown as CastMember[]) || []);
@@ -420,8 +415,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         if (draft.productionStatus === "ongoing" || draft.productionStatus === "completed" || draft.productionStatus === "draft") {
           setProductionStatus(draft.productionStatus);
         }
-        if (typeof draft.transcriptUrl === "string") setTranscriptUrl(draft.transcriptUrl);
-        if (typeof draft.transcriptContent === "string") setTranscriptContent(draft.transcriptContent);
         if (typeof draft.pamphletPdfUrl === "string") setPamphletPdfUrl(draft.pamphletPdfUrl);
       } catch (error) {
         console.warn("Failed to restore production draft", error);
@@ -452,8 +445,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       tags,
       cast,
       productionStatus,
-      transcriptUrl,
-      transcriptContent,
       pamphletPdfUrl,
     };
 
@@ -479,10 +470,30 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
     tags,
     cast,
     productionStatus,
-    transcriptUrl,
-    transcriptContent,
     pamphletPdfUrl,
   ]);
+
+  const handleBatchDateSelect = (dates: Date[] | undefined) => {
+    if (!dates || dates.length === 0) return;
+
+    const selectedDateSet = new Set(dates.map((date) => format(date, "yyyy-MM-dd")));
+    setScheduleSlots((prev) => {
+      const existingDates = new Set(prev.filter((slot) => slot.date).map((slot) => slot.date));
+      const next = [...prev];
+
+      selectedDateSet.forEach((date) => {
+        if (!existingDates.has(date)) {
+          next.push({ id: crypto.randomUUID(), date, time: "", deadline: "", seat_limit: 50, venue: "", city: "" });
+        }
+      });
+
+      return next.sort((a, b) => {
+        if (!a.date) return -1;
+        if (!b.date) return 1;
+        return parseDateLocal(a.date).getTime() - parseDateLocal(b.date).getTime();
+      });
+    });
+  };
 
   const handlePamphletSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -846,8 +857,6 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
         deadline_mode: deadlineMode,
         formatted_date: displayDateString, // Save the friendly string
         formatted_show_time: displayTimeString, // Save the friendly time string
-        transcript_url: transcriptUrl || null,
-        transcript_content: transcriptContent || null,
         pamphlet_pdf_url: finalPamphletPdfUrl,
       },
     };
@@ -989,6 +998,33 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
 
               <div className="space-y-3">
                   <div className="space-y-1">
+                    <Label className="text-xs">Quick Add Multiple Dates</Label>
+                    <Popover open={schedulePickerOpen} onOpenChange={setSchedulePickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn("w-full justify-start text-left font-normal", "bg-background border-secondary/30")}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          Select multiple dates from calendar
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="multiple"
+                          selected={scheduleSlots.filter((slot) => slot.date).map((slot) => parseDateLocal(slot.date))}
+                          onSelect={handleBatchDateSelect}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-[10px] text-muted-foreground">
+                      Select all show dates first, then set each schedule's time and deadline below.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
                     <Label className="text-xs">Deadline Mode</Label>
                     <Select value={deadlineMode} onValueChange={(value) => setDeadlineMode(value as DeadlineMode)}>
                       <SelectTrigger className="bg-background border-secondary/30">
@@ -1126,39 +1162,11 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
               </p>
             </div>
 
-            {/* Transcript Integration */}
-            <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
+                        <div className="space-y-4 bg-muted/10 p-4 rounded-lg border border-secondary/10">
                <Label className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Transcript Integration</span>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">New</Badge>
+                  <span className="text-sm font-medium">Private Pamphlet</span>
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Optional</Badge>
                </Label>
-
-               <div className="space-y-2">
-                  <Label htmlFor="transcriptUrl" className="text-xs text-muted-foreground">Google Doc / Transcript Link</Label>
-                  <Input
-                     id="transcriptUrl"
-                     value={transcriptUrl}
-                     onChange={(e) => setTranscriptUrl(e.target.value)}
-                     placeholder="https://docs.google.com/document/d/..."
-                     className="bg-background border-secondary/30"
-                  />
-               </div>
-
-               <div className="space-y-2">
-                  <Label htmlFor="transcriptContent" className="text-xs text-muted-foreground">
-                     Transcript Text (for Search Indexing)
-                  </Label>
-                  <Textarea
-                     id="transcriptContent"
-                     value={transcriptContent}
-                     onChange={(e) => setTranscriptContent(e.target.value)}
-                     placeholder="Paste the full transcript text here to allow users to find your show by searching for specific lines or keywords."
-                     className="bg-background border-secondary/30 min-h-[100px]"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                     This content will be hidden from the main view but used for search functionality.
-                  </p>
-               </div>
 
                <div className="space-y-2">
                   <Label htmlFor="pamphletPdf" className="text-xs text-muted-foreground">
@@ -1180,6 +1188,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                   )}
                </div>
             </div>
+
 
             <div className="space-y-2 rounded-lg border border-secondary/20 bg-muted/20 p-4">
               <Label htmlFor="paymentInstructions">Payment Instructions</Label>
