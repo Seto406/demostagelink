@@ -683,13 +683,14 @@ END:VCALENDAR`;
                                 size="lg"
                                 className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
                                 onClick={() => show && toggleFavorite(show.id)}
+                                aria-label={show && isFavorited(show.id) ? "Remove from favorites" : "Add to favorites"}
                             >
                                 <Heart className={`w-5 h-5 ${show && isFavorited(show.id) ? "fill-red-500 text-red-500" : ""}`} />
                             </Button>
 
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
+                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white" aria-label="Share">
                                         <Share2 className="w-5 h-5" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -715,7 +716,7 @@ END:VCALENDAR`;
 
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
+                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white" aria-label="Add to calendar">
                                         <Calendar className="w-5 h-5" />
                                     </Button>
                                 </DropdownMenuTrigger>
