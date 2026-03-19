@@ -4,7 +4,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Share2, MessageCircle, MoreHorizontal, Heart, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Carousel,
@@ -217,7 +216,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -301,6 +300,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
                     size="sm"
                     className={cn("gap-2 hover:bg-background/50", isLiked && "text-red-500 hover:text-red-600")}
                     onClick={handleLike}
+                    aria-label={isLiked ? "Unlike post" : "Like post"}
                  >
                      <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
                      <span className="text-xs">{likeCount > 0 ? likeCount : "Like"}</span>
@@ -311,6 +311,7 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
                     size="sm"
                     className="gap-2 hover:bg-background/50"
                     onClick={() => setShowComments(!showComments)}
+                    aria-label={showComments ? "Hide comments" : "Show comments"}
                  >
                      <MessageCircle className="w-4 h-4" />
                      <span className="text-xs">{commentCount > 0 ? commentCount : "Comment"}</span>
