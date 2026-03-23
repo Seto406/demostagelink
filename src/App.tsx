@@ -52,6 +52,7 @@ const TestEmail = lazy(() => import("./pages/TestEmail"));
 const TestNotifications = lazy(() => import("./pages/TestNotifications"));
 const ExternalRedirect = lazy(() => import("./pages/ExternalRedirect"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const TestTooltips = lazy(() => import("./pages/TestTooltips"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,6 +135,7 @@ const AppRoutes = () => {
           <Route path="/test-email" element={<TestEmail />} />
           <Route path="/test-notifications" element={<TestNotifications />} />
           <Route path="/external-redirect" element={<ExternalRedirect />} />
+          <Route path="/test-tooltips" element={<TestTooltips />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
