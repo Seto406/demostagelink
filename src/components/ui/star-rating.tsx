@@ -34,6 +34,11 @@ export const StarRating = ({
               "transition-all duration-200 focus:outline-none",
               readOnly ? "cursor-default" : "cursor-pointer hover:scale-110"
             )}
+            aria-label={
+              readOnly
+                ? `${starValue} star${starValue > 1 ? "s" : ""}`
+                : `Rate ${starValue} star${starValue > 1 ? "s" : ""}`
+            }
           >
             <Star
               size={size}
