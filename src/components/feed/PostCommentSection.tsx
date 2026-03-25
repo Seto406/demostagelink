@@ -9,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Send, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createNotification } from "@/lib/notifications";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Comment {
   id: string;
@@ -219,15 +220,24 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                       </span>
                     </div>
                     {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(comment.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        <span className="sr-only">Delete comment</span>
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDelete(comment.id)}
+                              aria-label="Delete comment"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete comment</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{comment.content}</p>
@@ -257,18 +267,28 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                 }
               }}
             />
-            <Button
-              type="submit"
-              size="icon"
-              disabled={submitting || !newComment.trim()}
-              className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={submitting || !newComment.trim()}
+                    className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                    aria-label="Post comment"
+                  >
+                    {submitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Post comment</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </form>
       ) : (

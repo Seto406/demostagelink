@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-24 - Playwright Tooltip Verification Local Injection
+**Learning:** When trying to verify standard UI components (like Radix UI Tooltips) in isolation locally using Playwright, injecting test code directly into `App.tsx` can break the application router and subsequent E2E tests if not carefully reverted.
+**Action:** Use `page.setContent()` on `about:blank` within the Playwright script to inject minimal HTML structures that replicate the component's DOM footprint for visual verification of interactions (like hover states) without modifying repository code or navigating complex authenticated routes.
