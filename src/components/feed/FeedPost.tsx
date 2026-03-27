@@ -403,12 +403,15 @@ export function FeedPost({ show, dataTour }: FeedPostProps) {
                         ) : show.ticket_link ? (
                             <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
                                 <Ticket className="w-4 h-4 mr-1" />
-                                Get Tickets
+                                Buy Tickets
                             </Button>
                         ) : (
-                            <Button size="sm" variant="secondary" disabled>
-                                Unavailable
-                            </Button>
+                            <div className="space-y-1">
+                              <Button size="sm" variant="secondary" disabled>
+                                  Buy Tickets
+                              </Button>
+                              <p className="text-[10px] text-muted-foreground text-center">Ticket link coming soon.</p>
+                            </div>
                         )}
                     </Link>
                 </div>
