@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -47,7 +47,6 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PaymentSuccess = lazy(() => import("./pages/payment/Success"));
 const PaymentCancel = lazy(() => import("./pages/payment/Cancel"));
-const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const TestEmail = lazy(() => import("./pages/TestEmail"));
 const TestNotifications = lazy(() => import("./pages/TestNotifications"));
 const ExternalRedirect = lazy(() => import("./pages/ExternalRedirect"));
@@ -76,6 +75,10 @@ const ToastHandlerInit = () => {
 // Main routes wrapper
 const AppRoutes = () => {
   const location = useLocation();
+  const LegacyCheckoutRedirect = () => {
+    const { showId } = useParams<{ showId: string }>();
+    return <Navigate to={showId ? `/show/${showId}` : "/shows"} replace />;
+  };
 
   // Scroll to top on route change
   useEffect(() => {
@@ -130,7 +133,7 @@ const AppRoutes = () => {
           <Route path="/terms" element={<Terms />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
-          <Route path="/checkout/:showId" element={<CheckoutPage />} />
+          <Route path="/checkout/:showId" element={<LegacyCheckoutRedirect />} />
           <Route path="/test-email" element={<TestEmail />} />
           <Route path="/test-notifications" element={<TestNotifications />} />
           <Route path="/external-redirect" element={<ExternalRedirect />} />
