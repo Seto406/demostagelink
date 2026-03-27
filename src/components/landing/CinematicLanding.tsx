@@ -37,9 +37,9 @@ export const CinematicLanding = () => {
                 Manila Theater Network
               </span>
               <h1 className="mb-4 mt-4 text-4xl font-serif font-bold leading-tight text-foreground drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl">
-                The Stage <br />
+                Your Stage, <br />
                 <span className="bg-gradient-to-r from-secondary via-yellow-100 to-secondary bg-clip-text text-transparent">
-                  Is Yours.
+                  Connected.
                 </span>
               </h1>
               <p className="mx-auto mb-6 max-w-lg text-base font-medium leading-relaxed text-muted-foreground/90 drop-shadow-md sm:text-lg lg:mx-0">
