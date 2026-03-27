@@ -337,34 +337,38 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                 </Link>
               </div>
 
-              {/* Buy Ticket Button */}
-              {safeTicketLink && (
-                <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto">
-                  {isPast ? (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled
-                      className="w-full text-xs h-8 font-semibold bg-muted text-muted-foreground"
-                    >
-                      Event Ended
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
+              {/* Ticket CTA */}
+              <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto space-y-1">
+                {isPast ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled
+                    className="w-full text-xs h-8 font-semibold bg-muted text-muted-foreground"
+                  >
+                    Event Ended
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold disabled:bg-muted disabled:text-muted-foreground"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (safeTicketLink) {
                         window.open(safeTicketLink, '_blank', 'noopener,noreferrer');
-                      }}
-                    >
-                      <Ticket className="w-3 h-3 mr-1" />
-                      Buy Ticket
-                    </Button>
-                  )}
-                </div>
-              )}
+                      }
+                    }}
+                    disabled={!safeTicketLink}
+                  >
+                    <Ticket className="w-3 h-3 mr-1" />
+                    Buy Tickets
+                  </Button>
+                )}
+                {!isPast && !safeTicketLink && (
+                  <p className="text-[10px] text-muted-foreground">Ticket link coming soon.</p>
+                )}
+              </div>
             </div>
 
             {/* Hover border effect */}
