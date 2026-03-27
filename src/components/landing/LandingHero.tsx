@@ -44,7 +44,7 @@ const LandingHero = () => {
           >
             Your Stage,{" "}
             <span className="relative">
-              <span className="text-secondary">Connected</span>
+              <span className="text-secondary">Connected.</span>
               <motion.span
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
@@ -61,8 +61,7 @@ const LandingHero = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
           >
-            The ultimate platform for theater groups to showcase their work and for audiences 
-            to discover the magic of local productions across Metro Manila.
+            Making theater groups and their productions visible, discoverable, and accessible to the right audience.
           </motion.p>
 
           {/* CTA Buttons - Both redirect to login for gatekeeping */}

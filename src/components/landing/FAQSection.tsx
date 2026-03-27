@@ -59,7 +59,7 @@ const faqs = [
         <li>Discover productions and theatre groups without needing prior knowledge.</li>
         <li>Follow shows and groups, receive notifications, and add shows to personal calendars.</li>
         <li>Comment, review, and rate productions to engage with the community.</li>
-        <li>Reserve seats or buy tickets directly for ticketed shows (Premium feature).</li>
+        <li>Use “Buy Tickets” links to continue booking with theater groups on their preferred channels.</li>
         <li>Explore local and university theatre groups in one place.</li>
       </ul>
     )
