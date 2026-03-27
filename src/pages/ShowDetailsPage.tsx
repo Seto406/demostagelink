@@ -426,9 +426,13 @@ END:VCALENDAR`;
       return;
     }
 
-    // Navigate to checkout page for paid tickets
-    const slotParam = selectedSlot?.id ? `?slotId=${encodeURIComponent(selectedSlot.id)}` : "";
-    navigate(`/checkout/${show.id}${slotParam}`);
+    const externalLink = show?.ticket_link || (Array.isArray(show?.external_links) ? String(show.external_links[0] || "") : "");
+    if (!externalLink) {
+      toast.error("Ticket link unavailable for this show.");
+      return;
+    }
+
+    navigate(`/external-redirect?url=${encodeURIComponent(externalLink)}`);
   };
 
   return (
@@ -641,7 +645,7 @@ END:VCALENDAR`;
                                 <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none text-lg font-serif px-8">
                                     Event Ended
                                 </Button>
-                            ) : (show.price !== null && show.price !== undefined && show.price >= 0) ? (
+                            ) : show.price === 0 ? (
                                 <Button
                                     size="lg"
                                     className={`flex-1 sm:flex-none text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 ${
@@ -651,26 +655,18 @@ END:VCALENDAR`;
                                     disabled={buyingTicket || isTicketClaimed}
                                 >
                                     {isTicketClaimed ? <Check className="w-5 h-5 mr-2" /> : <Ticket className="w-5 h-5 mr-2" />}
-                                    {isTicketClaimed ? "Claimed" : (show.price === 0 ? "Get Free Ticket" : "Reserve Now")}
+                                    {isTicketClaimed ? "Claimed" : "Get Free Ticket"}
                                 </Button>
-                            ) : show.ticket_link ? (
-                                <a
-                                  href={show.ticket_link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-1 sm:flex-none"
-                                  onClick={() => {
-                                    const groupId = show?.theater_group?.id || show?.producer_id?.id;
-                                    if (groupId && show?.id) {
-                                      trackEvent('ticket_click', groupId, show.id);
-                                    }
-                                  }}
+                            ) : (show.price !== null && show.price !== undefined && show.price > 0 && (show.ticket_link || (Array.isArray(show.external_links) && show.external_links.length > 0))) ? (
+                                <Button
+                                  size="lg"
+                                  className="flex-1 sm:flex-none text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5"
+                                  onClick={handleBuyTicket}
+                                  disabled={buyingTicket}
                                 >
-                                    <Button size="lg" className="w-full text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
-                                        <ExternalLink className="w-5 h-5 mr-2" />
-                                        Get Tickets
-                                    </Button>
-                                </a>
+                                    <ExternalLink className="w-5 h-5 mr-2" />
+                                    Buy Tickets
+                                </Button>
                             ) : (
                                 <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none">
                                     Unavailable
@@ -736,8 +732,8 @@ END:VCALENDAR`;
                           <div className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm text-white/90">
                             <p className="font-medium">Ticket Deadlines</p>
                             <ul className="mt-1 space-y-1 text-white/80">
-                              <li>Reservation closes in: <span className="font-semibold text-white">{formatCountdown(msUntilDeadline)}</span></li>
-                              <li>Payment and ticket claiming should be completed before showtime.</li>
+                              <li>Booking window closes in: <span className="font-semibold text-white">{formatCountdown(msUntilDeadline)}</span></li>
+                              <li>Complete your booking before showtime for best availability.</li>
                             </ul>
                           </div>
                         )}

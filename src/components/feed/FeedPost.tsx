@@ -397,7 +397,7 @@ export function FeedPost({ show, dataTour }: FeedPostProps) {
                             ) : (
                                 <Button size="sm" variant="default" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-medium">
                                     <Ticket className="w-4 h-4 mr-1" />
-                                    Reserve for ₱25
+                                    Buy Tickets
                                 </Button>
                             )
                         ) : show.ticket_link ? (

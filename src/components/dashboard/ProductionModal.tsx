@@ -25,11 +25,10 @@ import { CreatableSelect } from "@/components/ui/creatable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { ImageCropper } from "@/components/ui/image-cropper";
 import { toast } from "@/hooks/use-toast";
-import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon, Lock } from "lucide-react";
+import { Image, Trash2, HelpCircle, Plus, Ticket, Calendar as CalendarIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { venues } from "@/data/venues";
 import { Json, Tables } from "@/integrations/supabase/types";
-import { calculateReservationFee } from "@/lib/pricing";
 import { format } from "date-fns";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpsellModal } from "./UpsellModal";
@@ -842,7 +841,7 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
       price: price ? parseFloat(price) : null,
       production_status: effectiveProductionStatus,
       poster_url: finalPosterUrl,
-      reservation_fee: price ? calculateReservationFee(parseFloat(price), niche) : 0,
+      reservation_fee: 0,
       collect_balance_onsite: collectBalanceOnsite,
       genre: genre.length > 0 ? genre.join(", ") : null,
       director: director || null,
@@ -1272,34 +1271,15 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    disabled={!isPro}
-                    className={`bg-background border-secondary/30 ${!isPro ? "opacity-50 cursor-not-allowed pr-10" : ""}`}
+                    className="bg-background border-secondary/30"
                   />
-                  {!isPro && (
-                      <div
-                          className="absolute inset-0 z-10 cursor-pointer flex items-center justify-end pr-3"
-                          onClick={() => {
-                              setUpsellContext({
-                                   featureName: "Direct Ticketing",
-                                   description: "Selling tickets directly through StageLink requires a Premium subscription."
-                              });
-                              setUpsellOpen(true);
-                          }}
-                      >
-                           <Lock className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                  )}
                 </div>
 
                 {price && parseFloat(price) > 0 && (
                    <div className="text-xs text-muted-foreground mt-1 space-y-1">
                      <div className="flex justify-between">
-                       <span>Online Reservation Fee:</span>
-                       <span className="font-medium">₱{calculateReservationFee(parseFloat(price), niche).toFixed(2)}</span>
-                     </div>
-                     <div className="flex justify-between">
-                       <span>Total Audience Price:</span>
-                       <span className="font-medium">₱{(parseFloat(price) + calculateReservationFee(parseFloat(price), niche)).toFixed(2)}</span>
+                       <span>Audience Price:</span>
+                       <span className="font-medium">₱{parseFloat(price).toFixed(2)}</span>
                      </div>
                    </div>
                 )}
