@@ -639,7 +639,7 @@ END:VCALENDAR`;
                              </p>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                        <div className="flex flex-col gap-2 w-full sm:w-auto">
                             {/* Primary Action */}
                             {isPast ? (
                                 <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none text-lg font-serif px-8">
@@ -655,7 +655,7 @@ END:VCALENDAR`;
                                     disabled={buyingTicket || isTicketClaimed}
                                 >
                                     {isTicketClaimed ? <Check className="w-5 h-5 mr-2" /> : <Ticket className="w-5 h-5 mr-2" />}
-                                    {isTicketClaimed ? "Claimed" : "Get Free Ticket"}
+                                    {isTicketClaimed ? "Claimed" : "Buy Tickets"}
                                 </Button>
                             ) : (show.price !== null && show.price !== undefined && show.price > 0 && (show.ticket_link || (Array.isArray(show.external_links) && show.external_links.length > 0))) ? (
                                 <Button
@@ -668,64 +668,69 @@ END:VCALENDAR`;
                                     Buy Tickets
                                 </Button>
                             ) : (
-                                <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none">
-                                    Unavailable
-                                </Button>
+                                <>
+                                  <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none">
+                                      Buy Tickets
+                                  </Button>
+                                  <p className="text-xs text-white/70">Ticket link coming soon.</p>
+                                </>
                             )}
 
                             {/* Secondary Actions */}
-                             <Button
-                                variant="outline"
-                                size="lg"
-                                className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
-                                onClick={() => show && toggleFavorite(show.id)}
-                            >
-                                <Heart className={`w-5 h-5 ${show && isFavorited(show.id) ? "fill-red-500 text-red-500" : ""}`} />
-                            </Button>
+                            <div className="flex flex-wrap gap-3">
+                              <Button
+                                  variant="outline"
+                                  size="lg"
+                                  className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white"
+                                  onClick={() => show && toggleFavorite(show.id)}
+                              >
+                                  <Heart className={`w-5 h-5 ${show && isFavorited(show.id) ? "fill-red-500 text-red-500" : ""}`} />
+                              </Button>
 
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
-                                        <Share2 className="w-5 h-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem onClick={() => {
-                                        navigator.clipboard.writeText(window.location.href);
-                                        toast.success("Link copied to clipboard");
-                                    }}>
-                                        Copy Link
-                                    </DropdownMenuItem>
-                                     <DropdownMenuItem asChild>
-                                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer">
-                                            Share on Facebook
-                                        </a>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(show.title)}`} target="_blank" rel="noopener noreferrer">
-                                            Share on Twitter
-                                        </a>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
+                                          <Share2 className="w-5 h-5" />
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem onClick={() => {
+                                          navigator.clipboard.writeText(window.location.href);
+                                          toast.success("Link copied to clipboard");
+                                      }}>
+                                          Copy Link
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem asChild>
+                                          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer">
+                                              Share on Facebook
+                                          </a>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem asChild>
+                                          <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(show.title)}`} target="_blank" rel="noopener noreferrer">
+                                              Share on Twitter
+                                          </a>
+                                      </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
 
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
-                                        <Calendar className="w-5 h-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                        <a href={googleCalendarLink} target="_blank" rel="noopener noreferrer">
-                                            Add to Google Calendar
-                                        </a>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={downloadICS}>
-                                        Download .ics
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                              <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="outline" size="lg" className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
+                                          <Calendar className="w-5 h-5" />
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuItem asChild>
+                                          <a href={googleCalendarLink} target="_blank" rel="noopener noreferrer">
+                                              Add to Google Calendar
+                                          </a>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={downloadICS}>
+                                          Download .ics
+                                      </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                         </div>
 
                         {hasUpcomingDeadline && (

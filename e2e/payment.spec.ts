@@ -37,15 +37,15 @@ test.describe('Payment E2E Flow', () => {
     // 1. Navigate to Show Page
     await page.goto(`/show/${showId}`); // CORRECTED PATH
 
-    // 2. Click Buy Ticket
-    // Expect a "Get Tickets", "Buy Ticket", "Reserve Now" button.
+    // 2. Click primary ticket CTA
+    // Expect a "Buy Tickets" button.
     console.log(`Navigating to show: ${showId}`);
     // Wait for network idle to ensure content is loaded
     await page.waitForLoadState('networkidle');
 
     // Use a more generic selector that handles various button texts
     // Using a more permissive selector to find the primary CTA
-    const buyButton = page.locator('button').filter({ hasText: /Get Tickets|Buy Ticket|Reserve Now|Reserve Seat/i }).first();
+    const buyButton = page.locator('button').filter({ hasText: /Buy Tickets/i }).first();
 
     // Check if visible with a timeout
     try {
@@ -55,7 +55,7 @@ test.describe('Payment E2E Flow', () => {
         // Log page content for debugging
         console.log('Buy button not found. Page content snippet:', await page.content().then(c => c.substring(0, 500)));
         // Fail explicitly
-        throw new Error('Buy/Reserve button not found on page.');
+        throw new Error('Buy Tickets button not found on page.');
     }
 
     // 3. Handle Ticket Selection Dialog (if any)
