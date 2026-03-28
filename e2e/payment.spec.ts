@@ -68,7 +68,7 @@ test.describe('Payment E2E Flow', () => {
       return;
     }
 
-    // 4. Otherwise, best-effort check for external handoff.
-    await expect.poll(() => page.url(), { timeout: 15000 }).toMatch(/external-redirect|paymongo|https?:\/\//i);
+    // 4. Otherwise, best-effort check for external handoff route/provider.
+    await expect.poll(() => page.url(), { timeout: 15000 }).toMatch(/external-redirect|paymongo/i);
   });
 });
