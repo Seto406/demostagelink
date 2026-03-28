@@ -338,7 +338,7 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
               </div>
 
               {/* Ticket CTA */}
-              <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto">
+              <div className="mt-4 pt-2 border-t border-white/10 relative z-20 pointer-events-auto space-y-1">
                 {isPast ? (
                   <Button
                     size="sm"
@@ -348,29 +348,25 @@ const ShowCard = forwardRef<HTMLDivElement, { show: Show; index: number }>(({ sh
                   >
                     Event Ended
                   </Button>
-                ) : safeTicketLink ? (
+                ) : (
                   <Button
                     size="sm"
-                    className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold"
+                    className="w-full text-xs h-8 bg-secondary/90 hover:bg-secondary text-black font-semibold disabled:bg-muted disabled:text-muted-foreground"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      window.open(safeTicketLink, '_blank', 'noopener,noreferrer');
+                      if (safeTicketLink) {
+                        window.open(safeTicketLink, '_blank', 'noopener,noreferrer');
+                      }
                     }}
+                    disabled={!safeTicketLink}
                   >
                     <Ticket className="w-3 h-3 mr-1" />
                     Buy Tickets
                   </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled
-                    className="w-full text-xs h-8 font-semibold"
-                    aria-label="Ticket link coming soon"
-                  >
-                    Buy Tickets
-                  </Button>
+                )}
+                {!isPast && !safeTicketLink && (
+                  <p className="text-[10px] text-muted-foreground">Ticket link coming soon.</p>
                 )}
               </div>
             </div>

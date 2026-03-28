@@ -37,15 +37,13 @@ test.describe('Payment E2E Flow', () => {
     // 1. Navigate to Show Page
     await page.goto(`/show/${showId}`); // CORRECTED PATH
 
-    // 2. Click primary ticket CTA
-    // Expect a "Buy Tickets" button.
+    // 2. Click Buy Tickets
+    // Expect a "Buy Tickets" primary CTA.
     console.log(`Navigating to show: ${showId}`);
     // Wait for network idle to ensure content is loaded
     await page.waitForLoadState('networkidle');
 
-    // Use a more generic selector that handles various button texts
-    // Using a more permissive selector to find the primary CTA
-    const buyButton = page.locator('button').filter({ hasText: /Buy Tickets/i }).first();
+    const buyButton = page.locator('button').filter({ hasText: /Buy Tickets|Get Free Ticket/i }).first();
 
     // Check if visible with a timeout
     try {

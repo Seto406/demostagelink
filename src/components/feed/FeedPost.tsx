@@ -406,9 +406,12 @@ export function FeedPost({ show, dataTour }: FeedPostProps) {
                                 Buy Tickets
                             </Button>
                         ) : (
-                            <Button size="sm" variant="secondary" disabled aria-label="Ticket link coming soon">
-                                Buy Tickets
-                            </Button>
+                            <div className="space-y-1">
+                              <Button size="sm" variant="secondary" disabled>
+                                  Buy Tickets
+                              </Button>
+                              <p className="text-[10px] text-muted-foreground text-center">Ticket link coming soon.</p>
+                            </div>
                         )}
                     </Link>
                 </div>

@@ -657,23 +657,21 @@ END:VCALENDAR`;
                                     {isTicketClaimed ? <Check className="w-5 h-5 mr-2" /> : <Ticket className="w-5 h-5 mr-2" />}
                                     {isTicketClaimed ? "Claimed" : "Buy Tickets"}
                                 </Button>
-                            ) : (show.price !== null && show.price !== undefined && show.price > 0 && (show.ticket_link || (Array.isArray(show.external_links) && show.external_links.length > 0))) ? (
-                                <Button
-                                  size="lg"
-                                  className="flex-1 sm:flex-none text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5"
-                                  onClick={handleBuyTicket}
-                                  disabled={buyingTicket}
-                                >
-                                    <ExternalLink className="w-5 h-5 mr-2" />
-                                    Buy Tickets
-                                </Button>
                             ) : (
-                                <>
-                                  <Button size="lg" variant="secondary" disabled className="flex-1 sm:flex-none">
+                                <div className="flex-1 sm:flex-none space-y-2">
+                                  <Button
+                                    size="lg"
+                                    className="w-full text-lg font-serif px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 disabled:shadow-none disabled:hover:translate-y-0"
+                                    onClick={handleBuyTicket}
+                                    disabled={buyingTicket || !(show.ticket_link || (Array.isArray(show.external_links) && show.external_links.length > 0))}
+                                  >
+                                      <ExternalLink className="w-5 h-5 mr-2" />
                                       Buy Tickets
                                   </Button>
-                                  <p className="text-xs text-white/70">Ticket link coming soon.</p>
-                                </>
+                                  {!(show.ticket_link || (Array.isArray(show.external_links) && show.external_links.length > 0)) && (
+                                    <p className="text-xs text-white/70">Ticket link coming soon.</p>
+                                  )}
+                                </div>
                             )}
 
                             {/* Secondary Actions */}
