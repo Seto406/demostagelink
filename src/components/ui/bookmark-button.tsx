@@ -36,6 +36,7 @@ export const BookmarkButton = ({
         "rounded-full flex items-center justify-center transition-all",
         "bg-background/80 backdrop-blur-sm border border-secondary/30",
         "hover:border-primary/50 hover:bg-background/90",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2",
         sizeClasses[size],
         className
       )}
