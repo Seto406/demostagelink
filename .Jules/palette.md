@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-25 - Core Interaction Tooltips
+**Learning:** Frequently used core interaction buttons like `LikeButton` and `BookmarkButton` were missing tooltips. Adding them ensures that users clearly understand their actions, and drastically improves accessibility.
+**Action:** Always wrap primary action icon-only buttons with `Tooltip` and `TooltipProvider`, not just auxiliary buttons.
