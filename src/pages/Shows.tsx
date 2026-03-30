@@ -833,6 +833,7 @@ const Shows = () => {
                   <button
                     onClick={() => setSearchQuery("")}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Clear search"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -945,6 +946,7 @@ const Shows = () => {
                         <button
                           onClick={() => setDateFilter("")}
                           className="text-muted-foreground hover:text-foreground transition-colors p-2"
+                          aria-label="Clear date filter"
                         >
                           <X className="w-4 h-4" />
                         </button>

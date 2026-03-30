@@ -123,6 +123,7 @@ export function NotificationItem({ notification, onRead, onMarkAsRead }: Notific
              <button
                onClick={handleMarkAsRead}
                className="mt-1 p-1.5 hover:bg-secondary/20 rounded-full text-muted-foreground hover:text-secondary transition-colors shrink-0 z-10"
+               aria-label="Mark as read"
                title="Mark as read"
                type="button"
              >
