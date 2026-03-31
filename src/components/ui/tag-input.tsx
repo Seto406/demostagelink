@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface TagInputProps {
@@ -52,15 +53,23 @@ export const TagInput = ({ placeholder, tags, setTags, suggestions, className, i
         {tags.map((tag, index) => (
           <Badge key={index} variant="secondary" className="pl-2 pr-1 py-1 h-7 text-sm flex items-center gap-1">
             {tag}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={() => removeTag(index)}
-            >
-              <X className="h-3 w-3" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 p-0 hover:bg-transparent"
+                  onClick={() => removeTag(index)}
+                  aria-label={`Remove ${tag}`}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Remove {tag}</p>
+              </TooltipContent>
+            </Tooltip>
           </Badge>
         ))}
       </div>
