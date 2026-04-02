@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2024-05-18 - Framer Motion Interactive Elements Tooltips and Focus
+**Learning:** Custom interactive elements (like Framer Motion `motion.button` wrappers) that lack visible text labels must not only have an `aria-label` but also explicit tooltips for visual feedback and explicit keyboard accessibility styling (`focus-visible` states) to match the application's design system and ensure screen-reader + keyboard navigation equality.
+**Action:** Always verify that `motion.button` components, especially icon-only variations like `LikeButton` or `BookmarkButton`, are wrapped in the `Tooltip` component hierarchy (with `asChild` on the trigger) and include `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2` in their Tailwind classes.
