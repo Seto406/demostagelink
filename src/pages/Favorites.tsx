@@ -183,16 +183,17 @@ const Favorites = () => {
                       </div>
                     </div>
                   </Link>
-                  <BookmarkButton
-                    isFavorited={isFavorited(show.id)}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleFavorite(show.id);
-                    }}
-                    className="absolute top-3 right-3"
-                    size="sm"
-                  />
+                  <div className="absolute top-3 right-3 z-30 pointer-events-auto">
+                    <BookmarkButton
+                      isFavorited={isFavorited(show.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(show.id);
+                      }}
+                      size="sm"
+                    />
+                  </div>
                 </motion.div>
               ))}
             </div>
