@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-03-22 - Tooltips & Focus States on Icon Buttons
+**Learning:** Custom interactive elements (like Framer Motion wrappers for buttons) need explicit `focus-visible` classes to maintain keyboard accessibility, and icon-only buttons benefit greatly from Radix `Tooltip`s for sighted users since `aria-label` is invisible.
+**Action:** When creating or modifying custom icon-only controls, always wrap them in a `Tooltip` and apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2` to match the design system.
