@@ -421,6 +421,7 @@ export const GroupMembers = ({ profileId, isPro = false, onUpsell }: GroupMember
                           setAvatarPreview(null);
                         }}
                         className="absolute top-0 right-0 p-1 bg-destructive text-destructive-foreground rounded-full"
+                        aria-label="Remove avatar"
                       >
                         <X className="w-3 h-3" />
                       </button>
