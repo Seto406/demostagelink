@@ -28,6 +28,7 @@ const Index = lazy(() => import("./pages/Index"));
 const UserFeed = lazy(() => import("./pages/UserFeed"));
 const Directory = lazy(() => import("./pages/Directory"));
 const Shows = lazy(() => import("./pages/Shows"));
+const TestTooltips = lazy(() => import("./components/TestTooltips"));
 const About = lazy(() => import("./pages/About"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -104,6 +105,7 @@ const AppRoutes = () => {
           <Route path="/feed" element={<UserFeed />} />
           <Route path="/directory" element={<Directory />} />
           <Route path="/shows" element={<Shows />} />
+              <Route path="/test-tooltips" element={<TestTooltips />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
           <Route path="/login" element={<Login />} />
