@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-06-15 - Tooltips and Keyboard Accessibility on Icon-Only Feedback Buttons
+**Learning:** Icon-only interactive elements like Like and Bookmark buttons (wrapped in `motion.button`) are common in social feeds. However, they lack context for visual users on hover and are difficult to identify for keyboard users without explicit `focus-visible` styles, despite having `aria-label`s for screen readers.
+**Action:** Always wrap `motion.button` icon elements with Radix UI `Tooltip` (using `TooltipTrigger asChild`) and explicitly add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2` to the `className` to ensure a consistent, accessible experience across all input modalities.
