@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-25 - Motion Buttons and Tooltips
+**Learning:** Wrapping interactive `motion.button` components (e.g. `BookmarkButton`, `LikeButton`) with Radix UI `Tooltip` (via `asChild` on `TooltipTrigger`) resolves accessibility issues for icon-only buttons while maintaining Framer Motion animations. Additionally, these custom components often lack default browser focus states.
+**Action:** When creating custom icon-only animated buttons, always wrap them in a Tooltip and apply explicit keyboard focus classes (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2`).
