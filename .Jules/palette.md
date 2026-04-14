@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-02-23 - Focus Rings on Framer Motion Components
+**Learning:** Custom interactive elements wrapped in Framer Motion (like `motion.button`) often lack default browser focus states, making them invisible to keyboard users.
+**Action:** Explicitly implement keyboard accessibility using Tailwind classes `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2` to match the application's design system when building or modifying custom animated buttons.
