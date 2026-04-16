@@ -260,6 +260,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
             <Button
               type="submit"
               size="icon"
+              aria-label="Post comment"
               disabled={submitting || !newComment.trim()}
               className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             >
