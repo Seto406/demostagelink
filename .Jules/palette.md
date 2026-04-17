@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-25 - Tooltip Triggers on Dropdown Menus
+**Learning:** Wrapping a Radix UI `<DropdownMenuTrigger asChild>` inside a `<TooltipTrigger asChild>` on a single `<Button>` creates component composition issues. Both triggers attempt to attach event handlers (like `onClick` or `onPointerDown`) and specific ARIA attributes to the same child DOM element, which can lead to unexpected behavior or React errors.
+**Action:** When an icon-only button opens a dropdown menu, prioritize a clear `aria-label` on the button itself rather than attempting to wrap it in a tooltip, or ensure the tooltip and dropdown are composed correctly without conflicting `asChild` delegation.
