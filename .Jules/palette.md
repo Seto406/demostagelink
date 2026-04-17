@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-24 - Accessibility of Hover-Dependent Actions
+**Learning:** Icon-only action buttons placed inside hover groups (like comment deletions) that use `opacity-0 group-hover:opacity-100` are completely invisible to keyboard-only users who navigate via <kbd>Tab</kbd>, making them inaccessible.
+**Action:** Always append `focus-visible:opacity-100` to such elements to ensure they appear when focused. Additionally, wrap them in `<Tooltip>` components instead of just relying on `<span className="sr-only">` so that both mouse and keyboard users receive contextual labels.
