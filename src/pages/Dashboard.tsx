@@ -973,7 +973,7 @@ const Dashboard = () => {
                     <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
                         <h1 className="text-3xl font-serif font-bold text-foreground">{selectedGroup?.group_name || "Unnamed Group"}</h1>
                         {selectedGroup && (
-                            <Button variant="ghost" size="icon" onClick={() => setIsEditProfileOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <Button variant="ghost" size="icon" onClick={() => setIsEditProfileOpen(true)} className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Edit Group Settings">
                                 <Settings className="w-4 h-4" />
                             </Button>
                         )}
