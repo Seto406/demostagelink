@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-25 - Interaction Buttons and Keyboard Focus
+**Learning:** Custom interactive components wrapped in `framer-motion` (like LikeButton and BookmarkButton) often lack native button focus states and tooltips, making them inaccessible for keyboard users and ambiguous for screen readers or new users.
+**Action:** When creating animated icon buttons, always explicitly add `focus-visible` utility classes (e.g., `focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2`) and wrap them in Tooltips to provide both visual focus indicators and clear text labels.
