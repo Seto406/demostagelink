@@ -5,6 +5,7 @@ import LandingNavbar from "@/components/landing/LandingNavbar";
 import { CinematicLanding } from "@/components/landing/CinematicLanding";
 import MissionSection from "@/components/landing/MissionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
+import CapstoneHighlightsSection from "@/components/landing/CapstoneHighlightsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
@@ -50,6 +51,7 @@ const Index = () => {
         <CinematicLanding />
         <MissionSection />
         <FeaturesSection />
+        <CapstoneHighlightsSection />
         <PricingSection />
         <FAQSection />
         <ShowcaseSection />
