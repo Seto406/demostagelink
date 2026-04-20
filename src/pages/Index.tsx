@@ -10,6 +10,8 @@ import FAQSection from "@/components/landing/FAQSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import { BrandedLoader } from "@/components/ui/branded-loader";
+import ScrollToTop from "@/components/ui/scroll-to-top";
+import { ScrollProgress } from "@/components/ui/scroll-progress";
 
 const Index = () => {
   const { user, profile, loading } = useAuth();
@@ -44,6 +46,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <ScrollProgress color="gold" />
       <LandingNavbar />
       
       <main>
@@ -56,6 +59,7 @@ const Index = () => {
       </main>
       
       <LandingFooter />
+      <ScrollToTop />
     </div>
   );
 };
