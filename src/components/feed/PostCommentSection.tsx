@@ -222,7 +222,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(comment.id)}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -260,6 +260,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
             <Button
               type="submit"
               size="icon"
+              aria-label="Post comment"
               disabled={submitting || !newComment.trim()}
               className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
             >
