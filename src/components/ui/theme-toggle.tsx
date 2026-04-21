@@ -43,7 +43,7 @@ export const ThemeToggle = ({ variant = "default" }: ThemeToggleProps) => {
     <div className="space-y-3">
       <button
         onClick={() => setTheme("dark")}
-        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
+        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 ${
           theme === "dark" 
             ? "bg-secondary/10 border-secondary/50" 
             : "bg-background/50 border-secondary/10 hover:bg-background/80"
@@ -73,7 +73,7 @@ export const ThemeToggle = ({ variant = "default" }: ThemeToggleProps) => {
 
       <button
         onClick={() => setTheme("light")}
-        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
+        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 ${
           theme === "light" 
             ? "bg-secondary/10 border-secondary/50" 
             : "bg-background/50 border-secondary/10 hover:bg-background/80"
