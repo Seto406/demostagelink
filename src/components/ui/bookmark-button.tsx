@@ -1,61 +1,68 @@
-import { Star } from "lucide-react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bookmark } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface BookmarkButtonProps {
-  isFavorited: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  className?: string;
-  size?: "sm" | "md" | "lg";
+interface BookmarkButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  isBookmarked: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export const BookmarkButton = ({
-  isFavorited, 
-  onClick, 
+const BookmarkButton = React.forwardRef<HTMLButtonElement, BookmarkButtonProps>(({
+  isBookmarked,
+  size = 'md',
   className,
-  size = "md" 
-}: BookmarkButtonProps) => {
-  const sizeClasses = {
-    sm: "w-7 h-7",
-    md: "w-9 h-9",
-    lg: "w-11 h-11"
-  };
-
-  const iconSizes = {
-    sm: "w-3.5 h-3.5",
-    md: "w-4 h-4",
-    lg: "w-5 h-5"
+  ...props
+}, ref) => {
+  const sizes = {
+    sm: { icon: 16, container: 'h-8 w-8' },
+    md: { icon: 20, container: 'h-10 w-10' },
+    lg: { icon: 24, container: 'h-12 w-12' }
   };
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      onClick={onClick}
-      className={cn(
-        "rounded-full flex items-center justify-center transition-all",
-        "bg-background/80 backdrop-blur-sm border border-secondary/30",
-        "hover:border-primary/50 hover:bg-background/90",
-        sizeClasses[size],
-        className
-      )}
-      aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-    >
-      <motion.div
-        initial={false}
-        animate={isFavorited ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Star
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
+          ref={ref}
+          whileTap={{ scale: 0.9 }}
           className={cn(
-            iconSizes[size],
-            "transition-colors",
-            isFavorited 
-              ? "fill-primary text-primary" 
-              : "text-muted-foreground hover:text-primary"
+            'flex items-center justify-center rounded-full transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            sizes[size].container,
+            isBookmarked
+              ? 'bg-primary/10 text-primary hover:bg-primary/20'
+              : 'hover:bg-accent text-muted-foreground hover:text-foreground',
+            className
           )}
-        />
-      </motion.div>
-    </motion.button>
+          {...props}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isBookmarked ? 'bookmarked' : 'unbookmarked'}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Bookmark
+                size={sizes[size].icon}
+                className={cn(
+                  'transition-all duration-200',
+                  isBookmarked ? 'fill-current' : 'fill-none'
+                )}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{isBookmarked ? 'Remove Bookmark' : 'Bookmark'}</p>
+      </TooltipContent>
+    </Tooltip>
   );
-};
+});
+BookmarkButton.displayName = 'BookmarkButton';
+
+export { BookmarkButton };
