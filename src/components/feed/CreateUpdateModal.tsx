@@ -204,7 +204,8 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
                   )}
                   <button
                     onClick={() => removeFile(idx)}
-                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove preview"
+                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2 transition-opacity"
                   >
                     <X className="w-3 h-3" />
                   </button>
