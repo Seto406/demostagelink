@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2024-04-30 - Tooltip testing with Playwright
+**Learning:** When verifying dynamic Radix UI tooltips with Playwright (e.g., tooltips that change text after a click interaction like Like/Unlike or Bookmark/Unbookmark), the original tooltip DOM node is often destroyed. Reusing a locator stored in a variable will lead to 'timeout' or 'element detached' errors.
+**Action:** Clear the hover state (e.g., `page.mouse.move(0, 0)`), wait for the exit animation, and re-trigger the hover before querying the tooltip locator again with `.first` or a fresh `get_by_role('tooltip')` call to ensure you attach to the new DOM node.
