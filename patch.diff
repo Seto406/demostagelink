@@ -1,0 +1,37 @@
+--- src/components/layout/Navbar.tsx
++++ src/components/layout/Navbar.tsx
+@@ -10,6 +10,7 @@
+ import { useAuth } from "@/contexts/AuthContext";
+ import { supabase } from "@/integrations/supabase/client";
+ import { useProfile } from "@/hooks/useProfile";
++import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+ const mobileNavLinks = [
+   { path: "/directory/shows", label: "Shows" },
+@@ -165,13 +166,17 @@
+
+               {user && (
+                 <Link to="/notifications" className="relative">
+-                  <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
+-                    <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
+-                    {unreadCount > 0 && (
+-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+-                        {unreadCount > 9 ? "9+" : unreadCount}
+-                      </span>
+-                    )}
+-                  </Button>
++                  <Tooltip>
++                    <TooltipTrigger asChild>
++                      <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
++                        <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
++                        {unreadCount > 0 && (
++                          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
++                            {unreadCount > 9 ? "9+" : unreadCount}
++                          </span>
++                        )}
++                      </Button>
++                    </TooltipTrigger>
++                    <TooltipContent>Notifications</TooltipContent>
++                  </Tooltip>
+                 </Link>
+               )}

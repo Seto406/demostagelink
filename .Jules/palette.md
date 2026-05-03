@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-24 - Tooltips on Icon Buttons
+**Learning:** The notifications icon button in the Navbar is visually clean but lacks a tooltip, which makes it less clear for some users despite having an `aria-label`.
+**Action:** Added a `Tooltip` component wrapper around the notification button to provide a clear description for mouse users.
