@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shield, Menu, X, Settings, Star, User, Ticket, Bell, Film, Users, House, LayoutDashboard } from "lucide-react";
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
@@ -164,23 +165,37 @@ const Navbar = () => {
 
               {user && (
                 <Link to="/notifications" className="relative">
-                  <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
-                    <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
+                        <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
+                        {unreadCount > 0 && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Notifications</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Link>
               )}
 
               {user && (
                 <Link to="/profile">
-                  <Avatar className="h-9 w-9 border border-secondary/30">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt="Profile avatar" />
-                    <AvatarFallback className="bg-muted text-foreground">{profileInitial}</AvatarFallback>
-                  </Avatar>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Avatar className="h-9 w-9 border border-secondary/30">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt="Profile avatar" />
+                        <AvatarFallback className="bg-muted text-foreground">{profileInitial}</AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Profile</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </Link>
               )}
 
