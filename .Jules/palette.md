@@ -29,3 +29,6 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+## 2024-05-05 - Tooltip Triggers for Framer Motion Interactive Elements
+**Learning:** `framer-motion`'s `motion.button` and similar components correctly forward refs. This means they can be safely wrapped with Radix UI's `TooltipTrigger asChild` without causing ref-forwarding errors or requiring additional intermediary spans, which is often a point of confusion when integrating animation libraries with accessible overlay components.
+**Action:** When adding tooltips to custom animated icon-only components (like `LikeButton` or `BookmarkButton`), wrap the `motion.button` directly with `<TooltipTrigger asChild>` and rely on existing Radix tooltip context. Do not add redundant wrapper divs.
