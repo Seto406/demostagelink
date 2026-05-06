@@ -82,7 +82,7 @@ export const OnboardingChecklist = ({ profile, hasShows }: OnboardingChecklistPr
              {!step.isComplete && step.link && (
                <Link
                  to={step.link}
-                 className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                 className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                >
                  Go <ChevronRight className="w-3 h-3" />
                </Link>
