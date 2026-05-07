@@ -394,12 +394,12 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
               </p>
             )}
             <div className="flex items-center gap-4">
-              <label className="cursor-pointer relative group">
+              <label className="cursor-pointer relative group rounded-full focus-within:ring-2 focus-within:ring-secondary/50 focus-within:ring-offset-2 focus-within:ring-offset-background">
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handleAvatarUpload}
-                  className="hidden"
+                  className="sr-only"
                   disabled={uploadingAvatar}
                 />
                 <div className="relative">
@@ -427,12 +427,12 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
               </label>
 
               <div className="flex flex-col gap-2">
-                <label className="cursor-pointer">
+                <label className="cursor-pointer rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 focus-within:ring-offset-2 focus-within:ring-offset-background">
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleAvatarUpload}
-                    className="hidden"
+                    className="sr-only"
                     disabled={uploadingAvatar}
                   />
                   <span className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/10 hover:bg-secondary/20 text-secondary text-sm font-medium rounded-lg transition-colors">

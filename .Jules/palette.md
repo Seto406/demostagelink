@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-24 - Accessible Custom File Inputs
+**Learning:** File inputs (`<input type="file">`) hidden with `className="hidden"` are inaccessible to keyboard users and screen readers.
+**Action:** Apply `className="sr-only"` to the input element instead, and add `focus-within` styling (e.g., `focus-within:ring-2`) to its parent `<label>` wrapper, allowing keyboard navigability while maintaining visual custom button styles.
