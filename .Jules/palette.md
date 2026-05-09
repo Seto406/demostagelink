@@ -29,3 +29,6 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+## 2025-05-24 - Hover-Hidden Interactive Elements Keyboard Accessibility
+**Learning:** Interactive elements hidden behind hover states (e.g., using `opacity-0 group-hover:opacity-100`) become completely inaccessible to keyboard-only users navigating via Tab because they only appear on mouse hover.
+**Action:** When hiding interactive elements (like edit/delete buttons) with `opacity-0 group-hover:opacity-100`, ALWAYS add `focus-visible:opacity-100` so they become visible when a keyboard user tabs to them.

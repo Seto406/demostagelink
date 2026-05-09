@@ -530,7 +530,7 @@ const CheckoutPage = () => {
                                                     alt="Payment QR Code"
                                                     className="max-w-[200px] h-auto object-contain transition-transform group-hover:scale-105"
                                                 />
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/10 transition-opacity rounded-lg">
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 bg-black/10 transition-opacity rounded-lg">
                                                     <ZoomIn className="w-8 h-8 text-white drop-shadow-md" />
                                                 </div>
                                             </button>
