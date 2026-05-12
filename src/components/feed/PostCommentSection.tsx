@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDistanceToNow } from "date-fns";
 import { Send, Loader2, Trash2 } from "lucide-react";
@@ -219,15 +220,22 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                       </span>
                     </div>
                     {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(comment.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        <span className="sr-only">Delete comment</span>
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDelete(comment.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span className="sr-only">Delete comment</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete comment</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{comment.content}</p>
