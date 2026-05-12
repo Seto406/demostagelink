@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Image, X, Loader2, Video } from "lucide-react";
@@ -202,12 +203,20 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
                   ) : (
                     <img src={src} alt="Preview" className="w-full h-full object-cover" />
                   )}
-                  <button
-                    onClick={() => removeFile(idx)}
-                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        aria-label="Remove media"
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Remove media</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               ))}
             </div>
