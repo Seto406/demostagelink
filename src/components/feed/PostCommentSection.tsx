@@ -224,6 +224,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
                         size="icon"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(comment.id)}
+                        aria-label="Delete comment"
                       >
                         <Trash2 className="h-3 w-3" />
                         <span className="sr-only">Delete comment</span>
@@ -262,6 +263,7 @@ export function PostCommentSection({ postId, postAuthorId }: PostCommentSectionP
               size="icon"
               disabled={submitting || !newComment.trim()}
               className="h-[40px] w-[40px] shrink-0 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+              aria-label="Post comment"
             >
               {submitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
