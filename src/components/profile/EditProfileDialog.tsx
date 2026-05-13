@@ -445,6 +445,7 @@ export const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps
                     onClick={handleRemoveAvatar}
                     disabled={uploadingAvatar}
                     className="inline-flex items-center gap-2 px-4 py-2 text-red-500 text-sm hover:bg-red-500/10 rounded-lg transition-colors"
+                    aria-label="Remove avatar"
                   >
                     <X className="w-4 h-4" />
                     Remove

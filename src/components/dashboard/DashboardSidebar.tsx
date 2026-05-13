@@ -72,6 +72,7 @@ export const DashboardSidebar = ({
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="Close menu"
           >
             <X className="w-5 h-5" />
           </button>
