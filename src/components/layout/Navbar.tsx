@@ -8,6 +8,7 @@ import { Shield, Menu, X, Settings, Star, User, Ticket, Bell, Film, Users, House
 import { useState, useEffect } from "react";
 import stageLinkLogo from "@/assets/stagelink-logo-mask.png";
 import { SearchBar } from "@/components/search/SearchBar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Navbar = () => {
   const location = useLocation();
@@ -163,16 +164,23 @@ const Navbar = () => {
               </div>
 
               {user && (
-                <Link to="/notifications" className="relative">
-                  <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
-                    <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/notifications" className="relative">
+                      <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
+                        <Bell className={`h-5 w-5 ${isBellShaking ? "animate-shake" : ""}`} />
+                        {unreadCount > 0 && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+                            {unreadCount > 9 ? "9+" : unreadCount}
+                          </span>
+                        )}
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Notifications</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {user && (
