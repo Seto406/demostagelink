@@ -105,7 +105,7 @@ export const DigitalPass = ({
       <div className="absolute top-2 right-2 z-30 print:hidden">
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm border border-secondary/20 hover:bg-background/80 shadow-sm">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-sm border border-secondary/20 hover:bg-background/80 shadow-sm" aria-label="Download options">
                     <Download className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
