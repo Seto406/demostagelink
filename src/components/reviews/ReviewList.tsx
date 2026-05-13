@@ -276,6 +276,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
                             size="icon"
                             className="h-6 w-6 text-muted-foreground hover:text-secondary"
                             title="Edit Review"
+                            aria-label="Edit Review"
                             onClick={() => handleEditStart(review)}
                           >
                             <Pencil className="w-3 h-3" />
@@ -289,6 +290,7 @@ export const ReviewList = ({ showId, refreshTrigger, isUpcoming, producerId, onS
                               size="icon"
                               className="h-6 w-6 text-muted-foreground hover:text-destructive"
                               title="Delete Review"
+                              aria-label="Delete Review"
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
