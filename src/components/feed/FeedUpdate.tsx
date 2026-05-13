@@ -216,11 +216,18 @@ export function FeedUpdate({ post, onDelete }: FeedUpdateProps) {
           </div>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <DropdownMenuTrigger asChild>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" aria-label="More options">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+              </DropdownMenuTrigger>
+              <TooltipContent>
+                <p>More options</p>
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={handleShare}>
                 <Share2 className="mr-2 h-4 w-4" />
