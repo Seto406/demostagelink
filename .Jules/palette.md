@@ -29,3 +29,6 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+## 2024-05-24 - Tooltips on Icon Buttons
+**Learning:** Icon-only buttons (like 'Like' and 'Bookmark') in the social feed were inaccessible and ambiguous. Adding Tooltips resolved this, and applying 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2' resolved keyboard accessibility issues, bringing them in line with the app's design system.
+**Action:** Consistently apply Tooltips to all icon-only buttons, and ensure proper focus states are applied for custom interactive elements without default focus styles.
