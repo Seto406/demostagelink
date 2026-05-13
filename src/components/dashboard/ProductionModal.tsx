@@ -1074,16 +1074,24 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                                 className="bg-background border-secondary/30"
                               />
                            </div>
-                           <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeSlot(index)}
-                                disabled={scheduleSlots.length === 1}
-                                className="text-destructive hover:bg-destructive/10 mb-[2px]"
-                           >
-                               <Trash2 className="w-4 h-4" />
-                           </Button>
+                           <Tooltip>
+                             <TooltipTrigger asChild>
+                               <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeSlot(index)}
+                                    disabled={scheduleSlots.length === 1}
+                                    className="text-destructive hover:bg-destructive/10 mb-[2px]"
+                                    aria-label="Remove schedule slot"
+                               >
+                                   <Trash2 className="w-4 h-4" />
+                               </Button>
+                             </TooltipTrigger>
+                             <TooltipContent>
+                               <p>Remove schedule slot</p>
+                             </TooltipContent>
+                           </Tooltip>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div className="space-y-1">
@@ -1297,17 +1305,25 @@ export function ProductionModal({ open, onOpenChange, showToEdit, onSuccess }: P
                             className="bg-background border-secondary/30"
                         />
                          {index > 0 && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                    const newLinks = externalLinks.filter((_, i) => i !== index);
-                                    setExternalLinks(newLinks);
-                                }}
-                            >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                        const newLinks = externalLinks.filter((_, i) => i !== index);
+                                        setExternalLinks(newLinks);
+                                    }}
+                                    aria-label="Remove external link"
+                                >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove external link</p>
+                              </TooltipContent>
+                            </Tooltip>
                         )}
                     </div>
                 ))}
