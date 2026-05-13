@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2026-04-09 - Focus States for Interactive Motion Elements
+**Learning:** Custom interactive elements wrapped in framer-motion like `motion.button` lack default browser focus indicators, making keyboard navigation difficult and inaccessible.
+**Action:** Always implement explicit keyboard accessibility using `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2` classes on custom animated interactive elements.
