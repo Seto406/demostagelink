@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2024-05-25 - File Input Accessibility & Icon Tooltips
+**Learning:** File inputs (`<input type="file">`) hidden with `className="hidden"` are completely removed from the accessibility tree, preventing keyboard navigation. Furthermore, interactive elements that only appear on hover (like a "Remove" X icon) are invisible to keyboard users unless explicitly styled for focus.
+**Action:** Replace `className="hidden"` on file inputs with `sr-only` so they remain focusable. Add `focus-within:ring-2` to their visual `<label>` wrappers. For hover-only elements, add `focus-visible:opacity-100` alongside `group-hover:opacity-100`, and wrap all icon-only interactions in `Tooltip` components with explicit `aria-label`s or `sr-only` labels.
