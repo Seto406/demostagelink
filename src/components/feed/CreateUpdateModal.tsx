@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { Image, X, Loader2, Video } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -202,12 +203,20 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
                   ) : (
                     <img src={src} alt="Preview" className="w-full h-full object-cover" />
                   )}
-                  <button
-                    onClick={() => removeFile(idx)}
-                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        aria-label="Remove media"
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Remove media</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -215,19 +224,27 @@ export function CreateUpdateModal({ open, onOpenChange, onSuccess }: CreateUpdat
 
           <div className="flex justify-between items-center pt-2 border-t border-secondary/10">
             <div className="flex gap-2">
-              <label className="cursor-pointer p-2 hover:bg-secondary/10 rounded-full transition-colors text-secondary">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-                <div className="flex items-center gap-1">
-                  <Image className="w-5 h-5" />
-                  <Video className="w-5 h-5" />
-                </div>
-              </label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <label className="cursor-pointer p-2 hover:bg-secondary/10 rounded-full transition-colors text-secondary focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background outline-none flex items-center justify-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      className="sr-only"
+                      onChange={handleFileSelect}
+                    />
+                    <span className="sr-only">Attach images or videos</span>
+                    <div className="flex items-center gap-1">
+                      <Image className="w-5 h-5" />
+                      <Video className="w-5 h-5" />
+                    </div>
+                  </label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Attach media</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
 
             <Button
