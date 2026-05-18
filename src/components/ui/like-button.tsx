@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LikeButtonProps {
   isLiked: boolean;
@@ -27,8 +28,12 @@ export const LikeButton = ({
     lg: "w-5 h-5"
   };
 
+  const label = isLiked ? "Unlike" : "Like";
+
   return (
-    <motion.button
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
@@ -36,10 +41,11 @@ export const LikeButton = ({
         "rounded-full flex items-center justify-center transition-all",
         "bg-background/80 backdrop-blur-sm border border-secondary/30",
         "hover:border-primary/50 hover:bg-background/90",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2",
         sizeClasses[size],
         className
       )}
-      aria-label={isLiked ? "Unlike" : "Like"}
+      aria-label={label}
     >
       <motion.div
         initial={false}
@@ -56,6 +62,11 @@ export const LikeButton = ({
           )}
         />
       </motion.div>
-    </motion.button>
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 };
