@@ -29,3 +29,7 @@
 ## 2025-05-24 - Playwright Tooltip Verification
 **Learning:** When verifying tooltips with Playwright, avoid using `get_by_text` for the tooltip content if the same text exists elsewhere. Use `page.get_by_role('tooltip')` to target the active tooltip content specifically to avoid strict mode violations.
 **Action:** Use `page.get_by_role('tooltip')` combined with `.to_have_text()` for robust tooltip verification.
+
+## 2025-05-18 - Framer Motion & Radix Tooltip Integration
+**Learning:** Framer Motion components (like `motion.button`) successfully forward refs and can be safely used as direct children of Radix UI components using the `asChild` prop (e.g., `<TooltipTrigger asChild>`). However, when adding accessible keyboard focus states (like `focus-visible:ring`), these must be explicitly defined on the interactive component to match standard shadcn/tailwind design system patterns.
+**Action:** Always include `focus-visible` utility classes (e.g., `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/50 focus-visible:ring-offset-2`) when implementing custom interactive elements wrapped with Framer Motion, and safely compose them with Radix Tooltips via `asChild`.
